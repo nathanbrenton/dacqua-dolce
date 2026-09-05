@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 
+from app.api.authentication import router as authentication_router
 from app.api.health import router as health_router
 from app.core.config import get_settings
+from app.core.security import (
+    CSRFMiddleware,
+    SecurityHeadersMiddleware,
+)
 
 settings = get_settings()
 
@@ -11,4 +16,18 @@ app = FastAPI(
     redoc_url=None,
 )
 
+app.add_middleware(
+    CSRFMiddleware,
+    settings=settings,
+)
+
+app.add_middleware(
+    SecurityHeadersMiddleware,
+)
+
 app.include_router(health_router)
+
+app.include_router(
+    authentication_router,
+    prefix=settings.api_prefix,
+)
