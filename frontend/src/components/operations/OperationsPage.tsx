@@ -1,0 +1,696 @@
+import {
+  type ChangeEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  getOperationsCatalog,
+  getOperationsQuotes,
+  getOperationsSummary,
+  updateProductInventory,
+  updateProductPricing,
+  updateQuoteStatus,
+  type OperationsProduct,
+  type OperationsQuote,
+  type OperationsSummary,
+} from "../../api/operations";
+
+type OperationsPageProps = {
+  roles: string[];
+  onNavigate: (path: string) => void;
+};
+
+const OPERATIONS_ROLES = new Set([
+  "employee",
+  "manager",
+  "administrator",
+  "developer",
+]);
+
+const PRIVILEGED_ROLES = new Set([
+  "manager",
+  "administrator",
+  "developer",
+]);
+
+const QUOTE_STATUSES = [
+  "new",
+  "contacted",
+  "quoted",
+  "closed",
+] as const;
+
+const PRICING_MODES = [
+  "PUBLIC",
+  "MAP_LIMITED",
+  "CART_ONLY",
+  "PRIVATE_QUOTE",
+  "LOGIN_REQUIRED",
+  "NO_ONLINE_PRICE",
+  "NO_ONLINE_SALE",
+] as const;
+
+const AMOUNT_REQUIRED = new Set<string>([
+  "PUBLIC",
+  "MAP_LIMITED",
+  "CART_ONLY",
+  "LOGIN_REQUIRED",
+]);
+
+const INVENTORY_STATUSES = [
+  "in_stock",
+  "low_stock",
+  "backordered",
+  "unavailable",
+  "not_tracked",
+] as const;
+
+type PricingDraft = {
+  mode: string;
+  amount: string;
+  currency: string;
+};
+
+type InventoryDraft = {
+  status: string;
+  quantityOnHand: string;
+  quantityReserved: string;
+};
+
+function dollarsToMinor(value: string): number | null {
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+    throw new Error(
+      "Enter a dollar amount with no more than two decimals.",
+    );
+  }
+
+  const amount = Number(normalized);
+
+  if (!Number.isFinite(amount)) {
+    throw new Error("Enter a valid amount.");
+  }
+
+  return Math.round(amount * 100);
+}
+
+function minorToDollars(amountMinor: number | null): string {
+  if (amountMinor === null) {
+    return "";
+  }
+
+  return (amountMinor / 100).toFixed(2);
+}
+
+function replaceProduct(
+  products: OperationsProduct[],
+  replacement: OperationsProduct,
+): OperationsProduct[] {
+  return products.map((product) =>
+    product.id === replacement.id ? replacement : product,
+  );
+}
+
+export function OperationsPage({
+  roles,
+  onNavigate,
+}: OperationsPageProps) {
+  const authorized = useMemo(
+    () => roles.some((role) => OPERATIONS_ROLES.has(role)),
+    [roles],
+  );
+
+  const privileged = useMemo(
+    () => roles.some((role) => PRIVILEGED_ROLES.has(role)),
+    [roles],
+  );
+
+  const [summary, setSummary] =
+    useState<OperationsSummary | null>(null);
+  const [quotes, setQuotes] =
+    useState<OperationsQuote[]>([]);
+  const [products, setProducts] =
+    useState<OperationsProduct[]>([]);
+  const [pricingDrafts, setPricingDrafts] =
+    useState<Record<string, PricingDraft>>({});
+  const [inventoryDrafts, setInventoryDrafts] =
+    useState<Record<string, InventoryDraft>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authorized) {
+      setLoading(false);
+      return;
+    }
+
+    void Promise.all([
+      getOperationsSummary(),
+      getOperationsQuotes(),
+      getOperationsCatalog(),
+    ])
+      .then(([summaryResult, quoteResult, productResult]) => {
+        setSummary(summaryResult);
+        setQuotes(quoteResult);
+        setProducts(productResult);
+
+        const nextPricing: Record<string, PricingDraft> = {};
+        const nextInventory: Record<string, InventoryDraft> = {};
+
+        for (const product of productResult) {
+          nextPricing[product.id] = {
+            mode: product.pricing.mode,
+            amount: minorToDollars(product.pricing.amount_minor),
+            currency: product.pricing.currency ?? "USD",
+          };
+
+          nextInventory[product.id] = {
+            status: product.inventory.status,
+            quantityOnHand: String(product.inventory.quantity_on_hand),
+            quantityReserved: String(product.inventory.quantity_reserved),
+          };
+        }
+
+        setPricingDrafts(nextPricing);
+        setInventoryDrafts(nextInventory);
+        setError(null);
+      })
+      .catch((caught) => {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Operations data could not be loaded.",
+        );
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [authorized]);
+
+  if (!authorized) {
+    return (
+      <main className="operations-shell">
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => onNavigate("/")}
+        >
+          ← Home
+        </button>
+
+        <section className="operations-denied">
+          <p className="eyebrow">Operations</p>
+          <h1>Access restricted.</h1>
+          <p>
+            This workspace is limited to authorized operations roles.
+          </p>
+        </section>
+      </main>
+    );
+  }
+
+  async function saveQuoteStatus(
+    quote: OperationsQuote,
+    nextStatus: string,
+  ) {
+    setError(null);
+    setMessage(null);
+
+    try {
+      const updated = await updateQuoteStatus(
+        quote.id,
+        nextStatus,
+      );
+
+      setQuotes((current) =>
+        current.map((candidate) =>
+          candidate.id === updated.id ? updated : candidate,
+        ),
+      );
+
+      setSummary(await getOperationsSummary());
+      setMessage("Quote status updated.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Quote status update failed.",
+      );
+    }
+  }
+
+  async function savePricing(product: OperationsProduct) {
+    const draft = pricingDrafts[product.id];
+
+    if (draft === undefined) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    try {
+      const amountMinor = AMOUNT_REQUIRED.has(draft.mode)
+        ? dollarsToMinor(draft.amount)
+        : null;
+
+      if (
+        AMOUNT_REQUIRED.has(draft.mode)
+        && amountMinor === null
+      ) {
+        throw new Error("This pricing policy requires an amount.");
+      }
+
+      const updated = await updateProductPricing(product.id, {
+        mode: draft.mode,
+        amount_minor: amountMinor,
+        currency: draft.currency,
+      });
+
+      setProducts((current) => replaceProduct(current, updated));
+      setPricingDrafts((current) => ({
+        ...current,
+        [updated.id]: {
+          mode: updated.pricing.mode,
+          amount: minorToDollars(updated.pricing.amount_minor),
+          currency: updated.pricing.currency ?? "USD",
+        },
+      }));
+      setMessage(`Pricing policy saved for ${updated.sku}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Pricing update failed.",
+      );
+    }
+  }
+
+  async function saveInventory(product: OperationsProduct) {
+    const draft = inventoryDrafts[product.id];
+
+    if (draft === undefined) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+
+    const quantityOnHand = Number.parseInt(draft.quantityOnHand, 10);
+    const quantityReserved = Number.parseInt(
+      draft.quantityReserved,
+      10,
+    );
+
+    if (
+      !Number.isInteger(quantityOnHand)
+      || quantityOnHand < 0
+      || !Number.isInteger(quantityReserved)
+      || quantityReserved < 0
+    ) {
+      setError("Inventory quantities must be non-negative integers.");
+      return;
+    }
+
+    try {
+      const updated = await updateProductInventory(product.id, {
+        status: draft.status,
+        quantity_on_hand: quantityOnHand,
+        quantity_reserved: quantityReserved,
+      });
+
+      setProducts((current) => replaceProduct(current, updated));
+      setInventoryDrafts((current) => ({
+        ...current,
+        [updated.id]: {
+          status: updated.inventory.status,
+          quantityOnHand: String(updated.inventory.quantity_on_hand),
+          quantityReserved: String(updated.inventory.quantity_reserved),
+        },
+      }));
+      setMessage(`Inventory saved for ${updated.sku}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Inventory update failed.",
+      );
+    }
+  }
+
+  function updatePricingDraft(
+    productId: string,
+    field: keyof PricingDraft,
+    value: string,
+  ) {
+    setPricingDrafts((current) => {
+      const existing = current[productId];
+
+      if (existing === undefined) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [productId]: {
+          ...existing,
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  function updateInventoryDraft(
+    productId: string,
+    field: keyof InventoryDraft,
+    value: string,
+  ) {
+    setInventoryDrafts((current) => {
+      const existing = current[productId];
+
+      if (existing === undefined) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [productId]: {
+          ...existing,
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  return (
+    <main className="operations-shell">
+      <button
+        type="button"
+        className="text-button"
+        onClick={() => onNavigate("/")}
+      >
+        ← Customer site
+      </button>
+
+      <header className="operations-heading">
+        <p className="eyebrow">Operations</p>
+        <h1>Business control, without business rules in the browser.</h1>
+        <p>
+          Pricing, inventory, and quote state are authoritative
+          server-side records with role enforcement and audit events.
+        </p>
+      </header>
+
+      {error !== null ? (
+        <p className="operations-alert operations-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {message !== null ? (
+        <p className="operations-alert" role="status">
+          {message}
+        </p>
+      ) : null}
+
+      {loading ? <p role="status">Loading operations…</p> : null}
+
+      {summary !== null ? (
+        <section
+          className="operations-metrics"
+          aria-label="Operations summary"
+        >
+          <article>
+            <strong>{summary.new_quotes}</strong>
+            <span>New quotes</span>
+          </article>
+          <article>
+            <strong>{summary.open_quotes}</strong>
+            <span>Open quotes</span>
+          </article>
+          <article>
+            <strong>{summary.active_products}</strong>
+            <span>Active systems</span>
+          </article>
+          <article>
+            <strong>{summary.failed_email_deliveries}</strong>
+            <span>Email failures</span>
+          </article>
+        </section>
+      ) : null}
+
+      <section className="operations-section">
+        <div className="operations-section-heading">
+          <p className="eyebrow">Quote Queue</p>
+          <h2>Customer requests</h2>
+        </div>
+
+        {quotes.length === 0 ? (
+          <p className="account-muted">No quote requests.</p>
+        ) : (
+          <div className="operations-quote-list">
+            {quotes.map((quote) => (
+              <article key={quote.id} className="operations-quote">
+                <div className="operations-quote-main">
+                  <p className="product-meta">
+                    {quote.product_name ?? "General consultation"}
+                  </p>
+                  <h3>{quote.name}</h3>
+                  <p>
+                    <a href={`mailto:${quote.email}`}>{quote.email}</a>
+                    {quote.phone !== null ? (
+                      <>
+                        {" · "}
+                        <a href={`tel:${quote.phone}`}>{quote.phone}</a>
+                      </>
+                    ) : null}
+                  </p>
+                  {quote.message !== null ? (
+                    <p className="operations-customer-message">
+                      {quote.message}
+                    </p>
+                  ) : null}
+                  <small>
+                    {new Date(quote.created_at).toLocaleString()}
+                  </small>
+                </div>
+
+                <label className="operations-field">
+                  <span>Status</span>
+                  <select
+                    value={quote.status}
+                    onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                      void saveQuoteStatus(quote, event.target.value);
+                    }}
+                  >
+                    {QUOTE_STATUSES.map((quoteStatus) => (
+                      <option key={quoteStatus} value={quoteStatus}>
+                        {quoteStatus}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="operations-section">
+        <div className="operations-section-heading">
+          <p className="eyebrow">Catalog Governance</p>
+          <h2>Pricing &amp; inventory</h2>
+          <p>
+            Enter only authoritative business/manufacturer data.
+            Restricted products should use a non-public pricing policy
+            rather than a workaround.
+          </p>
+        </div>
+
+        <div className="operations-product-list">
+          {products.map((product) => {
+            const pricing = pricingDrafts[product.id];
+            const inventory = inventoryDrafts[product.id];
+
+            if (pricing === undefined || inventory === undefined) {
+              return null;
+            }
+
+            const amountNeeded = AMOUNT_REQUIRED.has(pricing.mode);
+
+            return (
+              <article key={product.id} className="operations-product">
+                <header>
+                  <p className="product-meta">
+                    {product.manufacturer}
+                    {" · "}
+                    {product.category}
+                  </p>
+                  <h3>{product.name}</h3>
+                  <code>{product.sku}</code>
+                </header>
+
+                <div className="operations-product-grid">
+                  <fieldset>
+                    <legend>Pricing policy</legend>
+
+                    <label className="operations-field">
+                      <span>Mode</span>
+                      <select
+                        value={pricing.mode}
+                        disabled={!privileged}
+                        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                          updatePricingDraft(
+                            product.id,
+                            "mode",
+                            event.target.value,
+                          );
+                        }}
+                      >
+                        {PRICING_MODES.map((mode) => (
+                          <option key={mode} value={mode}>
+                            {mode}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="operations-field-row">
+                      <label className="operations-field">
+                        <span>Amount</span>
+                        <input
+                          inputMode="decimal"
+                          placeholder={amountNeeded ? "0.00" : "Hidden"}
+                          value={amountNeeded ? pricing.amount : ""}
+                          disabled={!privileged || !amountNeeded}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            updatePricingDraft(
+                              product.id,
+                              "amount",
+                              event.target.value,
+                            );
+                          }}
+                        />
+                      </label>
+
+                      <label className="operations-field">
+                        <span>Currency</span>
+                        <input
+                          maxLength={3}
+                          value={pricing.currency}
+                          disabled={!privileged}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            updatePricingDraft(
+                              product.id,
+                              "currency",
+                              event.target.value.toUpperCase(),
+                            );
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="operations-action"
+                      disabled={!privileged}
+                      onClick={() => void savePricing(product)}
+                    >
+                      Save Pricing Policy
+                    </button>
+
+                    {!privileged ? (
+                      <p className="operations-note">
+                        Manager, administrator, or developer role required
+                        to change pricing.
+                      </p>
+                    ) : null}
+                  </fieldset>
+
+                  <fieldset>
+                    <legend>Inventory</legend>
+
+                    <label className="operations-field">
+                      <span>Status</span>
+                      <select
+                        value={inventory.status}
+                        onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                          updateInventoryDraft(
+                            product.id,
+                            "status",
+                            event.target.value,
+                          );
+                        }}
+                      >
+                        {INVENTORY_STATUSES.map((inventoryStatus) => (
+                          <option
+                            key={inventoryStatus}
+                            value={inventoryStatus}
+                          >
+                            {inventoryStatus}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="operations-field-row">
+                      <label className="operations-field">
+                        <span>On hand</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={inventory.quantityOnHand}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            updateInventoryDraft(
+                              product.id,
+                              "quantityOnHand",
+                              event.target.value,
+                            );
+                          }}
+                        />
+                      </label>
+
+                      <label className="operations-field">
+                        <span>Reserved</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={inventory.quantityReserved}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            updateInventoryDraft(
+                              product.id,
+                              "quantityReserved",
+                              event.target.value,
+                            );
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="operations-action secondary"
+                      onClick={() => void saveInventory(product)}
+                    >
+                      Save Inventory
+                    </button>
+                  </fieldset>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </main>
+  );
+}

@@ -113,3 +113,73 @@ export async function logoutAccount(): Promise<void> {
     throw new Error(await readError(response));
   }
 }
+
+
+export async function requestPasswordReset(
+  email: string,
+): Promise<string> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/password-reset/request",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ email }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  const payload = (await response.json()) as {
+    message: string;
+  };
+
+  return payload.message;
+}
+
+export async function completePasswordReset(
+  token: string,
+  password: string,
+): Promise<string> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/password-reset/complete",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({
+        token,
+        password,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  const payload = (await response.json()) as {
+    message: string;
+  };
+
+  return payload.message;
+}
+

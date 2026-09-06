@@ -16,20 +16,35 @@ type AuthMode = "login" | "register";
 type AuthDialogProps = {
   open: boolean;
   onClose: () => void;
-  onAuthenticated: (account: AuthenticationStatus) => void;
+  onAuthenticated: (
+    account: AuthenticationStatus,
+  ) => void;
+  onForgotPassword: () => void;
 };
 
 export function AuthDialog({
   open,
   onClose,
   onAuthenticated,
+  onForgotPassword,
 }: AuthDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const dialogRef =
+    useRef<HTMLDialogElement>(null);
+
+  const [mode, setMode] =
+    useState<AuthMode>("login");
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [submitting, setSubmitting] =
+    useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -54,13 +69,17 @@ export function AuthDialog({
     }
   }, [open]);
 
-  function switchMode(nextMode: AuthMode) {
+  function switchMode(
+    nextMode: AuthMode,
+  ) {
     setMode(nextMode);
     setError(null);
     setPassword("");
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
     setError(null);
     setSubmitting(true);
@@ -68,8 +87,14 @@ export function AuthDialog({
     try {
       const account = await (
         mode === "login"
-          ? loginAccount({ email, password })
-          : registerAccount({ email, password })
+          ? loginAccount({
+              email,
+              password,
+            })
+          : registerAccount({
+              email,
+              password,
+            })
       );
 
       onAuthenticated(account);
@@ -128,7 +153,9 @@ export function AuthDialog({
               ? "is-active"
               : undefined
           }
-          aria-pressed={mode === "login"}
+          aria-pressed={
+            mode === "login"
+          }
           onClick={() => {
             switchMode("login");
           }}
@@ -143,9 +170,13 @@ export function AuthDialog({
               ? "is-active"
               : undefined
           }
-          aria-pressed={mode === "register"}
+          aria-pressed={
+            mode === "register"
+          }
           onClick={() => {
-            switchMode("register");
+            switchMode(
+              "register"
+            );
           }}
         >
           Create Account
@@ -169,7 +200,9 @@ export function AuthDialog({
             maxLength={320}
             value={email}
             onChange={(event) => {
-              setEmail(event.target.value);
+              setEmail(
+                event.target.value,
+              );
             }}
           />
         </label>
@@ -186,11 +219,17 @@ export function AuthDialog({
                 : "new-password"
             }
             required
-            minLength={mode === "register" ? 12 : 1}
+            minLength={
+              mode === "register"
+                ? 12
+                : 1
+            }
             maxLength={256}
             value={password}
             onChange={(event) => {
-              setPassword(event.target.value);
+              setPassword(
+                event.target.value,
+              );
             }}
           />
         </label>
@@ -199,7 +238,18 @@ export function AuthDialog({
           <p className="auth-helper">
             Use at least 12 characters.
           </p>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            className="auth-forgot-link"
+            onClick={() => {
+              onClose();
+              onForgotPassword();
+            }}
+          >
+            Forgot password?
+          </button>
+        )}
 
         {error !== null ? (
           <p
@@ -224,7 +274,8 @@ export function AuthDialog({
       </form>
 
       <p className="auth-privacy-note">
-        Your session is stored in a secure, HTTP-only cookie.
+        Your session is stored in a
+        secure, HTTP-only cookie.
       </p>
     </dialog>
   );

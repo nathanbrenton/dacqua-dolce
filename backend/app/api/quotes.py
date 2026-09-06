@@ -11,10 +11,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
+from app.core.email_config import (
+    get_email_runtime_settings,
+)
 from app.core.privacy import (
     privacy_safe_identifier,
 )
 from app.db.session import SessionLocal
+from app.integrations.email import (
+    EmailMessage,
+)
 from app.models.catalog import Product
 from app.models.identity import (
     User,
@@ -31,6 +37,9 @@ from app.services.audit import (
 )
 from app.services.auth_rate_limit import (
     AuthenticationRateLimiter,
+)
+from app.services.email_delivery import (
+    deliver_email,
 )
 from app.services.sessions import (
     hash_session_token,
@@ -85,6 +94,81 @@ def optional_user(
         return session_record.user
 
 
+def send_quote_emails(
+    *,
+    db: object,
+    quote: QuoteRequest,
+    product: Product | None,
+) -> None:
+    email_settings = get_email_runtime_settings()
+
+    product_label = product.name if product is not None else "General consultation"
+
+    deliver_email(
+        db,
+        settings=email_settings,
+        message=EmailMessage(
+            sender=(email_settings.email_from),
+            recipient=quote.email,
+            subject=("We received your D'Acqua Dolce request"),
+            body_text=(
+                "Thank you for contacting "
+                "D'Acqua Dolce.\n\n"
+                "Your request has been "
+                "received.\n"
+                f"Reference: {quote.id}\n"
+                f"System: {product_label}\n\n"
+                "A team member can follow "
+                "up using the contact "
+                "information you provided."
+            ),
+        ),
+        category=("quote_customer_receipt"),
+        related_entity_type=("quote_request"),
+        related_entity_id=str(quote.id),
+    )
+
+    operator_to = email_settings.email_operator_to
+
+    if operator_to is None:
+        return
+
+    message_lines = [
+        "New D'Acqua Dolce quote request",
+        "",
+        f"Reference: {quote.id}",
+        f"System: {product_label}",
+        f"Name: {quote.name}",
+        f"Email: {quote.email}",
+    ]
+
+    if quote.phone:
+        message_lines.append(f"Phone: {quote.phone}")
+
+    if quote.message:
+        message_lines.extend(
+            [
+                "",
+                "Customer message:",
+                quote.message,
+            ]
+        )
+
+    deliver_email(
+        db,
+        settings=email_settings,
+        message=EmailMessage(
+            sender=(email_settings.email_from),
+            recipient=operator_to,
+            subject=("New D'Acqua Dolce quote request"),
+            body_text="\n".join(message_lines),
+        ),
+        category=("quote_operator_notification"),
+        related_entity_type=("quote_request"),
+        related_entity_id=str(quote.id),
+    )
+
+
 @router.post(
     "",
     response_model=QuoteRequestRead,
@@ -119,6 +203,8 @@ def create_quote_request(
     current_user = optional_user(request)
 
     with SessionLocal() as db:
+        product: Product | None = None
+
         if product_uuid is not None:
             product = db.scalar(
                 select(Product).where(
@@ -148,7 +234,7 @@ def create_quote_request(
         record_audit_event(
             db,
             action="quote.requested",
-            entity_type="quote_request",
+            entity_type=("quote_request"),
             entity_id=str(quote.id),
             actor_user_id=(current_user.id if current_user is not None else None),
             metadata={
@@ -157,6 +243,12 @@ def create_quote_request(
             },
             ip_address=request_ip(request),
             user_agent=(request.headers.get("user-agent")),
+        )
+
+        send_quote_emails(
+            db=db,
+            quote=quote,
+            product=product,
         )
 
         db.commit()

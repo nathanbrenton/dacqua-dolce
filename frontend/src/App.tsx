@@ -8,12 +8,39 @@ import {
   logoutAccount,
   type AuthenticationStatus,
 } from "./api/authentication";
-import { getBackendHealth } from "./api/backend";
-import { AuthDialog } from "./components/auth/AuthDialog";
-import { BrandLogo } from "./components/brand/BrandLogo";
-import { CatalogSection } from "./components/catalog/CatalogSection";
-import { ProductDetailPage } from "./components/catalog/ProductDetailPage";
-import { DeveloperControls } from "./components/developer/DeveloperControls";
+import {
+  getBackendHealth,
+} from "./api/backend";
+import {
+  AccountPage,
+} from "./components/account/AccountPage";
+import {
+  AuthDialog,
+} from "./components/auth/AuthDialog";
+import {
+  BrandLogo,
+} from "./components/brand/BrandLogo";
+import {
+  CatalogSection,
+} from "./components/catalog/CatalogSection";
+import {
+  ProductDetailPage,
+} from "./components/catalog/ProductDetailPage";
+import {
+  DeveloperControls,
+} from "./components/developer/DeveloperControls";
+import {
+  OperationsPage,
+} from "./components/operations/OperationsPage";
+import {
+  QuoteDialog,
+} from "./components/quotes/QuoteDialog";
+import {
+  ForgotPasswordPage,
+} from "./pages/ForgotPasswordPage";
+import {
+  ResetPasswordPage,
+} from "./pages/ResetPasswordPage";
 import {
   DEFAULT_LOGO_VARIANT,
   isLogoVariantId,
@@ -68,38 +95,72 @@ function getInitialLogo(): LogoVariantId {
   return DEFAULT_LOGO_VARIANT;
 }
 
+
+const OPERATIONS_ROLE_NAMES = new Set([
+  "employee",
+  "manager",
+  "administrator",
+  "developer",
+]);
+
+function hasOperationsRole(
+  account: AuthenticationStatus | null,
+): boolean {
+  return (
+    account?.roles.some((role) =>
+      OPERATIONS_ROLE_NAMES.has(role),
+    ) ?? false
+  );
+}
+
 export function App() {
-  const [backendState, setBackendState] =
-    useState<BackendState>("checking");
+  const [
+    backendState,
+    setBackendState,
+  ] = useState<BackendState>(
+    "checking",
+  );
 
   const [theme, setTheme] =
-    useState<ThemeId>(getInitialTheme);
-
-  const [logoVariant, setLogoVariant] =
-    useState<LogoVariantId>(
-      getInitialLogo,
+    useState<ThemeId>(
+      getInitialTheme,
     );
+
+  const [
+    logoVariant,
+    setLogoVariant,
+  ] = useState<LogoVariantId>(
+    getInitialLogo,
+  );
 
   const [account, setAccount] =
-    useState<AuthenticationStatus | null>(
-      null,
-    );
+    useState<
+      AuthenticationStatus | null
+    >(null);
 
-  const [accountReady, setAccountReady] =
-    useState(false);
+  const [
+    accountReady,
+    setAccountReady,
+  ] = useState(false);
 
   const [
     authDialogOpen,
     setAuthDialogOpen,
   ] = useState(false);
 
-  const [path, setPath] = useState(
-    window.location.pathname,
-  );
+  const [
+    generalQuoteOpen,
+    setGeneralQuoteOpen,
+  ] = useState(false);
+
+  const [path, setPath] =
+    useState(
+      window.location.pathname,
+    );
 
   useEffect(() => {
-    document.documentElement.dataset.theme =
-      theme;
+    document.documentElement
+      .dataset.theme = theme;
 
     localStorage.setItem(
       THEME_STORAGE_KEY,
@@ -117,17 +178,23 @@ export function App() {
   useEffect(() => {
     void getBackendHealth()
       .then(() => {
-        setBackendState("online");
+        setBackendState(
+          "online",
+        );
       })
       .catch(() => {
-        setBackendState("offline");
+        setBackendState(
+          "offline",
+        );
       });
   }, []);
 
   useEffect(() => {
     void getCurrentAccount()
       .then((currentAccount) => {
-        setAccount(currentAccount);
+        setAccount(
+          currentAccount,
+        );
       })
       .catch(() => {
         setAccount(null);
@@ -157,7 +224,9 @@ export function App() {
     };
   }, []);
 
-  function navigate(nextPath: string) {
+  function navigate(
+    nextPath: string,
+  ) {
     if (
       window.location.pathname
       !== nextPath
@@ -170,6 +239,7 @@ export function App() {
     }
 
     setPath(nextPath);
+
     window.scrollTo({
       top: 0,
       behavior: "instant",
@@ -181,6 +251,7 @@ export function App() {
       await logoutAccount();
     } finally {
       setAccount(null);
+      navigate("/");
     }
   }
 
@@ -190,6 +261,16 @@ export function App() {
 
   const detailSlug =
     detailMatch?.[1] ?? null;
+
+  const resetMatch = path.match(
+    /^\/reset-password\/([^/]+)\/?$/,
+  );
+
+  const resetToken =
+    resetMatch?.[1] ?? null;
+
+  const isHome =
+    path === "/" || path === "";
 
   return (
     <>
@@ -205,7 +286,9 @@ export function App() {
       <AuthDialog
         open={authDialogOpen}
         onClose={() => {
-          setAuthDialogOpen(false);
+          setAuthDialogOpen(
+            false,
+          );
         }}
         onAuthenticated={(
           authenticatedAccount,
@@ -215,9 +298,64 @@ export function App() {
           );
           setAccountReady(true);
         }}
+        onForgotPassword={() => {
+          navigate(
+            "/forgot-password",
+          );
+        }}
       />
 
-      {detailSlug !== null ? (
+      <QuoteDialog
+        open={generalQuoteOpen}
+        productId={null}
+        productName={
+          "Talk to an Expert"
+        }
+        initialEmail={
+          account?.email ?? null
+        }
+        onClose={() => {
+          setGeneralQuoteOpen(
+            false,
+          );
+        }}
+      />
+
+      {path === "/operations" ? (
+        <OperationsPage
+          roles={account?.roles ?? []}
+          onNavigate={navigate}
+        />
+      ) : path === "/account" ? (
+        <AccountPage
+          authenticated={
+            account !== null
+          }
+          onNavigate={navigate}
+          onRequestSignIn={() => {
+            setAuthDialogOpen(true);
+          }}
+        />
+      ) : path
+        === "/forgot-password" ? (
+        <ForgotPasswordPage
+          onNavigate={navigate}
+        />
+      ) : resetToken
+        !== null ? (
+        <ResetPasswordPage
+          token={decodeURIComponent(
+            resetToken,
+          )}
+          onNavigate={navigate}
+          onResetComplete={() => {
+            setAccount(null);
+            setAccountReady(true);
+            setAuthDialogOpen(true);
+          }}
+        />
+      ) : detailSlug
+        !== null ? (
         <ProductDetailPage
           slug={decodeURIComponent(
             detailSlug,
@@ -228,7 +366,7 @@ export function App() {
             setAuthDialogOpen(true);
           }}
         />
-      ) : (
+      ) : isHome ? (
         <main className="site-shell">
           <header className="site-header">
             <button
@@ -249,7 +387,9 @@ export function App() {
               </span>
             </button>
 
-            <nav aria-label="Primary navigation">
+            <nav
+              aria-label="Primary navigation"
+            >
               <a href="#systems">
                 Systems
               </a>
@@ -292,6 +432,32 @@ export function App() {
                     {account.email}
                   </span>
 
+                  {hasOperationsRole(
+                    account,
+                  ) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigate(
+                          "/operations",
+                        );
+                      }}
+                    >
+                      Operations
+                    </button>
+                  ) : null}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(
+                        "/account",
+                      );
+                    }}
+                  >
+                    Account
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -317,10 +483,10 @@ export function App() {
             </h1>
 
             <p className="hero-copy">
-              Thoughtfully engineered water
-              filtration for the home,
-              supported throughout the life
-              of the system.
+              Thoughtfully engineered
+              water filtration for the
+              home, supported throughout
+              the life of the system.
             </p>
 
             <div className="hero-actions">
@@ -334,6 +500,11 @@ export function App() {
               <button
                 className="secondary"
                 type="button"
+                onClick={() => {
+                  setGeneralQuoteOpen(
+                    true,
+                  );
+                }}
               >
                 Talk to an Expert
               </button>
@@ -343,6 +514,28 @@ export function App() {
           <CatalogSection
             onNavigate={navigate}
           />
+
+          <section
+            id="service"
+            className="service-statement"
+          >
+            <p className="eyebrow">
+              Service
+            </p>
+
+            <h2>
+              Support beyond installation.
+            </h2>
+
+            <p>
+              Customer accounts provide
+              the foundation for service,
+              maintenance, documents,
+              warranty, and equipment
+              lifecycle features as those
+              workflows come online.
+            </p>
+          </section>
 
           <section
             id="about"
@@ -374,13 +567,32 @@ export function App() {
 
             <div className="development-status">
               <span
-                className={`status-dot status-${backendState}`}
+                className={
+                  `status-dot `
+                  + `status-${backendState}`
+                }
                 aria-hidden="true"
               />
 
               Local API: {backendState}
             </div>
           </footer>
+        </main>
+      ) : (
+        <main className="detail-shell">
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => {
+              navigate("/");
+            }}
+          >
+            ← Home
+          </button>
+
+          <h1 className="detail-error-title">
+            Page not found.
+          </h1>
         </main>
       )}
     </>
