@@ -32,3 +32,11 @@ test-results/
 *.log
 *.pid
 tmp/
+
+# Local patch backups
+.patch-backups/
+
+# TypeScript incremental/build artifacts
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
