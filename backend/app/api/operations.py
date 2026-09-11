@@ -222,6 +222,9 @@ def load_product_for_operations(
             selectinload(Product.manufacturer),
             selectinload(Product.prices),
         )
+        .execution_options(
+            populate_existing=True
+        )
         .where(Product.id == product_id)
     )
 
