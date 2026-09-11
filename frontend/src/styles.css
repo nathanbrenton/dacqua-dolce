@@ -2012,3 +2012,81 @@ textarea:focus-visible {
     justify-self: start;
   }
 }
+
+/* P0 operations customer roster */
+
+.operations-customer-search {
+  max-width: 520px;
+  margin-bottom: 18px;
+}
+
+.operations-customer-list {
+  display: grid;
+  gap: 8px;
+}
+
+.operations-customer {
+  display: grid;
+  grid-template-columns:
+    minmax(210px, 0.7fr)
+    minmax(0, 1.3fr);
+  gap: 22px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+}
+
+.operations-customer h3 {
+  margin: 3px 0 8px;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.operations-customer p {
+  margin: 4px 0;
+  font-size: 0.84rem;
+}
+
+.operations-customer small {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.operations-address-list {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(210px, 1fr)
+    );
+  gap: 8px;
+}
+
+.operations-address {
+  padding: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.operations-address strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+}
+
+.operations-address address {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .operations-customer {
+    grid-template-columns: 1fr;
+  }
+}
+

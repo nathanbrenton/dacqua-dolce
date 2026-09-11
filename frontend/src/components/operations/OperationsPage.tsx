@@ -7,16 +7,22 @@ import {
 
 import {
   getOperationsCatalog,
+  getOperationsCustomers,
   getOperationsQuotes,
   getOperationsSummary,
   updateProductInventory,
   updateProductPricing,
   updateQuoteNotes,
   updateQuoteStatus,
+  type OperationsCustomer,
   type OperationsProduct,
   type OperationsQuote,
   type OperationsSummary,
 } from "../../api/operations";
+
+import {
+  formatUsPhoneInput,
+} from "../../utils/phone";
 
 type OperationsPageProps = {
   roles: string[];
@@ -142,6 +148,10 @@ export function OperationsPage({
     useState<OperationsSummary | null>(null);
   const [quotes, setQuotes] =
     useState<OperationsQuote[]>([]);
+  const [customers, setCustomers] =
+    useState<OperationsCustomer[]>([]);
+  const [customerSearch, setCustomerSearch] =
+    useState("");
   const [products, setProducts] =
     useState<OperationsProduct[]>([]);
   const [pricingDrafts, setPricingDrafts] =
@@ -178,11 +188,18 @@ export function OperationsPage({
     void Promise.all([
       getOperationsSummary(),
       getOperationsQuotes(),
+      getOperationsCustomers(),
       getOperationsCatalog(),
     ])
-      .then(([summaryResult, quoteResult, productResult]) => {
+      .then(([
+        summaryResult,
+        quoteResult,
+        customerResult,
+        productResult,
+      ]) => {
         setSummary(summaryResult);
         setQuotes(quoteResult);
+        setCustomers(customerResult);
         setProducts(productResult);
 
         const nextQuoteNotes: Record<string, string> = {};
@@ -226,6 +243,46 @@ export function OperationsPage({
         setLoading(false);
       });
   }, [authorized]);
+
+  const filteredCustomers = useMemo(() => {
+    const query =
+      customerSearch.trim().toLowerCase();
+
+    if (query.length === 0) {
+      return customers;
+    }
+
+    return customers.filter((customer) => {
+      const addressText =
+        customer.addresses
+          .flatMap((address) => [
+            address.label,
+            address.line1,
+            address.line2 ?? "",
+            address.city,
+            address.region_code,
+            address.postal_code,
+            address.country_code,
+          ])
+          .join(" ");
+
+      const searchable = [
+        customer.email,
+        customer.first_name ?? "",
+        customer.last_name ?? "",
+        customer.phone ?? "",
+        customer.status,
+        addressText,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  }, [
+    customers,
+    customerSearch,
+  ]);
 
   if (!authorized) {
     return (
@@ -782,6 +839,176 @@ export function OperationsPage({
                 </label>
               </article>
             ))}
+          </div>
+        )}
+      </section>
+
+      <section
+        id="customer-roster"
+        className="operations-section"
+      >
+        <div className="operations-section-heading">
+          <p className="eyebrow">Customer Roster</p>
+          <h2>Accounts &amp; address book</h2>
+          <p>
+            Registered customer accounts and saved addresses.
+            This P0 view is read-only.
+          </p>
+        </div>
+
+        <label
+          className={
+            "operations-field "
+            + "operations-customer-search"
+          }
+        >
+          <span>Search customers</span>
+          <input
+            type="search"
+            placeholder="Name, email, phone, city, ZIP…"
+            value={customerSearch}
+            onChange={(event) => {
+              setCustomerSearch(
+                event.target.value,
+              );
+            }}
+          />
+        </label>
+
+        {customers.length === 0 ? (
+          <p className="account-muted">
+            No registered customer accounts.
+          </p>
+        ) : filteredCustomers.length === 0 ? (
+          <p className="account-muted">
+            No customers match this search.
+          </p>
+        ) : (
+          <div className="operations-customer-list">
+            {filteredCustomers.map((customer) => {
+              const fullName = [
+                customer.first_name,
+                customer.last_name,
+              ]
+                .filter(
+                  (value): value is string =>
+                    value !== null,
+                )
+                .join(" ");
+
+              return (
+                <article
+                  key={customer.id}
+                  className="operations-customer"
+                >
+                  <header>
+                    <div>
+                      <p className="product-meta">
+                        Account · {customer.status}
+                      </p>
+
+                      <h3>
+                        {fullName || customer.email}
+                      </h3>
+
+                      {fullName.length > 0 ? (
+                        <p>
+                          <a
+                            href={
+                              `mailto:${customer.email}`
+                            }
+                          >
+                            {customer.email}
+                          </a>
+                        </p>
+                      ) : null}
+
+                      {customer.phone !== null ? (
+                        <p>
+                          <a
+                            href={
+                              `tel:${customer.phone}`
+                            }
+                          >
+                            {formatUsPhoneInput(
+                              customer.phone,
+                            )}
+                          </a>
+                        </p>
+                      ) : null}
+
+                      <small>
+                        Account created{" "}
+                        {new Date(
+                          customer.created_at,
+                        ).toLocaleDateString()}
+                      </small>
+                    </div>
+                  </header>
+
+                  <div className="operations-address-list">
+                    {customer.addresses.length === 0 ? (
+                      <p className="account-muted">
+                        No saved addresses.
+                      </p>
+                    ) : (
+                      customer.addresses.map(
+                        (address) => (
+                          <div
+                            key={address.id}
+                            className="operations-address"
+                          >
+                            <strong>
+                              {address.label}
+                            </strong>
+
+                            <address>
+                              {address.line1}
+
+                              {address.line2 !== null ? (
+                                <>
+                                  <br />
+                                  {address.line2}
+                                </>
+                              ) : null}
+
+                              <br />
+                              {address.city},{" "}
+                              {address.region_code}{" "}
+                              {address.postal_code}
+                              <br />
+                              {address.country_code}
+                            </address>
+
+                            {(
+                              address.is_default_shipping
+                              || address.is_default_billing
+                            ) ? (
+                              <small>
+                                {address.is_default_shipping
+                                  ? "Default shipping"
+                                  : ""}
+
+                                {(
+                                  address.is_default_shipping
+                                  && address.is_default_billing
+                                )
+                                  ? " · "
+                                  : ""}
+
+                                {address.is_default_billing
+                                  ? "Default billing"
+                                  : ""}
+                              </small>
+                            ) : null}
+                          </div>
+                        )
+                      )
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

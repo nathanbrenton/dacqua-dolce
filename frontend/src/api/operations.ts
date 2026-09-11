@@ -22,6 +22,30 @@ export type OperationsQuote = {
   created_at: string;
 };
 
+export type OperationsCustomerAddress = {
+  id: string;
+  label: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  region_code: string;
+  postal_code: string;
+  country_code: string;
+  is_default_shipping: boolean;
+  is_default_billing: boolean;
+};
+
+export type OperationsCustomer = {
+  id: string;
+  email: string;
+  status: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  addresses: OperationsCustomerAddress[];
+  created_at: string;
+};
+
 export type OperationsPricing = {
   mode: string;
   amount_minor: number | null;
@@ -162,6 +186,12 @@ export function updateQuoteNotes(
     {
       internal_notes: internalNotes,
     },
+  );
+}
+
+export function getOperationsCustomers(): Promise<OperationsCustomer[]> {
+  return getJson(
+    "/api/operations/customers",
   );
 }
 
