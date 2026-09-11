@@ -73,6 +73,11 @@ PRODUCTS = (
                 unit="cu ft",
                 public=True,
                 sort_order=10,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATPTV.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="valve_type",
@@ -81,6 +86,50 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=20,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_height",
+                label="System Height",
+                value_text="58",
+                unit="in",
+                public=True,
+                sort_order=40,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="media_tank_width",
+                label="Media Tank Width",
+                value_text="11",
+                unit="in",
+                public=True,
+                sort_order=50,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="dimension_tolerance",
+                label="Dimension Tolerance",
+                value_text="±0.5",
+                unit="in",
+                public=True,
+                sort_order=90,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATPTV.jpg"
+                ),
             ),
         ),
         images=(
@@ -126,6 +175,11 @@ PRODUCTS = (
                 unit="cu ft",
                 public=True,
                 sort_order=10,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATRV.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="valve_type",
@@ -134,6 +188,50 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=20,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_height",
+                label="System Height",
+                value_text="62",
+                unit="in",
+                public=True,
+                sort_order=40,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="media_tank_width",
+                label="Media Tank Width",
+                value_text="11",
+                unit="in",
+                public=True,
+                sort_order=50,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="dimension_tolerance",
+                label="Dimension Tolerance",
+                value_text="±0.5",
+                unit="in",
+                public=True,
+                sort_order=90,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CATRV.jpg"
+                ),
             ),
         ),
         images=(
@@ -179,6 +277,11 @@ PRODUCTS = (
                 unit="cu ft",
                 public=True,
                 sort_order=10,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="valve_type",
@@ -187,6 +290,11 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=20,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="prefilter",
@@ -195,6 +303,76 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=30,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_height",
+                label="System Height",
+                value_text="58",
+                unit="in",
+                public=True,
+                sort_order=40,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="media_tank_width",
+                label="Media Tank Width",
+                value_text="11",
+                unit="in",
+                public=True,
+                sort_order=50,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="prefilter_height",
+                label="Prefilter Height",
+                value_text="29",
+                unit="in",
+                public=True,
+                sort_order=60,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="prefilter_width",
+                label="Prefilter Width",
+                value_text="7.5",
+                unit="in",
+                public=True,
+                sort_order=70,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="dimension_tolerance",
+                label="Dimension Tolerance",
+                value_text="±0.5",
+                unit="in",
+                public=True,
+                sort_order=90,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACPTV.jpg"
+                ),
             ),
         ),
         images=(
@@ -240,6 +418,11 @@ PRODUCTS = (
                 unit="cu ft",
                 public=True,
                 sort_order=10,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="valve_type",
@@ -248,6 +431,11 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=20,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="prefilter",
@@ -256,6 +444,76 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=30,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_height",
+                label="System Height",
+                value_text="62",
+                unit="in",
+                public=True,
+                sort_order=40,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="media_tank_width",
+                label="Media Tank Width",
+                value_text="11",
+                unit="in",
+                public=True,
+                sort_order=50,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="prefilter_height",
+                label="Prefilter Height",
+                value_text="29",
+                unit="in",
+                public=True,
+                sort_order=60,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="prefilter_width",
+                label="Prefilter Width",
+                value_text="7.5",
+                unit="in",
+                public=True,
+                sort_order=70,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="dimension_tolerance",
+                label="Dimension Tolerance",
+                value_text="±0.5",
+                unit="in",
+                public=True,
+                sort_order=90,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD15CAT-TTACRV.jpg"
+                ),
             ),
         ),
         images=(
