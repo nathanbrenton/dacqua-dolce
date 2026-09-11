@@ -12,6 +12,7 @@ import {
 } from "../../theme/themes";
 
 type DeveloperControlsProps = {
+  open: boolean;
   theme: ThemeId;
   onThemeChange: (theme: ThemeId) => void;
   logoVariant: LogoVariantId;
@@ -21,6 +22,7 @@ type DeveloperControlsProps = {
 };
 
 export function DeveloperControls({
+  open,
   theme,
   onThemeChange,
   logoVariant,
@@ -29,6 +31,7 @@ export function DeveloperControls({
   if (
     import.meta.env.VITE_DEVELOPER_MODE
     !== "true"
+    || !open
   ) {
     return null;
   }

@@ -9,6 +9,9 @@ import {
   type CatalogProductDetail,
 } from "../../api/catalog";
 import type { AuthenticationStatus } from "../../api/authentication";
+import {
+  addCartItem,
+} from "../../api/cart";
 import { QuoteDialog } from "../quotes/QuoteDialog";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
 
@@ -49,6 +52,10 @@ export function ProductDetailPage({
   const [selectedImageIndex, setSelectedImageIndex] =
     useState(0);
   const [quoteOpen, setQuoteOpen] =
+    useState(false);
+  const [commerceError, setCommerceError] =
+    useState<string | null>(null);
+  const [addingToCart, setAddingToCart] =
     useState(false);
 
   useEffect(() => {
@@ -120,8 +127,11 @@ export function ProductDetailPage({
   }
 
   const pricing = product.pricing;
+  const productId = product.id;
 
-  function handlePrimaryAction() {
+  async function handlePrimaryAction() {
+    setCommerceError(null);
+
     if (
       pricing.action === "SIGN_IN"
     ) {
@@ -141,8 +151,27 @@ export function ProductDetailPage({
       pricing.action
       === "ADD_TO_CART"
     ) {
-      // Cart arrives in the next commerce milestone.
-      setQuoteOpen(true);
+      if (account === null) {
+        onRequestSignIn();
+        return;
+      }
+
+      setAddingToCart(true);
+
+      try {
+        await addCartItem(
+          productId,
+        );
+        onNavigate("/account");
+      } catch (caught) {
+        setCommerceError(
+          caught instanceof Error
+            ? caught.message
+            : "The system could not be added to the cart.",
+        );
+      } finally {
+        setAddingToCart(false);
+      }
     }
   }
 
@@ -316,14 +345,26 @@ export function ProductDetailPage({
                 </p>
               )}
 
+              {commerceError !== null ? (
+                <p
+                  className="commerce-error"
+                  role="alert"
+                >
+                  {commerceError}
+                </p>
+              ) : null}
+
               <button
                 type="button"
                 className="detail-primary-action"
-                onClick={
-                  handlePrimaryAction
-                }
+                disabled={addingToCart}
+                onClick={() => {
+                  void handlePrimaryAction();
+                }}
               >
-                {pricing.action_label}
+                {addingToCart
+                  ? "Adding…"
+                  : pricing.action_label}
               </button>
             </div>
 

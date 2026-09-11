@@ -23,7 +23,7 @@ export const THEMES = [
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
-export const DEFAULT_THEME: ThemeId = "baseline";
+export const DEFAULT_THEME: ThemeId = "lagoon-editorial";
 
 export function isThemeId(value: string): value is ThemeId {
   return THEMES.some((theme) => theme.id === value);

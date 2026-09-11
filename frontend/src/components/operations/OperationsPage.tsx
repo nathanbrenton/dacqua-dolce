@@ -79,6 +79,11 @@ type InventoryDraft = {
   quantityReserved: string;
 };
 
+type SaveState =
+  | "idle"
+  | "saving"
+  | "saved";
+
 function dollarsToMinor(value: string): number | null {
   const normalized = value.trim();
 
@@ -142,9 +147,20 @@ export function OperationsPage({
     useState<Record<string, PricingDraft>>({});
   const [inventoryDrafts, setInventoryDrafts] =
     useState<Record<string, InventoryDraft>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] =
+    useState<string | null>(null);
+  const [message, setMessage] =
+    useState<string | null>(null);
+  const [loading, setLoading] =
+    useState(true);
+  const [
+    pricingSaveStates,
+    setPricingSaveStates,
+  ] = useState<Record<string, SaveState>>({});
+  const [
+    inventorySaveStates,
+    setInventorySaveStates,
+  ] = useState<Record<string, SaveState>>({});
 
   useEffect(() => {
     if (!authorized) {
@@ -256,6 +272,10 @@ export function OperationsPage({
 
     setError(null);
     setMessage(null);
+    setPricingSaveStates((current) => ({
+      ...current,
+      [product.id]: "saving",
+    }));
 
     try {
       const amountMinor = AMOUNT_REQUIRED.has(draft.mode)
@@ -285,7 +305,22 @@ export function OperationsPage({
         },
       }));
       setMessage(`Pricing policy saved for ${updated.sku}.`);
+      setPricingSaveStates((current) => ({
+        ...current,
+        [product.id]: "saved",
+      }));
+
+      window.setTimeout(() => {
+        setPricingSaveStates((current) => ({
+          ...current,
+          [product.id]: "idle",
+        }));
+      }, 1800);
     } catch (caught) {
+      setPricingSaveStates((current) => ({
+        ...current,
+        [product.id]: "idle",
+      }));
       setError(
         caught instanceof Error
           ? caught.message
@@ -320,6 +355,11 @@ export function OperationsPage({
       return;
     }
 
+    setInventorySaveStates((current) => ({
+      ...current,
+      [product.id]: "saving",
+    }));
+
     try {
       const updated = await updateProductInventory(product.id, {
         status: draft.status,
@@ -337,7 +377,22 @@ export function OperationsPage({
         },
       }));
       setMessage(`Inventory saved for ${updated.sku}.`);
+      setInventorySaveStates((current) => ({
+        ...current,
+        [product.id]: "saved",
+      }));
+
+      window.setTimeout(() => {
+        setInventorySaveStates((current) => ({
+          ...current,
+          [product.id]: "idle",
+        }));
+      }, 1800);
     } catch (caught) {
+      setInventorySaveStates((current) => ({
+        ...current,
+        [product.id]: "idle",
+      }));
       setError(
         caught instanceof Error
           ? caught.message
@@ -389,6 +444,57 @@ export function OperationsPage({
       };
     });
   }
+
+  const nextAction = (
+    summary === null
+      ? null
+      : summary.new_quotes > 0
+        ? {
+            title: "Review new quote requests",
+            detail:
+              `${summary.new_quotes} new customer `
+              + (
+                summary.new_quotes === 1
+                  ? "request needs"
+                  : "requests need"
+              )
+              + " attention.",
+            href: "#quote-queue",
+          }
+        : summary.failed_email_deliveries > 0
+          ? {
+              title: "Investigate email delivery",
+              detail:
+                `${summary.failed_email_deliveries} failed email `
+                + (
+                  summary.failed_email_deliveries === 1
+                    ? "delivery requires"
+                    : "deliveries require"
+                )
+                + " review.",
+              href: null,
+            }
+          : summary.open_quotes > 0
+            ? {
+                title: "Continue open quotes",
+                detail:
+                  `${summary.open_quotes} open quote `
+                  + (
+                    summary.open_quotes === 1
+                      ? "request remains"
+                      : "requests remain"
+                  )
+                  + " in the queue.",
+                href: "#quote-queue",
+              }
+            : {
+                title: "No urgent actions",
+                detail:
+                  "The current operations queues "
+                  + "do not show an urgent item.",
+                href: null,
+              }
+  );
 
   return (
     <main className="operations-shell">
@@ -447,7 +553,32 @@ export function OperationsPage({
         </section>
       ) : null}
 
-      <section className="operations-section">
+      {nextAction !== null ? (
+        <section
+          className="operations-next-action"
+          aria-labelledby="operations-next-action-title"
+        >
+          <span>Next action</span>
+
+          <div>
+            <strong id="operations-next-action-title">
+              {nextAction.title}
+            </strong>
+            <p>{nextAction.detail}</p>
+          </div>
+
+          {nextAction.href !== null ? (
+            <a href={nextAction.href}>
+              Open queue
+            </a>
+          ) : null}
+        </section>
+      ) : null}
+
+      <section
+        id="quote-queue"
+        className="operations-section"
+      >
         <div className="operations-section-heading">
           <p className="eyebrow">Quote Queue</p>
           <h2>Customer requests</h2>
@@ -504,7 +635,10 @@ export function OperationsPage({
         )}
       </section>
 
-      <section className="operations-section">
+      <section
+        id="catalog-governance"
+        className="operations-section"
+      >
         <div className="operations-section-heading">
           <p className="eyebrow">Catalog Governance</p>
           <h2>Pricing &amp; inventory</h2>
@@ -525,6 +659,12 @@ export function OperationsPage({
             }
 
             const amountNeeded = AMOUNT_REQUIRED.has(pricing.mode);
+            const pricingSaveState =
+              pricingSaveStates[product.id]
+              ?? "idle";
+            const inventorySaveState =
+              inventorySaveStates[product.id]
+              ?? "idle";
 
             return (
               <article key={product.id} className="operations-product">
@@ -600,11 +740,25 @@ export function OperationsPage({
 
                     <button
                       type="button"
-                      className="operations-action"
-                      disabled={!privileged}
+                      className={
+                        "operations-action "
+                        + (
+                          pricingSaveState === "saved"
+                            ? "is-saved"
+                            : ""
+                        )
+                      }
+                      disabled={
+                        !privileged
+                        || pricingSaveState === "saving"
+                      }
                       onClick={() => void savePricing(product)}
                     >
-                      Save Pricing Policy
+                      {pricingSaveState === "saving"
+                        ? "Saving…"
+                        : pricingSaveState === "saved"
+                          ? "Saved ✓"
+                          : "Save Pricing Policy"}
                     </button>
 
                     {!privileged ? (
@@ -679,10 +833,24 @@ export function OperationsPage({
 
                     <button
                       type="button"
-                      className="operations-action secondary"
+                      className={
+                        "operations-action secondary "
+                        + (
+                          inventorySaveState === "saved"
+                            ? "is-saved"
+                            : ""
+                        )
+                      }
+                      disabled={
+                        inventorySaveState === "saving"
+                      }
                       onClick={() => void saveInventory(product)}
                     >
-                      Save Inventory
+                      {inventorySaveState === "saving"
+                        ? "Saving…"
+                        : inventorySaveState === "saved"
+                          ? "Saved ✓"
+                          : "Save Inventory"}
                     </button>
                   </fieldset>
                 </div>

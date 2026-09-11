@@ -58,10 +58,10 @@ type BackendState =
   | "offline";
 
 const THEME_STORAGE_KEY =
-  "dacqua-dolce-theme";
+  "dacqua-dolce-theme-v2";
 
 const LOGO_STORAGE_KEY =
-  "dacqua-dolce-logo";
+  "dacqua-dolce-logo-v2";
 
 function getInitialTheme(): ThemeId {
   const storedTheme =
@@ -153,6 +153,15 @@ export function App() {
     setGeneralQuoteOpen,
   ] = useState(false);
 
+  const [
+    developerControlsOpen,
+    setDeveloperControlsOpen,
+  ] = useState(false);
+
+  const developerMode =
+    import.meta.env.VITE_DEVELOPER_MODE
+    === "true";
+
   const [path, setPath] =
     useState(
       window.location.pathname,
@@ -239,6 +248,7 @@ export function App() {
     }
 
     setPath(nextPath);
+    setDeveloperControlsOpen(false);
 
     window.scrollTo({
       top: 0,
@@ -275,6 +285,7 @@ export function App() {
   return (
     <>
       <DeveloperControls
+        open={developerControlsOpen}
         theme={theme}
         onThemeChange={setTheme}
         logoVariant={logoVariant}
@@ -372,8 +383,24 @@ export function App() {
             <button
               type="button"
               className="brand-logo-link"
-              aria-label="D'Acqua Dolce home"
+              aria-label={
+                developerMode
+                  ? "Toggle developer visual controls"
+                  : "D'Acqua Dolce home"
+              }
+              aria-expanded={
+                developerMode
+                  ? developerControlsOpen
+                  : undefined
+              }
               onClick={() => {
+                if (developerMode) {
+                  setDeveloperControlsOpen(
+                    (current) => !current,
+                  );
+                  return;
+                }
+
                 navigate("/");
               }}
             >
