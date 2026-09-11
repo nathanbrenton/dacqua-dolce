@@ -34,6 +34,32 @@ class OperationsQuoteRead(BaseModel):
     created_at: str
 
 
+class OperationsCustomerAddressRead(BaseModel):
+    id: str
+    label: str
+    line1: str
+    line2: str | None
+    city: str
+    region_code: str
+    postal_code: str
+    country_code: str
+    is_default_shipping: bool
+    is_default_billing: bool
+
+
+class OperationsCustomerRead(BaseModel):
+    id: str
+    email: str
+    status: str
+    first_name: str | None
+    last_name: str | None
+    phone: str | None
+    addresses: list[OperationsCustomerAddressRead] = Field(
+        default_factory=list,
+    )
+    created_at: str
+
+
 class QuoteStatusUpdate(BaseModel):
     status: QuoteRequestStatus
 

@@ -7,10 +7,21 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
 from app.models.catalog import Product, ProductInventory, ProductPrice
+from app.models.customer import (
+    CustomerAddress,
+    CustomerProfile,
+)
 from app.models.email import EmailDelivery, EmailDeliveryStatus
+from app.models.identity import (
+    RoleName,
+    User,
+    UserRole,
+)
 from app.models.quote import QuoteRequest, QuoteRequestStatus
 from app.schemas.operations import (
     InventoryUpdateRequest,
+    OperationsCustomerAddressRead,
+    OperationsCustomerRead,
     OperationsInventoryRead,
     OperationsPricingRead,
     OperationsProductRead,
@@ -232,6 +243,107 @@ def update_quote_notes(
         db,
         quote=quote,
     )
+
+
+def operations_customer_read(
+    db: DatabaseSession,
+    *,
+    user: User,
+) -> OperationsCustomerRead:
+    profile = db.get(
+        CustomerProfile,
+        user.id,
+    )
+
+    addresses = db.scalars(
+        select(CustomerAddress)
+        .where(
+            CustomerAddress.user_id == user.id
+        )
+        .order_by(
+            CustomerAddress.created_at,
+            CustomerAddress.id,
+        )
+    ).all()
+
+    return OperationsCustomerRead(
+        id=str(user.id),
+        email=user.email,
+        status=user.status.value,
+        first_name=(
+            profile.first_name
+            if profile is not None
+            else None
+        ),
+        last_name=(
+            profile.last_name
+            if profile is not None
+            else None
+        ),
+        phone=(
+            profile.phone
+            if profile is not None
+            else None
+        ),
+        addresses=[
+            OperationsCustomerAddressRead(
+                id=str(address.id),
+                label=address.label,
+                line1=address.line1,
+                line2=address.line2,
+                city=address.city,
+                region_code=address.region_code,
+                postal_code=address.postal_code,
+                country_code=address.country_code,
+                is_default_shipping=(
+                    address.is_default_shipping
+                ),
+                is_default_billing=(
+                    address.is_default_billing
+                ),
+            )
+            for address in addresses
+        ],
+        created_at=user.created_at.isoformat(),
+    )
+
+
+@router.get(
+    "/customers",
+    response_model=list[OperationsCustomerRead],
+)
+def list_customers(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsCustomerRead]:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    users = db.scalars(
+        select(User)
+        .join(
+            UserRole,
+            UserRole.user_id == User.id,
+        )
+        .where(
+            UserRole.role == RoleName.customer
+        )
+        .order_by(
+            User.created_at.desc(),
+            User.email,
+        )
+        .limit(500)
+    ).all()
+
+    return [
+        operations_customer_read(
+            db,
+            user=user,
+        )
+        for user in users
+    ]
 
 
 def operations_product_read(
