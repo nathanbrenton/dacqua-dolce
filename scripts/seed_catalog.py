@@ -123,7 +123,7 @@ PRODUCTS = (
                 label="Dimension Tolerance",
                 value_text="±0.5",
                 unit="in",
-                public=True,
+                public=False,
                 sort_order=90,
                 source_reference=(
                     "owner-supplied image: "
@@ -225,7 +225,7 @@ PRODUCTS = (
                 label="Dimension Tolerance",
                 value_text="±0.5",
                 unit="in",
-                public=True,
+                public=False,
                 sort_order=90,
                 source_reference=(
                     "owner-supplied image: "
@@ -337,7 +337,7 @@ PRODUCTS = (
             ),
             SeedSpecification(
                 spec_key="prefilter_height",
-                label="Prefilter Height",
+                label="Prefilter Housing Height",
                 value_text="29",
                 unit="in",
                 public=True,
@@ -350,7 +350,7 @@ PRODUCTS = (
             ),
             SeedSpecification(
                 spec_key="prefilter_width",
-                label="Prefilter Width",
+                label="Prefilter Housing Width",
                 value_text="7.5",
                 unit="in",
                 public=True,
@@ -366,7 +366,7 @@ PRODUCTS = (
                 label="Dimension Tolerance",
                 value_text="±0.5",
                 unit="in",
-                public=True,
+                public=False,
                 sort_order=90,
                 source_reference=(
                     "owner-supplied image: "
@@ -478,7 +478,7 @@ PRODUCTS = (
             ),
             SeedSpecification(
                 spec_key="prefilter_height",
-                label="Prefilter Height",
+                label="Prefilter Housing Height",
                 value_text="29",
                 unit="in",
                 public=True,
@@ -491,7 +491,7 @@ PRODUCTS = (
             ),
             SeedSpecification(
                 spec_key="prefilter_width",
-                label="Prefilter Width",
+                label="Prefilter Housing Width",
                 value_text="7.5",
                 unit="in",
                 public=True,
@@ -507,7 +507,7 @@ PRODUCTS = (
                 label="Dimension Tolerance",
                 value_text="±0.5",
                 unit="in",
-                public=True,
+                public=False,
                 sort_order=90,
                 source_reference=(
                     "owner-supplied image: "
@@ -619,7 +619,7 @@ PRODUCTS = (
                 label="Dimension Tolerance",
                 value_text="±0.5",
                 unit="in",
-                public=True,
+                public=False,
                 sort_order=60,
                 source_reference=(
                     "owner-supplied image: "
@@ -773,7 +773,7 @@ PRODUCTS = (
                 label="Dimension Tolerance",
                 value_text="±0.5",
                 unit="in",
-                public=True,
+                public=False,
                 sort_order=70,
                 source_reference=(
                     "owner-supplied image: "
