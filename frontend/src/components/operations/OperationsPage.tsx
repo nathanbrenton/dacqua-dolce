@@ -11,6 +11,7 @@ import {
   getOperationsSummary,
   updateProductInventory,
   updateProductPricing,
+  updateQuoteNotes,
   updateQuoteStatus,
   type OperationsProduct,
   type OperationsQuote,
@@ -147,6 +148,8 @@ export function OperationsPage({
     useState<Record<string, PricingDraft>>({});
   const [inventoryDrafts, setInventoryDrafts] =
     useState<Record<string, InventoryDraft>>({});
+  const [quoteNoteDrafts, setQuoteNoteDrafts] =
+    useState<Record<string, string>>({});
   const [error, setError] =
     useState<string | null>(null);
   const [message, setMessage] =
@@ -160,6 +163,10 @@ export function OperationsPage({
   const [
     inventorySaveStates,
     setInventorySaveStates,
+  ] = useState<Record<string, SaveState>>({});
+  const [
+    quoteNoteSaveStates,
+    setQuoteNoteSaveStates,
   ] = useState<Record<string, SaveState>>({});
 
   useEffect(() => {
@@ -177,6 +184,15 @@ export function OperationsPage({
         setSummary(summaryResult);
         setQuotes(quoteResult);
         setProducts(productResult);
+
+        const nextQuoteNotes: Record<string, string> = {};
+
+        for (const quote of quoteResult) {
+          nextQuoteNotes[quote.id] =
+            quote.internal_notes ?? "";
+        }
+
+        setQuoteNoteDrafts(nextQuoteNotes);
 
         const nextPricing: Record<string, PricingDraft> = {};
         const nextInventory: Record<string, InventoryDraft> = {};
@@ -259,6 +275,78 @@ export function OperationsPage({
         caught instanceof Error
           ? caught.message
           : "Quote status update failed.",
+      );
+    }
+  }
+
+  async function saveQuoteNotes(
+    quote: OperationsQuote,
+  ) {
+    const draft =
+      quoteNoteDrafts[quote.id];
+
+    if (draft === undefined) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setQuoteNoteSaveStates((current) => ({
+      ...current,
+      [quote.id]: "saving",
+    }));
+
+    try {
+      const normalized =
+        draft.trim().length > 0
+          ? draft
+          : null;
+
+      const updated =
+        await updateQuoteNotes(
+          quote.id,
+          normalized,
+        );
+
+      setQuotes((current) =>
+        current.map((candidate) =>
+          candidate.id === updated.id
+            ? updated
+            : candidate,
+        ),
+      );
+
+      setQuoteNoteDrafts((current) => ({
+        ...current,
+        [quote.id]:
+          updated.internal_notes ?? "",
+      }));
+
+      setQuoteNoteSaveStates((current) => ({
+        ...current,
+        [quote.id]: "saved",
+      }));
+
+      setMessage(
+        "Internal quote notes saved.",
+      );
+
+      window.setTimeout(() => {
+        setQuoteNoteSaveStates((current) => ({
+          ...current,
+          [quote.id]: "idle",
+        }));
+      }, 1800);
+    } catch (caught) {
+      setQuoteNoteSaveStates((current) => ({
+        ...current,
+        [quote.id]: "idle",
+      }));
+
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Internal quote notes could not be saved.",
       );
     }
   }
@@ -609,6 +697,69 @@ export function OperationsPage({
                       {quote.message}
                     </p>
                   ) : null}
+
+                  <label className="operations-field">
+                    <span>Internal notes</span>
+                    <textarea
+                      rows={3}
+                      maxLength={8000}
+                      placeholder="Private operations notes"
+                      value={
+                        quoteNoteDrafts[quote.id]
+                        ?? ""
+                      }
+                      onChange={(event) => {
+                        setQuoteNoteDrafts(
+                          (current) => ({
+                            ...current,
+                            [quote.id]:
+                              event.target.value,
+                          }),
+                        );
+                      }}
+                    />
+                  </label>
+
+                  <small className="operations-note">
+                    Private — never shown to the customer.
+                  </small>
+
+                  <button
+                    type="button"
+                    className={
+                      "operations-action secondary "
+                      + (
+                        (
+                          quoteNoteSaveStates[quote.id]
+                          ?? "idle"
+                        ) === "saved"
+                          ? "is-saved"
+                          : ""
+                      )
+                    }
+                    disabled={
+                      (
+                        quoteNoteSaveStates[quote.id]
+                        ?? "idle"
+                      ) === "saving"
+                    }
+                    onClick={() => {
+                      void saveQuoteNotes(quote);
+                    }}
+                  >
+                    {(
+                      quoteNoteSaveStates[quote.id]
+                      ?? "idle"
+                    ) === "saving"
+                      ? "Saving…"
+                      : (
+                          quoteNoteSaveStates[quote.id]
+                          ?? "idle"
+                        ) === "saved"
+                        ? "Saved ✓"
+                        : "Save Internal Notes"}
+                  </button>
+
                   <small>
                     {new Date(quote.created_at).toLocaleString()}
                   </small>

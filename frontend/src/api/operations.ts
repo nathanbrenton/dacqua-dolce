@@ -17,6 +17,7 @@ export type OperationsQuote = {
   email: string;
   phone: string | null;
   message: string | null;
+  internal_notes: string | null;
   status: string;
   created_at: string;
 };
@@ -148,6 +149,19 @@ export function updateQuoteStatus(
     `/api/operations/quotes/${encodeURIComponent(quoteId)}`,
     "PATCH",
     { status },
+  );
+}
+
+export function updateQuoteNotes(
+  quoteId: string,
+  internalNotes: string | null,
+): Promise<OperationsQuote> {
+  return writeJson(
+    `/api/operations/quotes/${encodeURIComponent(quoteId)}/notes`,
+    "PUT",
+    {
+      internal_notes: internalNotes,
+    },
   );
 }
 
