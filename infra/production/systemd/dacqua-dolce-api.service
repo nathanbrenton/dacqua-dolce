@@ -1,0 +1,39 @@
+[Unit]
+Description=D'Acqua Dolce FastAPI application
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dacqua
+Group=dacqua
+
+WorkingDirectory=/srv/dacqua-dolce/current/backend
+EnvironmentFile=/etc/dacqua-dolce/backend.env
+
+ExecStart=/srv/dacqua-dolce/current/backend/.venv/bin/uvicorn \
+  app.main:app \
+  --host 127.0.0.1 \
+  --port 8000 \
+  --workers 2 \
+  --proxy-headers \
+  --forwarded-allow-ips=127.0.0.1
+
+Restart=on-failure
+RestartSec=5s
+
+TimeoutStartSec=30s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/dacqua-dolce/shared
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+[Install]
+WantedBy=multi-user.target
