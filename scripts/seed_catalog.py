@@ -39,6 +39,7 @@ class SeedSpecification:
     unit: str | None
     public: bool
     sort_order: int
+    source_reference: str | None = None
 
 
 @dataclass(frozen=True)
@@ -297,6 +298,103 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=10,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_width",
+                label="System Width",
+                value_text="15",
+                unit="in",
+                public=True,
+                sort_order=20,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_height",
+                label="System Height",
+                value_text="16",
+                unit="in",
+                public=True,
+                sort_order=30,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="storage_tank_width",
+                label="Storage Tank Width",
+                value_text="11",
+                unit="in",
+                public=True,
+                sort_order=40,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="storage_tank_height",
+                label="Storage Tank Height",
+                value_text="16",
+                unit="in",
+                public=True,
+                sort_order=50,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="dimension_tolerance",
+                label="Dimension Tolerance",
+                value_text="±0.5",
+                unit="in",
+                public=True,
+                sort_order=60,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="ro_membrane_model",
+                label="RO Membrane",
+                value_text="Pentair GRO-50EN",
+                unit=None,
+                public=True,
+                sort_order=70,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5RO.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="ro_membrane_nominal_flow",
+                label="RO Membrane Nominal Flow",
+                value_text="50",
+                unit="GPD",
+                public=True,
+                sort_order=80,
+                source_reference=(
+                    "Pentair GRO Membrane Spec Sheet, GRO-50EN: "
+                    "https://www.pentair.com/content/dam/extranet/web/nam/"
+                    "pentair/spec-sheets/english/"
+                    "4002874-gro-membrane-spec-sheet.pdf"
+                ),
             ),
         ),
         images=(
@@ -341,6 +439,11 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=10,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
             ),
             SeedSpecification(
                 spec_key="remineralization",
@@ -349,6 +452,129 @@ PRODUCTS = (
                 unit=None,
                 public=True,
                 sort_order=20,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_width",
+                label="System Width",
+                value_text="15",
+                unit="in",
+                public=True,
+                sort_order=30,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="system_height",
+                label="System Height",
+                value_text="18",
+                unit="in",
+                public=True,
+                sort_order=40,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="storage_tank_width",
+                label="Storage Tank Width",
+                value_text="11",
+                unit="in",
+                public=True,
+                sort_order=50,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="storage_tank_height",
+                label="Storage Tank Height",
+                value_text="16",
+                unit="in",
+                public=True,
+                sort_order=60,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="dimension_tolerance",
+                label="Dimension Tolerance",
+                value_text="±0.5",
+                unit="in",
+                public=True,
+                sort_order=70,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="ro_membrane_model",
+                label="RO Membrane",
+                value_text="Pentair GRO-50EN",
+                unit=None,
+                public=True,
+                sort_order=80,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="ro_membrane_nominal_flow",
+                label="RO Membrane Nominal Flow",
+                value_text="50",
+                unit="GPD",
+                public=True,
+                sort_order=90,
+                source_reference=(
+                    "Pentair GRO Membrane Spec Sheet, GRO-50EN: "
+                    "https://www.pentair.com/content/dam/extranet/web/nam/"
+                    "pentair/spec-sheets/english/"
+                    "4002874-gro-membrane-spec-sheet.pdf"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="alkaline_cartridge_model",
+                label="Alkaline Cartridge",
+                value_text="K-FLOW K5650 BB",
+                unit=None,
+                public=True,
+                sort_order=100,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
+            ),
+            SeedSpecification(
+                spec_key="alkaline_media",
+                label="Alkaline Media",
+                value_text="Custom Alkaline Media",
+                unit=None,
+                public=True,
+                sort_order=110,
+                source_reference=(
+                    "owner-supplied image: "
+                    "dacqua-dolce-business/04_Brand_and_Creative/"
+                    "Product_Imagery/skudims/DD5ROAE.jpg"
+                ),
             ),
         ),
         images=(
@@ -489,6 +715,11 @@ def ensure_specifications(
     created = 0
 
     for seed in specifications:
+        effective_source_reference = (
+            seed.source_reference
+            or source_reference
+        )
+
         specification = existing.get(seed.spec_key)
 
         if specification is None:
@@ -499,7 +730,7 @@ def ensure_specifications(
                     label=seed.label,
                     value_text=seed.value_text,
                     unit=seed.unit,
-                    source_reference=source_reference,
+                    source_reference=effective_source_reference,
                     public=seed.public,
                     sort_order=seed.sort_order,
                     active=True,
@@ -514,7 +745,7 @@ def ensure_specifications(
             label=seed.label,
             value_text=seed.value_text,
             unit=seed.unit,
-            source_reference=source_reference,
+            source_reference=effective_source_reference,
             public=seed.public,
             sort_order=seed.sort_order,
         )
