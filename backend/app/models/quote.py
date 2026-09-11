@@ -66,6 +66,10 @@ class QuoteRequest(Base):
         Text,
     )
 
+    internal_notes: Mapped[str | None] = mapped_column(
+        Text,
+    )
+
     status: Mapped[QuoteRequestStatus] = mapped_column(
         Enum(
             QuoteRequestStatus,

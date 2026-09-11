@@ -17,6 +17,7 @@ from app.schemas.operations import (
     OperationsQuoteRead,
     OperationsSummaryRead,
     PricingUpdateRequest,
+    QuoteNotesUpdate,
     QuoteStatusUpdate,
 )
 from app.services.audit import record_audit_event
@@ -37,6 +38,32 @@ def product_name_for_quote(
         return None
 
     return db.scalar(select(Product.name).where(Product.id == product_id))
+
+
+def operations_quote_read(
+    db: DatabaseSession,
+    *,
+    quote: QuoteRequest,
+) -> OperationsQuoteRead:
+    return OperationsQuoteRead(
+        id=str(quote.id),
+        product_id=(
+            str(quote.product_id)
+            if quote.product_id is not None
+            else None
+        ),
+        product_name=product_name_for_quote(
+            db,
+            quote.product_id,
+        ),
+        name=quote.name,
+        email=quote.email,
+        phone=quote.phone,
+        message=quote.message,
+        internal_notes=quote.internal_notes,
+        status=quote.status.value,
+        created_at=quote.created_at.isoformat(),
+    )
 
 
 @router.get("/summary", response_model=OperationsSummaryRead)
@@ -105,16 +132,9 @@ def list_quotes(
     ).all()
 
     return [
-        OperationsQuoteRead(
-            id=str(quote.id),
-            product_id=(str(quote.product_id) if quote.product_id is not None else None),
-            product_name=product_name_for_quote(db, quote.product_id),
-            name=quote.name,
-            email=quote.email,
-            phone=quote.phone,
-            message=quote.message,
-            status=quote.status.value,
-            created_at=quote.created_at.isoformat(),
+        operations_quote_read(
+            db,
+            quote=quote,
         )
         for quote in quotes
     ]
@@ -155,16 +175,62 @@ def update_quote_status(
     db.commit()
     db.refresh(quote)
 
-    return OperationsQuoteRead(
-        id=str(quote.id),
-        product_id=(str(quote.product_id) if quote.product_id is not None else None),
-        product_name=product_name_for_quote(db, quote.product_id),
-        name=quote.name,
-        email=quote.email,
-        phone=quote.phone,
-        message=quote.message,
-        status=quote.status.value,
-        created_at=quote.created_at.isoformat(),
+    return operations_quote_read(
+        db,
+        quote=quote,
+    )
+
+
+@router.put(
+    "/quotes/{quote_id}/notes",
+    response_model=OperationsQuoteRead,
+)
+def update_quote_notes(
+    quote_id: uuid.UUID,
+    payload: QuoteNotesUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsQuoteRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    quote = db.get(
+        QuoteRequest,
+        quote_id,
+    )
+
+    if quote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote request not found.",
+        )
+
+    had_notes = quote.internal_notes is not None
+    quote.internal_notes = payload.internal_notes
+
+    record_audit_event(
+        db,
+        action="quote.notes_updated",
+        entity_type="quote_request",
+        entity_id=str(quote.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "had_notes": had_notes,
+            "has_notes": (
+                payload.internal_notes
+                is not None
+            ),
+        },
+    )
+
+    db.commit()
+    db.refresh(quote)
+
+    return operations_quote_read(
+        db,
+        quote=quote,
     )
 
 

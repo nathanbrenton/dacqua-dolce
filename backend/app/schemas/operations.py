@@ -29,12 +29,33 @@ class OperationsQuoteRead(BaseModel):
     email: str
     phone: str | None
     message: str | None
+    internal_notes: str | None
     status: str
     created_at: str
 
 
 class QuoteStatusUpdate(BaseModel):
     status: QuoteRequestStatus
+
+
+class QuoteNotesUpdate(BaseModel):
+    internal_notes: str | None = Field(
+        default=None,
+        max_length=8000,
+    )
+
+    @field_validator("internal_notes")
+    @classmethod
+    def clean_internal_notes(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        cleaned = value.strip()
+
+        return cleaned or None
 
 
 class OperationsPricingRead(BaseModel):

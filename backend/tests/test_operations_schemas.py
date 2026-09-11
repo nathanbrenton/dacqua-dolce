@@ -8,6 +8,7 @@ from app.models.catalog import (
 from app.schemas.operations import (
     InventoryUpdateRequest,
     PricingUpdateRequest,
+    QuoteNotesUpdate,
 )
 
 
@@ -66,4 +67,28 @@ def test_inventory_reserved_must_not_exceed_on_hand() -> None:
             status=InventoryStatus.in_stock,
             quantity_on_hand=1,
             quantity_reserved=2,
+        )
+
+def test_quote_notes_are_trimmed() -> None:
+    payload = QuoteNotesUpdate(
+        internal_notes="  Called customer; awaiting reply.  ",
+    )
+
+    assert payload.internal_notes == (
+        "Called customer; awaiting reply."
+    )
+
+
+def test_blank_quote_notes_become_none() -> None:
+    payload = QuoteNotesUpdate(
+        internal_notes="   ",
+    )
+
+    assert payload.internal_notes is None
+
+
+def test_quote_notes_have_reasonable_limit() -> None:
+    with pytest.raises(ValidationError):
+        QuoteNotesUpdate(
+            internal_notes="x" * 8001,
         )

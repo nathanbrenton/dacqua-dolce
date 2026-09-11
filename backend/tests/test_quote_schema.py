@@ -24,3 +24,18 @@ def test_quote_requires_email_shape() -> None:
             name="Test Customer",
             email="not-an-email",
         )
+
+def test_public_quote_response_has_no_internal_notes() -> None:
+    from app.schemas.quote import QuoteRequestRead
+
+    payload = QuoteRequestRead(
+        id="quote-id",
+        status="new",
+    ).model_dump()
+
+    assert payload == {
+        "id": "quote-id",
+        "status": "new",
+    }
+
+    assert "internal_notes" not in payload
