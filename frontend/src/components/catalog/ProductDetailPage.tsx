@@ -271,6 +271,33 @@ export function ProductDetailPage({
               ) : null}
             </dl>
 
+            {product.specifications.length > 0 ? (
+              <section
+                className="product-specifications"
+                aria-labelledby="product-specifications-heading"
+              >
+                <h2 id="product-specifications-heading">
+                  Specifications
+                </h2>
+
+                <dl className="product-facts">
+                  {product.specifications.map(
+                    (specification) => (
+                      <div key={specification.spec_key}>
+                        <dt>{specification.label}</dt>
+                        <dd>
+                          {specification.value_text}
+                          {specification.unit !== null
+                            ? ` ${specification.unit}`
+                            : ""}
+                        </dd>
+                      </div>
+                    ),
+                  )}
+                </dl>
+              </section>
+            ) : null}
+
             <div className="detail-commerce">
               {pricing.display_price
               && pricing.amount_minor

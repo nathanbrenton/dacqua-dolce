@@ -14,6 +14,13 @@ export type CatalogImage = {
   alt_text: string;
 };
 
+export type CatalogSpecification = {
+  spec_key: string;
+  label: string;
+  value_text: string;
+  unit: string | null;
+};
+
 export type CatalogVariant = {
   id: string;
   display_name: string;
@@ -48,6 +55,7 @@ export type CatalogProductDetail =
     images: CatalogImage[];
     variants: CatalogVariant[];
     documents: CatalogDocument[];
+    specifications: CatalogSpecification[];
   };
 
 type ProductListPayload = {

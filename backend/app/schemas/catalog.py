@@ -17,6 +17,13 @@ class CatalogImageRead(BaseModel):
     alt_text: str
 
 
+class CatalogSpecificationRead(BaseModel):
+    spec_key: str
+    label: str
+    value_text: str
+    unit: str | None = None
+
+
 class CatalogVariantRead(BaseModel):
     id: str
     display_name: str
@@ -50,6 +57,9 @@ class CatalogProductDetailRead(CatalogProductRead):
     images: list[CatalogImageRead] = Field(default_factory=list)
     variants: list[CatalogVariantRead] = Field(default_factory=list)
     documents: list[CatalogDocumentRead] = Field(default_factory=list)
+    specifications: list[CatalogSpecificationRead] = Field(
+        default_factory=list,
+    )
 
 
 class CatalogProductListResponse(BaseModel):

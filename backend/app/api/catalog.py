@@ -11,7 +11,10 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
-from app.models.catalog import Product
+from app.models.catalog import (
+    Product,
+    ProductSpecification,
+)
 from app.models.identity import (
     UserSession,
     UserStatus,
@@ -23,6 +26,7 @@ from app.schemas.catalog import (
     CatalogProductDetailRead,
     CatalogProductListResponse,
     CatalogProductRead,
+    CatalogSpecificationRead,
     CatalogVariantRead,
 )
 from app.services.pricing import (
@@ -59,6 +63,35 @@ def request_is_authenticated(
         )
 
         return session_record is not None and session_record.user.status == UserStatus.active
+
+
+def public_specification_reads(
+    specifications: list[ProductSpecification],
+) -> list[CatalogSpecificationRead]:
+    public_specifications = [
+        specification
+        for specification in specifications
+        if specification.public
+        and specification.active
+        and specification.verified_at is not None
+    ]
+
+    public_specifications.sort(
+        key=lambda specification: (
+            specification.sort_order,
+            specification.spec_key,
+        )
+    )
+
+    return [
+        CatalogSpecificationRead(
+            spec_key=specification.spec_key,
+            label=specification.label,
+            value_text=specification.value_text,
+            unit=specification.unit,
+        )
+        for specification in public_specifications
+    ]
 
 
 def pricing_read(
@@ -164,6 +197,7 @@ def get_public_product(
                 selectinload(Product.prices),
                 selectinload(Product.variants),
                 selectinload(Product.documents),
+                selectinload(Product.specifications),
             )
             .where(
                 Product.slug == slug,
@@ -225,4 +259,7 @@ def get_public_product(
                 for document in product.documents
                 if document.active
             ],
+            specifications=public_specification_reads(
+                product.specifications,
+            ),
         )

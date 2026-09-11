@@ -230,6 +230,11 @@ class Product(Base):
         back_populates="product",
         cascade="all, delete-orphan",
     )
+    specifications: Mapped[list[ProductSpecification]] = relationship(
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductSpecification.sort_order",
+    )
     approved_claims: Mapped[list[ApprovedProductClaim]] = relationship(
         back_populates="product",
         cascade="all, delete-orphan",
@@ -541,6 +546,83 @@ class ProductDocument(Base):
     )
 
     product: Mapped[Product] = relationship(back_populates="documents")
+
+
+class ProductSpecification(Base):
+    __tablename__ = "product_specifications"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "spec_key",
+            name="uq_product_specifications_product_key",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "products.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+    spec_key: Mapped[str] = mapped_column(
+        String(120),
+        nullable=False,
+    )
+    label: Mapped[str] = mapped_column(
+        String(160),
+        nullable=False,
+    )
+    value_text: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False,
+    )
+    unit: Mapped[str | None] = mapped_column(
+        String(60),
+    )
+    source_reference: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False,
+    )
+    public: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    sort_order: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+    verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    product: Mapped[Product] = relationship(
+        back_populates="specifications",
+    )
 
 
 class ApprovedProductClaim(Base):

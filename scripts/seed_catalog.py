@@ -6,6 +6,7 @@ NO_ONLINE_PRICE behavior until authoritative business pricing is loaded.
 """
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -15,6 +16,11 @@ from app.models.catalog import (
     Product,
     ProductCategory,
     ProductImage,
+    ProductSpecification,
+)
+from app.services.catalog_seed import (
+    reconcile_product_metadata,
+    reconcile_specification_metadata,
 )
 
 
@@ -26,6 +32,16 @@ class SeedImage:
 
 
 @dataclass(frozen=True)
+class SeedSpecification:
+    spec_key: str
+    label: str
+    value_text: str
+    unit: str | None
+    public: bool
+    sort_order: int
+
+
+@dataclass(frozen=True)
 class SeedProduct:
     sku: str
     name: str
@@ -33,20 +49,39 @@ class SeedProduct:
     description: str
     product_family: str
     category_slug: str
+    specifications: tuple[SeedSpecification, ...]
     images: tuple[SeedImage, ...]
 
 
 PRODUCTS = (
     SeedProduct(
         sku="DD15CATPTV",
-        name="1.5cf Catalytic Carbon Filter — Pass-through Valve",
+        name="Refine - Pass-Through",
         slug="dd15catptv",
         description=(
-            "1.5 cubic foot catalytic carbon filter configured "
-            "with a pass-through valve."
+            "Whole-home catalytic carbon filtration system with "
+            "1.5 cubic feet of media and a pass-through valve."
         ),
         product_family="Catalytic Carbon Filter",
         category_slug="whole-home-filtration",
+        specifications=(
+            SeedSpecification(
+                spec_key="media_volume",
+                label="Media Volume",
+                value_text="1.5",
+                unit="cu ft",
+                public=True,
+                sort_order=10,
+            ),
+            SeedSpecification(
+                spec_key="valve_type",
+                label="Valve Type",
+                value_text="Pass-Through",
+                unit=None,
+                public=True,
+                sort_order=20,
+            ),
+        ),
         images=(
             SeedImage(
                 path=(
@@ -74,14 +109,32 @@ PRODUCTS = (
     ),
     SeedProduct(
         sku="DD15CATRV",
-        name="1.5cf Catalytic Carbon Filter — Regenerating Valve",
+        name="Refine - Regenerating",
         slug="dd15catrv",
         description=(
-            "1.5 cubic foot catalytic carbon filter configured "
-            "with a regenerating valve."
+            "Whole-home catalytic carbon filtration system with "
+            "1.5 cubic feet of media and a regenerating valve."
         ),
         product_family="Catalytic Carbon Filter",
         category_slug="whole-home-filtration",
+        specifications=(
+            SeedSpecification(
+                spec_key="media_volume",
+                label="Media Volume",
+                value_text="1.5",
+                unit="cu ft",
+                public=True,
+                sort_order=10,
+            ),
+            SeedSpecification(
+                spec_key="valve_type",
+                label="Valve Type",
+                value_text="Regenerating",
+                unit=None,
+                public=True,
+                sort_order=20,
+            ),
+        ),
         images=(
             SeedImage(
                 path=(
@@ -109,14 +162,40 @@ PRODUCTS = (
     ),
     SeedProduct(
         sku="DD15CAT-TTACPTV",
-        name="1.5cf Catalytic Water Conditioner — Pass-through Valve",
+        name="Harmony - Pass-Through",
         slug="dd15cat-ttacptv",
         description=(
-            "1.5 cubic foot catalytic water conditioner configured "
-            "with a pass-through valve and prefilter."
+            "Whole-home catalytic water conditioning system with "
+            "1.5 cubic feet of media, a pass-through valve, and prefilter."
         ),
         product_family="Catalytic Water Conditioner",
         category_slug="whole-home-filtration",
+        specifications=(
+            SeedSpecification(
+                spec_key="media_volume",
+                label="Media Volume",
+                value_text="1.5",
+                unit="cu ft",
+                public=True,
+                sort_order=10,
+            ),
+            SeedSpecification(
+                spec_key="valve_type",
+                label="Valve Type",
+                value_text="Pass-Through",
+                unit=None,
+                public=True,
+                sort_order=20,
+            ),
+            SeedSpecification(
+                spec_key="prefilter",
+                label="Prefilter",
+                value_text="Included",
+                unit=None,
+                public=True,
+                sort_order=30,
+            ),
+        ),
         images=(
             SeedImage(
                 path=(
@@ -144,14 +223,40 @@ PRODUCTS = (
     ),
     SeedProduct(
         sku="DD15CAT-TTACRV",
-        name="1.5cf Catalytic Water Conditioner — Regenerating Valve",
+        name="Harmony - Regenerating",
         slug="dd15cat-ttacrv",
         description=(
-            "1.5 cubic foot catalytic water conditioner configured "
-            "with a regenerating valve and prefilter."
+            "Whole-home catalytic water conditioning system with "
+            "1.5 cubic feet of media, a regenerating valve, and prefilter."
         ),
         product_family="Catalytic Water Conditioner",
         category_slug="whole-home-filtration",
+        specifications=(
+            SeedSpecification(
+                spec_key="media_volume",
+                label="Media Volume",
+                value_text="1.5",
+                unit="cu ft",
+                public=True,
+                sort_order=10,
+            ),
+            SeedSpecification(
+                spec_key="valve_type",
+                label="Valve Type",
+                value_text="Regenerating",
+                unit=None,
+                public=True,
+                sort_order=20,
+            ),
+            SeedSpecification(
+                spec_key="prefilter",
+                label="Prefilter",
+                value_text="Included",
+                unit=None,
+                public=True,
+                sort_order=30,
+            ),
+        ),
         images=(
             SeedImage(
                 path=(
@@ -179,11 +284,21 @@ PRODUCTS = (
     ),
     SeedProduct(
         sku="DD5RO",
-        name="5 Stage Reverse Osmosis",
+        name="Origin",
         slug="dd5ro",
-        description="Five-stage reverse osmosis system.",
+        description="Five-stage point-of-use reverse osmosis drinking water system.",
         product_family="Reverse Osmosis",
         category_slug="reverse-osmosis",
+        specifications=(
+            SeedSpecification(
+                spec_key="stage_count",
+                label="Stages",
+                value_text="5",
+                unit=None,
+                public=True,
+                sort_order=10,
+            ),
+        ),
         images=(
             SeedImage(
                 path=(
@@ -210,13 +325,32 @@ PRODUCTS = (
     ),
     SeedProduct(
         sku="DD5ROAE",
-        name="5 Stage Reverse Osmosis — Alkaline Enhancer",
+        name="Origin - Alkaline Remineralization",
         slug="dd5roae",
         description=(
-            "Five-stage reverse osmosis system with alkaline enhancer."
+            "Five-stage point-of-use reverse osmosis drinking water system "
+            "with an alkaline remineralization stage."
         ),
         product_family="Reverse Osmosis",
         category_slug="reverse-osmosis",
+        specifications=(
+            SeedSpecification(
+                spec_key="stage_count",
+                label="Stages",
+                value_text="5",
+                unit=None,
+                public=True,
+                sort_order=10,
+            ),
+            SeedSpecification(
+                spec_key="remineralization",
+                label="Remineralization",
+                value_text="Alkaline",
+                unit=None,
+                public=True,
+                sort_order=20,
+            ),
+        ),
         images=(
             SeedImage(
                 path=(
@@ -336,9 +470,62 @@ def ensure_images(
     return created
 
 
+def ensure_specifications(
+    db: object,
+    product: Product,
+    specifications: tuple[SeedSpecification, ...],
+    *,
+    source_reference: str,
+) -> int:
+    existing = {
+        specification.spec_key: specification
+        for specification in db.scalars(
+            select(ProductSpecification).where(
+                ProductSpecification.product_id == product.id
+            )
+        ).all()
+    }
+
+    created = 0
+
+    for seed in specifications:
+        specification = existing.get(seed.spec_key)
+
+        if specification is None:
+            db.add(
+                ProductSpecification(
+                    product_id=product.id,
+                    spec_key=seed.spec_key,
+                    label=seed.label,
+                    value_text=seed.value_text,
+                    unit=seed.unit,
+                    source_reference=source_reference,
+                    public=seed.public,
+                    sort_order=seed.sort_order,
+                    active=True,
+                    verified_at=datetime.now(UTC),
+                )
+            )
+            created += 1
+            continue
+
+        reconcile_specification_metadata(
+            specification,
+            label=seed.label,
+            value_text=seed.value_text,
+            unit=seed.unit,
+            source_reference=source_reference,
+            public=seed.public,
+            sort_order=seed.sort_order,
+        )
+
+    return created
+
+
 def main() -> None:
     created_products = 0
     created_images = 0
+    created_specifications = 0
 
     with SessionLocal() as db:
         manufacturer = get_or_create_manufacturer(db)
@@ -370,6 +557,20 @@ def main() -> None:
                 db.add(product)
                 db.flush()
                 created_products += 1
+            else:
+                reconcile_product_metadata(
+                    product,
+                    manufacturer_id=manufacturer.id,
+                    category_id=categories[
+                        seed.category_slug
+                    ].id,
+                    name=seed.name,
+                    description=seed.description,
+                    product_family=seed.product_family,
+                    public_path=(
+                        f"/systems/{seed.slug}"
+                    ),
+                )
 
             db.refresh(
                 product,
@@ -382,12 +583,22 @@ def main() -> None:
                 seed.images,
             )
 
+            created_specifications += ensure_specifications(
+                db,
+                product,
+                seed.specifications,
+                source_reference=(
+                    f"owner-supplied SKU sheet: {seed.sku}"
+                ),
+            )
+
         db.commit()
 
     print(
         "Catalog seed complete: "
         f"{created_products} product(s) created, "
-        f"{created_images} image record(s) created."
+        f"{created_images} image record(s) created, "
+        f"{created_specifications} specification record(s) created."
     )
 
 
