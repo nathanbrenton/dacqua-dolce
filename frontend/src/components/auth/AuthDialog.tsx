@@ -13,6 +13,9 @@ import {
 
 type AuthMode = "login" | "register";
 
+const EMAIL_PATTERN =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 type AuthDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -82,17 +85,32 @@ export function AuthDialog({
   ) {
     event.preventDefault();
     setError(null);
+
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+    if (
+      !EMAIL_PATTERN.test(
+        normalizedEmail,
+      )
+    ) {
+      setError(
+        "Enter a valid email address.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
       const account = await (
         mode === "login"
           ? loginAccount({
-              email,
+              email: normalizedEmail,
               password,
             })
           : registerAccount({
-              email,
+              email: normalizedEmail,
               password,
             })
       );

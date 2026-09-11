@@ -79,3 +79,20 @@ def test_register_session_me_logout() -> None:
         if user is not None:
             db.delete(user)
             db.commit()
+
+
+def test_registration_rejects_malformed_email() -> None:
+    csrf_token = csrf()
+
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "email": "malformed@example",
+            "password": "correct-horse-battery-staple",
+        },
+        headers={
+            "X-CSRF-Token": csrf_token,
+        },
+    )
+
+    assert response.status_code == 422

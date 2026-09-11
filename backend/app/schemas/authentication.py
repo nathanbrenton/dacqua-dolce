@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.email import normalize_email_address
+
 
 class LoginRequest(BaseModel):
     email: str = Field(
@@ -15,7 +17,7 @@ class LoginRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
-        return value.strip().lower()
+        return normalize_email_address(value)
 
 
 class AccountRegistrationRequest(BaseModel):
@@ -32,12 +34,7 @@ class AccountRegistrationRequest(BaseModel):
     @field_validator("email")
     @classmethod
     def normalize_email(cls, value: str) -> str:
-        normalized = value.strip().lower()
-
-        if "@" not in normalized:
-            raise ValueError("A valid email address is required.")
-
-        return normalized
+        return normalize_email_address(value)
 
 
 class AuthenticationStatus(BaseModel):

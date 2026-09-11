@@ -1,4 +1,12 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+)
+
+from app.core.phone import (
+    normalize_us_phone,
+)
 
 
 class AddressCreate(BaseModel):
@@ -78,7 +86,6 @@ class CustomerProfileUpdate(BaseModel):
     @field_validator(
         "first_name",
         "last_name",
-        "phone",
     )
     @classmethod
     def clean_optional_text(
@@ -92,10 +99,31 @@ class CustomerProfileUpdate(BaseModel):
 
         return cleaned or None
 
+    @field_validator(
+        "phone",
+        mode="before",
+    )
+    @classmethod
+    def normalize_phone(
+        cls,
+        value: object,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        if not isinstance(value, str):
+            raise ValueError(
+                "Phone number must be text."
+            )
+
+        return normalize_us_phone(value)
+
 
 class CustomerProfileRead(BaseModel):
     email: str
     first_name: str | None
     last_name: str | None
     phone: str | None
-    addresses: list[AddressRead] = Field(default_factory=list)
+    addresses: list[AddressRead] = Field(
+        default_factory=list
+    )

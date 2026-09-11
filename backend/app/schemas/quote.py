@@ -1,4 +1,15 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    field_validator,
+)
+
+from app.core.email import (
+    normalize_email_address,
+)
+from app.core.phone import (
+    normalize_us_phone,
+)
 
 
 class QuoteRequestCreate(BaseModel):
@@ -26,22 +37,42 @@ class QuoteRequestCreate(BaseModel):
 
     @field_validator("name")
     @classmethod
-    def clean_name(cls, value: str) -> str:
+    def clean_name(
+        cls,
+        value: str,
+    ) -> str:
         return value.strip()
 
     @field_validator("email")
     @classmethod
-    def normalize_email(cls, value: str) -> str:
-        normalized = value.strip().lower()
+    def normalize_email(
+        cls,
+        value: str,
+    ) -> str:
+        return normalize_email_address(value)
 
-        if "@" not in normalized:
-            raise ValueError("A valid email address is required.")
-
-        return normalized
-
-    @field_validator("phone", "message")
+    @field_validator(
+        "phone",
+        mode="before",
+    )
     @classmethod
-    def clean_optional_text(
+    def normalize_phone(
+        cls,
+        value: object,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        if not isinstance(value, str):
+            raise ValueError(
+                "Phone number must be text."
+            )
+
+        return normalize_us_phone(value)
+
+    @field_validator("message")
+    @classmethod
+    def clean_optional_message(
         cls,
         value: str | None,
     ) -> str | None:

@@ -5,7 +5,13 @@ import {
   useState,
 } from "react";
 
-import { submitQuoteRequest } from "../../api/quotes";
+import {
+  submitQuoteRequest,
+} from "../../api/quotes";
+import {
+  formatUsPhoneInput,
+  isCompleteUsPhone,
+} from "../../utils/phone";
 
 type QuoteDialogProps = {
   open: boolean;
@@ -25,11 +31,12 @@ export function QuoteDialog({
   const dialogRef =
     useRef<HTMLDialogElement>(null);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState(
-    initialEmail ?? "",
-  );
-  const [phone, setPhone] = useState("");
+  const [name, setName] =
+    useState("");
+  const [email, setEmail] =
+    useState(initialEmail ?? "");
+  const [phone, setPhone] =
+    useState("");
   const [message, setMessage] =
     useState("");
   const [error, setError] =
@@ -68,6 +75,18 @@ export function QuoteDialog({
   ) {
     event.preventDefault();
     setError(null);
+
+    if (
+      phone.length > 0
+      && !isCompleteUsPhone(phone)
+    ) {
+      setError(
+        "Enter a complete "
+        + "10-digit phone number.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -190,15 +209,36 @@ export function QuoteDialog({
 
             <input
               type="tel"
+              inputMode="tel"
               autoComplete="tel"
-              maxLength={50}
+              maxLength={14}
+              pattern={
+                "[(][0-9]{3}[)] "
+                + "[0-9]{3}-"
+                + "[0-9]{4}"
+              }
+              title={
+                "Enter a 10-digit "
+                + "US phone number."
+              }
+              placeholder={
+                "(949) 555-1234"
+              }
               value={phone}
               onChange={(event) => {
                 setPhone(
-                  event.target.value,
+                  formatUsPhoneInput(
+                    event.target.value,
+                  ),
                 );
               }}
             />
+
+            <small className="field-helper">
+              Type the 10 digits;
+              formatting is added
+              automatically.
+            </small>
           </label>
 
           <label>

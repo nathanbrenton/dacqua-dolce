@@ -21,6 +21,10 @@ import {
   getOrders,
   type Order,
 } from "../../api/orders";
+import {
+  formatUsPhoneInput,
+  isCompleteUsPhone,
+} from "../../utils/phone";
 
 type AccountPageProps = {
   onNavigate: (path: string) => void;
@@ -158,6 +162,19 @@ export function AccountPage({
     const currentProfile = profile;
 
     if (currentProfile === null) {
+      return;
+    }
+
+    if (
+      currentProfile.phone !== null
+      && !isCompleteUsPhone(
+        currentProfile.phone,
+      )
+    ) {
+      setError(
+        "Enter a complete "
+        + "10-digit phone number.",
+      );
       return;
     }
 
@@ -301,19 +318,46 @@ export function AccountPage({
               <span>Phone</span>
               <input
                 type="tel"
+                inputMode="tel"
                 autoComplete="tel"
+                maxLength={14}
+                pattern={
+                  "[(][0-9]{3}[)] "
+                  + "[0-9]{3}-"
+                  + "[0-9]{4}"
+                }
+                title={
+                  "Enter a 10-digit "
+                  + "US phone number."
+                }
+                placeholder={
+                  "(949) 555-1234"
+                }
                 value={
-                  profile.phone ?? ""
+                  formatUsPhoneInput(
+                    profile.phone ?? "",
+                  )
                 }
                 onChange={(event) => {
+                  const formatted =
+                    formatUsPhoneInput(
+                      event.target.value,
+                    );
+
                   setProfile({
                     ...profile,
                     phone:
-                      event.target.value
+                      formatted
                       || null,
                   });
                 }}
               />
+
+              <small className="field-helper">
+                Type the 10 digits;
+                formatting is added
+                automatically.
+              </small>
             </label>
 
             <button
