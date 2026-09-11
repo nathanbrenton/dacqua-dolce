@@ -13,6 +13,10 @@ Local development defaults to:
 
 so no message is sent until Postmark is explicitly configured.
 
+The Postmark application adapter imports runtime `httpx`. The separate
+development dependency `httpx2` exists for Starlette/FastAPI test-client
+compatibility and does not replace the Postmark runtime dependency.
+
 ## Required production settings
 
     DACQUA_PUBLIC_ORIGIN=https://<canonical-public-host>

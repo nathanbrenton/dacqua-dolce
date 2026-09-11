@@ -16,20 +16,36 @@ dependencies = [
     "alembic==1.19.2",
     "psycopg[binary]==3.3.5",
     "pwdlib[argon2]==0.3.1",
+    # Runtime HTTP client used directly by the Postmark adapter.
+    "httpx==0.28.1",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "httpx==0.28.1",
+    # Starlette TestClient prefers httpx2; keep it alongside runtime httpx.
+    "httpx2==2.12.0",
     "pytest==9.1.1",
     "ruff==0.16.6",
     "bandit==1.9.1",
     "pip-audit==2.10.1",
 ]
 
+# Package only application Python modules.
+# Alembic migrations and tests remain repository/runtime-support files.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app", "app.*"]
+exclude = ["alembic", "alembic.*", "tests", "tests.*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+filterwarnings = [
+    # Unexpected warnings fail tests.
+    "error",
+    # Temporary upstream Starlette/AnyIO compatibility exception.
+    "ignore:The anyio\\.abc\\.BlockingPortal alias is deprecated, use anyio\\.from_thread\\.BlockingPortal instead\\.:DeprecationWarning:starlette\\.testclient",
+]
 
 [tool.ruff]
 target-version = "py313"
