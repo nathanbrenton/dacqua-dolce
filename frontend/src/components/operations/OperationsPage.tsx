@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import {
+  getOperationsAuditEvents,
   getOperationsCatalog,
   getOperationsCommunications,
   getOperationsCustomers,
@@ -16,6 +17,7 @@ import {
   updateProductPricing,
   updateQuoteNotes,
   updateQuoteStatus,
+  type OperationsAuditEvent,
   type OperationsCommunication,
   type OperationsCustomer,
   type OperationsOrder,
@@ -203,6 +205,16 @@ export function OperationsPage({
     useState<OperationsCommunication[]>([]);
   const [communicationSearch, setCommunicationSearch] =
     useState("");
+  const [auditEvents, setAuditEvents] =
+    useState<OperationsAuditEvent[]>([]);
+  const [auditSearch, setAuditSearch] =
+    useState("");
+  const [auditLoaded, setAuditLoaded] =
+    useState(false);
+  const [auditLoading, setAuditLoading] =
+    useState(false);
+  const [auditError, setAuditError] =
+    useState<string | null>(null);
   const [customers, setCustomers] =
     useState<OperationsCustomer[]>([]);
   const [customerSearch, setCustomerSearch] =
@@ -311,6 +323,33 @@ export function OperationsPage({
       });
   }, [authorized]);
 
+  async function loadAuditEvents(): Promise<void> {
+    if (
+      !privileged
+      || auditLoaded
+      || auditLoading
+    ) {
+      return;
+    }
+
+    setAuditLoading(true);
+    setAuditError(null);
+
+    try {
+      const result =
+        await getOperationsAuditEvents();
+
+      setAuditEvents(result);
+      setAuditLoaded(true);
+    } catch {
+      setAuditError(
+        "Unable to load audit events.",
+      );
+    } finally {
+      setAuditLoading(false);
+    }
+  }
+
   const filteredCustomers = useMemo(() => {
     const query =
       customerSearch.trim().toLowerCase();
@@ -409,6 +448,33 @@ export function OperationsPage({
   }, [
     communications,
     communicationSearch,
+  ]);
+
+  const filteredAuditEvents = useMemo(() => {
+    const query =
+      auditSearch.trim().toLowerCase();
+
+    if (query.length === 0) {
+      return auditEvents;
+    }
+
+    return auditEvents.filter((event) => {
+      const searchable = [
+        event.id,
+        event.actor_user_id ?? "",
+        event.action,
+        event.entity_type,
+        event.entity_id ?? "",
+        event.environment,
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  }, [
+    auditEvents,
+    auditSearch,
   ]);
 
   if (!authorized) {
@@ -997,10 +1063,19 @@ export function OperationsPage({
         )}
       </section>
 
-      <section
+      <details
         id="customer-roster"
-        className="operations-section"
+        className="operations-section operations-disclosure"
       >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Accounts & address book</strong>
+            <small>Customer roster</small>
+          </span>
+        </summary>
+
+        <div className="operations-disclosure-content">
+
         <div className="operations-section-heading">
           <p className="eyebrow">Customer Roster</p>
           <h2>Accounts &amp; address book</h2>
@@ -1165,7 +1240,9 @@ export function OperationsPage({
             })}
           </div>
         )}
-      </section>
+      
+        </div>
+      </details>
 
       <section
         id="order-history"
@@ -1321,10 +1398,19 @@ export function OperationsPage({
         )}
       </section>
 
-      <section
+      <details
         id="communications-history"
-        className="operations-section"
+        className="operations-section operations-disclosure"
       >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Customer email activity</strong>
+            <small>Communications history</small>
+          </span>
+        </summary>
+
+        <div className="operations-disclosure-content">
+
         <div className="operations-section-heading">
           <p className="eyebrow">
             Communications History
@@ -1476,12 +1562,23 @@ export function OperationsPage({
             )}
           </div>
         )}
-      </section>
+      
+        </div>
+      </details>
 
-      <section
+      <details
         id="catalog-governance"
-        className="operations-section"
+        className="operations-section operations-disclosure"
       >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Pricing & inventory</strong>
+            <small>Catalog governance</small>
+          </span>
+        </summary>
+
+        <div className="operations-disclosure-content">
+
         <div className="operations-section-heading">
           <p className="eyebrow">Catalog Governance</p>
           <h2>Pricing &amp; inventory</h2>
@@ -1701,7 +1798,143 @@ export function OperationsPage({
             );
           })}
         </div>
-      </section>
+      
+        </div>
+      </details>
+
+      {privileged ? (
+        <section
+          id="audit-events"
+          className="operations-section operations-audit-section"
+        >
+          <details
+            className="operations-audit-disclosure operations-disclosure"
+            onToggle={(event) => {
+              if (
+                event.currentTarget.open
+                && !auditLoaded
+              ) {
+                void loadAuditEvents();
+              }
+            }}
+          >
+            <summary>
+              <span>
+                <strong>Audit log</strong>
+                <small>
+                  Privileged troubleshooting and scheduled review
+                </small>
+              </span>
+            </summary>
+
+            <div className="operations-audit-content">
+              <div className="operations-section-heading">
+                <p className="eyebrow">
+                  Audit Events
+                </p>
+                <h2>Privileged activity history</h2>
+                <p>
+                  Sensitive metadata, IP addresses, and user-agent
+                  details are intentionally excluded.
+                </p>
+              </div>
+
+              {auditLoading ? (
+                <p className="account-muted">
+                  Loading audit events…
+                </p>
+              ) : auditError !== null ? (
+                <p className="account-muted">
+                  {auditError}
+                </p>
+              ) : (
+                <>
+                  <label
+                    className={
+                      "operations-field "
+                      + "operations-customer-search"
+                    }
+                  >
+                    <span>Search audit events</span>
+                    <input
+                      type="search"
+                      placeholder={
+                        "Action, entity, actor, environment…"
+                      }
+                      value={auditSearch}
+                      onChange={(event) => {
+                        setAuditSearch(
+                          event.target.value,
+                        );
+                      }}
+                    />
+                  </label>
+
+                  {auditEvents.length === 0 ? (
+                    <p className="account-muted">
+                      No audit events recorded.
+                    </p>
+                  ) : filteredAuditEvents.length === 0 ? (
+                    <p className="account-muted">
+                      No audit events match this search.
+                    </p>
+                  ) : (
+                    <div className="operations-customer-list">
+                      {filteredAuditEvents.map((event) => (
+                        <article
+                          key={event.id}
+                          className="operations-customer"
+                        >
+                          <header>
+                            <div>
+                              <p className="product-meta">
+                                {event.environment}
+                                {" · "}
+                                {event.entity_type}
+                              </p>
+
+                              <h3>{event.action}</h3>
+
+                              <small>
+                                {new Date(
+                                  event.created_at,
+                                ).toLocaleString()}
+                              </small>
+                            </div>
+                          </header>
+
+                          <div className="operations-address-list">
+                            <div className="operations-address">
+                              <strong>Entity</strong>
+                              <address>
+                                {event.entity_type}
+                                <br />
+                                {event.entity_id
+                                  ?? "No entity identifier"}
+                              </address>
+                            </div>
+
+                            <div className="operations-address">
+                              <strong>Actor</strong>
+                              <address>
+                                {event.actor_user_id
+                                  ?? "System / unauthenticated"}
+                              </address>
+                              <small>
+                                Audit event {event.id}
+                              </small>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </details>
+        </section>
+      ) : null}
 
       <footer className="site-footer operations-footer">
         <DeveloperFooterLogo

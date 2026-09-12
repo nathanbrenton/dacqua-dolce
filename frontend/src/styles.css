@@ -2308,3 +2308,102 @@ textarea:focus-visible {
   }
 }
 
+
+.operations-audit-section {
+  margin-top: clamp(64px, 9vw, 120px);
+}
+
+.operations-audit-disclosure {
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.operations-audit-disclosure > summary {
+  display: flex;
+  align-items: center;
+  padding: 22px 0;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.operations-audit-disclosure > summary > span {
+  display: grid;
+  gap: 4px;
+}
+
+.operations-audit-disclosure > summary strong {
+  font-size: 0.95rem;
+}
+
+.operations-audit-disclosure > summary small {
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.operations-audit-content {
+  padding: 14px 0 36px;
+}
+
+
+/* Operations disclosure system */
+
+.operations-disclosure {
+  width: 100%;
+}
+
+.operations-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 20px 0;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.operations-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.operations-disclosure > summary::before {
+  content: "▸";
+  display: inline-block;
+  flex: 0 0 1rem;
+  width: 1rem;
+  color: var(--accent);
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 140ms ease;
+}
+
+.operations-disclosure[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.operations-disclosure > summary > span {
+  display: grid;
+  gap: 4px;
+}
+
+.operations-disclosure > summary strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.operations-disclosure > summary small {
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.operations-disclosure-content {
+  padding: 12px 0 34px;
+}
+
+.operations-disclosure > summary:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
