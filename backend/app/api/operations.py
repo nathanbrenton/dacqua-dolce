@@ -7,6 +7,10 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
 from app.models.catalog import Product, ProductInventory, ProductPrice
+from app.models.commerce import (
+    Order,
+    OrderItem,
+)
 from app.models.customer import (
     CustomerAddress,
     CustomerProfile,
@@ -23,6 +27,9 @@ from app.schemas.operations import (
     OperationsCustomerAddressRead,
     OperationsCustomerRead,
     OperationsInventoryRead,
+    OperationsOrderCustomerRead,
+    OperationsOrderItemRead,
+    OperationsOrderRead,
     OperationsPricingRead,
     OperationsProductRead,
     OperationsQuoteRead,
@@ -344,6 +351,125 @@ def list_customers(
         )
         for user in users
     ]
+
+
+def operations_order_read(
+    db: DatabaseSession,
+    *,
+    order: Order,
+    customer: User,
+) -> OperationsOrderRead:
+    profile = db.get(
+        CustomerProfile,
+        customer.id,
+    )
+
+    items = db.scalars(
+        select(OrderItem)
+        .where(OrderItem.order_id == order.id)
+        .order_by(
+            OrderItem.created_at,
+            OrderItem.id,
+        )
+    ).all()
+
+    return OperationsOrderRead(
+        id=str(order.id),
+        status=order.status.value,
+        total_amount_minor=order.total_amount_minor,
+        currency=order.currency,
+        created_at=order.created_at.isoformat(),
+        customer=OperationsOrderCustomerRead(
+            id=str(customer.id),
+            email=customer.email,
+            first_name=(
+                profile.first_name
+                if profile is not None
+                else None
+            ),
+            last_name=(
+                profile.last_name
+                if profile is not None
+                else None
+            ),
+            phone=(
+                profile.phone
+                if profile is not None
+                else None
+            ),
+        ),
+        items=[
+            OperationsOrderItemRead(
+                sku=item.sku_snapshot,
+                name=item.name_snapshot,
+                quantity=item.quantity,
+                unit_amount_minor=item.unit_amount_minor,
+                line_total_minor=item.line_total_minor,
+                currency=item.currency,
+            )
+            for item in items
+        ],
+    )
+
+
+@router.get(
+    "/orders",
+    response_model=list[OperationsOrderRead],
+)
+def list_orders(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsOrderRead]:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    orders = db.scalars(
+        select(Order)
+        .join(
+            User,
+            User.id == Order.user_id,
+        )
+        .join(
+            UserRole,
+            UserRole.user_id == User.id,
+        )
+        .where(
+            UserRole.role == RoleName.customer
+        )
+        .order_by(
+            Order.created_at.desc(),
+            Order.id,
+        )
+        .limit(500)
+    ).all()
+
+    result: list[OperationsOrderRead] = []
+
+    for order in orders:
+        customer = db.get(
+            User,
+            order.user_id,
+        )
+
+        if customer is None:
+            raise HTTPException(
+                status_code=(
+                    status.HTTP_500_INTERNAL_SERVER_ERROR
+                ),
+                detail="Order customer record not found.",
+            )
+
+        result.append(
+            operations_order_read(
+                db,
+                order=order,
+                customer=customer,
+            )
+        )
+
+    return result
 
 
 def operations_product_read(

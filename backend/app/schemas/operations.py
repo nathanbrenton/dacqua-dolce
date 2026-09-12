@@ -60,6 +60,35 @@ class OperationsCustomerRead(BaseModel):
     created_at: str
 
 
+class OperationsOrderCustomerRead(BaseModel):
+    id: str
+    email: str
+    first_name: str | None
+    last_name: str | None
+    phone: str | None
+
+
+class OperationsOrderItemRead(BaseModel):
+    sku: str
+    name: str
+    quantity: int
+    unit_amount_minor: int
+    line_total_minor: int
+    currency: str
+
+
+class OperationsOrderRead(BaseModel):
+    id: str
+    status: str
+    total_amount_minor: int
+    currency: str
+    created_at: str
+    customer: OperationsOrderCustomerRead
+    items: list[OperationsOrderItemRead] = Field(
+        default_factory=list,
+    )
+
+
 class QuoteStatusUpdate(BaseModel):
     status: QuoteRequestStatus
 
