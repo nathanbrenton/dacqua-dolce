@@ -13,7 +13,10 @@ from fastapi import (
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.dependencies.auth import CurrentUser
+from app.api.dependencies.auth import (
+    CurrentSession,
+    CurrentUser,
+)
 from app.core.config import Settings, get_settings
 from app.core.privacy import privacy_safe_identifier
 from app.core.security import (
@@ -24,6 +27,8 @@ from app.db.session import get_db
 from app.models.identity import (
     RoleName,
     User,
+    UserMfa,
+    UserMfaRecoveryCode,
     UserRole,
     UserSession,
 )
@@ -31,6 +36,8 @@ from app.schemas.authentication import (
     AccountRegistrationRequest,
     AuthenticationStatus,
     LoginRequest,
+    MfaEnrollmentResponse,
+    MfaVerificationRequest,
     SessionListResponse,
     UserSessionRead,
 )
@@ -41,6 +48,17 @@ from app.services.auth_rate_limit import (
 from app.services.authentication import (
     attach_password,
     authenticate_user,
+)
+from app.services.mfa import (
+    MfaConfigurationError,
+    build_provisioning_uri,
+    decrypt_totp_secret,
+    encrypt_totp_secret,
+    generate_recovery_codes,
+    generate_totp_secret,
+    hash_recovery_code,
+    user_requires_mfa,
+    verify_totp,
 )
 from app.services.passwords import hash_password
 from app.services.sessions import (
@@ -79,6 +97,24 @@ login_account_limiter = AuthenticationRateLimiter(
 registration_ip_limiter = AuthenticationRateLimiter(
     window_seconds=(settings_snapshot.auth_rate_limit_window_seconds),
     max_attempts=(settings_snapshot.registration_rate_limit_ip_attempts),
+)
+
+mfa_ip_limiter = AuthenticationRateLimiter(
+    window_seconds=(
+        settings_snapshot.auth_rate_limit_window_seconds
+    ),
+    max_attempts=(
+        settings_snapshot.mfa_rate_limit_ip_attempts
+    ),
+)
+
+mfa_account_limiter = AuthenticationRateLimiter(
+    window_seconds=(
+        settings_snapshot.auth_rate_limit_window_seconds
+    ),
+    max_attempts=(
+        settings_snapshot.mfa_rate_limit_account_attempts
+    ),
 )
 
 
@@ -145,6 +181,48 @@ def rate_limit_or_reject(
             detail=("Too many authentication attempts. Try again later."),
             headers={"Retry-After": str(decision.retry_after_seconds)},
         )
+
+
+def authentication_status(
+    db: Session,
+    *,
+    user: User,
+    session_record: UserSession,
+) -> AuthenticationStatus:
+    if (
+        user_requires_mfa(user)
+        and session_record.mfa_verified_at
+        is None
+    ):
+        profile = db.get(
+            UserMfa,
+            user.id,
+        )
+
+        enabled = (
+            profile is not None
+            and profile.enabled_at
+            is not None
+        )
+
+        return AuthenticationStatus(
+            authenticated=False,
+            email=user.email,
+            roles=[],
+            mfa_required=enabled,
+            mfa_enrollment_required=(
+                not enabled
+            ),
+        )
+
+    return AuthenticationStatus(
+        authenticated=True,
+        email=user.email,
+        roles=[
+            assignment.role.value
+            for assignment in user.roles
+        ],
+    )
 
 
 @router.get("/csrf")
@@ -320,22 +398,32 @@ def login(
 
     token = generate_session_token()
 
-    db.add(
-        build_session(
-            user_id=user.id,
-            token=token,
-            max_age_seconds=(settings.session_max_age_seconds),
-            ip_address=request_ip(request),
-            user_agent=bounded_user_agent(
-                request,
-                settings,
-            ),
-        )
+    session_record = build_session(
+        user_id=user.id,
+        token=token,
+        max_age_seconds=(
+            settings.session_max_age_seconds
+        ),
+        ip_address=request_ip(request),
+        user_agent=bounded_user_agent(
+            request,
+            settings,
+        ),
+    )
+
+    db.add(session_record)
+
+    requires_mfa = user_requires_mfa(
+        user
     )
 
     record_audit_event(
         db,
-        action="authentication.succeeded",
+        action=(
+            "authentication.password_succeeded"
+            if requires_mfa
+            else "authentication.succeeded"
+        ),
         entity_type="user",
         entity_id=str(user.id),
         actor_user_id=user.id,
@@ -359,10 +447,323 @@ def login(
         settings,
     )
 
-    return AuthenticationStatus(
-        authenticated=True,
-        email=user.email,
-        roles=[assignment.role.value for assignment in user.roles],
+    return authentication_status(
+        db,
+        user=user,
+        session_record=session_record,
+    )
+
+
+@router.post(
+    "/mfa/enroll",
+    response_model=MfaEnrollmentResponse,
+)
+def enroll_mfa(
+    request: Request,
+    db: DatabaseSession,
+    settings: SettingsDependency,
+    current_session: CurrentSession,
+) -> MfaEnrollmentResponse:
+    user = current_session.user
+
+    if not user_requires_mfa(user):
+        raise HTTPException(
+            status_code=(
+                status.HTTP_403_FORBIDDEN
+            ),
+            detail=(
+                "MFA enrollment is reserved "
+                "for privileged accounts."
+            ),
+        )
+
+    profile = db.get(
+        UserMfa,
+        user.id,
+    )
+
+    if (
+        profile is not None
+        and profile.enabled_at
+        is not None
+    ):
+        raise HTTPException(
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
+            detail="MFA is already enrolled.",
+        )
+
+    secret = generate_totp_secret()
+
+    try:
+        ciphertext = encrypt_totp_secret(
+            secret,
+            settings,
+        )
+    except MfaConfigurationError as exc:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_503_SERVICE_UNAVAILABLE
+            ),
+            detail="MFA is not configured.",
+        ) from exc
+
+    if profile is None:
+        profile = UserMfa(
+            user_id=user.id,
+            totp_secret_ciphertext=(
+                ciphertext
+            ),
+        )
+        db.add(profile)
+    else:
+        profile.totp_secret_ciphertext = (
+            ciphertext
+        )
+
+    existing_codes = db.scalars(
+        select(
+            UserMfaRecoveryCode
+        ).where(
+            UserMfaRecoveryCode.user_id
+            == user.id
+        )
+    ).all()
+
+    for existing_code in existing_codes:
+        db.delete(existing_code)
+
+    recovery_codes = (
+        generate_recovery_codes(
+            settings.mfa_recovery_code_count
+        )
+    )
+
+    for recovery_code in recovery_codes:
+        db.add(
+            UserMfaRecoveryCode(
+                user_id=user.id,
+                code_hash=(
+                    hash_recovery_code(
+                        recovery_code
+                    )
+                ),
+            )
+        )
+
+    record_audit_event(
+        db,
+        action=(
+            "authentication.mfa_enrollment_started"
+        ),
+        entity_type="user",
+        entity_id=str(user.id),
+        actor_user_id=user.id,
+        ip_address=request_ip(request),
+        user_agent=bounded_user_agent(
+            request,
+            settings,
+        ),
+    )
+
+    db.commit()
+
+    return MfaEnrollmentResponse(
+        secret=secret,
+        provisioning_uri=(
+            build_provisioning_uri(
+                issuer=settings.mfa_issuer,
+                email=user.email,
+                secret=secret,
+                period_seconds=(
+                    settings.mfa_totp_period_seconds
+                ),
+                digits=(
+                    settings.mfa_totp_digits
+                ),
+            )
+        ),
+        recovery_codes=recovery_codes,
+    )
+
+
+@router.post(
+    "/mfa/verify",
+    response_model=AuthenticationStatus,
+)
+def verify_mfa(
+    payload: MfaVerificationRequest,
+    request: Request,
+    db: DatabaseSession,
+    settings: SettingsDependency,
+    current_session: CurrentSession,
+) -> AuthenticationStatus:
+    user = current_session.user
+
+    if not user_requires_mfa(user):
+        raise HTTPException(
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
+            detail=(
+                "MFA is not required "
+                "for this account."
+            ),
+        )
+
+    ip = request_ip(request) or "unknown"
+
+    account_key = (
+        AuthenticationRateLimiter.email_key(
+            user.email
+        )
+    )
+
+    rate_limit_or_reject(
+        limiter=mfa_ip_limiter,
+        key=f"mfa-ip:{ip}",
+    )
+
+    rate_limit_or_reject(
+        limiter=mfa_account_limiter,
+        key=(
+            "mfa-account:"
+            + account_key
+        ),
+    )
+
+    profile = db.get(
+        UserMfa,
+        user.id,
+    )
+
+    if profile is None:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
+            detail="MFA enrollment required.",
+        )
+
+    try:
+        secret = decrypt_totp_secret(
+            profile.totp_secret_ciphertext,
+            settings,
+        )
+    except MfaConfigurationError as exc:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_503_SERVICE_UNAVAILABLE
+            ),
+            detail="MFA is not configured.",
+        ) from exc
+
+    verified_with_totp = verify_totp(
+        secret,
+        payload.code,
+        settings=settings,
+    )
+
+    recovery_record = None
+
+    if (
+        not verified_with_totp
+        and profile.enabled_at
+        is not None
+    ):
+        recovery_hash = hash_recovery_code(
+            payload.code
+        )
+
+        recovery_record = db.scalar(
+            select(
+                UserMfaRecoveryCode
+            ).where(
+                UserMfaRecoveryCode.user_id
+                == user.id,
+                UserMfaRecoveryCode.code_hash
+                == recovery_hash,
+                UserMfaRecoveryCode.used_at.is_(
+                    None
+                ),
+            )
+        )
+
+    if (
+        not verified_with_totp
+        and recovery_record is None
+    ):
+        record_audit_event(
+            db,
+            action=(
+                "authentication.mfa_failed"
+            ),
+            entity_type="user",
+            entity_id=str(user.id),
+            actor_user_id=user.id,
+            ip_address=request_ip(request),
+            user_agent=bounded_user_agent(
+                request,
+                settings,
+            ),
+        )
+
+        db.commit()
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
+            detail="Invalid MFA code.",
+        )
+
+    now = datetime.now(UTC)
+
+    if profile.enabled_at is None:
+        profile.enabled_at = now
+
+        action = (
+            "authentication.mfa_enrolled"
+        )
+    elif recovery_record is not None:
+        recovery_record.used_at = now
+
+        action = (
+            "authentication."
+            "mfa_recovery_used"
+        )
+    else:
+        action = (
+            "authentication.mfa_verified"
+        )
+
+    current_session.mfa_verified_at = now
+
+    mfa_account_limiter.clear(
+        "mfa-account:"
+        + account_key
+    )
+
+    record_audit_event(
+        db,
+        action=action,
+        entity_type="user",
+        entity_id=str(user.id),
+        actor_user_id=user.id,
+        ip_address=request_ip(request),
+        user_agent=bounded_user_agent(
+            request,
+            settings,
+        ),
+    )
+
+    db.commit()
+
+    return authentication_status(
+        db,
+        user=user,
+        session_record=current_session,
     )
 
 
@@ -420,12 +821,13 @@ def logout(
     response_model=AuthenticationStatus,
 )
 def current_account(
-    current_user: CurrentUser,
+    db: DatabaseSession,
+    current_session: CurrentSession,
 ) -> AuthenticationStatus:
-    return AuthenticationStatus(
-        authenticated=True,
-        email=current_user.email,
-        roles=[assignment.role.value for assignment in current_user.roles],
+    return authentication_status(
+        db,
+        user=current_session.user,
+        session_record=current_session,
     )
 
 

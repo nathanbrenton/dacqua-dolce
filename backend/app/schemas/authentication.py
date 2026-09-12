@@ -41,6 +41,21 @@ class AuthenticationStatus(BaseModel):
     authenticated: bool
     email: str | None = None
     roles: list[str] = Field(default_factory=list)
+    mfa_required: bool = False
+    mfa_enrollment_required: bool = False
+
+
+class MfaEnrollmentResponse(BaseModel):
+    secret: str
+    provisioning_uri: str
+    recovery_codes: list[str]
+
+
+class MfaVerificationRequest(BaseModel):
+    code: str = Field(
+        min_length=6,
+        max_length=64,
+    )
 
 
 class UserSessionRead(BaseModel):

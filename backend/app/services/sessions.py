@@ -27,6 +27,7 @@ def build_session(
     max_age_seconds: int,
     ip_address: str | None,
     user_agent: str | None,
+    mfa_verified_at: datetime | None = None,
 ) -> UserSession:
     """Create a persistent session without storing the raw token."""
 
@@ -37,6 +38,7 @@ def build_session(
         token_hash=hash_session_token(token),
         expires_at=now + timedelta(seconds=max_age_seconds),
         last_seen_at=now,
+        mfa_verified_at=mfa_verified_at,
         ip_address=ip_address,
         user_agent=user_agent,
     )

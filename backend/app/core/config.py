@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     auth_rate_limit_account_attempts: int = 10
     registration_rate_limit_ip_attempts: int = 10
 
+    mfa_encryption_key: str | None = None
+    mfa_issuer: str = "D'Acqua Dolce"
+    mfa_totp_period_seconds: int = 30
+    mfa_totp_digits: int = 6
+    mfa_totp_valid_window: int = 1
+    mfa_recovery_code_count: int = 10
+    mfa_rate_limit_ip_attempts: int = 20
+    mfa_rate_limit_account_attempts: int = 10
+
     @property
     def is_production(self) -> bool:
         return (

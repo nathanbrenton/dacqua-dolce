@@ -228,6 +228,12 @@ class UserSession(Base):
         DateTime(timezone=True),
     )
 
+    mfa_verified_at: Mapped[
+        datetime | None
+    ] = mapped_column(
+        DateTime(timezone=True),
+    )
+
     ip_address: Mapped[str | None] = mapped_column(
         String(64),
     )
@@ -238,4 +244,83 @@ class UserSession(Base):
 
     user: Mapped[User] = relationship(
         back_populates="sessions",
+    )
+
+
+
+class UserMfa(Base):
+    __tablename__ = "user_mfa"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    totp_secret_ciphertext: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    enabled_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class UserMfaRecoveryCode(Base):
+    __tablename__ = "user_mfa_recovery_codes"
+
+    __table_args__ = (
+        Index(
+            "ix_user_mfa_recovery_user_hash",
+            "user_id",
+            "code_hash",
+            unique=True,
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    code_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
