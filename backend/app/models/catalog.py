@@ -391,14 +391,6 @@ class ProductInventory(Base):
             "quantity_on_hand >= 0",
             name="quantity_on_hand_nonnegative",
         ),
-        CheckConstraint(
-            "quantity_reserved >= 0",
-            name="quantity_reserved_nonnegative",
-        ),
-        CheckConstraint(
-            "quantity_reserved <= quantity_on_hand",
-            name="reserved_not_above_on_hand",
-        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -430,11 +422,6 @@ class ProductInventory(Base):
         default=InventoryStatus.not_tracked,
     )
     quantity_on_hand: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-    )
-    quantity_reserved: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=0,

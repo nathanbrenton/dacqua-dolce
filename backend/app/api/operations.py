@@ -42,6 +42,9 @@ from app.schemas.operations import (
     QuoteStatusUpdate,
 )
 from app.services.audit import record_audit_event
+from app.services.commerce import (
+    active_reserved_quantity,
+)
 from app.services.operations_access import (
     require_operations,
     require_privileged_operations,
@@ -600,6 +603,20 @@ def operations_product_read(
         .order_by(ProductInventory.updated_at.desc())
     )
 
+    reserved_quantity = (
+        active_reserved_quantity(
+            db,
+            product_id=product.id,
+            variant_id=(
+                inventory.variant_id
+                if inventory is not None
+                else None
+            ),
+        )
+        if inventory is not None
+        else 0
+    )
+
     return OperationsProductRead(
         id=str(product.id),
         sku=product.sku,
@@ -622,7 +639,7 @@ def operations_product_read(
         inventory=OperationsInventoryRead(
             status=(inventory.inventory_status.value if inventory is not None else "not_tracked"),
             quantity_on_hand=(inventory.quantity_on_hand if inventory is not None else 0),
-            quantity_reserved=(inventory.quantity_reserved if inventory is not None else 0),
+            quantity_reserved=reserved_quantity,
         ),
     )
 
@@ -759,25 +776,54 @@ def update_product_inventory(
         )
 
     inventory = db.scalar(
-        select(ProductInventory).where(
-            ProductInventory.product_id == product.id,
-            ProductInventory.variant_id.is_(None),
+        select(ProductInventory)
+        .where(
+            ProductInventory.product_id
+            == product.id,
+            ProductInventory.variant_id.is_(
+                None
+            ),
+        )
+        .with_for_update()
+    )
+
+    reserved_quantity = (
+        active_reserved_quantity(
+            db,
+            product_id=product.id,
+            variant_id=None,
         )
     )
+
+    if (
+        payload.quantity_on_hand
+        < reserved_quantity
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "On-hand quantity cannot be "
+                "below active cart reservations."
+            ),
+        )
 
     if inventory is None:
         inventory = ProductInventory(
             product_id=product.id,
             variant_id=None,
             inventory_status=payload.status,
-            quantity_on_hand=payload.quantity_on_hand,
-            quantity_reserved=payload.quantity_reserved,
+            quantity_on_hand=(
+                payload.quantity_on_hand
+            ),
         )
         db.add(inventory)
     else:
-        inventory.inventory_status = payload.status
-        inventory.quantity_on_hand = payload.quantity_on_hand
-        inventory.quantity_reserved = payload.quantity_reserved
+        inventory.inventory_status = (
+            payload.status
+        )
+        inventory.quantity_on_hand = (
+            payload.quantity_on_hand
+        )
 
     db.flush()
 
@@ -790,8 +836,12 @@ def update_product_inventory(
         metadata={
             "sku": product.sku,
             "status": payload.status.value,
-            "quantity_on_hand": payload.quantity_on_hand,
-            "quantity_reserved": payload.quantity_reserved,
+            "quantity_on_hand": (
+                payload.quantity_on_hand
+            ),
+            "quantity_reserved": (
+                reserved_quantity
+            ),
         },
     )
 

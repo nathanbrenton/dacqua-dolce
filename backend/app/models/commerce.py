@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     func,
@@ -98,6 +99,12 @@ class CartItem(Base):
             "unit_amount_minor >= 0",
             name="unit_amount_minor_nonnegative",
         ),
+        Index(
+            "ix_cart_items_reservation_scope",
+            "product_id",
+            "variant_id",
+            "reservation_expires_at",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -170,6 +177,12 @@ class CartItem(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+
+    reservation_expires_at: Mapped[
+        datetime | None
+    ] = mapped_column(
+        DateTime(timezone=True),
     )
 
 

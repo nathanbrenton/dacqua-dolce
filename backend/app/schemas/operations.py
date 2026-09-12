@@ -1,5 +1,6 @@
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     field_validator,
     model_validator,
@@ -207,21 +208,12 @@ class PricingUpdateRequest(BaseModel):
 
 
 class InventoryUpdateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
     status: InventoryStatus
     quantity_on_hand: int = Field(
         ge=0,
         le=1_000_000,
     )
-    quantity_reserved: int = Field(
-        ge=0,
-        le=1_000_000,
-    )
-
-    @model_validator(mode="after")
-    def reserved_not_above_on_hand(
-        self,
-    ) -> "InventoryUpdateRequest":
-        if self.quantity_reserved > self.quantity_on_hand:
-            raise ValueError("Reserved quantity cannot exceed quantity on hand.")
-
-        return self

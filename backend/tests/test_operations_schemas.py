@@ -61,12 +61,12 @@ def test_currency_is_normalized() -> None:
     assert payload.currency == "USD"
 
 
-def test_inventory_reserved_must_not_exceed_on_hand() -> None:
+def test_inventory_reserved_is_not_operator_editable() -> None:
     with pytest.raises(ValidationError):
         InventoryUpdateRequest(
             status=InventoryStatus.in_stock,
             quantity_on_hand=1,
-            quantity_reserved=2,
+            quantity_reserved=1,
         )
 
 def test_quote_notes_are_trimmed() -> None:
