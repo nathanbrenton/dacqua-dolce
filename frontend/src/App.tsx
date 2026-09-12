@@ -45,6 +45,9 @@ import {
   ResetPasswordPage,
 } from "./pages/ResetPasswordPage";
 import {
+  PolicyStatusPage,
+} from "./pages/PolicyStatusPage";
+import {
   DEFAULT_LOGO_VARIANT,
   isLogoVariantId,
   type LogoVariantId,
@@ -331,7 +334,17 @@ export function App() {
         }}
       />
 
-      {path === "/operations" ? (
+      {path === "/privacy" ? (
+        <PolicyStatusPage
+          kind="privacy"
+          onNavigate={navigate}
+        />
+      ) : path === "/terms" ? (
+        <PolicyStatusPage
+          kind="terms"
+          onNavigate={navigate}
+        />
+      ) : path === "/operations" ? (
         <OperationsPage
           roles={account?.roles ?? []}
           onNavigate={navigate}
@@ -585,16 +598,43 @@ export function App() {
               }}
             />
 
-            <div className="development-status">
-              <span
-                className={
-                  `status-dot `
-                  + `status-${backendState}`
-                }
-                aria-hidden="true"
-              />
+            <div className="site-footer-meta">
+              <nav
+                className="footer-policy-links"
+                aria-label="Policies"
+              >
+                <a
+                  href="/privacy"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate("/privacy");
+                  }}
+                >
+                  Privacy
+                </a>
 
-              Local API: {backendState}
+                <a
+                  href="/terms"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    navigate("/terms");
+                  }}
+                >
+                  Terms & Policies
+                </a>
+              </nav>
+
+              <div className="development-status">
+                <span
+                  className={
+                    `status-dot `
+                    + `status-${backendState}`
+                  }
+                  aria-hidden="true"
+                />
+
+                Local API: {backendState}
+              </div>
             </div>
           </footer>
         </main>

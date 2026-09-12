@@ -2407,3 +2407,138 @@ textarea:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 4px;
 }
+
+
+/* Policy/footer refinement */
+
+.site-footer-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 28px;
+}
+
+.footer-policy-links {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.footer-policy-links a {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.footer-policy-links a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.policy-status-page {
+  max-width: 980px;
+}
+
+.policy-status-page h1 {
+  max-width: 760px;
+  margin-bottom: 28px;
+}
+
+.policy-status-page > p {
+  max-width: 760px;
+}
+
+.policy-status-lead {
+  color: var(--ink);
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  line-height: 1.5;
+}
+
+.policy-status-note {
+  margin-top: 42px;
+  padding-top: 22px;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--hairline);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .site-footer-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .footer-policy-links {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+
+/* Shared customer/operations aesthetic */
+
+/*
+ * Button geometry belongs to the selected visual theme,
+ * not to the customer or operations view.
+ */
+
+.operations-action,
+.operations-next-action a,
+.appearance-toggle {
+  border-radius: var(--button-radius);
+}
+
+/*
+ * Keep the Operations controls on the same interaction
+ * vocabulary as customer-facing actions.
+ */
+
+.operations-action,
+.operations-next-action a,
+.appearance-toggle {
+  transition:
+    transform 140ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.operations-action:hover,
+.operations-next-action a:hover {
+  transform: translateY(-1px);
+}
+
+.operations-action:active,
+.operations-next-action a:active {
+  transform: translateY(0);
+}
+
+/*
+ * Form geometry remains deliberately restrained, matching
+ * the customer account/auth forms rather than inventing a
+ * separate operations-console visual language.
+ */
+
+.operations-field input,
+.operations-field select,
+.operations-field textarea {
+  font: inherit;
+}
+
+/*
+ * Native focus treatment should read consistently in both
+ * customer and internal workflows.
+ */
+
+.operations-shell button:focus-visible,
+.operations-shell a:focus-visible,
+.operations-shell input:focus-visible,
+.operations-shell select:focus-visible,
+.operations-shell textarea:focus-visible,
+.operations-shell summary:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
