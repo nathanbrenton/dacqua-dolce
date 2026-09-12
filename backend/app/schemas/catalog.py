@@ -46,7 +46,6 @@ class CatalogProductRead(BaseModel):
     sku: str
     description: str
     product_family: str | None
-    manufacturer: str
     category: str
     public_path: str
     primary_image: CatalogImageRead | None

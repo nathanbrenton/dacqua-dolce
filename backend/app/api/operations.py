@@ -624,6 +624,9 @@ def operations_product_read(
         category=product.category.name,
         manufacturer=product.manufacturer.name,
         active=product.active,
+        online_sale_approved=(
+            product.online_sale_approved
+        ),
         pricing=OperationsPricingRead(
             mode=(
                 current_price.pricing_policy_mode.value

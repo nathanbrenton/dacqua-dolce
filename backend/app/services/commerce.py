@@ -247,6 +247,11 @@ def add_item_to_cart(
             "System not found."
         )
 
+    if not product.online_sale_approved:
+        raise CommerceError(
+            "This system is not approved for online sale."
+        )
+
     if variant_id is not None:
         variant = db.scalar(
             select(ProductVariant).where(

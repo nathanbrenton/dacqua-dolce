@@ -157,6 +157,7 @@ class OperationsProductRead(BaseModel):
     category: str
     manufacturer: str
     active: bool
+    online_sale_approved: bool
     pricing: OperationsPricingRead
     inventory: OperationsInventoryRead
 

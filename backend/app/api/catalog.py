@@ -12,7 +12,9 @@ from sqlalchemy.orm import selectinload
 from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.models.catalog import (
+    PricingPolicyMode,
     Product,
+    ProductDocument,
     ProductSpecification,
 )
 from app.models.identity import (
@@ -94,6 +96,23 @@ def public_specification_reads(
     ]
 
 
+def public_document_reads(
+    documents: list[ProductDocument],
+) -> list[CatalogDocumentRead]:
+    return [
+        CatalogDocumentRead(
+            title=document.title,
+            document_type=document.document_type.value,
+            path=document.storage_path,
+            content_type=document.content_type,
+            version=document.version,
+        )
+        for document in documents
+        if document.active
+        and document.public
+    ]
+
+
 def pricing_read(
     product: Product,
     *,
@@ -106,6 +125,18 @@ def pricing_read(
         price,
         authenticated=authenticated,
     )
+
+    if not product.online_sale_approved:
+        return CatalogPricingRead(
+            mode=PricingPolicyMode.NO_ONLINE_SALE.value,
+            amount_minor=None,
+            currency=decision.currency,
+            display_price=False,
+            can_add_to_cart=False,
+            can_checkout_online=False,
+            action="REQUEST_QUOTE",
+            action_label="Contact for Availability",
+        )
 
     return CatalogPricingRead(
         mode=decision.mode.value,
@@ -132,7 +163,6 @@ def list_public_products(
         products = db.scalars(
             select(Product)
             .options(
-                selectinload(Product.manufacturer),
                 selectinload(Product.category),
                 selectinload(Product.images),
                 selectinload(Product.prices),
@@ -156,7 +186,6 @@ def list_public_products(
                     sku=product.sku,
                     description=(product.description),
                     product_family=(product.product_family),
-                    manufacturer=(product.manufacturer.name),
                     category=(product.category.name),
                     public_path=(product.public_path),
                     primary_image=(
@@ -191,7 +220,6 @@ def get_public_product(
         product = db.scalar(
             select(Product)
             .options(
-                selectinload(Product.manufacturer),
                 selectinload(Product.category),
                 selectinload(Product.images),
                 selectinload(Product.prices),
@@ -229,7 +257,6 @@ def get_public_product(
             sku=product.sku,
             description=product.description,
             product_family=(product.product_family),
-            manufacturer=(product.manufacturer.name),
             category=product.category.name,
             public_path=product.public_path,
             primary_image=primary_image,
@@ -248,17 +275,9 @@ def get_public_product(
                 for variant in product.variants
                 if variant.active
             ],
-            documents=[
-                CatalogDocumentRead(
-                    title=document.title,
-                    document_type=(document.document_type.value),
-                    path=(document.storage_path),
-                    content_type=(document.content_type),
-                    version=document.version,
-                )
-                for document in product.documents
-                if document.active
-            ],
+            documents=public_document_reads(
+                product.documents,
+            ),
             specifications=public_specification_reads(
                 product.specifications,
             ),

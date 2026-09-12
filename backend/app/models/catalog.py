@@ -185,6 +185,11 @@ class Product(Base):
         nullable=False,
     )
     product_family: Mapped[str | None] = mapped_column(String(120))
+    online_sale_approved: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
     active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -521,6 +526,11 @@ class ProductDocument(Base):
         default="1",
     )
     checksum_sha256: Mapped[str | None] = mapped_column(String(64))
+    public: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
     active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
