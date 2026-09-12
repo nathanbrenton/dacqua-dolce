@@ -27,10 +27,21 @@ class Settings(BaseSettings):
 
     request_user_agent_max_length: int = 512
 
+    security_hsts_enabled: bool = True
+    security_hsts_max_age_seconds: int = 365 * 24 * 60 * 60
+    security_hsts_include_subdomains: bool = False
+
     auth_rate_limit_window_seconds: int = 15 * 60
     auth_rate_limit_ip_attempts: int = 25
     auth_rate_limit_account_attempts: int = 10
     registration_rate_limit_ip_attempts: int = 10
+
+    @property
+    def is_production(self) -> bool:
+        return (
+            self.environment.strip().lower()
+            in {"production", "prod"}
+        )
 
     model_config = SettingsConfigDict(
         env_file=".env",

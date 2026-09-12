@@ -59,8 +59,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         "/api/payments",
     )
 
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        settings: Settings,
+    ) -> None:
         super().__init__(app)
+        self.settings = settings
 
     async def dispatch(
         self,
@@ -74,6 +79,45 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
         response.headers["X-DNS-Prefetch-Control"] = "off"
+        response.headers["Permissions-Policy"] = (
+            "accelerometer=(), "
+            "camera=(), "
+            "geolocation=(), "
+            "gyroscope=(), "
+            "magnetometer=(), "
+            "microphone=(), "
+            "payment=(), "
+            "usb=()"
+        )
+
+        if self.settings.is_production:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; "
+                "base-uri 'none'; "
+                "frame-ancestors 'none'; "
+                "form-action 'none'"
+            )
+
+            if (
+                self.settings.security_hsts_enabled
+                and request.url.scheme == "https"
+            ):
+                hsts = (
+                    "max-age="
+                    + str(
+                        self.settings.security_hsts_max_age_seconds
+                    )
+                )
+
+                if (
+                    self.settings
+                    .security_hsts_include_subdomains
+                ):
+                    hsts += "; includeSubDomains"
+
+                response.headers[
+                    "Strict-Transport-Security"
+                ] = hsts
 
         if request.url.path.startswith(self.sensitive_prefixes):
             response.headers["Cache-Control"] = "no-store"
