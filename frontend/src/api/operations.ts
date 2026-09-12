@@ -293,7 +293,6 @@ export function updateProductInventory(
   payload: {
     status: string;
     quantity_on_hand: number;
-    quantity_reserved: number;
   },
 ): Promise<OperationsProduct> {
   return writeJson(

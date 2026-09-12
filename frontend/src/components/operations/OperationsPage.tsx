@@ -111,7 +111,6 @@ type PricingDraft = {
 type InventoryDraft = {
   status: string;
   quantityOnHand: string;
-  quantityReserved: string;
 };
 
 type SaveState =
@@ -302,8 +301,9 @@ export function OperationsPage({
 
           nextInventory[product.id] = {
             status: product.inventory.status,
-            quantityOnHand: String(product.inventory.quantity_on_hand),
-            quantityReserved: String(product.inventory.quantity_reserved),
+            quantityOnHand: String(
+              product.inventory.quantity_on_hand,
+            ),
           };
         }
 
@@ -677,19 +677,18 @@ export function OperationsPage({
     setError(null);
     setMessage(null);
 
-    const quantityOnHand = Number.parseInt(draft.quantityOnHand, 10);
-    const quantityReserved = Number.parseInt(
-      draft.quantityReserved,
+    const quantityOnHand = Number.parseInt(
+      draft.quantityOnHand,
       10,
     );
 
     if (
       !Number.isInteger(quantityOnHand)
       || quantityOnHand < 0
-      || !Number.isInteger(quantityReserved)
-      || quantityReserved < 0
     ) {
-      setError("Inventory quantities must be non-negative integers.");
+      setError(
+        "On-hand quantity must be a non-negative integer.",
+      );
       return;
     }
 
@@ -699,19 +698,22 @@ export function OperationsPage({
     }));
 
     try {
-      const updated = await updateProductInventory(product.id, {
-        status: draft.status,
-        quantity_on_hand: quantityOnHand,
-        quantity_reserved: quantityReserved,
-      });
+      const updated = await updateProductInventory(
+        product.id,
+        {
+          status: draft.status,
+          quantity_on_hand: quantityOnHand,
+        },
+      );
 
       setProducts((current) => replaceProduct(current, updated));
       setInventoryDrafts((current) => ({
         ...current,
         [updated.id]: {
           status: updated.inventory.status,
-          quantityOnHand: String(updated.inventory.quantity_on_hand),
-          quantityReserved: String(updated.inventory.quantity_reserved),
+          quantityOnHand: String(
+            updated.inventory.quantity_on_hand,
+          ),
         },
       }));
       setMessage(`Inventory saved for ${updated.sku}.`);
@@ -1754,20 +1756,20 @@ export function OperationsPage({
                       </label>
 
                       <label className="operations-field">
-                        <span>Reserved</span>
+                        <span>Reserved · automatic</span>
                         <input
                           type="number"
                           min={0}
                           step={1}
-                          value={inventory.quantityReserved}
-                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                            updateInventoryDraft(
-                              product.id,
-                              "quantityReserved",
-                              event.target.value,
-                            );
-                          }}
+                          value={
+                            product.inventory.quantity_reserved
+                          }
+                          readOnly
+                          aria-readonly="true"
                         />
+                        <small>
+                          Active, unexpired cart holds
+                        </small>
                       </label>
                     </div>
 
