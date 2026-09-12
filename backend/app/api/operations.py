@@ -24,6 +24,7 @@ from app.models.identity import (
 from app.models.quote import QuoteRequest, QuoteRequestStatus
 from app.schemas.operations import (
     InventoryUpdateRequest,
+    OperationsCommunicationRead,
     OperationsCustomerAddressRead,
     OperationsCustomerRead,
     OperationsInventoryRead,
@@ -136,6 +137,66 @@ def operations_summary(
         active_products=int(active_products),
         failed_email_deliveries=int(failed_email_deliveries),
     )
+
+
+def operations_communication_read(
+    *,
+    delivery: EmailDelivery,
+) -> OperationsCommunicationRead:
+    return OperationsCommunicationRead(
+        id=str(delivery.id),
+        category=delivery.category,
+        related_entity_type=(
+            delivery.related_entity_type
+        ),
+        related_entity_id=(
+            delivery.related_entity_id
+        ),
+        sender=delivery.sender,
+        recipient=delivery.recipient,
+        subject=delivery.subject,
+        status=delivery.status.value,
+        created_at=(
+            delivery.created_at.isoformat()
+        ),
+        sent_at=(
+            delivery.sent_at.isoformat()
+            if delivery.sent_at is not None
+            else None
+        ),
+    )
+
+
+@router.get(
+    "/communications",
+    response_model=list[
+        OperationsCommunicationRead
+    ],
+)
+def list_communications(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsCommunicationRead]:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    deliveries = db.scalars(
+        select(EmailDelivery)
+        .order_by(
+            EmailDelivery.created_at.desc(),
+            EmailDelivery.id,
+        )
+        .limit(500)
+    ).all()
+
+    return [
+        operations_communication_read(
+            delivery=delivery,
+        )
+        for delivery in deliveries
+    ]
 
 
 @router.get("/quotes", response_model=list[OperationsQuoteRead])

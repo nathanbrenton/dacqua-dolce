@@ -21,6 +21,19 @@ class OperationsSummaryRead(BaseModel):
     failed_email_deliveries: int
 
 
+class OperationsCommunicationRead(BaseModel):
+    id: str
+    category: str
+    related_entity_type: str | None
+    related_entity_id: str | None
+    sender: str
+    recipient: str
+    subject: str
+    status: str
+    created_at: str
+    sent_at: str | None
+
+
 class OperationsQuoteRead(BaseModel):
     id: str
     product_id: str | None
