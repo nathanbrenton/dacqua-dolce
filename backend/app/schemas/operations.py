@@ -21,6 +21,16 @@ class OperationsSummaryRead(BaseModel):
     failed_email_deliveries: int
 
 
+class OperationsAuditEventRead(BaseModel):
+    id: str
+    actor_user_id: str | None
+    action: str
+    entity_type: str
+    entity_id: str | None
+    environment: str
+    created_at: str
+
+
 class OperationsCommunicationRead(BaseModel):
     id: str
     category: str

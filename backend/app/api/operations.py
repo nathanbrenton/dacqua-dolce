@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
+from app.models.audit import AuditEvent
 from app.models.catalog import Product, ProductInventory, ProductPrice
 from app.models.commerce import (
     Order,
@@ -24,6 +25,7 @@ from app.models.identity import (
 from app.models.quote import QuoteRequest, QuoteRequestStatus
 from app.schemas.operations import (
     InventoryUpdateRequest,
+    OperationsAuditEventRead,
     OperationsCommunicationRead,
     OperationsCustomerAddressRead,
     OperationsCustomerRead,
@@ -137,6 +139,55 @@ def operations_summary(
         active_products=int(active_products),
         failed_email_deliveries=int(failed_email_deliveries),
     )
+
+
+def operations_audit_event_read(
+    *,
+    event: AuditEvent,
+) -> OperationsAuditEventRead:
+    return OperationsAuditEventRead(
+        id=str(event.id),
+        actor_user_id=(
+            str(event.actor_user_id)
+            if event.actor_user_id is not None
+            else None
+        ),
+        action=event.action,
+        entity_type=event.entity_type,
+        entity_id=event.entity_id,
+        environment=event.environment,
+        created_at=event.created_at.isoformat(),
+    )
+
+
+@router.get(
+    "/audit-events",
+    response_model=list[OperationsAuditEventRead],
+)
+def list_audit_events(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsAuditEventRead]:
+    require_privileged_operations(
+        db,
+        user=current_user,
+    )
+
+    events = db.scalars(
+        select(AuditEvent)
+        .order_by(
+            AuditEvent.created_at.desc(),
+            AuditEvent.id,
+        )
+        .limit(500)
+    ).all()
+
+    return [
+        operations_audit_event_read(
+            event=event,
+        )
+        for event in events
+    ]
 
 
 def operations_communication_read(
