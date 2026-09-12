@@ -9,6 +9,19 @@ export type OperationsSummary = {
   failed_email_deliveries: number;
 };
 
+export type OperationsCommunication = {
+  id: string;
+  category: string;
+  related_entity_type: string | null;
+  related_entity_id: string | null;
+  sender: string;
+  recipient: string;
+  subject: string;
+  status: string;
+  created_at: string;
+  sent_at: string | null;
+};
+
 export type OperationsQuote = {
   id: string;
   product_id: string | null;
@@ -183,6 +196,14 @@ async function writeJson<T>(
 export function getOperationsSummary(): Promise<OperationsSummary> {
   return getJson(
     "/api/operations/summary",
+  );
+}
+
+export function getOperationsCommunications(): Promise<
+  OperationsCommunication[]
+> {
+  return getJson(
+    "/api/operations/communications",
   );
 }
 
