@@ -46,6 +46,33 @@ export type OperationsCustomer = {
   created_at: string;
 };
 
+export type OperationsOrderCustomer = {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+};
+
+export type OperationsOrderItem = {
+  sku: string;
+  name: string;
+  quantity: number;
+  unit_amount_minor: number;
+  line_total_minor: number;
+  currency: string;
+};
+
+export type OperationsOrder = {
+  id: string;
+  status: string;
+  total_amount_minor: number;
+  currency: string;
+  created_at: string;
+  customer: OperationsOrderCustomer;
+  items: OperationsOrderItem[];
+};
+
 export type OperationsPricing = {
   mode: string;
   amount_minor: number | null;
@@ -192,6 +219,12 @@ export function updateQuoteNotes(
 export function getOperationsCustomers(): Promise<OperationsCustomer[]> {
   return getJson(
     "/api/operations/customers",
+  );
+}
+
+export function getOperationsOrders(): Promise<OperationsOrder[]> {
+  return getJson(
+    "/api/operations/orders",
   );
 }
 

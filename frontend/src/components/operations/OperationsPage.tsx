@@ -8,6 +8,7 @@ import {
 import {
   getOperationsCatalog,
   getOperationsCustomers,
+  getOperationsOrders,
   getOperationsQuotes,
   getOperationsSummary,
   updateProductInventory,
@@ -15,10 +16,30 @@ import {
   updateQuoteNotes,
   updateQuoteStatus,
   type OperationsCustomer,
+  type OperationsOrder,
   type OperationsProduct,
   type OperationsQuote,
   type OperationsSummary,
 } from "../../api/operations";
+
+import {
+  BrandLogo,
+} from "../brand/BrandLogo";
+import {
+  DeveloperFooterLogo,
+} from "../brand/DeveloperFooterLogo";
+import {
+  AppearanceToggle,
+} from "../theme/AppearanceToggle";
+
+import {
+  getInitialAppearance,
+  saveAppearance,
+  type AppearanceMode,
+} from "../../theme/appearance";
+import {
+  type LogoVariantId,
+} from "../../theme/branding";
 
 import {
   formatUsPhoneInput,
@@ -27,6 +48,9 @@ import {
 type OperationsPageProps = {
   roles: string[];
   onNavigate: (path: string) => void;
+  logoVariant: LogoVariantId;
+  developerControlsOpen: boolean;
+  onToggleDeveloperControls: () => void;
 };
 
 const OPERATIONS_ROLES = new Set([
@@ -121,6 +145,19 @@ function minorToDollars(amountMinor: number | null): string {
   return (amountMinor / 100).toFixed(2);
 }
 
+function formatMoney(
+  amountMinor: number,
+  currency: string,
+): string {
+  return new Intl.NumberFormat(
+    undefined,
+    {
+      style: "currency",
+      currency,
+    },
+  ).format(amountMinor / 100);
+}
+
 function replaceProduct(
   products: OperationsProduct[],
   replacement: OperationsProduct,
@@ -133,6 +170,9 @@ function replaceProduct(
 export function OperationsPage({
   roles,
   onNavigate,
+  logoVariant,
+  developerControlsOpen,
+  onToggleDeveloperControls,
 }: OperationsPageProps) {
   const authorized = useMemo(
     () => roles.some((role) => OPERATIONS_ROLES.has(role)),
@@ -144,6 +184,15 @@ export function OperationsPage({
     [roles],
   );
 
+  const [appearance, setAppearance] =
+    useState<AppearanceMode>(
+      getInitialAppearance,
+    );
+
+  useEffect(() => {
+    saveAppearance(appearance);
+  }, [appearance]);
+
   const [summary, setSummary] =
     useState<OperationsSummary | null>(null);
   const [quotes, setQuotes] =
@@ -151,6 +200,10 @@ export function OperationsPage({
   const [customers, setCustomers] =
     useState<OperationsCustomer[]>([]);
   const [customerSearch, setCustomerSearch] =
+    useState("");
+  const [orders, setOrders] =
+    useState<OperationsOrder[]>([]);
+  const [orderSearch, setOrderSearch] =
     useState("");
   const [products, setProducts] =
     useState<OperationsProduct[]>([]);
@@ -189,17 +242,20 @@ export function OperationsPage({
       getOperationsSummary(),
       getOperationsQuotes(),
       getOperationsCustomers(),
+      getOperationsOrders(),
       getOperationsCatalog(),
     ])
       .then(([
         summaryResult,
         quoteResult,
         customerResult,
+        orderResult,
         productResult,
       ]) => {
         setSummary(summaryResult);
         setQuotes(quoteResult);
         setCustomers(customerResult);
+        setOrders(orderResult);
         setProducts(productResult);
 
         const nextQuoteNotes: Record<string, string> = {};
@@ -282,6 +338,37 @@ export function OperationsPage({
   }, [
     customers,
     customerSearch,
+  ]);
+
+  const filteredOrders = useMemo(() => {
+    const query =
+      orderSearch.trim().toLowerCase();
+
+    if (query.length === 0) {
+      return orders;
+    }
+
+    return orders.filter((order) => {
+      const searchable = [
+        order.id,
+        order.status,
+        order.customer.email,
+        order.customer.first_name ?? "",
+        order.customer.last_name ?? "",
+        order.customer.phone ?? "",
+        ...order.items.flatMap((item) => [
+          item.sku,
+          item.name,
+        ]),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  }, [
+    orders,
+    orderSearch,
   ]);
 
   if (!authorized) {
@@ -642,14 +729,41 @@ export function OperationsPage({
   );
 
   return (
-    <main className="operations-shell">
-      <button
-        type="button"
-        className="text-button"
-        onClick={() => onNavigate("/")}
-      >
-        ← Customer site
-      </button>
+    <main
+      className="operations-shell"
+      data-appearance={appearance}
+    >
+      <header className="operations-brand-header">
+        <a
+          className="brand-logo-link"
+          href="#"
+          aria-label="D'Acqua Dolce operations"
+        >
+          <span className="brand-logo-frame">
+            <BrandLogo
+              variant={logoVariant}
+              className="brand-logo"
+            />
+          </span>
+        </a>
+
+        <div className="operations-header-actions">
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => onNavigate("/")}
+          >
+            ← Customer site
+          </button>
+
+          <AppearanceToggle
+            appearance={appearance}
+            onAppearanceChange={
+              setAppearance
+            }
+          />
+        </div>
+      </header>
 
       <header className="operations-heading">
         <p className="eyebrow">Operations</p>
@@ -1014,6 +1128,160 @@ export function OperationsPage({
       </section>
 
       <section
+        id="order-history"
+        className="operations-section"
+      >
+        <div className="operations-section-heading">
+          <p className="eyebrow">Order History</p>
+          <h2>Customer orders</h2>
+          <p>
+            Read-only order history tied to registered customer
+            accounts. Payment-provider details are not exposed.
+          </p>
+        </div>
+
+        <label
+          className={
+            "operations-field "
+            + "operations-customer-search"
+          }
+        >
+          <span>Search orders</span>
+          <input
+            type="search"
+            placeholder="Customer, email, order ID, SKU, status…"
+            value={orderSearch}
+            onChange={(event) => {
+              setOrderSearch(
+                event.target.value,
+              );
+            }}
+          />
+        </label>
+
+        {orders.length === 0 ? (
+          <p className="account-muted">
+            No customer orders recorded.
+          </p>
+        ) : filteredOrders.length === 0 ? (
+          <p className="account-muted">
+            No orders match this search.
+          </p>
+        ) : (
+          <div className="operations-customer-list">
+            {filteredOrders.map((order) => {
+              const customerName = [
+                order.customer.first_name,
+                order.customer.last_name,
+              ]
+                .filter(
+                  (value): value is string =>
+                    value !== null,
+                )
+                .join(" ");
+
+              return (
+                <article
+                  key={order.id}
+                  className="operations-customer"
+                >
+                  <header>
+                    <div>
+                      <p className="product-meta">
+                        Order · {order.status}
+                      </p>
+
+                      <h3>
+                        {customerName || order.customer.email}
+                      </h3>
+
+                      {customerName.length > 0 ? (
+                        <p>
+                          <a
+                            href={`mailto:${order.customer.email}`}
+                          >
+                            {order.customer.email}
+                          </a>
+                        </p>
+                      ) : null}
+
+                      {order.customer.phone !== null ? (
+                        <p>
+                          <a
+                            href={`tel:${order.customer.phone}`}
+                          >
+                            {formatUsPhoneInput(
+                              order.customer.phone,
+                            )}
+                          </a>
+                        </p>
+                      ) : null}
+
+                      <small>
+                        {new Date(
+                          order.created_at,
+                        ).toLocaleString()}
+                        {" · "}
+                        {order.id}
+                      </small>
+                    </div>
+                  </header>
+
+                  <div className="operations-address-list">
+                    {order.items.map((item, index) => (
+                      <div
+                        key={
+                          `${order.id}-${item.sku}-${index}`
+                        }
+                        className="operations-address"
+                      >
+                        <strong>
+                          {item.name}
+                        </strong>
+
+                        <address>
+                          {item.sku}
+                          <br />
+                          {item.quantity} × {formatMoney(
+                            item.unit_amount_minor,
+                            item.currency,
+                          )}
+                        </address>
+
+                        <small>
+                          Line total: {formatMoney(
+                            item.line_total_minor,
+                            item.currency,
+                          )}
+                        </small>
+                      </div>
+                    ))}
+
+                    <div className="operations-address">
+                      <strong>
+                        Order total
+                      </strong>
+
+                      <address>
+                        {formatMoney(
+                          order.total_amount_minor,
+                          order.currency,
+                        )}
+                      </address>
+
+                      <small>
+                        Read-only
+                      </small>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section
         id="catalog-governance"
         className="operations-section"
       >
@@ -1237,6 +1505,20 @@ export function OperationsPage({
           })}
         </div>
       </section>
+
+      <footer className="site-footer operations-footer">
+        <DeveloperFooterLogo
+          variant={logoVariant}
+          controlsOpen={developerControlsOpen}
+          onToggleControls={
+            onToggleDeveloperControls
+          }
+        />
+
+        <div className="operations-footer-label">
+          Operations Workspace
+        </div>
+      </footer>
     </main>
   );
 }

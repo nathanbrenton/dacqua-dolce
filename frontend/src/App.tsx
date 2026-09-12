@@ -21,6 +21,9 @@ import {
   BrandLogo,
 } from "./components/brand/BrandLogo";
 import {
+  DeveloperFooterLogo,
+} from "./components/brand/DeveloperFooterLogo";
+import {
   CatalogSection,
 } from "./components/catalog/CatalogSection";
 import {
@@ -157,10 +160,6 @@ export function App() {
     developerControlsOpen,
     setDeveloperControlsOpen,
   ] = useState(false);
-
-  const developerMode =
-    import.meta.env.VITE_DEVELOPER_MODE
-    === "true";
 
   const [path, setPath] =
     useState(
@@ -336,6 +335,15 @@ export function App() {
         <OperationsPage
           roles={account?.roles ?? []}
           onNavigate={navigate}
+          logoVariant={logoVariant}
+          developerControlsOpen={
+            developerControlsOpen
+          }
+          onToggleDeveloperControls={() => {
+            setDeveloperControlsOpen(
+              (current) => !current,
+            );
+          }}
         />
       ) : path === "/account" ? (
         <AccountPage
@@ -380,29 +388,10 @@ export function App() {
       ) : isHome ? (
         <main className="site-shell">
           <header className="site-header">
-            <button
-              type="button"
+            <a
               className="brand-logo-link"
-              aria-label={
-                developerMode
-                  ? "Toggle developer visual controls"
-                  : "D'Acqua Dolce home"
-              }
-              aria-expanded={
-                developerMode
-                  ? developerControlsOpen
-                  : undefined
-              }
-              onClick={() => {
-                if (developerMode) {
-                  setDeveloperControlsOpen(
-                    (current) => !current,
-                  );
-                  return;
-                }
-
-                navigate("/");
-              }}
+              href="#"
+              aria-label="D'Acqua Dolce home"
             >
               <span className="brand-logo-frame">
                 <BrandLogo
@@ -412,7 +401,7 @@ export function App() {
                   className="brand-logo"
                 />
               </span>
-            </button>
+            </a>
 
             <nav
               aria-label="Primary navigation"
@@ -584,13 +573,17 @@ export function App() {
           </section>
 
           <footer className="site-footer">
-            <div className="footer-brand-frame">
-              <BrandLogo
-                variant={logoVariant}
-                filtrationSystems
-                className="footer-logo"
-              />
-            </div>
+            <DeveloperFooterLogo
+              variant={logoVariant}
+              controlsOpen={
+                developerControlsOpen
+              }
+              onToggleControls={() => {
+                setDeveloperControlsOpen(
+                  (current) => !current,
+                );
+              }}
+            />
 
             <div className="development-status">
               <span

@@ -1493,6 +1493,7 @@ textarea:focus-visible {
     clamp(28px, 4vw, 58px)
     var(--shell-padding)
     clamp(90px, 12vw, 170px);
+  color: var(--ink);
   background: var(--surface-0);
 }
 
@@ -2087,6 +2088,223 @@ textarea:focus-visible {
 @media (max-width: 760px) {
   .operations-customer {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Shared appearance system — operations pilot */
+
+.operations-brand-header {
+  min-height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: clamp(38px, 6vw, 74px);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.operations-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.operations-header-actions .text-button {
+  min-height: 40px;
+  margin: 0;
+}
+
+.footer-logo-trigger {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.footer-logo-trigger:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.operations-footer {
+  margin-top: clamp(60px, 9vw, 120px);
+}
+
+.operations-footer-label {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.appearance-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 8px 6px 12px;
+  color: var(--ink-muted);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.appearance-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}
+
+.appearance-toggle-track {
+  position: relative;
+  display: block;
+  width: 38px;
+  height: 22px;
+  background: var(--hairline);
+  border-radius: 999px;
+  transition: background-color 160ms ease;
+}
+
+.appearance-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--surface-2);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+  transition:
+    left 160ms ease,
+    background-color 160ms ease;
+}
+
+.appearance-toggle[aria-pressed="true"]
+.appearance-toggle-track {
+  background: var(--accent);
+}
+
+.appearance-toggle[aria-pressed="true"]
+.appearance-toggle-thumb {
+  left: 19px;
+  background: var(--surface-0);
+}
+
+.operations-shell[data-appearance="light"] {
+  color-scheme: light;
+}
+
+.operations-shell[data-appearance="dark"] {
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+/*
+ * Each dark palette is a tonal counterpart to the selected
+ * visual theme. The appearance axis is intentionally separate
+ * from data-theme so it can later be promoted to the whole app.
+ */
+
+:root[data-theme="baseline"]
+.operations-shell[data-appearance="dark"] {
+  --surface-0: #101613;
+  --surface-1: #151d19;
+  --surface-2: #1b2521;
+  --ink: #eef3ef;
+  --ink-muted: #adb9b2;
+  --action: #d9e7df;
+  --action-text: #101613;
+  --hairline: #33423b;
+  --accent: #9fcab9;
+  --focus-ring: #72c7aa;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="quiet-mineral"]
+.operations-shell[data-appearance="dark"] {
+  --surface-0: #141410;
+  --surface-1: #1b1a16;
+  --surface-2: #23221c;
+  --ink: #f0eee6;
+  --ink-muted: #b7b2a4;
+  --action: #e3dfd4;
+  --action-text: #161611;
+  --hairline: #444138;
+  --accent: #c7c0ad;
+  --focus-ring: #a8dadd;
+  --control-highlight: #0a5960;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="lagoon-editorial"]
+.operations-shell[data-appearance="dark"] {
+  --surface-0: #06191b;
+  --surface-1: #0a2224;
+  --surface-2: #0f2a2d;
+  --ink: #e8f8f7;
+  --ink-muted: #a5c6c5;
+  --action: #b9e5e3;
+  --action-text: #062022;
+  --hairline: #285154;
+  --accent: #79d1d2;
+  --focus-ring: #79d1d2;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="culinary-atelier"]
+.operations-shell[data-appearance="dark"] {
+  --surface-0: #171411;
+  --surface-1: #201c17;
+  --surface-2: #28231d;
+  --ink: #f4efe7;
+  --ink-muted: #bdb3a6;
+  --action: #eadfd1;
+  --action-text: #1a1612;
+  --hairline: #4b4238;
+  --accent: #d88b7a;
+  --focus-ring: #e29a89;
+  --control-highlight: #7b2d1f;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="performance-precision"]
+.operations-shell[data-appearance="dark"] {
+  --surface-0: #0c1110;
+  --surface-1: #121817;
+  --surface-2: #18201e;
+  --ink: #eff4f1;
+  --ink-muted: #aeb9b3;
+  --action: #dfe8e3;
+  --action-text: #101513;
+  --hairline: #33403b;
+  --accent: #75c7ca;
+  --focus-ring: #75c7ca;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+@media (max-width: 720px) {
+  .operations-brand-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-top: 14px;
+    padding-bottom: 22px;
+  }
+
+  .operations-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .appearance-toggle {
+    flex: 0 0 auto;
   }
 }
 
