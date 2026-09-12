@@ -158,8 +158,6 @@ export function CatalogSection({
 
               <div className="product-card-body">
                 <p className="product-meta">
-                  {product.manufacturer}
-                  {" · "}
                   {product.category}
                 </p>
 

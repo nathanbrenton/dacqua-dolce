@@ -43,7 +43,6 @@ export type CatalogProduct = {
   sku: string;
   description: string;
   product_family: string | null;
-  manufacturer: string;
   category: string;
   public_path: string;
   primary_image: CatalogImage | null;

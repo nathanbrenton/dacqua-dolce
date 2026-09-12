@@ -116,6 +116,7 @@ export type OperationsProduct = {
   category: string;
   manufacturer: string;
   active: boolean;
+  online_sale_approved: boolean;
   pricing: OperationsPricing;
   inventory: OperationsInventory;
 };

@@ -257,8 +257,6 @@ export function ProductDetailPage({
 
           <div className="product-detail-copy">
             <p className="product-meta">
-              {product.manufacturer}
-              {" · "}
               {product.category}
             </p>
 

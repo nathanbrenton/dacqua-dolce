@@ -1618,6 +1618,16 @@ export function OperationsPage({
                   </p>
                   <h3>{product.name}</h3>
                   <code>{product.sku}</code>
+
+                  <p className="operations-note">
+                    Online sale:{" "}
+                    {product.online_sale_approved
+                      ? "approved"
+                      : (
+                          "blocked pending manufacturer/"
+                          + "component policy verification"
+                        )}
+                  </p>
                 </header>
 
                 <div className="operations-product-grid">
