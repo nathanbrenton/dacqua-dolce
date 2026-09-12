@@ -145,6 +145,13 @@ export function App() {
     >(null);
 
   const [
+    pendingAuthentication,
+    setPendingAuthentication,
+  ] = useState<
+    AuthenticationStatus | null
+  >(null);
+
+  const [
     accountReady,
     setAccountReady,
   ] = useState(false);
@@ -203,12 +210,52 @@ export function App() {
   useEffect(() => {
     void getCurrentAccount()
       .then((currentAccount) => {
-        setAccount(
-          currentAccount,
+        if (
+          currentAccount
+          === null
+        ) {
+          setAccount(null);
+          setPendingAuthentication(
+            null,
+          );
+          return;
+        }
+
+        if (
+          currentAccount.authenticated
+        ) {
+          setAccount(
+            currentAccount,
+          );
+          setPendingAuthentication(
+            null,
+          );
+          return;
+        }
+
+        if (
+          currentAccount.mfa_required
+          || currentAccount
+            .mfa_enrollment_required
+        ) {
+          setAccount(null);
+          setPendingAuthentication(
+            currentAccount,
+          );
+          setAuthDialogOpen(true);
+          return;
+        }
+
+        setAccount(null);
+        setPendingAuthentication(
+          null,
         );
       })
       .catch(() => {
         setAccount(null);
+        setPendingAuthentication(
+          null,
+        );
       })
       .finally(() => {
         setAccountReady(true);
@@ -263,7 +310,22 @@ export function App() {
       await logoutAccount();
     } finally {
       setAccount(null);
+      setPendingAuthentication(
+        null,
+      );
       navigate("/");
+    }
+  }
+
+  async function cancelPendingAuthentication() {
+    try {
+      await logoutAccount();
+    } finally {
+      setPendingAuthentication(
+        null,
+      );
+      setAccount(null);
+      setAuthDialogOpen(false);
     }
   }
 
@@ -298,6 +360,9 @@ export function App() {
 
       <AuthDialog
         open={authDialogOpen}
+        pendingAuthentication={
+          pendingAuthentication
+        }
         onClose={() => {
           setAuthDialogOpen(
             false,
@@ -309,7 +374,22 @@ export function App() {
           setAccount(
             authenticatedAccount,
           );
+          setPendingAuthentication(
+            null,
+          );
           setAccountReady(true);
+        }}
+        onAuthenticationPending={(
+          pendingAccount,
+        ) => {
+          setAccount(null);
+          setPendingAuthentication(
+            pendingAccount,
+          );
+          setAccountReady(true);
+        }}
+        onCancelPendingAuthentication={() => {
+          void cancelPendingAuthentication();
         }}
         onForgotPassword={() => {
           navigate(
@@ -360,11 +440,18 @@ export function App() {
         />
       ) : path === "/account" ? (
         <AccountPage
-          authenticated={
-            account !== null
-          }
+          account={account}
           onNavigate={navigate}
           onRequestSignIn={() => {
+            setAuthDialogOpen(true);
+          }}
+          onMfaReconfigurationStarted={(
+            pendingAccount,
+          ) => {
+            setAccount(null);
+            setPendingAuthentication(
+              pendingAccount,
+            );
             setAuthDialogOpen(true);
           }}
         />

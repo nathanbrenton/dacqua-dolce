@@ -58,6 +58,13 @@ class MfaVerificationRequest(BaseModel):
     )
 
 
+class MfaReconfigurationRequest(BaseModel):
+    password: str = Field(
+        min_length=1,
+        max_length=256,
+    )
+
+
 class UserSessionRead(BaseModel):
     id: str
     created_at: str

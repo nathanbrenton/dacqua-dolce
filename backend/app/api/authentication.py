@@ -37,6 +37,7 @@ from app.schemas.authentication import (
     AuthenticationStatus,
     LoginRequest,
     MfaEnrollmentResponse,
+    MfaReconfigurationRequest,
     MfaVerificationRequest,
     SessionListResponse,
     UserSessionRead,
@@ -60,7 +61,10 @@ from app.services.mfa import (
     user_requires_mfa,
     verify_totp,
 )
-from app.services.passwords import hash_password
+from app.services.passwords import (
+    hash_password,
+    verify_password,
+)
 from app.services.sessions import (
     build_session,
     generate_session_token,
@@ -451,6 +455,190 @@ def login(
         db,
         user=user,
         session_record=session_record,
+    )
+
+
+@router.post(
+    "/mfa/reconfigure",
+    response_model=AuthenticationStatus,
+)
+def reconfigure_mfa(
+    payload: MfaReconfigurationRequest,
+    request: Request,
+    db: DatabaseSession,
+    settings: SettingsDependency,
+    current_session: CurrentSession,
+    current_user: CurrentUser,
+) -> AuthenticationStatus:
+    if not user_requires_mfa(
+        current_user
+    ):
+        raise HTTPException(
+            status_code=(
+                status.HTTP_403_FORBIDDEN
+            ),
+            detail=(
+                "MFA is not required "
+                "for this account."
+            ),
+        )
+
+    ip = request_ip(request) or "unknown"
+
+    account_key = (
+        AuthenticationRateLimiter.email_key(
+            current_user.email
+        )
+    )
+
+    rate_limit_or_reject(
+        limiter=mfa_ip_limiter,
+        key=f"mfa-reconfigure-ip:{ip}",
+    )
+
+    rate_limit_or_reject(
+        limiter=mfa_account_limiter,
+        key=(
+            "mfa-reconfigure-account:"
+            + account_key
+        ),
+    )
+
+    credential = current_user.credential
+
+    if (
+        credential is None
+        or not verify_password(
+            payload.password,
+            credential.password_hash,
+        )
+    ):
+        record_audit_event(
+            db,
+            action=(
+                "authentication."
+                "mfa_reconfiguration_failed"
+            ),
+            entity_type="user",
+            entity_id=str(current_user.id),
+            actor_user_id=current_user.id,
+            ip_address=request_ip(request),
+            user_agent=bounded_user_agent(
+                request,
+                settings,
+            ),
+        )
+
+        db.commit()
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_401_UNAUTHORIZED
+            ),
+            detail=(
+                "Current password "
+                "is incorrect."
+            ),
+        )
+
+    profile = db.get(
+        UserMfa,
+        current_user.id,
+    )
+
+    if (
+        profile is None
+        or profile.enabled_at is None
+    ):
+        raise HTTPException(
+            status_code=(
+                status.HTTP_409_CONFLICT
+            ),
+            detail=(
+                "MFA is not currently enrolled."
+            ),
+        )
+
+    # Immediately rotate away from the old secret before
+    # returning the account to enrollment state. The next
+    # /mfa/enroll call will replace this temporary secret.
+    try:
+        profile.totp_secret_ciphertext = (
+            encrypt_totp_secret(
+                generate_totp_secret(),
+                settings,
+            )
+        )
+    except MfaConfigurationError as exc:
+        raise HTTPException(
+            status_code=(
+                status.HTTP_503_SERVICE_UNAVAILABLE
+            ),
+            detail="MFA is not configured.",
+        ) from exc
+
+    profile.enabled_at = None
+
+    existing_codes = db.scalars(
+        select(
+            UserMfaRecoveryCode
+        ).where(
+            UserMfaRecoveryCode.user_id
+            == current_user.id
+        )
+    ).all()
+
+    for recovery_code in existing_codes:
+        db.delete(recovery_code)
+
+    now = datetime.now(UTC)
+
+    other_sessions = db.scalars(
+        select(
+            UserSession
+        ).where(
+            UserSession.user_id
+            == current_user.id,
+            UserSession.id
+            != current_session.id,
+            UserSession.revoked_at.is_(
+                None
+            ),
+        )
+    ).all()
+
+    for session_record in other_sessions:
+        session_record.revoked_at = now
+
+    current_session.mfa_verified_at = None
+
+    record_audit_event(
+        db,
+        action=(
+            "authentication."
+            "mfa_reconfiguration_started"
+        ),
+        entity_type="user",
+        entity_id=str(current_user.id),
+        actor_user_id=current_user.id,
+        ip_address=request_ip(request),
+        user_agent=bounded_user_agent(
+            request,
+            settings,
+        ),
+    )
+
+    mfa_account_limiter.clear(
+        "mfa-reconfigure-account:"
+        + account_key
+    )
+
+    db.commit()
+
+    return authentication_status(
+        db,
+        user=current_user,
+        session_record=current_session,
     )
 
 

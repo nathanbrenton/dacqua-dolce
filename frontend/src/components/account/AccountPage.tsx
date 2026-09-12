@@ -13,6 +13,10 @@ import {
   type CustomerProfile,
 } from "../../api/account";
 import {
+  reconfigureMfa,
+  type AuthenticationStatus,
+} from "../../api/authentication";
+import {
   getCart,
   removeCartItem,
   type Cart,
@@ -29,7 +33,10 @@ import {
 type AccountPageProps = {
   onNavigate: (path: string) => void;
   onRequestSignIn: () => void;
-  authenticated: boolean;
+  account: AuthenticationStatus | null;
+  onMfaReconfigurationStarted: (
+    account: AuthenticationStatus,
+  ) => void;
 };
 
 const EMPTY_ADDRESS: AddressCreate = {
@@ -57,11 +64,185 @@ function money(
   ).format(amountMinor / 100);
 }
 
+
+const PRIVILEGED_MFA_ROLES = new Set([
+  "manager",
+  "administrator",
+  "developer",
+]);
+
+function hasPrivilegedMfaRole(
+  account: AuthenticationStatus,
+): boolean {
+  return account.roles.some((role) =>
+    PRIVILEGED_MFA_ROLES.has(role),
+  );
+}
+
+type SecurityPanelProps = {
+  account: AuthenticationStatus;
+  onMfaReconfigurationStarted: (
+    account: AuthenticationStatus,
+  ) => void;
+};
+
+function SecurityPanel({
+  account,
+  onMfaReconfigurationStarted,
+}: SecurityPanelProps) {
+  const [password, setPassword] =
+    useState("");
+
+  const [reconfiguring, setReconfiguring] =
+    useState(false);
+
+  const [securityError, setSecurityError] =
+    useState<string | null>(null);
+
+  const privileged =
+    hasPrivilegedMfaRole(account);
+
+  async function replaceAuthenticator(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    setSecurityError(null);
+    setReconfiguring(true);
+
+    try {
+      const pendingAccount =
+        await reconfigureMfa(
+          password,
+        );
+
+      setPassword("");
+
+      onMfaReconfigurationStarted(
+        pendingAccount,
+      );
+    } catch (caught) {
+      setSecurityError(
+        caught instanceof Error
+          ? caught.message
+          : (
+              "Unable to replace "
+              + "authenticator."
+            ),
+      );
+    } finally {
+      setReconfiguring(false);
+    }
+  }
+
+  return (
+    <section className="account-panel">
+      <h2>Security</h2>
+
+      <div className="account-security-status">
+        <strong>Authenticator MFA</strong>
+
+        <span>
+          {privileged
+            ? "Enabled"
+            : "Not required for this role"}
+        </span>
+      </div>
+
+      {privileged ? (
+        <>
+          <p className="account-muted">
+            Authenticator MFA protects
+            privileged Operations access.
+          </p>
+
+          <details
+            className="account-security-replace"
+          >
+            <summary>
+              Replace authenticator
+            </summary>
+
+            <p className="account-muted">
+              Replacing the authenticator
+              immediately invalidates the
+              existing setup and recovery
+              codes, signs out other
+              sessions, and requires a
+              new enrollment.
+            </p>
+
+            <form
+              className="account-form"
+              onSubmit={(event) => {
+                void replaceAuthenticator(
+                  event,
+                );
+              }}
+            >
+              <label>
+                <span>
+                  Current password
+                </span>
+
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  maxLength={256}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(
+                      event.target.value,
+                    );
+                  }}
+                />
+              </label>
+
+              {securityError !== null ? (
+                <p
+                  className="account-error-inline"
+                  role="alert"
+                >
+                  {securityError}
+                </p>
+              ) : null}
+
+              <button
+                type="submit"
+                className="account-action"
+                disabled={reconfiguring}
+              >
+                {reconfiguring
+                  ? "Replacing..."
+                  : "Replace Authenticator"}
+              </button>
+            </form>
+          </details>
+        </>
+      ) : (
+        <p className="account-muted">
+          No additional MFA setup is
+          required for this account role.
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function AccountPage({
   onNavigate,
   onRequestSignIn,
-  authenticated,
+  account,
+  onMfaReconfigurationStarted,
 }: AccountPageProps) {
+  const authenticated =
+    account?.authenticated ?? false;
+
+  const isCustomer =
+    account?.roles.includes(
+      "customer",
+    ) ?? false;
   const [profile, setProfile] =
     useState<CustomerProfile | null>(null);
   const [cart, setCart] =
@@ -78,7 +259,10 @@ export function AccountPage({
     );
 
   useEffect(() => {
-    if (!authenticated) {
+    if (
+      !authenticated
+      || !isCustomer
+    ) {
       return;
     }
 
@@ -106,9 +290,15 @@ export function AccountPage({
             : "Account unavailable.",
         );
       });
-  }, [authenticated]);
+  }, [
+    authenticated,
+    isCustomer,
+  ]);
 
-  if (!authenticated) {
+  if (
+    account === null
+    || !authenticated
+  ) {
     return (
       <main className="account-shell">
         <button
@@ -136,6 +326,41 @@ export function AccountPage({
             Sign In
           </button>
         </section>
+      </main>
+    );
+  }
+
+  if (!isCustomer) {
+    return (
+      <main className="account-shell">
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => {
+            onNavigate("/");
+          }}
+        >
+          ← Home
+        </button>
+
+        <header className="account-heading">
+          <p className="eyebrow">
+            Account
+          </p>
+
+          <h1>Account &amp; security.</h1>
+
+          <p>{account.email}</p>
+        </header>
+
+        <div className="account-grid">
+          <SecurityPanel
+            account={account}
+            onMfaReconfigurationStarted={
+              onMfaReconfigurationStarted
+            }
+          />
+        </div>
       </main>
     );
   }
@@ -247,12 +472,12 @@ export function AccountPage({
 
       <header className="account-heading">
         <p className="eyebrow">
-          Customer Account
+          Account
         </p>
 
         <h1>Your water, organized.</h1>
 
-        <p>{profile.email}</p>
+        <p>{account.email}</p>
       </header>
 
       {error !== null ? (
@@ -265,6 +490,17 @@ export function AccountPage({
       ) : null}
 
       <div className="account-grid">
+        {hasPrivilegedMfaRole(
+          account,
+        ) ? (
+          <SecurityPanel
+            account={account}
+            onMfaReconfigurationStarted={
+              onMfaReconfigurationStarted
+            }
+          />
+        ) : null}
+
         <section className="account-panel">
           <h2>Profile</h2>
 

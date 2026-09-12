@@ -2,6 +2,14 @@ export type AuthenticationStatus = {
   authenticated: boolean;
   email: string | null;
   roles: string[];
+  mfa_required: boolean;
+  mfa_enrollment_required: boolean;
+};
+
+export type MfaEnrollmentResponse = {
+  secret: string;
+  provisioning_uri: string;
+  recovery_codes: string[];
 };
 
 type AuthenticationPayload = {
@@ -112,6 +120,89 @@ export async function logoutAccount(): Promise<void> {
   if (!response.ok) {
     throw new Error(await readError(response));
   }
+}
+
+export async function enrollMfa(): Promise<MfaEnrollmentResponse> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/mfa/enroll",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "X-CSRF-Token": csrfToken,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  return response.json() as Promise<MfaEnrollmentResponse>;
+}
+
+export async function reconfigureMfa(
+  password: string,
+): Promise<AuthenticationStatus> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/mfa/reconfigure",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({
+        password,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  return response.json() as Promise<AuthenticationStatus>;
+}
+
+
+export async function verifyMfa(
+  code: string,
+): Promise<AuthenticationStatus> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/mfa/verify",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ code }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  return response.json() as Promise<AuthenticationStatus>;
 }
 
 

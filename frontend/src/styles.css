@@ -1294,6 +1294,42 @@ textarea:focus-visible {
   border-radius: var(--button-radius);
 }
 
+.account-security-status {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.account-security-status span {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.account-security-replace {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+.account-security-replace summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.account-security-replace .account-form {
+  margin-top: 20px;
+}
+
+.account-error-inline {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .address-form {
   margin-top: 30px;
   padding-top: 26px;
@@ -1385,6 +1421,123 @@ textarea:focus-visible {
     justify-items: start;
   }
 }
+
+/* v0.8 — privileged MFA */
+
+.auth-mfa-panel {
+  display: grid;
+  gap: 22px;
+  padding: 26px 30px 14px;
+}
+
+.auth-mfa-step {
+  display: grid;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+.auth-mfa-label {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.auth-mfa-qr {
+  display: grid;
+  place-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 4px auto;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+}
+
+.auth-mfa-qr svg {
+  display: block;
+  width: min(220px, 64vw);
+  height: auto;
+}
+
+.auth-mfa-manual {
+  color: var(--ink);
+}
+
+.auth-mfa-manual summary {
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.auth-mfa-manual[open] {
+  display: grid;
+  gap: 10px;
+}
+
+
+.auth-mfa-secret {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 14px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  user-select: all;
+}
+
+.auth-recovery-codes {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.auth-recovery-codes code {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  user-select: all;
+}
+
+.auth-mfa-form {
+  display: grid;
+  gap: 18px;
+}
+
+.auth-mfa-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.auth-mfa-form input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 12px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+@media (max-width: 520px) {
+  .auth-recovery-codes {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 /* v0.7 — account recovery + contact email */
 

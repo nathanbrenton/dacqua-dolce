@@ -331,6 +331,132 @@ def test_privileged_login_requires_mfa_enrollment() -> None:
 
         assert used is not None
 
+    old_unused_recovery_code = (
+        enrollment_payload[
+            "recovery_codes"
+        ][1]
+    )
+
+    wrong_password = client.post(
+        "/api/auth/mfa/reconfigure",
+        json={
+            "password": "definitely-wrong",
+        },
+        headers={
+            "X-CSRF-Token": csrf(
+                client
+            ),
+        },
+    )
+
+    assert wrong_password.status_code == 401
+
+    reconfigure = client.post(
+        "/api/auth/mfa/reconfigure",
+        json={
+            "password": password,
+        },
+        headers={
+            "X-CSRF-Token": csrf(
+                client
+            ),
+        },
+    )
+
+    assert reconfigure.status_code == 200
+
+    reconfigure_payload = (
+        reconfigure.json()
+    )
+
+    assert (
+        reconfigure_payload[
+            "authenticated"
+        ]
+        is False
+    )
+    assert (
+        reconfigure_payload[
+            "mfa_enrollment_required"
+        ]
+        is True
+    )
+
+    old_recovery_attempt = client.post(
+        "/api/auth/mfa/verify",
+        json={
+            "code": (
+                old_unused_recovery_code
+            ),
+        },
+        headers={
+            "X-CSRF-Token": csrf(
+                client
+            ),
+        },
+    )
+
+    assert (
+        old_recovery_attempt.status_code
+        == 401
+    )
+
+    replacement_enrollment = (
+        client.post(
+            "/api/auth/mfa/enroll",
+            headers={
+                "X-CSRF-Token": csrf(
+                    client
+                ),
+            },
+        )
+    )
+
+    assert (
+        replacement_enrollment.status_code
+        == 200
+    )
+
+    replacement_payload = (
+        replacement_enrollment.json()
+    )
+
+    replacement_verify = client.post(
+        "/api/auth/mfa/verify",
+        json={
+            "code": totp_code(
+                replacement_payload[
+                    "secret"
+                ],
+                period_seconds=(
+                    settings
+                    .mfa_totp_period_seconds
+                ),
+                digits=(
+                    settings
+                    .mfa_totp_digits
+                ),
+            ),
+        },
+        headers={
+            "X-CSRF-Token": csrf(
+                client
+            ),
+        },
+    )
+
+    assert (
+        replacement_verify.status_code
+        == 200
+    )
+    assert (
+        replacement_verify.json()[
+            "authenticated"
+        ]
+        is True
+    )
+
+    with SessionLocal() as db:
         user = db.get(
             User,
             user_id,
