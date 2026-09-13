@@ -102,6 +102,19 @@ def get_current_user(
     user = current_session.user
 
     if (
+        settings.is_production
+        and user.email_verified_at is None
+    ):
+        raise HTTPException(
+            status_code=(
+                status.HTTP_403_FORBIDDEN
+            ),
+            detail=(
+                "Email verification required."
+            ),
+        )
+
+    if (
         user_requires_mfa(user)
         and current_session.mfa_verified_at
         is None

@@ -41,8 +41,21 @@ class AuthenticationStatus(BaseModel):
     authenticated: bool
     email: str | None = None
     roles: list[str] = Field(default_factory=list)
+    email_verified: bool = False
+    email_verification_required: bool = False
     mfa_required: bool = False
     mfa_enrollment_required: bool = False
+
+
+class EmailVerificationCompleteRequest(BaseModel):
+    token: str = Field(
+        min_length=32,
+        max_length=256,
+    )
+
+
+class EmailVerificationResponse(BaseModel):
+    message: str
 
 
 class MfaEnrollmentResponse(BaseModel):

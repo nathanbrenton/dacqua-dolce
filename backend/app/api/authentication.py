@@ -18,6 +18,9 @@ from app.api.dependencies.auth import (
     CurrentUser,
 )
 from app.core.config import Settings, get_settings
+from app.core.email_config import (
+    get_email_runtime_settings,
+)
 from app.core.privacy import privacy_safe_identifier
 from app.core.security import (
     clear_csrf_cookie,
@@ -35,6 +38,8 @@ from app.models.identity import (
 from app.schemas.authentication import (
     AccountRegistrationRequest,
     AuthenticationStatus,
+    EmailVerificationCompleteRequest,
+    EmailVerificationResponse,
     LoginRequest,
     MfaEnrollmentResponse,
     MfaReconfigurationRequest,
@@ -49,6 +54,11 @@ from app.services.auth_rate_limit import (
 from app.services.authentication import (
     attach_password,
     authenticate_user,
+)
+from app.services.email_verification import (
+    GENERIC_VERIFICATION_MESSAGE,
+    complete_email_verification,
+    issue_email_verification,
 )
 from app.services.mfa import (
     MfaConfigurationError,
@@ -110,6 +120,24 @@ mfa_ip_limiter = AuthenticationRateLimiter(
     max_attempts=(
         settings_snapshot.mfa_rate_limit_ip_attempts
     ),
+)
+
+email_verification_ip_limiter = AuthenticationRateLimiter(
+    window_seconds=(
+        settings_snapshot
+        .auth_rate_limit_window_seconds
+    ),
+    max_attempts=10,
+)
+
+email_verification_account_limiter = (
+    AuthenticationRateLimiter(
+        window_seconds=(
+            settings_snapshot
+            .auth_rate_limit_window_seconds
+        ),
+        max_attempts=5,
+    )
 )
 
 mfa_account_limiter = AuthenticationRateLimiter(
@@ -192,7 +220,24 @@ def authentication_status(
     *,
     user: User,
     session_record: UserSession,
+    settings: Settings,
 ) -> AuthenticationStatus:
+    email_verified = (
+        user.email_verified_at is not None
+    )
+
+    if (
+        settings.is_production
+        and not email_verified
+    ):
+        return AuthenticationStatus(
+            authenticated=False,
+            email=user.email,
+            roles=[],
+            email_verified=False,
+            email_verification_required=True,
+        )
+
     if (
         user_requires_mfa(user)
         and session_record.mfa_verified_at
@@ -213,6 +258,7 @@ def authentication_status(
             authenticated=False,
             email=user.email,
             roles=[],
+            email_verified=email_verified,
             mfa_required=enabled,
             mfa_enrollment_required=(
                 not enabled
@@ -222,6 +268,7 @@ def authentication_status(
     return AuthenticationStatus(
         authenticated=True,
         email=user.email,
+        email_verified=email_verified,
         roles=[
             assignment.role.value
             for assignment in user.roles
@@ -296,6 +343,23 @@ def register_account(
         )
     )
 
+    issue_email_verification(
+        db,
+        user=user,
+        settings=(
+            get_email_runtime_settings()
+        ),
+        requested_ip_address=(
+            request_ip(request)
+        ),
+        requested_user_agent=(
+            bounded_user_agent(
+                request,
+                settings,
+            )
+        ),
+    )
+
     record_audit_event(
         db,
         action="account.registered",
@@ -323,9 +387,19 @@ def register_account(
     )
 
     return AuthenticationStatus(
-        authenticated=True,
+        authenticated=(
+            not settings.is_production
+        ),
         email=user.email,
-        roles=[RoleName.customer.value],
+        roles=(
+            [RoleName.customer.value]
+            if not settings.is_production
+            else []
+        ),
+        email_verified=False,
+        email_verification_required=(
+            settings.is_production
+        ),
     )
 
 
@@ -455,6 +529,123 @@ def login(
         db,
         user=user,
         session_record=session_record,
+        settings=settings,
+    )
+
+
+@router.post(
+    "/email-verification/request",
+    response_model=EmailVerificationResponse,
+)
+def request_email_verification(
+    request: Request,
+    db: DatabaseSession,
+    settings: SettingsDependency,
+    current_session: CurrentSession,
+) -> EmailVerificationResponse:
+    user = current_session.user
+
+    ip = request_ip(request) or "unknown"
+
+    account_key = (
+        AuthenticationRateLimiter.email_key(
+            user.email
+        )
+    )
+
+    rate_limit_or_reject(
+        limiter=email_verification_ip_limiter,
+        key=(
+            "email-verification-ip:"
+            + ip
+        ),
+    )
+
+    rate_limit_or_reject(
+        limiter=(
+            email_verification_account_limiter
+        ),
+        key=(
+            "email-verification-account:"
+            + account_key
+        ),
+    )
+
+    issue_email_verification(
+        db,
+        user=user,
+        settings=(
+            get_email_runtime_settings()
+        ),
+        requested_ip_address=(
+            request_ip(request)
+        ),
+        requested_user_agent=(
+            bounded_user_agent(
+                request,
+                settings,
+            )
+        ),
+    )
+
+    db.commit()
+
+    return EmailVerificationResponse(
+        message=GENERIC_VERIFICATION_MESSAGE,
+    )
+
+
+@router.post(
+    "/email-verification/complete",
+    response_model=EmailVerificationResponse,
+)
+def verify_email_address(
+    payload: EmailVerificationCompleteRequest,
+    request: Request,
+    db: DatabaseSession,
+    settings: SettingsDependency,
+) -> EmailVerificationResponse:
+    ip = request_ip(request) or "unknown"
+
+    rate_limit_or_reject(
+        limiter=email_verification_ip_limiter,
+        key=(
+            "email-verification-complete:"
+            + ip
+        ),
+    )
+
+    completed = complete_email_verification(
+        db,
+        raw_token=payload.token,
+        request_ip_address=(
+            request_ip(request)
+        ),
+        request_user_agent=(
+            bounded_user_agent(
+                request,
+                settings,
+            )
+        ),
+    )
+
+    if not completed:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=(
+                status.HTTP_400_BAD_REQUEST
+            ),
+            detail=(
+                "This email verification "
+                "link is invalid or has expired."
+            ),
+        )
+
+    db.commit()
+
+    return EmailVerificationResponse(
+        message="Email address verified.",
     )
 
 
@@ -639,6 +830,7 @@ def reconfigure_mfa(
         db,
         user=current_user,
         session_record=current_session,
+        settings=settings,
     )
 
 
@@ -952,6 +1144,7 @@ def verify_mfa(
         db,
         user=user,
         session_record=current_session,
+        settings=settings,
     )
 
 
@@ -1010,12 +1203,14 @@ def logout(
 )
 def current_account(
     db: DatabaseSession,
+    settings: SettingsDependency,
     current_session: CurrentSession,
 ) -> AuthenticationStatus:
     return authentication_status(
         db,
         user=current_session.user,
         session_record=current_session,
+        settings=settings,
     )
 
 

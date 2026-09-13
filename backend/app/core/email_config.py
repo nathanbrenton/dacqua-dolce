@@ -39,6 +39,12 @@ class EmailRuntimeSettings(BaseSettings):
         le=120,
     )
 
+    email_verification_ttl_minutes: int = Field(
+        default=24 * 60,
+        ge=15,
+        le=7 * 24 * 60,
+    )
+
     @field_validator("public_origin")
     @classmethod
     def validate_public_origin(
