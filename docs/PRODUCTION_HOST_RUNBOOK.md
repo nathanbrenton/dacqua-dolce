@@ -126,3 +126,76 @@ See:
     docs/PYTHON_DEPENDENCY_POLICY.md
     docs/PRODUCTION_DEPLOYMENT_FOUNDATION.md
 
+
+
+## 12. Configure the production environment
+
+Install the repository template:
+
+    install       -o root       -g dacqua       -m 0640       infra/production/backend.env.example       /etc/dacqua-dolce/backend.env
+
+Replace every `REPLACE_*` value in the installed copy.
+
+Never commit the populated production environment file.
+
+Keep:
+
+    DACQUA_EMAIL_PROVIDER=disabled
+
+until Postmark and its DNS records are ready for live acceptance testing.
+
+## 13. Enable the HTTP-only ACME site
+
+After the canonical hostname resolves to the production host:
+
+    sudo scripts/production/install_nginx_site.sh       http       YOUR_CANONICAL_HOSTNAME
+
+This stage exposes only the Let's Encrypt ACME challenge path.
+The application itself is not served over plaintext HTTP.
+
+## 14. Issue the TLS certificate
+
+    sudo certbot certonly       --webroot       --webroot-path /var/www/letsencrypt       --domain YOUR_CANONICAL_HOSTNAME
+
+Do not enable the HTTPS template until certificate issuance succeeds.
+
+## 15. Enable the HTTPS application edge
+
+    sudo scripts/production/install_nginx_site.sh       https       YOUR_CANONICAL_HOSTNAME
+
+The HTTPS edge:
+
+- serves the React production build;
+- proxies `/api/` and `/health` to loopback Uvicorn;
+- keeps `/readiness` inaccessible publicly;
+- independently blocks Swagger/OpenAPI routes;
+- redirects ordinary HTTP requests to HTTPS.
+
+## 16. Install the systemd units
+
+Install the units under:
+
+    infra/production/systemd/
+
+The API remains bound only to:
+
+    127.0.0.1:8000
+
+The local systemd readiness check continues to use:
+
+    http://127.0.0.1:8000/readiness
+
+Do not route that endpoint through the public Nginx edge.
+
+## 17. Deploy and verify
+
+Deploy with:
+
+    scripts/production/deploy_release.sh       /path/to/release-source
+
+From a separate machine, verify the public edge:
+
+    scripts/production/verify_release.sh       https://YOUR_CANONICAL_HOSTNAME
+
+Resolve every release-verification failure before enabling Postmark or
+inviting production users.

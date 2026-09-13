@@ -26,11 +26,14 @@ apt-get update
 
 apt-get install -y \
   ca-certificates \
+  certbot \
   curl \
   fail2ban \
   git \
   nginx \
   nftables \
+  nodejs \
+  npm \
   postgresql-17 \
   postgresql-client-17 \
   python3 \
@@ -81,6 +84,30 @@ systemctl enable --now \
 systemctl enable unattended-upgrades.service \
   >/dev/null 2>&1 \
   || true
+
+if ! node -e '
+const [major, minor] = process.versions.node
+  .split(".")
+  .map(Number);
+
+const supported =
+  (major === 20 && minor >= 19)
+  || (major === 22 && minor >= 12)
+  || major > 22;
+
+if (!supported) {
+  process.exit(1);
+}
+'; then
+  echo "ERROR: Node.js must satisfy:"
+  echo "       ^20.19.0 || >=22.12.0"
+  exit 1
+fi
+
+echo
+echo "Node.js: $(node --version)"
+echo "npm:     $(npm --version)"
+echo "Certbot: $(certbot --version)"
 
 echo
 echo "Bootstrap complete."

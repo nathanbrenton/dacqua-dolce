@@ -1,9 +1,8 @@
-[DEFAULT]
-bantime = 1h
-findtime = 10m
-maxretry = 5
-backend = systemd
-
 [sshd]
 enabled = true
+backend = systemd
 port = ssh
+
+findtime = 10m
+maxretry = 4
+bantime = 1h

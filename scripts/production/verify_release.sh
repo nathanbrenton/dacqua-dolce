@@ -10,36 +10,54 @@ fi
 
 ORIGIN="${ORIGIN%/}"
 
+check_status() {
+  local path="$1"
+  local expected="$2"
+  local actual
+
+  actual="$(
+    curl       --silent       --show-error       --max-time 10       --output /dev/null       --write-out '%{http_code}'       "${ORIGIN}${path}"
+  )"
+
+  if [ "${actual}" != "${expected}" ]; then
+    echo "FAIL: ${path}"
+    echo "      expected HTTP ${expected}, got ${actual}"
+    exit 1
+  fi
+
+  echo "PASS: ${path} -> ${actual}"
+}
+
 echo "===== PUBLIC HTTPS ====="
-curl \
-  --fail \
-  --silent \
-  --show-error \
-  --max-time 10 \
-  "${ORIGIN}/" \
-  >/dev/null
 
-echo "PASS: homepage"
+check_status "/" "200"
+check_status "/account" "200"
+check_status "/health" "200"
 
-curl \
-  --fail \
-  --silent \
-  --show-error \
-  --max-time 10 \
-  "${ORIGIN}/health" \
-  >/dev/null
+echo
+echo "===== NON-PUBLIC ROUTES ====="
 
-echo "PASS: health"
+check_status "/readiness" "404"
+check_status "/api/docs" "404"
+check_status "/openapi.json" "404"
 
-curl \
-  --fail \
-  --silent \
-  --show-error \
-  --max-time 10 \
-  "${ORIGIN}/readiness" \
-  >/dev/null
+echo
+echo "===== HTTPS SECURITY HEADERS ====="
 
-echo "PASS: readiness"
+HEADERS="$(
+  curl     --silent     --show-error     --max-time 10     --dump-header -     --output /dev/null     "${ORIGIN}/"
+)"
+
+for header in   Strict-Transport-Security   Content-Security-Policy   Permissions-Policy   X-Content-Type-Options   X-Frame-Options   Referrer-Policy
+do
+  if printf '%s
+' "${HEADERS}"     | grep -Eiq "^${header}:"; then
+    echo "PASS: ${header}"
+  else
+    echo "FAIL: missing ${header}"
+    exit 1
+  fi
+done
 
 echo
 echo "Production smoke test passed."

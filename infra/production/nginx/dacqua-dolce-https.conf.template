@@ -1,0 +1,122 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name __SERVER_NAME__;
+    server_tokens off;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 301 https://__SERVER_NAME__$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name __SERVER_NAME__;
+    server_tokens off;
+
+    root /srv/dacqua-dolce/current/frontend/dist;
+    index index.html;
+
+    ssl_certificate /etc/letsencrypt/live/__SERVER_NAME__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__SERVER_NAME__/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:DACQUA_SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    client_max_body_size 2m;
+
+    add_header Strict-Transport-Security
+        "max-age=31536000"
+        always;
+
+    add_header X-Content-Type-Options
+        "nosniff"
+        always;
+
+    add_header X-Frame-Options
+        "DENY"
+        always;
+
+    add_header Referrer-Policy
+        "no-referrer"
+        always;
+
+    add_header X-Permitted-Cross-Domain-Policies
+        "none"
+        always;
+
+    add_header X-DNS-Prefetch-Control
+        "off"
+        always;
+
+    add_header Permissions-Policy
+        "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        always;
+
+    add_header Content-Security-Policy
+        "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'"
+        always;
+
+    # Never expose the internal readiness probe.
+    location = /readiness {
+        return 404;
+    }
+
+    # Production API documentation is disabled in FastAPI
+    # and independently blocked at the public edge.
+    location = /api/docs {
+        return 404;
+    }
+
+    location = /openapi.json {
+        return 404;
+    }
+
+    location = /health {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For
+            $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For
+            $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    location /assets/ {
+        try_files $uri =404;
+
+        expires 1y;
+
+        add_header Cache-Control
+            "public, immutable";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
