@@ -14,6 +14,7 @@ import {
 } from "../../api/account";
 import {
   reconfigureMfa,
+  requestEmailVerification,
   type AuthenticationStatus,
 } from "../../api/authentication";
 import {
@@ -99,8 +100,44 @@ function SecurityPanel({
   const [securityError, setSecurityError] =
     useState<string | null>(null);
 
+  const [
+    verificationSending,
+    setVerificationSending,
+  ] = useState(false);
+
+  const [
+    verificationMessage,
+    setVerificationMessage,
+  ] = useState<string | null>(null);
+
   const privileged =
     hasPrivilegedMfaRole(account);
+
+  async function resendVerification() {
+    setSecurityError(null);
+    setVerificationMessage(null);
+    setVerificationSending(true);
+
+    try {
+      const message =
+        await requestEmailVerification();
+
+      setVerificationMessage(
+        message,
+      );
+    } catch (caught) {
+      setSecurityError(
+        caught instanceof Error
+          ? caught.message
+          : (
+              "Unable to request "
+              + "verification email."
+            ),
+      );
+    } finally {
+      setVerificationSending(false);
+    }
+  }
 
   async function replaceAuthenticator(
     event: FormEvent<HTMLFormElement>,
@@ -138,6 +175,64 @@ function SecurityPanel({
   return (
     <section className="account-panel">
       <h2>Security</h2>
+
+      <div className="account-security-status">
+        <div>
+          <strong>Email address</strong>
+
+          <p className="account-security-email">
+            {account.email}
+          </p>
+        </div>
+
+        <span
+          className={
+            account.email_verified
+              ? "account-security-verified"
+              : "account-security-unverified"
+          }
+        >
+          {account.email_verified
+            ? "Verified"
+            : "Not verified"}
+        </span>
+      </div>
+
+      {!account.email_verified ? (
+        <div
+          className={
+            "account-email-verification-actions"
+          }
+        >
+          <p className="account-muted">
+            Verify this email before
+            production account access is
+            granted.
+          </p>
+
+          <button
+            type="button"
+            className="account-action"
+            disabled={verificationSending}
+            onClick={() => {
+              void resendVerification();
+            }}
+          >
+            {verificationSending
+              ? "Sending..."
+              : "Resend Verification Email"}
+          </button>
+
+          {verificationMessage !== null ? (
+            <p
+              className="account-success-inline"
+              role="status"
+            >
+              {verificationMessage}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="account-security-status">
         <div className="account-security-authenticator">
@@ -189,7 +284,11 @@ function SecurityPanel({
         <span>
           {privileged
             ? "Enabled"
-            : "Not required for this role"}
+            : account.roles.includes(
+                "customer",
+              )
+              ? "Optional"
+              : "Not required"}
         </span>
       </div>
 
@@ -267,10 +366,19 @@ function SecurityPanel({
             </form>
           </details>
         </>
+      ) : account.roles.includes(
+        "customer",
+      ) ? (
+        <p className="account-muted">
+          Authenticator MFA is optional
+          for customer accounts. Enable
+          it for additional account
+          security.
+        </p>
       ) : (
         <p className="account-muted">
-          No additional MFA setup is
-          required for this account role.
+          Authenticator MFA is not
+          required for this account.
         </p>
       )}
     </section>
@@ -537,16 +645,12 @@ export function AccountPage({
       ) : null}
 
       <div className="account-grid">
-        {hasPrivilegedMfaRole(
-          account,
-        ) ? (
-          <SecurityPanel
-            account={account}
-            onMfaReconfigurationStarted={
-              onMfaReconfigurationStarted
-            }
-          />
-        ) : null}
+        <SecurityPanel
+          account={account}
+          onMfaReconfigurationStarted={
+            onMfaReconfigurationStarted
+          }
+        />
 
         <section className="account-panel">
           <h2>Profile</h2>
@@ -665,9 +769,35 @@ export function AccountPage({
                     key={address.id}
                     className="address-card"
                   >
-                    <strong>
-                      {address.label}
-                    </strong>
+                    <div
+                      className="address-card-heading"
+                    >
+                      <strong>
+                        {address.label}
+                      </strong>
+
+                      <div
+                        className="address-badges"
+                      >
+                        {address
+                          .is_default_shipping ? (
+                          <span
+                            className="address-badge"
+                          >
+                            Default shipping
+                          </span>
+                        ) : null}
+
+                        {address
+                          .is_default_billing ? (
+                          <span
+                            className="address-badge"
+                          >
+                            Default billing
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
 
                     <p>
                       {address.line1}

@@ -1294,6 +1294,62 @@ textarea:focus-visible {
   border-radius: var(--button-radius);
 }
 
+.account-security-email {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.account-security-verified,
+.account-security-unverified {
+  font-weight: 700;
+}
+
+.account-security-unverified {
+  font-style: italic;
+}
+
+.account-email-verification-actions {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  padding: 18px 0 22px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.account-success-inline,
+.auth-success {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.auth-email-verification-address {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+  font-weight: 700;
+}
+
+.email-verification-page {
+  display: grid;
+  gap: 18px;
+  max-width: 680px;
+  margin-top: 54px;
+}
+
+.email-verification-page h1,
+.email-verification-page p {
+  margin-top: 0;
+}
+
 .account-security-status {
   display: flex;
   align-items: baseline;
@@ -1367,6 +1423,36 @@ textarea:focus-visible {
   font-weight: 700;
   line-height: 1.5;
 }
+
+.address-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.address-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.address-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 
 .address-form {
   margin-top: 30px;

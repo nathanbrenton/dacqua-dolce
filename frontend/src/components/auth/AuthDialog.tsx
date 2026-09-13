@@ -13,6 +13,7 @@ import {
   enrollMfa,
   loginAccount,
   registerAccount,
+  requestEmailVerification,
   verifyMfa,
   type AuthenticationStatus,
   type MfaEnrollmentResponse,
@@ -22,6 +23,7 @@ type AuthMode = "login" | "register";
 
 type AuthStage =
   | "credentials"
+  | "email-verify"
   | "mfa-enroll"
   | "mfa-verify";
 
@@ -83,6 +85,11 @@ export function AuthDialog({
   const [error, setError] =
     useState<string | null>(null);
 
+  const [
+    verificationMessage,
+    setVerificationMessage,
+  ] = useState<string | null>(null);
+
   const [submitting, setSubmitting] =
     useState(false);
 
@@ -108,6 +115,7 @@ export function AuthDialog({
     }
 
     setError(null);
+    setVerificationMessage(null);
     setPassword("");
     setMfaCode("");
 
@@ -120,6 +128,14 @@ export function AuthDialog({
       setEmail(
         pendingAuthentication.email,
       );
+    }
+
+    if (
+      pendingAuthentication
+        ?.email_verification_required
+    ) {
+      setStage("email-verify");
+      return;
     }
 
     if (
@@ -183,6 +199,14 @@ export function AuthDialog({
     setPassword("");
     setMfaCode("");
     setError(null);
+    setVerificationMessage(null);
+
+    if (
+      account.email_verification_required
+    ) {
+      setStage("email-verify");
+      return;
+    }
 
     if (
       account.mfa_enrollment_required
@@ -318,6 +342,32 @@ export function AuthDialog({
     }
   }
 
+  async function resendVerificationEmail() {
+    setError(null);
+    setVerificationMessage(null);
+    setSubmitting(true);
+
+    try {
+      const message =
+        await requestEmailVerification();
+
+      setVerificationMessage(
+        message,
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : (
+              "Unable to request "
+              + "verification email."
+            ),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   function requestClose() {
     if (
       stage !== "credentials"
@@ -332,9 +382,11 @@ export function AuthDialog({
   }
 
   const dialogTitle =
-    stage === "mfa-enroll"
-      ? "Secure your account."
-      : stage === "mfa-verify"
+    stage === "email-verify"
+      ? "Verify your email."
+      : stage === "mfa-enroll"
+        ? "Secure your account."
+        : stage === "mfa-verify"
         ? "Verify it’s you."
         : mode === "login"
           ? "Welcome back."
@@ -507,6 +559,69 @@ export function AuthDialog({
             </button>
           </form>
         </>
+      ) : null}
+
+      {stage === "email-verify" ? (
+        <div className="auth-mfa-panel">
+          <p className="auth-helper">
+            Verify the email address for
+            your D&apos;Acqua Dolce
+            account before continuing.
+          </p>
+
+          {pendingAuthentication
+            ?.email !== null
+          && pendingAuthentication
+            ?.email !== undefined ? (
+            <p className="auth-email-verification-address">
+              {pendingAuthentication.email}
+            </p>
+          ) : null}
+
+          <p className="auth-helper">
+            Use the verification link
+            sent to your email. The link
+            is single-use and expires.
+          </p>
+
+          <button
+            className="auth-submit"
+            type="button"
+            disabled={submitting}
+            onClick={() => {
+              void resendVerificationEmail();
+            }}
+          >
+            {submitting
+              ? "Sending..."
+              : "Resend Verification Email"}
+          </button>
+
+          {verificationMessage !== null ? (
+            <p
+              className="auth-success"
+              role="status"
+            >
+              {verificationMessage}
+            </p>
+          ) : null}
+
+          {error !== null ? (
+            <p
+              className="auth-error"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <p className="auth-helper">
+            In local development, email
+            delivery may be disabled even
+            though the verification
+            request is recorded correctly.
+          </p>
+        </div>
       ) : null}
 
       {stage === "mfa-enroll" ? (

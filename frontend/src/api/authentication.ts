@@ -2,6 +2,8 @@ export type AuthenticationStatus = {
   authenticated: boolean;
   email: string | null;
   roles: string[];
+  email_verified: boolean;
+  email_verification_required: boolean;
   mfa_required: boolean;
   mfa_enrollment_required: boolean;
 };
@@ -121,6 +123,69 @@ export async function logoutAccount(): Promise<void> {
     throw new Error(await readError(response));
   }
 }
+
+export async function requestEmailVerification(): Promise<string> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/email-verification/request",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "X-CSRF-Token": csrfToken,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  const payload = (await response.json()) as {
+    message: string;
+  };
+
+  return payload.message;
+}
+
+export async function completeEmailVerification(
+  token: string,
+): Promise<string> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    "/api/auth/email-verification/complete",
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({
+        token,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  const payload = (await response.json()) as {
+    message: string;
+  };
+
+  return payload.message;
+}
+
 
 export async function enrollMfa(): Promise<MfaEnrollmentResponse> {
   const csrfToken = await getCsrfToken();

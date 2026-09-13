@@ -48,6 +48,9 @@ import {
   PolicyStatusPage,
 } from "./pages/PolicyStatusPage";
 import {
+  VerifyEmailPage,
+} from "./pages/VerifyEmailPage";
+import {
   DEFAULT_LOGO_VARIANT,
   isLogoVariantId,
   type LogoVariantId,
@@ -234,7 +237,9 @@ export function App() {
         }
 
         if (
-          currentAccount.mfa_required
+          currentAccount
+            .email_verification_required
+          || currentAccount.mfa_required
           || currentAccount
             .mfa_enrollment_required
         ) {
@@ -242,7 +247,16 @@ export function App() {
           setPendingAuthentication(
             currentAccount,
           );
-          setAuthDialogOpen(true);
+
+          if (
+            !window.location.pathname
+              .startsWith(
+                "/verify-email/",
+              )
+          ) {
+            setAuthDialogOpen(true);
+          }
+
           return;
         }
 
@@ -317,6 +331,58 @@ export function App() {
     }
   }
 
+  async function refreshAuthenticationAfterVerification() {
+    try {
+      const currentAccount =
+        await getCurrentAccount();
+
+      if (currentAccount === null) {
+        setAccount(null);
+        setPendingAuthentication(
+          null,
+        );
+        return;
+      }
+
+      if (currentAccount.authenticated) {
+        setAccount(currentAccount);
+        setPendingAuthentication(
+          null,
+        );
+        setAuthDialogOpen(false);
+        return;
+      }
+
+      if (
+        currentAccount
+          .email_verification_required
+        || currentAccount.mfa_required
+        || currentAccount
+          .mfa_enrollment_required
+      ) {
+        setAccount(null);
+        setPendingAuthentication(
+          currentAccount,
+        );
+
+        if (
+          currentAccount.mfa_required
+          || currentAccount
+            .mfa_enrollment_required
+        ) {
+          setAuthDialogOpen(true);
+        }
+
+        return;
+      }
+
+      setAccount(null);
+      setPendingAuthentication(null);
+    } finally {
+      setAccountReady(true);
+    }
+  }
+
   async function cancelPendingAuthentication() {
     try {
       await logoutAccount();
@@ -342,6 +408,13 @@ export function App() {
 
   const resetToken =
     resetMatch?.[1] ?? null;
+
+  const verifyEmailMatch = path.match(
+    /^\/verify-email\/([^/]+)\/?$/,
+  );
+
+  const verifyEmailToken =
+    verifyEmailMatch?.[1] ?? null;
 
   const isHome =
     path === "/" || path === "";
@@ -459,6 +532,17 @@ export function App() {
         === "/forgot-password" ? (
         <ForgotPasswordPage
           onNavigate={navigate}
+        />
+      ) : verifyEmailToken
+        !== null ? (
+        <VerifyEmailPage
+          token={decodeURIComponent(
+            verifyEmailToken,
+          )}
+          onNavigate={navigate}
+          onVerified={
+            refreshAuthenticationAfterVerification
+          }
         />
       ) : resetToken
         !== null ? (
