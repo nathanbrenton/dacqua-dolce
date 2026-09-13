@@ -544,15 +544,94 @@ export function AuthDialog({
                   code.
                 </p>
 
-                <p className="auth-helper">
-                  Microsoft Authenticator:
-                  choose Add account,
-                  then Other account,
-                  then Scan a QR code.
-                  Do not choose Personal
-                  account or Work or
-                  school account.
-                </p>
+                <div
+                  className="authenticator-recommendation"
+                >
+                  <div
+                    className="authenticator-generic-icon"
+                    aria-hidden="true"
+                  >
+                    <span
+                      className="authenticator-phone"
+                    />
+                    <span
+                      className="authenticator-shield"
+                    >
+                      ✓
+                    </span>
+                  </div>
+
+                  <div>
+                    <p
+                      className={
+                        "authenticator-recommendation-title"
+                      }
+                    >
+                      Microsoft Authenticator
+                    </p>
+
+                    <div
+                      className={
+                        "authenticator-compatibility-meta"
+                      }
+                    >
+                      <span
+                        className={
+                          "authenticator-compatibility-badge"
+                        }
+                      >
+                        Microsoft Authenticator
+                        compatible
+                      </span>
+
+                      <span>
+                        Standard TOTP
+                      </span>
+                    </div>
+
+                    <p className="auth-helper">
+                      Works with Microsoft
+                      Authenticator and
+                      other standards-
+                      compatible TOTP
+                      authenticator apps.
+                    </p>
+
+                    <p className="auth-helper">
+                      In Microsoft
+                      Authenticator choose
+                      Add account → Other
+                      account → Scan a QR
+                      code.
+                    </p>
+
+                    <p className="auth-helper">
+                      Do not choose Personal
+                      account or Work or
+                      school account for
+                      D&apos;Acqua Dolce.
+                    </p>
+
+                    <a
+                      className={
+                        "authenticator-download-link"
+                      }
+                      href={
+                        "https://support.microsoft.com/"
+                        + "en-us/authenticator/"
+                        + "download-microsoft-authenticator"
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Get Microsoft
+                      Authenticator
+                      <span aria-hidden="true">
+                        {" "}↗
+                      </span>
+                    </a>
+                  </div>
+                </div>
 
                 <div
                   className="auth-mfa-qr"

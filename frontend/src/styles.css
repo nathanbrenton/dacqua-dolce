@@ -1303,6 +1303,44 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--hairline);
 }
 
+.account-security-authenticator {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.account-authenticator-icon {
+  width: 42px;
+  height: 46px;
+  flex: 0 0 42px;
+}
+
+.authenticator-compatibility-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 10px;
+  margin-top: 7px;
+}
+
+.authenticator-compatibility-meta > span {
+  font-size: 0.72rem;
+}
+
+.authenticator-compatibility-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .account-security-status span {
   color: var(--ink-muted);
   font-size: 0.82rem;
@@ -1443,6 +1481,114 @@ textarea:focus-visible {
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.authenticator-recommendation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+}
+
+.authenticator-generic-icon {
+  position: relative;
+  width: 48px;
+  height: 52px;
+  flex: 0 0 auto;
+}
+
+.authenticator-phone {
+  position: absolute;
+  inset: 0 8px 4px 0;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  opacity: 0.82;
+}
+
+.authenticator-phone::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.authenticator-shield {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 28px;
+  color: var(--surface-1);
+  background: var(--ink);
+  border-radius: 50% 50% 45% 45%;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.authenticator-compatibility-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 10px;
+  margin: 7px 0 10px;
+}
+
+.authenticator-compatibility-meta > span {
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+}
+
+.authenticator-compatibility-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.authenticator-recommendation-title {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.authenticator-recommendation .auth-helper {
+  margin: 5px 0;
+}
+
+.authenticator-download-link {
+  display: inline-block;
+  margin-top: 7px;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.authenticator-download-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.authenticator-download-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
 }
 
 .auth-mfa-qr {

@@ -140,7 +140,51 @@ function SecurityPanel({
       <h2>Security</h2>
 
       <div className="account-security-status">
-        <strong>Authenticator MFA</strong>
+        <div className="account-security-authenticator">
+          <div
+            className={
+              "authenticator-generic-icon "
+              + "account-authenticator-icon"
+            }
+            aria-hidden="true"
+          >
+            <span
+              className="authenticator-phone"
+            />
+            <span
+              className="authenticator-shield"
+            >
+              ✓
+            </span>
+          </div>
+
+          <div>
+            <strong>
+              Authenticator MFA
+            </strong>
+
+            {privileged ? (
+              <div
+                className={
+                  "authenticator-compatibility-meta"
+                }
+              >
+                <span
+                  className={
+                    "authenticator-compatibility-badge"
+                  }
+                >
+                  Microsoft Authenticator
+                  compatible
+                </span>
+
+                <span>
+                  Standard TOTP
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </div>
 
         <span>
           {privileged
@@ -152,8 +196,11 @@ function SecurityPanel({
       {privileged ? (
         <>
           <p className="account-muted">
-            Authenticator MFA protects
-            privileged Operations access.
+            Protects privileged Operations
+            access. Works with Microsoft
+            Authenticator and other
+            standards-compatible TOTP
+            authenticator apps.
           </p>
 
           <details
