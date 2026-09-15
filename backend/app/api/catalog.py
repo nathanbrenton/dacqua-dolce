@@ -4,6 +4,7 @@ from fastapi import (
     APIRouter,
     HTTPException,
     Request,
+    Response,
     status,
 )
 from sqlalchemy import select
@@ -15,6 +16,7 @@ from app.models.catalog import (
     PricingPolicyMode,
     Product,
     ProductDocument,
+    ProductInventory,
     ProductSpecification,
 )
 from app.models.identity import (
@@ -22,6 +24,7 @@ from app.models.identity import (
     UserStatus,
 )
 from app.schemas.catalog import (
+    CatalogAvailabilityRead,
     CatalogDocumentRead,
     CatalogImageRead,
     CatalogPricingRead,
@@ -31,6 +34,8 @@ from app.schemas.catalog import (
     CatalogSpecificationRead,
     CatalogVariantRead,
 )
+from app.services.commerce import active_reserved_quantity
+from app.services.public_availability import resolve_public_availability
 from app.services.pricing import (
     resolve_pricing,
     select_effective_price,
@@ -281,4 +286,68 @@ def get_public_product(
             specifications=public_specification_reads(
                 product.specifications,
             ),
+        )
+
+
+@router.get(
+    "/products/{slug}/availability",
+    response_model=CatalogAvailabilityRead,
+)
+def get_public_product_availability(
+    slug: str,
+    response: Response,
+) -> CatalogAvailabilityRead:
+    """Return current customer-safe inventory availability."""
+
+    response.headers["Cache-Control"] = "no-store"
+
+    with SessionLocal() as db:
+        product = db.scalar(
+            select(Product).where(
+                Product.slug == slug,
+                Product.active.is_(True),
+            )
+        )
+
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="System not found.",
+            )
+
+        inventory = db.scalar(
+            select(ProductInventory)
+            .where(
+                ProductInventory.product_id
+                == product.id,
+                ProductInventory.variant_id.is_(None),
+            )
+            .order_by(
+                ProductInventory.updated_at.desc()
+            )
+        )
+
+        reserved_quantity = (
+            active_reserved_quantity(
+                db,
+                product_id=product.id,
+                variant_id=None,
+            )
+            if inventory is not None
+            else 0
+        )
+
+        decision = resolve_public_availability(
+            inventory,
+            reserved_quantity=reserved_quantity,
+            online_sale_approved=(
+                product.online_sale_approved
+            ),
+        )
+
+        return CatalogAvailabilityRead(
+            status=decision.status,
+            available=decision.available,
+            action=decision.action,
+            action_label=decision.action_label,
         )

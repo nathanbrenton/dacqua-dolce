@@ -12,6 +12,13 @@ class CatalogPricingRead(BaseModel):
     action_label: str
 
 
+class CatalogAvailabilityRead(BaseModel):
+    status: str
+    available: bool | None
+    action: str
+    action_label: str
+
+
 class CatalogImageRead(BaseModel):
     path: str
     alt_text: str
