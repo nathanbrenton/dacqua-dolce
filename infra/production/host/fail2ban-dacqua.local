@@ -1,8 +1,10 @@
 [sshd]
 enabled = true
 backend = systemd
+banaction = nftables
 port = ssh
 
 findtime = 10m
-maxretry = 4
+maxretry = 5
 bantime = 1h
+usedns = no

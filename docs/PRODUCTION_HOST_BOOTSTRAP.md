@@ -2,8 +2,12 @@
 
 ## Target
 
-P0 assumes one appropriately sized Vultr production instance, with roughly
-4 GiB RAM as the current planning baseline because the initial host will carry:
+P0 currently uses one Vultr production instance:
+
+    dacqua-platform-prod-01
+
+with 4 vCPU, 8 GiB RAM, 160 GB storage, and an 8 GiB swapfile. The initial
+host will carry:
 
 - Nginx;
 - FastAPI/Uvicorn;
@@ -32,7 +36,7 @@ Only its public key is installed on the server.
 
 The host contains:
 
-    dacqua
+    dacqua-app
 
 as a system service account with `/usr/sbin/nologin`.
 
@@ -93,7 +97,7 @@ PostgreSQL 17 is native on the production host.
 
 Network policy:
 
-    listen_addresses = '127.0.0.1'
+    listen_addresses = 'localhost'
 
 Application role:
 

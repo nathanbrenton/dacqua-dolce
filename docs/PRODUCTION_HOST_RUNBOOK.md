@@ -14,8 +14,8 @@ Keep the private key only on the workstation.
 
 ## 2. Create the Vultr instance
 
-Current architecture expects a single P0 production host with Debian 13 and
-approximately 4 GiB RAM.
+Current P0 host is `dacqua-platform-prod-01`: Debian 13, 4 vCPU, 8 GiB RAM,
+160 GB storage, and an 8 GiB swapfile.
 
 Record:
 
@@ -76,7 +76,7 @@ Keep the original session open. Verify a new key-only login before closing it.
 
 Merge the supplied PostgreSQL settings into the Debian PostgreSQL 17 cluster
 configuration, then reload/restart PostgreSQL and verify
-`listen_addresses = '127.0.0.1'`.
+`listen_addresses = 'localhost'`.
 
 Merge the supplied `pg_hba` fragment after the standard local postgres
 administration entries.
@@ -98,7 +98,7 @@ Do not store the value in shell history or in the repository.
 
 Run:
 
-    scripts/production/verify_host_baseline.sh
+    sudo scripts/production/verify_host_baseline.sh
 
 Resolve every failure before application deployment.
 
@@ -132,7 +132,7 @@ See:
 
 Install the repository template:
 
-    install       -o root       -g dacqua       -m 0640       infra/production/backend.env.example       /etc/dacqua-dolce/backend.env
+    install       -o root       -g dacqua-app       -m 0640       infra/production/backend.env.example       /etc/dacqua-dolce/backend.env
 
 Replace every `REPLACE_*` value in the installed copy.
 
@@ -191,7 +191,7 @@ Do not route that endpoint through the public Nginx edge.
 
 Deploy with:
 
-    scripts/production/deploy_release.sh       /path/to/release-source
+    sudo scripts/production/deploy_release.sh       /path/to/release-source
 
 From a separate machine, verify the public edge:
 

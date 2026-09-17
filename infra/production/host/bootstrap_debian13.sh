@@ -42,32 +42,64 @@ apt-get install -y \
   sudo \
   unattended-upgrades
 
-if ! getent group dacqua >/dev/null; then
-  addgroup --system dacqua
+if dpkg-query -W ufw >/dev/null 2>&1; then
+  systemctl disable --now ufw >/dev/null 2>&1 || true
+  apt-get purge -y ufw
 fi
 
-if ! id dacqua >/dev/null 2>&1; then
+timedatectl set-timezone UTC
+
+install -d -m 0755 /var/log/journal /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/10-dacqua-platform.conf <<'EOF_JOURNAL'
+[Journal]
+Storage=persistent
+SystemMaxUse=512M
+RuntimeMaxUse=128M
+MaxRetentionSec=14day
+Compress=yes
+EOF_JOURNAL
+systemctl restart systemd-journald
+
+cat > /etc/sysctl.d/60-dacqua-platform.conf <<'EOF_SYSCTL'
+vm.swappiness=10
+EOF_SYSCTL
+sysctl --system >/dev/null
+
+if ! getent group dacqua-app >/dev/null; then
+  addgroup --system dacqua-app
+fi
+
+if ! id dacqua-app >/dev/null 2>&1; then
   adduser \
     --system \
-    --ingroup dacqua \
+    --ingroup dacqua-app \
     --home /srv/dacqua-dolce \
+    --no-create-home \
     --shell /usr/sbin/nologin \
-    dacqua
+    dacqua-app
 fi
 
+# Release paths must be traversable by Nginx (www-data) because it serves
+# frontend/dist directly. Runtime secrets remain outside this tree.
 install -d \
-  -o dacqua \
-  -g dacqua \
-  -m 0750 \
+  -o root \
+  -g root \
+  -m 0755 \
   /srv/dacqua-dolce \
-  /srv/dacqua-dolce/releases \
-  /srv/dacqua-dolce/shared
+  /srv/dacqua-dolce/releases
 
 install -d \
   -o root \
-  -g dacqua \
+  -g dacqua-app \
   -m 0750 \
+  /srv/dacqua-dolce/shared \
   /etc/dacqua-dolce
+
+install -d \
+  -o dacqua-app \
+  -g dacqua-app \
+  -m 0750 \
+  /var/lib/dacqua-dolce
 
 install -d \
   -o root \

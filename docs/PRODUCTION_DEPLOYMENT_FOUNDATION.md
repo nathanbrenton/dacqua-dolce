@@ -27,10 +27,11 @@ Recommended production layout:
     /etc/dacqua-dolce/
       backend.env
 
-Application files should be owned by a dedicated `dacqua` service account.
-
-The runtime secret file should be root-owned and readable only by the service
-group as required.
+The runtime API executes as the dedicated `dacqua-app` service account.
+Release directories remain root-owned and world-traversable/readable as needed so
+Nginx can serve `frontend/dist` directly. Runtime secrets never live in the
+release tree; `/etc/dacqua-dolce/backend.env` remains root-owned and readable
+only by the `dacqua-app` group.
 
 ## Backend
 
@@ -67,7 +68,7 @@ uses:
 
     /etc/dacqua-dolce/backend.env
 
-and runs under a dedicated `dacqua` account.
+and runs under a dedicated `dacqua-app` account.
 
 The API service has several systemd sandboxing controls enabled. These should
 be tested on the actual production distribution before being considered final.
@@ -97,6 +98,10 @@ request Host headers.
 ## Release strategy
 
 Production uses immutable timestamped release directories.
+
+The deployment helper is run with `sudo`. It loads the root-controlled
+`/etc/dacqua-dolce/backend.env` for Alembic and validates the required database,
+MFA-key, and public-origin settings before changing production state.
 
 A deployment builds a new release, runs Alembic, builds the frontend, then
 atomically changes:

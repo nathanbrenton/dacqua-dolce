@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -u
 
+if [ "$(id -u)" -ne 0 ]; then
+  echo "ERROR: run with sudo or as root"
+  exit 1
+fi
+
 FAILED=0
 
 echo "===== OS ====="
@@ -14,10 +19,10 @@ fi
 
 echo
 echo "===== SERVICE ACCOUNT ====="
-if id dacqua >/dev/null 2>&1; then
-  id dacqua
+if id dacqua-app >/dev/null 2>&1; then
+  id dacqua-app
 else
-  echo "FAIL: dacqua user missing"
+  echo "FAIL: dacqua-app user missing"
   FAILED=1
 fi
 
@@ -26,7 +31,8 @@ echo "===== REQUIRED DIRECTORIES ====="
 for path in \
   /srv/dacqua-dolce/releases \
   /srv/dacqua-dolce/shared \
-  /etc/dacqua-dolce
+  /etc/dacqua-dolce \
+  /var/lib/dacqua-dolce
 do
   if [ -d "${path}" ]; then
     echo "PASS: ${path}"
@@ -60,15 +66,30 @@ fi
 
 echo
 echo "===== POSTGRESQL ====="
-if sudo -u postgres \
-  psql \
-  -tAc "SHOW listen_addresses;" \
-  | grep -qx '127.0.0.1'
-then
-  echo "PASS: PostgreSQL loopback-only"
-else
-  echo "FAIL: PostgreSQL listen_addresses is not exactly 127.0.0.1"
+LISTEN_ADDRESSES="$(sudo -u postgres psql -tAc "SHOW listen_addresses;" | tr -d '[:space:]')"
+
+case "${LISTEN_ADDRESSES}" in
+  localhost|127.0.0.1|127.0.0.1,::1|::1,127.0.0.1)
+    echo "PASS: PostgreSQL listen_addresses=${LISTEN_ADDRESSES}"
+    ;;
+  *)
+    echo "FAIL: unexpected PostgreSQL listen_addresses=${LISTEN_ADDRESSES}"
+    FAILED=1
+    ;;
+esac
+
+PG_LISTENERS="$(ss -lntH '( sport = :5432 )' | awk '{print $4}')"
+
+if [ -z "${PG_LISTENERS}" ]; then
+  echo "FAIL: PostgreSQL has no TCP listener on port 5432"
   FAILED=1
+elif printf '%s\n' "${PG_LISTENERS}" \
+  | grep -Evq '^(127\.0\.0\.1|\[::1\]):5432$'; then
+  echo "FAIL: PostgreSQL has a non-loopback listener"
+  ss -lntp '( sport = :5432 )'
+  FAILED=1
+else
+  echo "PASS: PostgreSQL TCP listeners are loopback-only"
 fi
 
 echo
@@ -76,4 +97,5 @@ if [ "${FAILED}" -eq 0 ]; then
   echo "PASS: production host baseline validated"
 else
   echo "FAIL: production host baseline has unresolved items"
+  exit 1
 fi

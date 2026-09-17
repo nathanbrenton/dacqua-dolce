@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "$(id -u)" -ne 0 ]; then
+  echo "ERROR: run with sudo or as root"
+  exit 1
+fi
+
 APP_ROOT="/srv/dacqua-dolce"
 RELEASES="${APP_ROOT}/releases"
 CURRENT="${APP_ROOT}/current"

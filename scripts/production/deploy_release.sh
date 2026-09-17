@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "$(id -u)" -ne 0 ]; then
+  echo "ERROR: run with sudo or as root"
+  exit 1
+fi
+
 APP_ROOT="/srv/dacqua-dolce"
 RELEASES="${APP_ROOT}/releases"
 SHARED="${APP_ROOT}/shared"
 CURRENT="${APP_ROOT}/current"
+ENV_FILE="/etc/dacqua-dolce/backend.env"
 
 SOURCE_ROOT="${1:-}"
 
@@ -19,13 +25,41 @@ if [ ! -d "${SOURCE_ROOT}/backend" ] \
   exit 1
 fi
 
+if [ ! -r "${ENV_FILE}" ]; then
+  echo "ERROR: production environment file is missing: ${ENV_FILE}"
+  exit 1
+fi
+
+set -a
+# shellcheck disable=SC1090
+. "${ENV_FILE}"
+set +a
+
+: "${DACQUA_DATABASE_URL:?DACQUA_DATABASE_URL is required}"
+: "${DACQUA_MFA_ENCRYPTION_KEY:?DACQUA_MFA_ENCRYPTION_KEY is required}"
+: "${DACQUA_PUBLIC_ORIGIN:?DACQUA_PUBLIC_ORIGIN is required}"
+
+for required_value in \
+  "${DACQUA_DATABASE_URL}" \
+  "${DACQUA_MFA_ENCRYPTION_KEY}" \
+  "${DACQUA_PUBLIC_ORIGIN}"
+do
+  if printf '%s' "${required_value}" | grep -q 'REPLACE_'; then
+    echo "ERROR: required production environment value still contains a REPLACE_* placeholder"
+    exit 1
+  fi
+done
+
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RELEASE="${RELEASES}/${STAMP}"
 
-mkdir -p \
+install -d -o root -g root -m 0755 \
+  "${APP_ROOT}" \
   "${RELEASES}" \
-  "${SHARED}" \
   "${RELEASE}"
+
+install -d -o root -g dacqua-app -m 0750 \
+  "${SHARED}"
 
 echo "Creating release: ${RELEASE}"
 
