@@ -2,7 +2,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name __SERVER_NAME__;
+    server_name __SERVER_NAMES__;
     server_tokens off;
 
     location ^~ /.well-known/acme-challenge/ {
@@ -20,7 +20,7 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
 
-    server_name __SERVER_NAME__;
+    server_name __SERVER_NAMES__;
     server_tokens off;
 
     root /srv/dacqua-dolce/current/frontend/dist;
@@ -33,6 +33,12 @@ server {
     ssl_session_cache shared:DACQUA_SSL:10m;
     ssl_session_timeout 1d;
     ssl_session_tickets off;
+
+    # Keep the bare domain canonical while serving the same certificate
+    # for the optional alias (for example, www).
+    if ($host != "__SERVER_NAME__") {
+        return 301 https://__SERVER_NAME__$request_uri;
+    }
 
     client_max_body_size 2m;
 

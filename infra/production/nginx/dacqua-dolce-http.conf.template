@@ -2,7 +2,7 @@ server {
     listen 80;
     listen [::]:80;
 
-    server_name __SERVER_NAME__;
+    server_name __SERVER_NAMES__;
     server_tokens off;
 
     location ^~ /.well-known/acme-challenge/ {

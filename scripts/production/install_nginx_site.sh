@@ -8,15 +8,27 @@ fi
 
 MODE="${1:-}"
 SERVER_NAME="${2:-}"
+SERVER_ALIAS="${3:-}"
 
 if [ "${MODE}" != "http" ]   && [ "${MODE}" != "https" ]; then
-  echo "usage: $0 http|https SERVER_NAME"
+  echo "usage: $0 http|https SERVER_NAME [SERVER_ALIAS]"
   exit 2
 fi
 
 if ! printf '%s' "${SERVER_NAME}"   | grep -Eq '^[A-Za-z0-9.-]+$'; then
   echo "ERROR: invalid server name"
   exit 1
+fi
+
+if [ -n "${SERVER_ALIAS}" ]   && ! printf '%s' "${SERVER_ALIAS}"   | grep -Eq '^[A-Za-z0-9.-]+$'; then
+  echo "ERROR: invalid server alias"
+  exit 1
+fi
+
+SERVER_NAMES="${SERVER_NAME}"
+
+if [ -n "${SERVER_ALIAS}" ]; then
+  SERVER_NAMES="${SERVER_NAMES} ${SERVER_ALIAS}"
 fi
 
 SCRIPT_DIR="$(
@@ -48,7 +60,11 @@ fi
 TMP="$(mktemp)"
 trap 'rm -f "${TMP}"' EXIT
 
-sed   "s/__SERVER_NAME__/${SERVER_NAME}/g"   "${TEMPLATE}"   > "${TMP}"
+sed \
+  -e "s/__SERVER_NAME__/${SERVER_NAME}/g" \
+  -e "s/__SERVER_NAMES__/${SERVER_NAMES}/g" \
+  "${TEMPLATE}" \
+  > "${TMP}"
 
 install   -o root   -g root   -m 0644   "${TMP}"   /etc/nginx/sites-available/dacqua-dolce.conf
 
@@ -60,4 +76,4 @@ nginx -t
 systemctl reload nginx
 
 echo
-echo "PASS: Nginx ${MODE} site enabled for ${SERVER_NAME}"
+echo "PASS: Nginx ${MODE} site enabled for ${SERVER_NAMES}"
