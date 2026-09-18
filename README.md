@@ -20,12 +20,18 @@ lifecycle platform.
 - PostgreSQL
 
 ### Production infrastructure
-- Vultr
-- Nginx
-- Postmark
-- pgBackRest
-- AWS S3
-- Prometheus / Grafana / Loki observability
+- Vultr / Debian 13
+- Nginx + Let's Encrypt/Certbot
+- PostgreSQL 17
+- Prometheus / Alertmanager / Grafana / Loki / Alloy / Monit
+- Better Stack external monitoring
+- Local PostgreSQL backup + full restore validation
+- Restic encryption layer prepared; AWS S3 off-host repository pending
+- Final outbound SMTP/report-delivery architecture pending
+
+Authoritative production documentation:
+
+    docs/production/
 
 ## Development policy
 

@@ -1,5 +1,8 @@
 # D'Acqua Dolce — Production Host Bootstrap
 
+> **PT10 documentation notice:** This file is retained as bootstrap/history material. For the current validated production state and rebuild procedure, use `docs/production/`.
+
+
 ## Target
 
 P0 currently uses one Vultr production instance:

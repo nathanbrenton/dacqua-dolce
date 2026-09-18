@@ -1,5 +1,8 @@
 # D'Acqua Dolce — First Host Runbook
 
+> **PT10 documentation notice:** This file is retained as bootstrap/history material. For the current validated production state and rebuild procedure, use `docs/production/`.
+
+
 Do not run these commands on the local development Mac.
 
 These steps are for the fresh production Debian host.

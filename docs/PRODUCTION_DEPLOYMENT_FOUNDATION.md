@@ -1,5 +1,8 @@
 # D'Acqua Dolce — Production Deployment Foundation
 
+> **PT10 documentation notice:** This file is retained as bootstrap/history material. For the current validated production state and rebuild procedure, use `docs/production/`.
+
+
 ## Scope
 
 This milestone defines the production runtime/deployment structure without
