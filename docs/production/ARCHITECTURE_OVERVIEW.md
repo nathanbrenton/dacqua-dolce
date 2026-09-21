@@ -313,3 +313,34 @@ Not yet commissioned:
 - Better Stack report heartbeats tied to successful mail submission;
 - final provisioned Grafana dashboard set;
 - deployment ownership/automatic rollback hardening.
+
+### FastAPI systemd sandbox
+
+The production FastAPI process runs as the dedicated unprivileged
+`dacqua-app:dacqua-app` identity. The application release itself is immutable
+to that identity; its designated writable application path is:
+
+    /srv/dacqua-dolce/shared
+
+The API systemd unit applies the following production sandboxing controls in
+addition to its existing `NoNewPrivileges`, `PrivateTmp`,
+`ProtectSystem=strict`, `ProtectHome`, restricted address families,
+`LockPersonality`, and `MemoryDenyWriteExecute` controls:
+
+- `UMask=0027`;
+- `PrivateDevices=true`;
+- protection for the clock, kernel tunables, kernel modules, kernel logs,
+  control groups, and hostname;
+- `RestrictSUIDSGID=true`;
+- `RestrictRealtime=true`;
+- `RemoveIPC=true`;
+- `SystemCallArchitectures=native`;
+- an empty capability bounding set and no ambient capabilities.
+
+The API needs no Linux capabilities because Uvicorn binds only to the
+unprivileged loopback port `8000`.
+
+Release directories are deployment artifacts, not mutable application state.
+Production releases are expected to be owned by `root:root` and must not be
+writable by `dacqua-app`. The hardened deployment lifecycle normalizes this
+ownership during deployment.

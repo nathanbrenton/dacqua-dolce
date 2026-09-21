@@ -578,3 +578,43 @@ Also confirm:
 Full dashboard operational documentation is in:
 
     docs/production/GRAFANA_DASHBOARDS.md
+
+### Validate API sandboxing
+
+Install the canonical API unit from:
+
+    infra/production/systemd/dacqua-dolce-api.service
+
+After installing or changing the unit:
+
+    sudo systemctl daemon-reload
+    sudo systemctl restart dacqua-dolce-api.service
+
+Validate without using an interactive pager:
+
+    systemctl is-active dacqua-dolce-api.service
+    systemctl status dacqua-dolce-api.service --no-pager --full -n 20
+    curl -fsS http://127.0.0.1:8000/readiness
+    curl -fsS https://dacquadolce.com/health
+
+The effective production sandbox should include:
+
+    UMask=0027
+    PrivateDevices=yes
+    ProtectClock=yes
+    ProtectKernelTunables=yes
+    ProtectKernelModules=yes
+    ProtectKernelLogs=yes
+    ProtectControlGroups=yes
+    ProtectHostname=yes
+    RestrictSUIDSGID=yes
+    RestrictRealtime=yes
+    RemoveIPC=yes
+    SystemCallArchitectures=native
+    CapabilityBoundingSet=
+    AmbientCapabilities=
+
+The release pointed to by `/srv/dacqua-dolce/current` should be owned by
+`root:root`, and `dacqua-app` must not be able to write to the release tree.
+Application state that requires persistence belongs under explicitly managed
+shared/state paths rather than inside a timestamped release.

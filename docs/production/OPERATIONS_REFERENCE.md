@@ -334,3 +334,17 @@ details are documented in `GRAFANA_DASHBOARDS.md`.
 Grafana Explore with the provisioned Loki datasource remains the current log
 interface. A dedicated Loki dashboard is intentionally deferred until its
 query labels are explicitly verified.
+
+### API sandbox verification
+
+Inspect the effective FastAPI sandbox:
+
+    systemctl show dacqua-dolce-api.service       -p UMask       -p PrivateDevices       -p ProtectClock       -p ProtectKernelTunables       -p ProtectKernelModules       -p ProtectKernelLogs       -p ProtectControlGroups       -p ProtectHostname       -p RestrictSUIDSGID       -p RestrictRealtime       -p RemoveIPC       -p SystemCallArchitectures       -p CapabilityBoundingSet       -p AmbientCapabilities
+
+The service is expected to run as `dacqua-app:dacqua-app`. Its release tree is
+read-only to the application identity. `/srv/dacqua-dolce/shared` is the
+explicit writable application path.
+
+For a non-interactive systemd security report:
+
+    SYSTEMD_PAGER=cat systemd-analyze security       dacqua-dolce-api.service --no-pager
