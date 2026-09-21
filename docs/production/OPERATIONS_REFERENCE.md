@@ -274,3 +274,63 @@ Post-deployment quick checks:
     systemctl --failed --no-pager
 
 See `DEPLOYMENT_AND_ROLLBACK.md` for the full lifecycle and migration-compatibility policy.
+
+## Grafana production dashboards
+
+Grafana remains internal-only on:
+
+    127.0.0.1:3000
+
+Do not expose TCP/3000 publicly.
+
+For workstation access, create an SSH tunnel:
+
+    ssh -L 3000:127.0.0.1:3000 dacqua-prod
+
+Then browse locally to:
+
+    http://127.0.0.1:3000
+
+The authoritative dashboard definitions are maintained in:
+
+    observability/grafana/
+
+The repository validator is:
+
+    python3 scripts/production/validate_grafana_dashboards.py
+
+The production installer is:
+
+    scripts/production/install_grafana_dashboards.sh
+
+### Provisioned production dashboard UIDs
+
+    dacqua-prod-overview
+    dacqua-host-resources
+    dacqua-service-backup
+
+The three dashboards are:
+
+- D'Acqua Dolce — Production Overview
+- D'Acqua Dolce — Host Resources
+- D'Acqua Dolce — Service & Backup Health
+
+The dashboards use the provisioned Prometheus datasource UID `prometheus`.
+
+Grafana 13 uses unified storage for current dashboard resources. Production
+validation should therefore verify these dashboard UIDs as
+`dashboard.grafana.app` / `dashboards` resources rather than treating the
+legacy `dashboard` SQL table as authoritative.
+
+Routine validation:
+
+    systemctl is-active grafana-server
+    curl -fsS http://127.0.0.1:3000/api/health
+    ss -lntp | grep '127.0.0.1:3000'
+
+Dashboard source, installation, unified-storage validation, and recovery
+details are documented in `GRAFANA_DASHBOARDS.md`.
+
+Grafana Explore with the provisioned Loki datasource remains the current log
+interface. A dedicated Loki dashboard is intentionally deferred until its
+query labels are explicitly verified.

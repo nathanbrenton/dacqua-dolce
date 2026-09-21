@@ -53,7 +53,9 @@ Dry-run generation is validated. After real mail delivery is commissioned:
 - submit the corresponding Better Stack heartbeat only after the successful mail-delivery boundary;
 - monitor timer/job failure and report freshness.
 
-## 4. Grafana dashboards
+## 4. Grafana dashboards — completed
 
-Grafana, Prometheus, and Loki are commissioned, and data sources are provisioned. A curated, repo-managed
-production dashboard set remains a separate milestone.
+Completed 2026-09-21. The production dashboard set is repo-managed and
+provisioned from `observability/grafana/`. It includes Production Overview,
+Host Resources, and Service & Backup Health dashboards. Rebuild, installation,
+access, and validation procedures are documented in `GRAFANA_DASHBOARDS.md`.

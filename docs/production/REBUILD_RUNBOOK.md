@@ -508,3 +508,73 @@ pending.
 
 After off-host backup is commissioned, this runbook must be extended with a tested clean-host restore sequence
 that starts from the remote encrypted repository and results in a validated production database/application.
+
+## Grafana dashboard provisioning
+
+Grafana data sources must already be provisioned before installing the D'Acqua
+Dolce production dashboards. The Prometheus datasource UID is:
+
+    prometheus
+
+The repository contains:
+
+    observability/grafana/provisioning/dashboards/dacqua-dolce.yaml
+    observability/grafana/dashboards/production-overview.json
+    observability/grafana/dashboards/host-resources.json
+    observability/grafana/dashboards/service-backup-health.json
+
+Before installation, validate the repository definitions:
+
+    python3 scripts/production/validate_grafana_dashboards.py
+
+### Install the repo-managed production dashboards
+
+From a staged copy of the repository on the production server:
+
+    sudo ./scripts/production/install_grafana_dashboards.sh /path/to/staged/repository
+
+The installer:
+
+- validates the source dashboards;
+- verifies the existing Prometheus datasource UID;
+- backs up prior D'Acqua Dolce Grafana provisioning;
+- installs the file provider and three dashboard JSON files;
+- restarts Grafana;
+- confirms Grafana health;
+- confirms Grafana remains bound to `127.0.0.1:3000`;
+- verifies all three dashboard UIDs in Grafana 13 unified storage;
+- restores the prior managed provisioning if post-install validation fails.
+
+Installed paths:
+
+    /etc/grafana/provisioning/dashboards/dacqua-dolce.yaml
+    /var/lib/grafana/dashboards/dacqua-dolce/
+
+Expected dashboard UIDs:
+
+    dacqua-prod-overview
+    dacqua-host-resources
+    dacqua-service-backup
+
+On the validated production implementation, Grafana 13 stores current
+dashboard resources through unified storage. The legacy `dashboard` SQL table
+is not the authoritative validation source.
+
+After installation validate:
+
+    systemctl is-active grafana-server
+    curl -fsS http://127.0.0.1:3000/api/health
+    ss -lntp | grep '127.0.0.1:3000'
+    sudo journalctl -u grafana-server --since '-15 minutes' --no-pager -p warning
+
+Also confirm:
+
+- all dashboard PromQL expressions execute successfully against the local
+  Prometheus instance;
+- all three expected dashboard UIDs exist in unified storage;
+- Prometheus has no unexpected firing or pending alerts;
+- `systemctl --failed` reports no failed units.
+
+Full dashboard operational documentation is in:
+
+    docs/production/GRAFANA_DASHBOARDS.md

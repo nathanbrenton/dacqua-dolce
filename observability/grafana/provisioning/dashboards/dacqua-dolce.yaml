@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: D'Acqua Dolce Production
+    orgId: 1
+    folder: D'Acqua Dolce Production
+    folderUid: dacqua-prod
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards/dacqua-dolce
+      foldersFromFilesStructure: false

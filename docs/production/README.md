@@ -33,3 +33,10 @@ This directory is the authoritative documentation namespace for the D'Acqua Dolc
 The older top-level `docs/PRODUCTION_*.md` files were written during bootstrap and pre-production planning.
 They remain useful implementation history and source material, but this directory supersedes them for the
 current production state and rebuild procedure.
+
+## Grafana production dashboards
+
+The repo-managed Grafana dashboard set, provisioning layout, installation
+procedure, access method, and validation commands are documented in:
+
+    GRAFANA_DASHBOARDS.md
