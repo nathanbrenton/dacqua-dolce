@@ -171,13 +171,14 @@ Production environment configuration is external to the release tree:
 
 The FastAPI service runs as the dedicated `dacqua-app` account.
 
-### Current PT10 release
+### Release ownership and lifecycle
 
-    /srv/dacqua-dolce/releases/20260917T084102Z
+The hardened deployment workflow normalizes successful release trees to `root:root` and removes group/other write
+permission before activation. New releases are switched atomically through `/srv/dacqua-dolce/current`, validated
+locally and publicly, and automatically rolled back to the previous application release if post-switch validation fails.
 
-The PT10 snapshot shows this release owned by the administrator account rather than normalized root ownership.
-That is a known deployment-lifecycle hardening item and must be resolved in the dedicated deployment milestone;
-it is not treated here as the desired long-term release-ownership policy.
+The default retention policy keeps the five newest timestamped releases. PostgreSQL migrations are never automatically
+downgraded as part of application rollback. See `DEPLOYMENT_AND_ROLLBACK.md`.
 
 ## 8. Observability stack
 

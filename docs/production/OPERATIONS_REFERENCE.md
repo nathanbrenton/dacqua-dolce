@@ -243,3 +243,34 @@ Current protected configuration namespaces include:
     /etc/dacqua-backup/
 
 The restic repository password is intentionally stored outside Git and has an additional off-server copy.
+
+## Deployment and rollback
+
+Deploy from a complete release source on the production host:
+
+    sudo scripts/production/deploy_release.sh /path/to/release-source
+
+The helper builds before activation, runs the database migration, normalizes release ownership, atomically switches the
+`current` symlink, validates readiness/public behavior, automatically restores the previous application release after a
+failed activation, and prunes old timestamped releases only after success.
+
+List rollback targets:
+
+    sudo scripts/production/rollback_release.sh
+
+Rollback the application only:
+
+    sudo scripts/production/rollback_release.sh RELEASE_DIRECTORY_NAME
+
+Application rollback never automatically downgrades PostgreSQL. Confirm schema compatibility before selecting an older
+release.
+
+Post-deployment quick checks:
+
+    readlink -f /srv/dacqua-dolce/current
+    stat -c '%U:%G %a %n' "$(readlink -f /srv/dacqua-dolce/current)"
+    curl -fsS http://127.0.0.1:8000/readiness
+    scripts/production/verify_release.sh https://dacquadolce.com
+    systemctl --failed --no-pager
+
+See `DEPLOYMENT_AND_ROLLBACK.md` for the full lifecycle and migration-compatibility policy.

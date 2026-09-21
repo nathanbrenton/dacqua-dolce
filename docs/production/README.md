@@ -12,6 +12,8 @@ This directory is the authoritative documentation namespace for the D'Acqua Dolc
   Debian 13 Vultr instance and the application repository.
 - `OPERATIONS_REFERENCE.md` — day-to-day service, health, log, backup, deployment, and validation
   reference.
+- `DEPLOYMENT_AND_ROLLBACK.md` — authoritative application release, activation, retention, migration-compatibility,
+  validation, and rollback workflow.
 - `PENDING_INTEGRATIONS.md` — intentionally unfinished production items that must not be mistaken for
   commissioned infrastructure.
 

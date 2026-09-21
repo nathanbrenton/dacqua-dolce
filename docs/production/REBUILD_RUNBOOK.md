@@ -217,9 +217,8 @@ The API runs as dedicated service account:
 
 The populated environment file must remain outside the release tree and protected from unprivileged users.
 
-**PT10 lifecycle note:** the current deployed release was observed with administrator ownership. The dedicated
-post-PT10 deployment-hardening milestone must normalize and document the final desired release ownership before
-this aspect of the runbook is considered final.
+Successful application releases are normalized to `root:root` ownership and have group/other write permission removed
+before activation. `/srv/dacqua-dolce/current` is changed only through an atomic symlink replacement.
 
 ## 13. Install production environment configuration
 
@@ -317,23 +316,25 @@ Repository helper:
 
     scripts/production/deploy_release.sh
 
-The current deployment sequence is:
+The hardened deployment sequence is:
 
-1. validate source tree and production environment;
-2. create timestamped release directory;
-3. copy source excluding Git, `.env*`, `node_modules`, and `.venv`;
-4. create backend virtual environment;
-5. install backend package using `constraints-known-good.txt`;
-6. run `alembic upgrade head`;
-7. run frontend `npm ci` and `npm run build`;
-8. atomically switch `/srv/dacqua-dolce/current`;
-9. restart `dacqua-dolce-api.service`;
-10. require local `/readiness` success.
+1. validate source tree, production environment, and retention policy;
+2. capture the previously active release;
+3. create a timestamped release directory and copy sanitized source;
+4. create the backend virtual environment and install the constrained runtime package;
+5. run frontend `npm ci` and `npm run build`;
+6. create an on-demand PostgreSQL backup when the commissioned backup helper is available;
+7. run `alembic upgrade head`;
+8. normalize release ownership to `root:root` and remove group/other write permission;
+9. atomically switch `/srv/dacqua-dolce/current`;
+10. restart `dacqua-dolce-api.service`;
+11. require local `/readiness` and public release verification;
+12. automatically restore the previous application release if post-switch validation fails;
+13. after success, retain the newest five timestamped releases by default.
 
-The separate deployment-lifecycle milestone will harden release ownership and post-switch rollback. Until then,
-follow the existing validated deployment helper and manually verify the release immediately after activation.
-
-Database migrations are not automatically downgraded during application rollback.
+Database migrations are not automatically downgraded during application rollback. Migration sequencing must preserve
+compatibility with the immediately previous application release unless a deployment has an explicit database recovery
+plan. See `docs/production/DEPLOYMENT_AND_ROLLBACK.md`.
 
 ## 19. Verify application edge
 

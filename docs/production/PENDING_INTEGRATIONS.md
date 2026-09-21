@@ -57,15 +57,3 @@ Dry-run generation is validated. After real mail delivery is commissioned:
 
 Grafana, Prometheus, and Loki are commissioned, and data sources are provisioned. A curated, repo-managed
 production dashboard set remains a separate milestone.
-
-## 5. Deployment lifecycle hardening
-
-The current PT10 release is healthy, but the dedicated deployment milestone still needs to finalize:
-
-- deterministic release ownership/permissions;
-- automatic application rollback when post-switch readiness fails;
-- release-retention cleanup;
-- migration/deployment compatibility policy;
-- deployment validation and rollback documentation synchronized with the scripts.
-
-Database migrations must never be automatically downgraded as part of ordinary application rollback.
