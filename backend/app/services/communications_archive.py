@@ -69,6 +69,8 @@ def archive_outbound_email(
     related_entity_type: str | None,
     related_entity_id: str | None,
     customer_user_id: uuid.UUID | None = None,
+    communication_thread: CommunicationThread | None = None,
+    author_user_id: uuid.UUID | None = None,
     sensitive_values: tuple[str, ...] = (),
 ) -> CommunicationMessage:
     archived_subject, subject_redacted = _redact_value(
@@ -86,19 +88,25 @@ def archive_outbound_email(
 
     now = datetime.now(UTC)
 
-    thread = CommunicationThread(
-        customer_user_id=customer_user_id,
-        subject=archived_subject,
-        related_entity_type=related_entity_type,
-        related_entity_id=related_entity_id,
-        status=CommunicationThreadStatus.open,
-        last_message_at=now,
-    )
-    db.add(thread)
-    db.flush()
+    if communication_thread is None:
+        thread = CommunicationThread(
+            customer_user_id=customer_user_id,
+            subject=archived_subject,
+            related_entity_type=related_entity_type,
+            related_entity_id=related_entity_id,
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+    else:
+        thread = communication_thread
+        thread.status = CommunicationThreadStatus.open
+        thread.last_message_at = now
 
     archived_message = CommunicationMessage(
         thread_id=thread.id,
+        author_user_id=author_user_id,
         email_delivery_id=delivery.id,
         direction=CommunicationDirection.outbound,
         status=CommunicationMessageStatus.queued,
@@ -113,6 +121,7 @@ def archive_outbound_email(
             or text_redacted
             or html_redacted
         ),
+        created_at=now,
     )
     db.add(archived_message)
     db.flush()
@@ -408,6 +417,7 @@ def archive_postmark_inbound_email(
         body_html=(payload.html_body or None),
         content_redacted=False,
         received_at=now,
+        created_at=now,
     )
     db.add(archived_message)
 

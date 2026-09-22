@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
+from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
 from app.models.catalog import Product, ProductInventory, ProductPrice
 from app.models.commerce import (
@@ -36,6 +37,8 @@ from app.schemas.operations import (
     OperationsCommunicationMessageRead,
     OperationsCommunicationRead,
     OperationsCommunicationRecipientRead,
+    OperationsCommunicationReplyCreate,
+    OperationsCommunicationReplyRead,
     OperationsCommunicationThreadDetailRead,
     OperationsCommunicationThreadRead,
     OperationsCustomerAddressRead,
@@ -55,6 +58,12 @@ from app.schemas.operations import (
 from app.services.audit import record_audit_event
 from app.services.commerce import (
     active_reserved_quantity,
+)
+from app.services.communications_reply import (
+    CommunicationReplyConfigurationError,
+    CommunicationReplyRecipientUnavailable,
+    resolve_communication_reply_target,
+    send_communication_reply,
 )
 from app.services.operations_access import (
     require_operations,
@@ -567,9 +576,85 @@ def get_communication_thread(
 
     return OperationsCommunicationThreadDetailRead(
         **summary.model_dump(),
+        reply_target=resolve_communication_reply_target(
+            db,
+            thread=thread,
+        ),
         messages=_communication_message_reads(
             db,
             messages=messages,
+        ),
+    )
+
+
+@router.post(
+    "/communication-threads/{thread_id}/reply",
+    response_model=OperationsCommunicationReplyRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def reply_to_communication_thread(
+    thread_id: uuid.UUID,
+    payload: OperationsCommunicationReplyCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsCommunicationReplyRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    thread = db.get(
+        CommunicationThread,
+        thread_id,
+    )
+
+    if thread is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Communication thread not found.",
+        )
+
+    try:
+        result = send_communication_reply(
+            db,
+            settings=get_email_runtime_settings(),
+            thread=thread,
+            author_user_id=current_user.id,
+            body_text=payload.body_text,
+        )
+    except CommunicationReplyRecipientUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    except CommunicationReplyConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from exc
+
+    record_audit_event(
+        db,
+        action="communications.reply_attempted",
+        entity_type="communication_thread",
+        entity_id=str(thread.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "delivery_status": result.delivery.status.value,
+            "provider": result.delivery.provider,
+        },
+    )
+
+    db.commit()
+    db.refresh(thread)
+
+    return OperationsCommunicationReplyRead(
+        delivery_status=result.delivery.status.value,
+        recipient=result.recipient,
+        thread=get_communication_thread(
+            thread.id,
+            db,
+            current_user,
         ),
     )
 

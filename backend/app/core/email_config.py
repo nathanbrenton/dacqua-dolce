@@ -1,3 +1,4 @@
+import uuid
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlsplit
@@ -11,6 +12,8 @@ from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
 )
+
+from app.core.email import normalize_email_address
 
 
 class EmailRuntimeSettings(BaseSettings):
@@ -31,6 +34,7 @@ class EmailRuntimeSettings(BaseSettings):
 
     postmark_inbound_webhook_username: SecretStr | None = None
     postmark_inbound_webhook_password: SecretStr | None = None
+    postmark_inbound_address: str | None = None
 
     email_from: str = "no-reply@localhost.invalid"
 
@@ -47,6 +51,29 @@ class EmailRuntimeSettings(BaseSettings):
         ge=15,
         le=7 * 24 * 60,
     )
+
+    @field_validator("postmark_inbound_address")
+    @classmethod
+    def validate_postmark_inbound_address(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        stripped = value.strip()
+        if not stripped:
+            return None
+
+        normalized = normalize_email_address(stripped)
+        local_part, _ = normalized.rsplit("@", 1)
+
+        if "+" in local_part:
+            raise ValueError(
+                "postmark_inbound_address must be the base inbound mailbox."
+            )
+
+        return normalized
 
     @field_validator("public_origin")
     @classmethod
@@ -82,6 +109,16 @@ class EmailRuntimeSettings(BaseSettings):
         normalized_path = path if path.startswith("/") else f"/{path}"
 
         return f"{self.public_origin}{normalized_path}"
+
+    def postmark_thread_reply_to(
+        self,
+        thread_id: uuid.UUID,
+    ) -> str | None:
+        if self.postmark_inbound_address is None:
+            return None
+
+        local_part, domain = self.postmark_inbound_address.rsplit("@", 1)
+        return f"{local_part}+{thread_id}@{domain}"
 
     @staticmethod
     def _secret_value(

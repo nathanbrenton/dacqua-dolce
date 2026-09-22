@@ -1,4 +1,5 @@
 import {
+  type FormEvent,
   useEffect,
   useMemo,
   useState,
@@ -7,6 +8,7 @@ import {
 import {
   getOperationsCommunicationThread,
   getOperationsCommunicationThreads,
+  replyToOperationsCommunicationThread,
   type OperationsCommunicationMessage,
   type OperationsCommunicationThread,
   type OperationsCommunicationThreadDetail,
@@ -74,6 +76,34 @@ function recipientLabel(
   return recipients.join(", ");
 }
 
+function relatedRecordLabel(
+  type: string | null,
+): string | null {
+  if (type === null) {
+    return null;
+  }
+
+  const labels: Record<string, string> = {
+    quote_request: "Quote request",
+    user: "Customer account",
+    order: "Customer order",
+  };
+
+  return labels[type] ?? "Related record";
+}
+
+function deliveryNotice(status: string): string {
+  if (status === "sent") {
+    return "Reply sent and archived.";
+  }
+
+  if (status === "suppressed") {
+    return "Reply archived locally; email delivery is disabled in this environment.";
+  }
+
+  return "Reply attempt was archived, but email delivery failed.";
+}
+
 export function CommunicationsInbox() {
   const [threads, setThreads] =
     useState<OperationsCommunicationThread[]>([]);
@@ -82,8 +112,12 @@ export function CommunicationsInbox() {
   const [threadDetail, setThreadDetail] =
     useState<OperationsCommunicationThreadDetail | null>(null);
   const [search, setSearch] = useState("");
+  const [replyBody, setReplyBody] = useState("");
+  const [replyNotice, setReplyNotice] = useState<string | null>(null);
+  const [replyFailed, setReplyFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [replySending, setReplySending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,6 +165,9 @@ export function CommunicationsInbox() {
   async function openThread(threadId: string): Promise<void> {
     setSelectedThreadId(threadId);
     setDetailLoading(true);
+    setReplyBody("");
+    setReplyNotice(null);
+    setReplyFailed(false);
     setError(null);
 
     try {
@@ -148,16 +185,71 @@ export function CommunicationsInbox() {
     }
   }
 
+  async function submitReply(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> {
+    event.preventDefault();
+
+    if (threadDetail === null || replyBody.trim().length === 0) {
+      return;
+    }
+
+    setReplySending(true);
+    setReplyNotice(null);
+    setReplyFailed(false);
+    setError(null);
+
+    try {
+      const result = await replyToOperationsCommunicationThread(
+        threadDetail.id,
+        replyBody,
+      );
+
+      setThreadDetail(result.thread);
+      setThreads((current) =>
+        current
+          .map((thread) =>
+            thread.id === result.thread.id
+              ? result.thread
+              : thread,
+          )
+          .sort((left, right) => {
+            const leftTime = new Date(
+              left.last_message_at ?? left.created_at,
+            ).getTime();
+            const rightTime = new Date(
+              right.last_message_at ?? right.created_at,
+            ).getTime();
+
+            return rightTime - leftTime;
+          }),
+      );
+      setReplyNotice(deliveryNotice(result.delivery_status));
+      setReplyFailed(result.delivery_status === "failed");
+
+      if (result.delivery_status !== "failed") {
+        setReplyBody("");
+      }
+    } catch (caught) {
+      setReplyFailed(true);
+      setReplyNotice(
+        caught instanceof Error
+          ? caught.message
+          : "Reply could not be submitted.",
+      );
+    } finally {
+      setReplySending(false);
+    }
+  }
+
   return (
     <div className="operations-inbox">
       <div className="operations-section-heading">
         <p className="eyebrow">Customer Communications</p>
         <h2>Conversation inbox</h2>
         <p>
-          Durable inbound and outbound customer communication history.
-          Plain-text message bodies are shown from the local archive;
-          provider-private identifiers, raw HTML, and attachment binary
-          content remain outside this view.
+          Search the durable customer email archive, inspect a
+          conversation, and reply from the same thread.
         </p>
       </div>
 
@@ -279,19 +371,20 @@ export function CommunicationsInbox() {
                     ?? threadDetail.latest_subject
                     ?? "Untitled conversation"}
                 </h3>
-                <p>
-                  {threadDetail.customer_email
-                    ?? "No registered customer matched"}
-                </p>
-                {(
-                  threadDetail.related_entity_type !== null
-                  || threadDetail.related_entity_id !== null
-                ) ? (
-                  <small>
-                    Related: {threadDetail.related_entity_type ?? "record"}
-                    {threadDetail.related_entity_id !== null
-                      ? ` · ${threadDetail.related_entity_id}`
-                      : ""}
+                {threadDetail.customer_email !== null ? (
+                  <p>{threadDetail.customer_email}</p>
+                ) : (
+                  <span className="operations-inbox-unmatched">
+                    Unmatched sender
+                  </span>
+                )}
+                {relatedRecordLabel(
+                  threadDetail.related_entity_type,
+                ) !== null ? (
+                  <small className="operations-inbox-related">
+                    {relatedRecordLabel(
+                      threadDetail.related_entity_type,
+                    )}
                   </small>
                 ) : null}
               </header>
@@ -307,7 +400,12 @@ export function CommunicationsInbox() {
                   >
                     <header>
                       <div>
-                        <span className="operations-inbox-direction">
+                        <span
+                          className={
+                            "operations-inbox-direction "
+                            + `is-${message.direction}`
+                          }
+                        >
                           {message.direction}
                         </span>
                         <strong>
@@ -361,6 +459,68 @@ export function CommunicationsInbox() {
                   </article>
                 ))}
               </div>
+
+              <form
+                className="operations-inbox-reply"
+                onSubmit={(event) => {
+                  void submitReply(event);
+                }}
+              >
+                <div>
+                  <strong>Reply</strong>
+                  <small>
+                    {threadDetail.reply_target !== null
+                      ? `To ${threadDetail.reply_target}`
+                      : "No reply address is available for this conversation."}
+                  </small>
+                </div>
+
+                <textarea
+                  aria-label="Reply message"
+                  placeholder="Write a plain-text reply…"
+                  value={replyBody}
+                  maxLength={20000}
+                  disabled={
+                    replySending
+                    || threadDetail.reply_target === null
+                  }
+                  onChange={(event) => {
+                    setReplyBody(event.target.value);
+                    setReplyNotice(null);
+                    setReplyFailed(false);
+                  }}
+                />
+
+                <div className="operations-inbox-reply-actions">
+                  {replyNotice !== null ? (
+                    <span
+                      className={
+                        replyFailed
+                          ? "operations-inbox-reply-status is-error"
+                          : "operations-inbox-reply-status"
+                      }
+                    >
+                      {replyNotice}
+                    </span>
+                  ) : (
+                    <span className="operations-inbox-reply-status">
+                      Plain text · archived with this conversation
+                    </span>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="operations-action"
+                    disabled={
+                      replySending
+                      || threadDetail.reply_target === null
+                      || replyBody.trim().length === 0
+                    }
+                  >
+                    {replySending ? "Sending…" : "Send reply"}
+                  </button>
+                </div>
+              </form>
             </>
           )}
         </section>

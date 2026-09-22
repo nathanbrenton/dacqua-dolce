@@ -100,9 +100,36 @@ class OperationsCommunicationThreadRead(BaseModel):
 class OperationsCommunicationThreadDetailRead(
     OperationsCommunicationThreadRead
 ):
+    reply_target: str | None = None
     messages: list[OperationsCommunicationMessageRead] = Field(
         default_factory=list,
     )
+
+
+class OperationsCommunicationReplyCreate(BaseModel):
+    body_text: str = Field(
+        min_length=1,
+        max_length=20000,
+    )
+
+    @field_validator("body_text")
+    @classmethod
+    def clean_body_text(
+        cls,
+        value: str,
+    ) -> str:
+        cleaned = value.strip()
+
+        if not cleaned:
+            raise ValueError("Reply message cannot be empty.")
+
+        return cleaned
+
+
+class OperationsCommunicationReplyRead(BaseModel):
+    delivery_status: str
+    recipient: str
+    thread: OperationsCommunicationThreadDetailRead
 
 
 class OperationsQuoteRead(BaseModel):

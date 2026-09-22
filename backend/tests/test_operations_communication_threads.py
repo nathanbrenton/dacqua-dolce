@@ -7,6 +7,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.api import operations
+from app.core.email_config import EmailRuntimeSettings
 from app.db.session import SessionLocal
 from app.models.communications import (
     CommunicationAttachment,
@@ -18,6 +19,8 @@ from app.models.communications import (
     CommunicationThread,
     CommunicationThreadStatus,
 )
+from app.models.identity import User
+from app.schemas.operations import OperationsCommunicationReplyCreate
 
 
 def _allow_operations(
@@ -191,3 +194,82 @@ def test_missing_communication_thread_returns_404(
         assert exc.value.status_code == 404
         assert exc.value.detail == "Communication thread not found."
 
+
+
+def test_reply_archives_into_existing_thread_without_live_email(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        employee = User(
+            email=f"employee-{uuid.uuid4()}@example.test",
+        )
+        db.add(employee)
+        db.flush()
+
+        thread = CommunicationThread(
+            subject="Water test follow-up",
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+
+        inbound = CommunicationMessage(
+            thread_id=thread.id,
+            direction=CommunicationDirection.inbound,
+            status=CommunicationMessageStatus.received,
+            provider="postmark",
+            provider_message_id=f"test-{uuid.uuid4()}",
+            message_stream="inbound",
+            sender_address="customer@example.test",
+            subject="Water test follow-up",
+            body_text="Can you tell me what happens next?",
+            content_redacted=False,
+            received_at=now,
+        )
+        db.add(inbound)
+        db.flush()
+
+        monkeypatch.setattr(
+            operations,
+            "get_email_runtime_settings",
+            lambda: EmailRuntimeSettings(
+                email_provider="disabled",
+                email_from="support@dacquadolce.com",
+                postmark_inbound_address=(
+                    "abc123@inbound.postmarkapp.com"
+                ),
+            ),
+        )
+        monkeypatch.setattr(
+            db,
+            "commit",
+            lambda: db.flush(),
+        )
+
+        result = operations.reply_to_communication_thread(
+            thread.id,
+            OperationsCommunicationReplyCreate(
+                body_text="We can help with the next step.",
+            ),
+            db,  # type: ignore[arg-type]
+            employee,  # type: ignore[arg-type]
+        )
+
+        assert result.delivery_status == "suppressed"
+        assert result.recipient == "customer@example.test"
+        assert result.thread.id == str(thread.id)
+        assert result.thread.reply_target == "customer@example.test"
+        assert len(result.thread.messages) == 2
+
+        reply = result.thread.messages[-1]
+        assert reply.direction == "outbound"
+        assert reply.status == "suppressed"
+        assert reply.author_user_id == str(employee.id)
+        assert reply.body_text == "We can help with the next step."
+        assert reply.recipients[0].address == "customer@example.test"
+
+        db.rollback()

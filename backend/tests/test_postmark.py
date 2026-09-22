@@ -104,3 +104,41 @@ def test_postmark_success_with_nonzero_error_code_includes_message(
         ),
     ):
         provider.send(_message())
+
+
+def test_postmark_send_includes_reply_to(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_post(*args: object, **kwargs: object) -> httpx.Response:
+        captured.update(kwargs)
+        request = httpx.Request("POST", PostmarkEmailProvider.API_URL)
+        return httpx.Response(
+            200,
+            request=request,
+            json={
+                "ErrorCode": 0,
+                "Message": "OK",
+                "MessageID": "provider-message-id",
+            },
+        )
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+
+    message = EmailMessage(
+        sender="no-reply@dacquadolce.com",
+        recipient="customer@example.com",
+        subject="Test reply",
+        body_text="Reply body",
+        reply_to=(
+            "abc123+11111111-2222-3333-4444-555555555555"
+            "@inbound.postmarkapp.com"
+        ),
+    )
+
+    PostmarkEmailProvider(server_token="secret").send(message)
+
+    payload = captured["json"]
+    assert isinstance(payload, dict)
+    assert payload["ReplyTo"] == message.reply_to

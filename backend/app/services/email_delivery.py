@@ -14,6 +14,7 @@ from app.integrations.postmark import (
 )
 from app.models.communications import (
     CommunicationMessageStatus,
+    CommunicationThread,
 )
 from app.models.email import (
     EmailDelivery,
@@ -33,6 +34,8 @@ def deliver_email(
     related_entity_type: (str | None) = None,
     related_entity_id: (str | None) = None,
     customer_user_id: uuid.UUID | None = None,
+    communication_thread: CommunicationThread | None = None,
+    author_user_id: uuid.UUID | None = None,
     archive_sensitive_values: tuple[str, ...] = (),
 ) -> EmailDelivery:
     delivery = EmailDelivery(
@@ -56,6 +59,8 @@ def deliver_email(
         related_entity_type=related_entity_type,
         related_entity_id=related_entity_id,
         customer_user_id=customer_user_id,
+        communication_thread=communication_thread,
+        author_user_id=author_user_id,
         sensitive_values=archive_sensitive_values,
     )
 

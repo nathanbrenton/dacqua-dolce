@@ -87,6 +87,9 @@ class PostmarkEmailProvider:
         if message.body_html is not None:
             payload["HtmlBody"] = message.body_html
 
+        if message.reply_to is not None:
+            payload["ReplyTo"] = message.reply_to
+
         response = httpx.post(
             self.API_URL,
             headers={

@@ -9,6 +9,7 @@ class EmailMessage:
     subject: str
     body_text: str
     body_html: str | None = None
+    reply_to: str | None = None
 
 
 @dataclass(frozen=True)

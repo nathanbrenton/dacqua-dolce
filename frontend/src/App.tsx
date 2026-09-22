@@ -752,7 +752,7 @@ export function App() {
             </p>
 
             <h2>
-              Water is not background.
+              Water is where well-being begins.
             </h2>
 
             <p>

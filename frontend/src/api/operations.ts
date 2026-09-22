@@ -82,8 +82,15 @@ export type OperationsCommunicationThread = {
 
 export type OperationsCommunicationThreadDetail =
   OperationsCommunicationThread & {
+    reply_target: string | null;
     messages: OperationsCommunicationMessage[];
   };
+
+export type OperationsCommunicationReply = {
+  delivery_status: string;
+  recipient: string;
+  thread: OperationsCommunicationThreadDetail;
+};
 
 export type OperationsQuote = {
   id: string;
@@ -225,7 +232,7 @@ async function getJson<T>(
 
 async function writeJson<T>(
   path: string,
-  method: "PATCH" | "PUT",
+  method: "PATCH" | "POST" | "PUT",
   payload: unknown,
 ): Promise<T> {
   const csrfToken =
@@ -292,6 +299,17 @@ export function getOperationsCommunicationThread(
 ): Promise<OperationsCommunicationThreadDetail> {
   return getJson(
     `/api/operations/communication-threads/${encodeURIComponent(threadId)}`,
+  );
+}
+
+export function replyToOperationsCommunicationThread(
+  threadId: string,
+  bodyText: string,
+): Promise<OperationsCommunicationReply> {
+  return writeJson(
+    `/api/operations/communication-threads/${encodeURIComponent(threadId)}/reply`,
+    "POST",
+    { body_text: bodyText },
   );
 }
 
