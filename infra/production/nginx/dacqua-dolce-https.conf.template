@@ -135,6 +135,25 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
+    # Postmark inbound email webhook.
+    #
+    # Keep the normal site-wide request limit at 2 MB. Inbound email
+    # attachments arrive base64-encoded inside Postmark's JSON payload,
+    # so this exact machine-to-machine endpoint receives a larger envelope.
+    location = /api/webhooks/postmark/inbound {
+        client_max_body_size 64m;
+
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For
+            $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
     location /api/ {
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
