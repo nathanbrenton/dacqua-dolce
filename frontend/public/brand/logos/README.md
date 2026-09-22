@@ -30,5 +30,7 @@ Assets:
 - `dacqua-dolce-logo-metallic-aqua-filtration-systems.webp`
 
 The logos are intentionally not automatically recolored or theme-filtered.
-Theme integration can select among the supplied source variants later without
-altering the artwork.
+The current application can select among the supplied source variants without
+altering the artwork. The footer-logo Appearance control exposes visual-theme
+selection in production, while the logo-artwork selector remains developer-mode
+only.

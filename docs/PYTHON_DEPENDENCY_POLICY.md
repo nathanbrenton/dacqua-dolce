@@ -46,11 +46,11 @@ Do not replace the narrow exception with a blanket suppression of
 
 From `backend/`, a normal online development installation is:
 
-    .venv/bin/python -m pip install       -c constraints-known-good.txt       -e '.[dev]'
+    .venv/bin/python3 -m pip install       -c constraints-known-good.txt       -e '.[dev]'
 
 A local offline rebuild uses the preserved macOS-compatible wheelhouse:
 
-    .venv/bin/python -m pip install       --no-index       --find-links "$HOME/Desktop/dacqua-dolce_build-assets/python-wheels"       -c constraints-known-good.txt       -e '.[dev]'
+    .venv/bin/python3 -m pip install       --no-index       --find-links "$HOME/Desktop/dacqua-dolce_build-assets/python-wheels"       -c constraints-known-good.txt       -e '.[dev]'
 
 The local wheelhouse contains platform-specific binaries and must be treated
 as a local development artifact.
@@ -80,7 +80,7 @@ repository/runtime-support files rather than Python distribution packages.
 
 Production installs the project without the `dev` extra:
 
-    python -m pip install       -c constraints-known-good.txt       .
+    python3 -m pip install       -c constraints-known-good.txt       .
 
 This installs runtime `httpx` but does not install test-only `httpx2`,
 pytest, Ruff, Bandit, or pip-audit.
@@ -121,7 +121,7 @@ After any dependency change:
 
 1. preserve newly required wheels;
 2. install the proposed environment;
-3. run `python -m pip check`;
+3. run `python3 -m pip check`;
 4. run the full pytest suite with strict warning handling;
 5. run Ruff/security validation;
 6. refresh `constraints-known-good.txt`;

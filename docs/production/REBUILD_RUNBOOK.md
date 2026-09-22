@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-This is the authoritative PT10 rebuild baseline for `dacqua-platform-prod-01`.
+This is the authoritative PT12 rebuild baseline for `dacqua-platform-prod-01`, validated through 2026-09-22.
 
 It documents the clean validated production architecture and the repository-supported rebuild path. It does
 not record commissioning mistakes, failed experiments, or transient troubleshooting.
@@ -24,7 +24,7 @@ Rebuild target:
 - hostname `dacqua-platform-prod-01`;
 - 4 vCPU;
 - ~8 GiB RAM;
-- ~160 GB provider disk / ~150 GiB root filesystem in the PT10 snapshot;
+- ~160 GB provider disk / ~150 GiB root filesystem;
 - 8 GiB swap;
 - UTC system timezone;
 - `vm.swappiness=10`;
@@ -42,8 +42,9 @@ Before destroying/rebuilding a production host, confirm independent access to:
 - TLS/DNS administrative access;
 - Better Stack account/monitor configuration;
 - backup encryption password;
-- future AWS/S3 credentials only after that integration is commissioned;
-- future mail-relay credentials only after that integration is commissioned.
+- Postmark production server token or an authoritative secret-store copy;
+- observability-reporting Postmark token/configuration if that workflow has been commissioned;
+- future AWS/S3 credentials only after that integration is commissioned.
 
 Never place these values in Git or this runbook.
 
@@ -72,7 +73,7 @@ Set the production hostname:
 
     dacqua-platform-prod-01
 
-The public IPv4 at PT10 is `144.202.114.17`; DNS must be verified against the actual rebuilt host rather than
+The public IPv4 at the 2026-09-22 checkpoint is `144.202.114.17`; DNS must be verified against the actual rebuilt host rather than
 blindly reusing an old address.
 
 ## 5. Base Debian bootstrap
@@ -259,8 +260,7 @@ Required boundaries:
 - `backend.env`: runtime configuration, readable by `dacqua-app`;
 - `migration.env`: deploy-only database URL, `root:root`, mode `0600`;
 - `dacqua-dolce-api.service` loads only `backend.env`;
-- `deploy_release.sh` sources `migration.env` only for Alembic and removes
-  `DACQUA_MIGRATION_DATABASE_URL` from its environment after migration.
+- `deploy_release.sh` sources `migration.env` for Alembic and deployment-time catalog reconciliation, then removes `DACQUA_MIGRATION_DATABASE_URL` from its environment before activation.
 
 Never commit either populated production file.
 
@@ -356,17 +356,21 @@ The hardened deployment sequence is:
 
 1. validate source tree, production environment, and retention policy;
 2. capture the previously active release;
-3. create a timestamped release directory and copy sanitized source;
+3. create a timestamped release directory and copy sanitized source with server-side `rsync`;
 4. create the backend virtual environment and install the constrained runtime package;
 5. run frontend `npm ci` and `npm run build`;
 6. create an on-demand PostgreSQL backup when the commissioned backup helper is available;
 7. run `alembic upgrade head`;
-8. normalize release ownership to `root:root` and remove group/other write permission;
-9. atomically switch `/srv/dacqua-dolce/current`;
-10. restart `dacqua-dolce-api.service`;
-11. require local `/readiness` and public release verification;
-12. automatically restore the previous application release if post-switch validation fails;
-13. after success, retain the newest five timestamped releases by default.
+8. run `./.venv/bin/python -m app.cli.seed_catalog apply` using the deploy-time database authority;
+9. remove the deploy-only migration URL from the process environment;
+10. normalize release ownership to `root:root` and remove group/other write permission;
+11. atomically switch `/srv/dacqua-dolce/current`;
+12. restart `dacqua-dolce-api.service`;
+13. require local `/readiness` and public release verification;
+14. automatically restore the previous application release if post-switch validation fails;
+15. after success, retain the newest five timestamped releases by default.
+
+The release source must represent a known Git revision. Through the 2026-09-22 checkpoint the validated staging method was exact `git archive` + SHA-256 + `scp` + extraction. An rsync-based exact-revision staging cache is planned to reduce workstation-to-server transfer volume; do not rsync directly into `/srv/dacqua-dolce/current` or mutate a timestamped release in place.
 
 Database migrations are not automatically downgraded during application rollback. Migration sequencing must preserve
 compatibility with the immediately previous application release unless a deployment has an explicit database recovery
@@ -393,7 +397,29 @@ Use the repository verifier when applicable:
 
     scripts/production/verify_release.sh https://dacquadolce.com
 
-## 20. Install observability stack
+## 20. Configure and validate application Postmark email
+
+Application transactional email is commissioned through the Postmark HTTPS API. Configure only through the protected runtime environment:
+
+    DACQUA_PUBLIC_ORIGIN=https://dacquadolce.com
+    DACQUA_EMAIL_PROVIDER=postmark
+    DACQUA_POSTMARK_SERVER_TOKEN=<secret>
+    DACQUA_EMAIL_FROM=<verified-sender>
+
+The `dacquadolce.com` sending domain must be verified in Postmark. Never place the server token in Git, shell history, tickets, or documentation.
+
+After configuration:
+
+1. restart `dacqua-dolce-api.service`;
+2. verify local readiness;
+3. perform a controlled Postmark test send;
+4. verify a real registration/email-verification flow;
+5. confirm the verification landing page requires an explicit **Verify email address** action before the token is consumed;
+6. inspect only bounded delivery metadata/errors rather than exposing credentials or full customer message bodies.
+
+Direct TCP/25 from the Vultr host is not required for this application email path.
+
+## 21. Install observability stack
 
 Validated production components:
 
@@ -424,13 +450,15 @@ Grafana data sources for Prometheus and Loki are provisioned from `/etc/grafana/
 
 ### Rebuild-detail boundary
 
-The PT10 state capture proves the final service locations, listeners, runtime configuration, and health, but the
+The PT12 state capture proves the validated service locations, listeners, runtime configuration, and health, but the
 repository does not yet contain a complete installer/pinning manifest for every observability binary/package.
 Do not invent download URLs or checksums. Before calling this runbook fully standalone, capture the validated
 installation source/version/checksum/package procedure for each manually installed observability component and
 store those assets or instructions under repository-controlled production infrastructure documentation.
 
-## 21. Validate Prometheus and monitoring
+The FastAPI unit has separately validated sandbox hardening. Do not assume identical hardening is safe for Grafana/Loki/Prometheus/Alertmanager/exporter vendor units; continue that work service-by-service and record only settings that survive restart/functional validation.
+
+## 22. Validate Prometheus and monitoring
 
 Before restarting Prometheus:
 
@@ -444,7 +472,7 @@ Then verify:
 
 The expected healthy state is no firing/pending alerts and zero failed systemd units.
 
-## 22. Configure Better Stack
+## 23. Configure Better Stack
 
 External monitors currently cover:
 
@@ -454,10 +482,9 @@ External monitors currently cover:
 
 Do not externally monitor `/readiness`.
 
-Daily/weekly heartbeat resources exist, but heartbeat submission is not commissioned until report-email
-delivery is commissioned.
+Daily/weekly heartbeat resources exist, but heartbeat submission is not commissioned until the dedicated observability report-delivery path is validated. Application transactional Postmark email is already commissioned; report delivery remains a separate boundary.
 
-## 23. Install local PostgreSQL backup and restore validation
+## 24. Install local PostgreSQL backup and restore validation
 
 Scripts:
 
@@ -498,7 +525,7 @@ Install/enable timers:
 
 Verify both manually through their systemd services before relying on the timers.
 
-## 24. Prepare restic
+## 25. Prepare restic
 
 Restic is the selected off-host encryption/snapshot layer.
 
@@ -508,9 +535,9 @@ Protected namespace:
 
 The repository password file must remain root-controlled, mode 0600, and have an independent off-server copy.
 
-At PT10, stop here. Do not initialize a fictional remote repository. AWS S3 provisioning is a later milestone.
+At PT12, stop here. Do not initialize a fictional remote repository. AWS S3 provisioning is a later milestone.
 
-## 25. Final baseline validation
+## 26. Final baseline validation
 
 Run at minimum:
 
@@ -536,9 +563,9 @@ Expected boundaries:
 - no failed systemd units;
 - backup/restore timers active.
 
-## 26. Disaster-recovery boundary
+## 27. Disaster-recovery boundary
 
-At PT10, loss of the entire Vultr server is not yet fully protected by an off-host commissioned repository.
+At PT12, loss of the entire Vultr server is not yet fully protected by an off-host commissioned repository.
 The local backup/restore system is validated, and restic encryption preparation is complete, but AWS S3 remains
 pending.
 

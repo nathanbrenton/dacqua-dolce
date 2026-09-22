@@ -2,15 +2,15 @@
 
 ## 1. Purpose
 
-D'Acqua Dolce is a public water-filtration commerce and customer-lifecycle application. Production is
-currently deployed as a single-host P0 architecture on Vultr, with strict loopback boundaries around the
-application, database, and observability services.
+D'Acqua Dolce is a public water-filtration commerce and customer-lifecycle application. Production is currently deployed as a single-host P0 architecture on Vultr, with strict loopback boundaries around the application, database, and observability services.
 
 The canonical public origin is:
 
     https://dacquadolce.com
 
 The `www` hostname is an alias and redirects permanently to the canonical bare domain.
+
+This document represents the validated production state through 2026-09-22.
 
 ## 2. Production host
 
@@ -25,12 +25,11 @@ The `www` hostname is an alias and redirects permanently to the canonical bare d
 | Compute | 4 vCPU |
 | Memory | ~8 GiB RAM |
 | Swap | 8 GiB, retained |
-| Root filesystem | ~150 GiB usable filesystem in the PT10 snapshot |
+| Root filesystem | ~150 GiB usable filesystem |
 | Server timezone | UTC |
 | `vm.swappiness` | 10 |
 
-The host is intentionally small and consolidated for P0. The architecture favors explicit local boundaries
-and rebuildability over early multi-host complexity.
+The host is intentionally consolidated for P0. The architecture favors explicit local boundaries, backup/restore validation, and rebuildability over early multi-host complexity.
 
 ## 3. Application stack
 
@@ -40,6 +39,8 @@ and rebuildability over early multi-host complexity.
 - TypeScript
 - Vite
 - production static build served directly by Nginx
+
+The customer account experience includes profile/address management, visual-theme selection, and a persistent light/dark preference. Operations keeps its own persistent appearance preference and defaults to dark when no preference has previously been stored.
 
 ### Backend
 
@@ -56,6 +57,31 @@ The backend listens only on:
 
 The public Nginx edge proxies application API traffic to this listener.
 
+### Identity and account administration
+
+Production identity currently includes:
+
+- customer registration and login;
+- secure cookie sessions and CSRF protection;
+- password reset using expiring, single-use, hash-only tokens;
+- email verification using expiring, single-use, hash-only tokens;
+- explicit verification confirmation so ordinary GET/link scanning does not consume the token;
+- privileged MFA;
+- roles `customer`, `employee`, `manager`, `administrator`, and `developer`;
+- web administration of `employee`, `manager`, and `administrator` by administrator/developer accounts;
+- CLI-only management of the `developer` role;
+- audit events for privileged identity changes.
+
+### Catalog
+
+The repository contains a canonical rebuild-grade public catalog baseline:
+
+    backend/catalog/production_catalog.json
+
+The catalog seed reconciles seed-owned descriptive metadata while preserving operational state such as pricing history, inventory, reservations, approved claims, jurisdiction rules, lifecycle flags, and verification state.
+
+The deployment helper runs the catalog reconciliation after Alembic and before activation. Re-running the same catalog against an already reconciled production database is expected to report zero changes.
+
 ### Database
 
 - PostgreSQL 17.11
@@ -67,20 +93,14 @@ The public Nginx edge proxies application API traffic to this listener.
 
 PostgreSQL is not exposed through the public firewall.
 
-The database privilege boundary separates deployment-time schema authority
-from runtime application access:
+The database privilege boundary separates deployment-time schema authority from runtime application access:
 
-- `dacqua_dolce_migrator` owns the database and application objects and is
-  used by Alembic only during deployments;
-- `dacqua_dolce_app` has runtime DML and sequence privileges but does not own
-  application objects and cannot create schema objects;
-- neither application-specific login role has superuser, `CREATEDB`,
-  `CREATEROLE`, replication, or `BYPASSRLS` privileges;
-- default privileges created under `dacqua_dolce_migrator` grant the runtime
-  role the required access to future Alembic-created tables and sequences.
+- `dacqua_dolce_migrator` owns the database and application objects and is used by Alembic and deployment-time catalog reconciliation;
+- `dacqua_dolce_app` has runtime DML and sequence privileges but does not own application objects and cannot create schema objects;
+- neither application-specific login role has superuser, `CREATEDB`, `CREATEROLE`, replication, or `BYPASSRLS` privileges;
+- default privileges created under `dacqua_dolce_migrator` grant the runtime role the required access to future Alembic-created tables and sequences.
 
-This limits the database DDL authority available to a compromised web
-application process.
+This limits the database DDL authority available to a compromised web application process.
 
 ## 4. Public request flow
 
@@ -113,8 +133,7 @@ Internal only:
     GET http://127.0.0.1:8000/readiness
     -> {"status":"ready"}
 
-Public requests to `/readiness` intentionally return Nginx 404. Production API documentation and OpenAPI
-surfaces are also blocked publicly.
+Public requests to `/readiness` intentionally return Nginx 404. Production API documentation and OpenAPI surfaces are also blocked publicly.
 
 ## 5. TLS and HTTP policy
 
@@ -123,11 +142,9 @@ Let's Encrypt/Certbot supplies the certificate for:
 - `dacquadolce.com`
 - `www.dacquadolce.com`
 
-The PT10 certificate is ECDSA. Nginx permits TLS 1.2 and TLS 1.3 and redirects ordinary HTTP traffic to the
-canonical HTTPS origin.
+The production certificate is ECDSA. Nginx permits TLS 1.2 and TLS 1.3 and redirects ordinary HTTP traffic to the canonical HTTPS origin.
 
-The production Nginx edge sets security headers including HSTS, `X-Content-Type-Options`,
-`X-Frame-Options`, a restrictive Referrer Policy, Permissions Policy, and Content Security Policy.
+The production Nginx edge sets security headers including HSTS, `X-Content-Type-Options`, `X-Frame-Options`, a restrictive Referrer Policy, Permissions Policy, and Content Security Policy.
 
 The public request-body limit is currently 2 MiB.
 
@@ -155,16 +172,16 @@ Public inbound TCP ports:
 - 80 — HTTP / ACME / HTTPS redirect
 - 443 — HTTPS
 
-PostgreSQL, FastAPI, Grafana, Prometheus, Alertmanager, exporters, Loki, Alloy, and other internal services
-remain loopback-only and are not opened through nftables.
+PostgreSQL, FastAPI, Grafana, Prometheus, Alertmanager, exporters, Loki, Alloy, and other internal services remain loopback-only and are not opened through nftables.
 
 ### Additional baseline controls
 
 - fail2ban protects SSH;
 - unattended upgrades are enabled;
 - journald is persistent;
-- systemd services use sandboxing controls where appropriate;
-- application runtime secrets live outside the release tree.
+- application runtime secrets live outside the release tree;
+- the FastAPI unit has a validated hardened systemd sandbox;
+- observability-unit sandbox hardening remains an incremental follow-up and must be validated service-by-service rather than assumed complete.
 
 ## 7. Release/deployment model
 
@@ -187,23 +204,31 @@ Production environment configuration is external to the release tree:
     /etc/dacqua-dolce/backend.env
     /etc/dacqua-dolce/migration.env
 
-`backend.env` contains runtime application configuration and is the only
-environment file loaded by `dacqua-dolce-api.service`.
+`backend.env` contains runtime application configuration and is the only environment file loaded by `dacqua-dolce-api.service`.
 
-`migration.env` contains the separate deploy-time PostgreSQL URL. It is
-root-only, is sourced by the deployment helper only while running Alembic,
-and is never loaded into the FastAPI systemd service.
+`migration.env` contains the separate deploy-time PostgreSQL URL. It is root-only, is sourced by the deployment helper for Alembic/catalog reconciliation, and is never loaded into the FastAPI systemd service.
 
 The FastAPI service runs as the dedicated `dacqua-app` account.
 
 ### Release ownership and lifecycle
 
-The hardened deployment workflow normalizes successful release trees to `root:root` and removes group/other write
-permission before activation. New releases are switched atomically through `/srv/dacqua-dolce/current`, validated
-locally and publicly, and automatically rolled back to the previous application release if post-switch validation fails.
+The hardened deployment workflow:
 
-The default retention policy keeps the five newest timestamped releases. PostgreSQL migrations are never automatically
-downgraded as part of application rollback. See `DEPLOYMENT_AND_ROLLBACK.md`.
+- creates a timestamped release;
+- copies sanitized source into the release with server-side `rsync`;
+- installs/builds backend and frontend dependencies;
+- creates an on-demand PostgreSQL backup when the commissioned helper is present;
+- runs Alembic;
+- reconciles the canonical production catalog;
+- normalizes successful release trees to `root:root` with no group/other write permission;
+- atomically switches `/srv/dacqua-dolce/current`;
+- validates local readiness and the public edge;
+- automatically restores the previous application release if post-switch validation fails;
+- retains the five newest successful timestamped releases by default.
+
+PostgreSQL migrations are never automatically downgraded as part of application rollback. See `DEPLOYMENT_AND_ROLLBACK.md`.
+
+The transport used to place a complete source tree on the production host is separate from activation. Through the 2026-09-22 checkpoint, exact Git commits were exported with `git archive` and transferred with `scp`. Future deployments may use an rsync-based exact-commit staging cache to reduce transfer volume, but the source still must represent a known commit and must never be rsynced directly into `/srv/dacqua-dolce/current`.
 
 ## 8. Observability stack
 
@@ -220,11 +245,9 @@ All observability application listeners are local-only.
 | Alloy | 1.19.2 journald/log pipeline | `127.0.0.1:12345` |
 | Monit | 5.34.3 host/service checks | Unix socket only |
 
-Prometheus retains metrics for 180 days with a 10 GiB size cap. Loki retains selected production logs for
-7 days.
+Prometheus is configured for 180 days of time retention with a 10 GiB size cap. The operational requirement is to preserve at least 90 days of useful metric history; retention/capacity should be revisited from measured ingestion and disk growth rather than relying permanently on an undersized fixed cap. Loki retains selected production logs for 7 days.
 
-Alloy reads journald, relabels selected production units, and sends the resulting stream to Loki. Grafana is
-provisioned with Prometheus and Loki data sources.
+Alloy reads journald, relabels selected production units, and sends the resulting stream to Loki. Grafana is provisioned with Prometheus and Loki data sources and three repo-managed production dashboards.
 
 Monit independently checks host resources, critical systemd services, and the local FastAPI readiness endpoint.
 
@@ -244,7 +267,7 @@ Prometheus rules cover, among other conditions:
 - high/critical CPU utilization;
 - PostgreSQL backup and restore-check timer health/freshness.
 
-At the PT10 checkpoint there were no firing or pending Prometheus alerts and no failed systemd units.
+At the 2026-09-22 production checkpoint there were no firing or pending Prometheus alerts and no failed systemd units.
 
 ## 9. External monitoring
 
@@ -256,8 +279,7 @@ Better Stack provides independent public checks for:
 
 `/readiness` is deliberately not externally monitored because it is an internal-only endpoint.
 
-Daily and weekly Better Stack heartbeat resources have been created, but heartbeat submission remains tied to
-completion of the report-email delivery workflow.
+Daily and weekly Better Stack heartbeat resources have been created, but heartbeat submission remains tied to completion of the observability report-delivery workflow.
 
 ## 10. Reporting
 
@@ -265,13 +287,14 @@ The production observability report generator is:
 
     /usr/local/sbin/dacqua-observability-report.py
 
-Daily and weekly dry-run report generation has been validated. Report timers are intentionally not enabled
-until the final email-delivery architecture is commissioned.
+Dry-run report generation has been validated. Report timers remain intentionally disabled until real report delivery is implemented and validated.
 
 Desired schedule after commissioning:
 
-- daily — 09:00 `America/Los_Angeles`
-- weekly — Saturday 11:00 `America/Los_Angeles`
+- daily — 09:00 `America/Los_Angeles` to `nathan@nathanbrenton.com`;
+- weekly — Saturday 11:00 `America/Los_Angeles` to `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
+
+Recipient declarations should remain obvious in protected report configuration. Application Postmark delivery is already commissioned; the remaining work is specifically the observability-report sender/timer path, not general application email approval.
 
 ## 11. Backup and recovery model
 
@@ -281,91 +304,98 @@ Production currently performs PostgreSQL custom-format logical backups to:
 
     /var/backups/dacqua-dolce/postgresql/
 
-Each completed `.dump` has a SHA-256 checksum. The backup job validates that `pg_restore` can read the archive
-before finalizing it.
+Each completed `.dump` has a SHA-256 checksum. The backup job validates that `pg_restore` can read the archive before finalizing it.
 
-A second job performs a real restore into a disposable local validation database and verifies that application
-relations exist before removing the scratch database.
+A second job performs a real restore into a disposable local validation database and verifies that application relations exist before removing the scratch database.
 
 Schedule:
 
 - daily backup — 03:15 `America/Los_Angeles`
 - weekly full restore validation — Sunday 04:15 `America/Los_Angeles`
 
-Local backup retention is 30 days.
+Local backup retention is 30 days. The application deployment workflow also creates an on-demand pre-migration backup before Alembic when the commissioned backup helper is available.
 
 ### Restic / off-host disaster recovery
 
-Restic is installed/prepared and the repository encryption password has been stored securely on and off the
-server. The off-host S3 repository has **not** been provisioned yet.
+Restic is installed/prepared and the repository encryption password has been stored securely on and off the server. The off-host S3 repository has **not** been provisioned yet.
 
-Local backup is therefore commissioned; off-host disaster recovery remains pending.
+Local backup/restore validation is commissioned; off-host disaster recovery remains pending.
 
-## 12. Email boundary
+## 12. Email and communications boundary
 
-Application/report mail is intended to submit through a local Postfix interface so applications remain
-provider-agnostic and gain durable queueing/retry/logging.
+### Application transactional email — commissioned
 
-Direct outbound TCP/25 from this host is blocked by the provider. The final authenticated relay or hosted-mail
-architecture has not yet been commissioned.
+FastAPI sends transactional application email directly through the Postmark HTTPS API. The production Postmark server token is stored outside Git in the root-controlled application environment.
 
-Postmark remains a candidate for application transactional mail, but it is not the foundational host-mail path
-at PT10 and the account approval state previously prevented live Gmail delivery.
+The `dacquadolce.com` sending domain is verified and live delivery was validated on 2026-09-22. Production account verification email was also validated end-to-end after the explicit-confirmation flow was deployed.
 
-Do not treat mail delivery or report timers as commissioned until the corresponding production validation is
-completed.
+Direct outbound TCP/25 from the Vultr host remains blocked. This does not block the Postmark HTTPS API and does not require a local Postfix-to-MX architecture for application mail.
 
-## 13. Production boundaries at PT10
+`email_deliveries` stores delivery metadata and bounded provider errors, not rendered message bodies or raw provider payloads.
+
+### Customer communications archive — pending
+
+The current delivery table is not a complete correspondence archive. The planned business communications architecture is:
+
+    inbound reply -> Postmark inbound webhook -> FastAPI -> PostgreSQL communications archive
+
+    employee reply -> authenticated web Operations UI -> FastAPI -> PostgreSQL archive -> Postmark API
+
+The future archive should model threads/messages/recipients/attachments/delivery events/assignment as appropriate and should preserve customer/company correspondence durably in PostgreSQL.
+
+A general-purpose IMAP/Dovecot mailbox on the production host is not required for this application design.
+
+### Observability reports — pending delivery
+
+The application Postmark path being live does not automatically commission the separate `/usr/local/sbin/dacqua-observability-report.py` delivery/timer workflow. That remains pending until its Postmark integration, recipients, timers, failure handling, and heartbeats are validated.
+
+## 13. Production boundaries at PT12
 
 Commissioned:
 
 - Vultr/Debian host baseline;
 - SSH hardening, nftables, fail2ban, unattended upgrades, persistent journald;
-- PostgreSQL 17 local database;
-- Nginx + TLS + canonical redirect;
-- React/FastAPI production release;
+- PostgreSQL 17 local database with separated migrator/runtime roles;
+- Nginx + TLS + canonical redirect and public security headers;
+- React/FastAPI production release lifecycle with immutable releases, automatic application rollback, and retention;
+- canonical production catalog bootstrap/reconciliation;
+- customer registration/login/password reset/email verification;
+- privileged MFA and account-role administration;
+- customer profile/address and account appearance controls;
+- Postmark transactional application email;
 - local health/readiness checks;
 - full local observability stack;
+- repo-managed Grafana dashboards;
 - Better Stack public monitors;
 - local PostgreSQL backup and real restore validation;
 - restic client-side encryption preparation.
 
 Not yet commissioned:
 
-- off-host S3/restic repository;
-- final Postfix outbound delivery/relay architecture;
-- live report-email delivery and report timers;
-- Better Stack report heartbeats tied to successful mail submission;
-- final provisioned Grafana dashboard set;
-- deployment ownership/automatic rollback hardening.
+- off-host AWS S3/restic repository and off-host restore rehearsal;
+- observability report email delivery/timers and corresponding Better Stack report heartbeats;
+- durable body-level customer communications archive, Postmark inbound webhook, and employee shared-inbox/reply workflow;
+- remaining observability service systemd hardening beyond the already hardened FastAPI service;
+- payment-provider checkout;
+- rsync-based local-to-production source staging as the documented/validated standard transport.
 
 ### FastAPI systemd sandbox
 
-The production FastAPI process runs as the dedicated unprivileged
-`dacqua-app:dacqua-app` identity. The application release itself is immutable
-to that identity; its designated writable application path is:
+The production FastAPI process runs as the dedicated unprivileged `dacqua-app:dacqua-app` identity. The application release itself is immutable to that identity; its designated writable application path is:
 
     /srv/dacqua-dolce/shared
 
-The API systemd unit applies the following production sandboxing controls in
-addition to its existing `NoNewPrivileges`, `PrivateTmp`,
-`ProtectSystem=strict`, `ProtectHome`, restricted address families,
-`LockPersonality`, and `MemoryDenyWriteExecute` controls:
+The API systemd unit applies the following production sandboxing controls in addition to its existing `NoNewPrivileges`, `PrivateTmp`, `ProtectSystem=strict`, `ProtectHome`, restricted address families, `LockPersonality`, and `MemoryDenyWriteExecute` controls:
 
 - `UMask=0027`;
 - `PrivateDevices=true`;
-- protection for the clock, kernel tunables, kernel modules, kernel logs,
-  control groups, and hostname;
+- protection for the clock, kernel tunables, kernel modules, kernel logs, control groups, and hostname;
 - `RestrictSUIDSGID=true`;
 - `RestrictRealtime=true`;
 - `RemoveIPC=true`;
 - `SystemCallArchitectures=native`;
 - an empty capability bounding set and no ambient capabilities.
 
-The API needs no Linux capabilities because Uvicorn binds only to the
-unprivileged loopback port `8000`.
+The API needs no Linux capabilities because Uvicorn binds only to the unprivileged loopback port `8000`.
 
-Release directories are deployment artifacts, not mutable application state.
-Production releases are expected to be owned by `root:root` and must not be
-writable by `dacqua-app`. The hardened deployment lifecycle normalizes this
-ownership during deployment.
+Release directories are deployment artifacts, not mutable application state. Production releases are expected to be owned by `root:root` and must not be writable by `dacqua-app`. The hardened deployment lifecycle normalizes this ownership during deployment.

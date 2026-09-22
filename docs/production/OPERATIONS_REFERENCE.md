@@ -1,7 +1,6 @@
 # D'Acqua Dolce Production Operations Reference
 
-This is the concise operator reference for the commissioned PT10 system. It is not a substitute for the full
-rebuild procedure.
+This is the concise operator reference for the commissioned PT12 system, validated through 2026-09-22. It is not a substitute for the full rebuild procedure.
 
 ## SSH
 
@@ -293,6 +292,19 @@ Weekly restore validation:
 
     Sunday 04:15 America/Los_Angeles
 
+## Observability report status
+
+The report generator is installed at:
+
+    /usr/local/sbin/dacqua-observability-report.py
+
+Dry-run rendering is validated, but delivery timers remain disabled pending the dedicated Postmark delivery integration. Desired schedules/recipients are:
+
+- daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
+- weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
+
+Do not enable the timers until real delivery, failure behavior, and Better Stack heartbeat submission have been validated.
+
 ## Local health timer
 
     systemctl status dacqua-dolce-healthcheck.timer --no-pager --full
@@ -304,26 +316,27 @@ The readiness check is intentionally local and runs every minute.
 
 Application:
 
-    sudo journalctl -u dacqua-dolce-api.service --since today
+    sudo journalctl -u dacqua-dolce-api.service --since today --no-pager
 
 Nginx:
 
-    sudo journalctl -u nginx.service --since today
+    sudo journalctl -u nginx.service --since today --no-pager
 
 Prometheus:
 
-    sudo journalctl -u prometheus.service --since today
+    sudo journalctl -u prometheus.service --since today --no-pager
 
 Loki / Alloy:
 
-    sudo journalctl -u loki.service -u alloy.service --since today
+    sudo journalctl -u loki.service -u alloy.service --since today --no-pager
 
 Backup/restore jobs:
 
     sudo journalctl \
       -u dacqua-postgres-backup.service \
       -u dacqua-postgres-restore-check.service \
-      --since '-7 days'
+      --since '-7 days' \
+      --no-pager
 
 ## Host resources
 
@@ -359,23 +372,52 @@ Current protected configuration namespaces include:
 
 The restic repository password is intentionally stored outside Git and has an additional off-server copy.
 
+The application Postmark server token lives in `/etc/dacqua-dolce/backend.env`. The observability reporting token/configuration is separate under `/etc/dacqua-observability/reporting.env`. Never print either token during routine checks.
+
+## Application email
+
+Application transactional mail is commissioned through the Postmark HTTPS API. Direct outbound TCP/25 remains blocked by Vultr and is not required for the application mail path.
+
+Useful boundaries:
+
+- `email_deliveries` stores delivery metadata, provider reference, and bounded error text;
+- rendered bodies and raw Postmark payloads are not persisted in that table;
+- the future durable customer-communications archive is a separate milestone;
+- observability report delivery/timers remain separate and pending.
+
+When diagnosing a transactional send, prefer database delivery state plus bounded application logs. Do not paste production tokens or complete customer message content into diagnostics.
+
+## Account and role administration
+
+The production role model includes `customer`, `employee`, `manager`, `administrator`, and `developer`.
+
+The Operations **User Access & Roles** interface allows administrator/developer accounts to manage only:
+
+- `employee`;
+- `manager`;
+- `administrator`.
+
+The web interface preserves `customer`, prevents self-removal of the current administrator role, prevents removal of the final active administrator, and refuses to edit an account carrying `developer`. `developer` remains CLI-managed.
+
+Use the repository role-management CLI for initial bootstrap/recovery or developer-role changes. Avoid shared privileged accounts.
+
 ## Deployment and rollback
 
 Deploy from a complete release source on the production host:
 
-    sudo scripts/production/deploy_release.sh /path/to/release-source
+    sudo /path/to/release-source/scripts/production/deploy_release.sh \
+      /path/to/release-source
 
-The helper builds before activation, runs the database migration, normalizes release ownership, atomically switches the
-`current` symlink, validates readiness/public behavior, automatically restores the previous application release after a
-failed activation, and prunes old timestamped releases only after success.
+The helper builds before activation, creates a pre-migration database backup when available, runs Alembic, reconciles the canonical production catalog, normalizes release ownership, atomically switches the `current` symlink, validates readiness/public behavior, automatically restores the previous application release after a failed activation, and prunes old timestamped releases only after success.
 
 List rollback targets:
 
-    sudo scripts/production/rollback_release.sh
+    sudo /srv/dacqua-dolce/current/scripts/production/rollback_release.sh
 
 Rollback the application only:
 
-    sudo scripts/production/rollback_release.sh RELEASE_DIRECTORY_NAME
+    sudo /srv/dacqua-dolce/current/scripts/production/rollback_release.sh \
+      RELEASE_DIRECTORY_NAME
 
 Application rollback never automatically downgrades PostgreSQL. Confirm schema compatibility before selecting an older
 release.
@@ -385,7 +427,8 @@ Post-deployment quick checks:
     readlink -f /srv/dacqua-dolce/current
     stat -c '%U:%G %a %n' "$(readlink -f /srv/dacqua-dolce/current)"
     curl -fsS http://127.0.0.1:8000/readiness
-    scripts/production/verify_release.sh https://dacquadolce.com
+    /srv/dacqua-dolce/current/scripts/production/verify_release.sh \
+      https://dacquadolce.com
     systemctl --failed --no-pager
 
 See `DEPLOYMENT_AND_ROLLBACK.md` for the full lifecycle and migration-compatibility policy.
