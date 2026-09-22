@@ -57,19 +57,32 @@ Through the 2026-09-22 checkpoint, the validated operator workflow was:
 
 This workflow is reproducible but retransmits the complete compressed repository snapshot for every release.
 
-### Planned rsync transport optimization
+### Rsync staging helper — implementation ready, production validation pending
 
-For future releases, use an rsync-based **staging** workflow to reduce transfer volume, while preserving the same exact-revision guarantee:
+The repository now contains:
 
-- export/check out the exact intended Git revision into a clean local staging tree;
-- rsync that complete tree with deletion semantics to a persistent production staging/cache directory;
-- exclude secrets, `.git`, local virtual environments, `node_modules`, and build output;
-- verify the staged revision/content before activation;
-- invoke the same `deploy_release.sh` against the staged tree.
+    scripts/production/stage_release_rsync.sh
+    scripts/production/verify_staged_source.py
+
+The staging helper is designed to replace repeated whole-archive transfers while preserving an exact-revision boundary. It:
+
+1. resolves the requested Git revision to a full 40-character commit ID;
+2. exports that exact commit to a temporary local tree, so uncommitted working-tree changes are never included;
+3. writes a revision marker plus a SHA-256 manifest covering the staged source tree;
+4. validates the export locally;
+5. rsyncs it with checksum comparison and deletion semantics to the persistent production-admin staging cache (default `~/dacqua-dolce-deploy-source/`);
+6. validates the complete staged tree again on the production host;
+7. prints the separate `deploy_release.sh` activation command.
+
+The intended local command is:
+
+    scripts/production/stage_release_rsync.sh <revision> dacqua-prod
+
+`deploy_release.sh` also recognizes the revision marker/manifest. When they are present, it revalidates the supplied staging tree before release creation and validates the copied immutable release tree before building or migrating. Legacy archive-based staging remains accepted with a warning so existing recovery procedures are not broken.
 
 Do **not** rsync directly into `/srv/dacqua-dolce/current` or a timestamped release. Immutable release creation, ownership normalization, activation, validation, rollback, and retention remain the responsibility of `deploy_release.sh`.
 
-The rsync transport becomes the authoritative standard only after the first end-to-end production deployment using it has been validated and its exact command/helper is committed/documented.
+This rsync transport becomes the authoritative standard only after its first end-to-end production deployment is validated. Until then, the previously validated `git archive` + SHA-256 + `scp` workflow remains the production fallback.
 
 ## Deployment command
 

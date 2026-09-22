@@ -160,6 +160,23 @@ if [ ! -d "${SOURCE_ROOT}/backend" ] \
   fail "release source must contain backend/ and frontend/"
 fi
 
+SOURCE_REVISION=""
+SOURCE_MANIFEST="${SOURCE_ROOT}/.dacqua-release-manifest.json"
+SOURCE_REVISION_FILE="${SOURCE_ROOT}/.dacqua-release-revision"
+SOURCE_VERIFIER="${SOURCE_ROOT}/scripts/production/verify_staged_source.py"
+
+if [ -e "${SOURCE_MANIFEST}" ] || [ -e "${SOURCE_REVISION_FILE}" ]; then
+  if [ ! -f "${SOURCE_VERIFIER}" ]; then
+    fail "staged-source provenance files exist but verifier is missing"
+  fi
+
+  python3 "${SOURCE_VERIFIER}" verify "${SOURCE_ROOT}"
+  SOURCE_REVISION="$(tr -d '[:space:]' < "${SOURCE_REVISION_FILE}")"
+  echo "Validated staged source revision: ${SOURCE_REVISION}"
+else
+  echo "WARNING: staged source has no revision manifest; continuing with legacy source validation"
+fi
+
 if [ ! -r "${ENV_FILE}" ]; then
   fail "production environment file is missing: ${ENV_FILE}"
 fi
@@ -241,6 +258,14 @@ rsync -a \
   "${SOURCE_ROOT}/" \
   "${RELEASE}/"
 
+if [ -n "${SOURCE_REVISION}" ]; then
+  python3 "${RELEASE}/scripts/production/verify_staged_source.py" \
+    verify \
+    "${RELEASE}" \
+    "${SOURCE_REVISION}"
+  echo "PASS: immutable release source matches staged revision ${SOURCE_REVISION}"
+fi
+
 cd "${RELEASE}/backend"
 python3 -m venv .venv
 
@@ -321,6 +346,9 @@ trap - EXIT
 
 echo
 echo "Release active: ${RELEASE}"
+if [ -n "${SOURCE_REVISION}" ]; then
+  echo "Source revision: ${SOURCE_REVISION}"
+fi
 
 if [ -n "${PREVIOUS_RELEASE}" ]; then
   echo "Previous release retained for rollback: ${PREVIOUS_RELEASE}"

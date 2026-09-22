@@ -104,21 +104,13 @@ For each service:
 
 ## 5. Rsync-based local-to-production source staging
 
-The immutable release mechanism itself already uses server-side `rsync` from the supplied source tree into a timestamped release. The remaining optimization is the **local workstation -> production staging** transport.
+The immutable release mechanism itself already uses server-side `rsync` from the supplied source tree into a timestamped release. The remaining validation item is the **local workstation -> production staging** transport.
 
-Through 2026-09-22, releases were staged reproducibly with `git archive` + SHA-256 + `scp`. This retransmits the complete compressed source snapshot even for small commits.
+The repository now includes `scripts/production/stage_release_rsync.sh` and `scripts/production/verify_staged_source.py`. The helper exports an exact Git revision, creates and validates a SHA-256 source manifest, transfers the tree with checksum-based `rsync --delete` semantics to a persistent production-admin staging cache, and verifies the remote tree before activation. `deploy_release.sh` revalidates manifested source trees before release creation and again after copying them into the immutable release directory.
 
-The next deployment transport improvement is to:
-
-- materialize the exact intended Git revision into a clean local export;
-- `rsync` that export to a persistent production staging/cache directory with deletion semantics;
-- exclude `.git`, secrets, local `.env*`, virtual environments, `node_modules`, and build output;
-- verify the staged revision/content;
-- invoke the unchanged immutable `deploy_release.sh` against the staged tree.
+Status: implementation ready; first end-to-end production use still requires validation. Until that succeeds, retain the previously validated `git archive` + SHA-256 + `scp` workflow as the production fallback.
 
 Never rsync directly into `/srv/dacqua-dolce/current` or mutate a timestamped release in place.
-
-After the first successful production deployment through this path, commit the exact reusable helper/command and promote the workflow from pending to the authoritative deployment runbook.
 
 ## 6. Payment provider / live checkout
 
