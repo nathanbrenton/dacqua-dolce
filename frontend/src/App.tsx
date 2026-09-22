@@ -518,6 +518,8 @@ export function App() {
       ) : path === "/account" ? (
         <AccountPage
           account={account}
+          theme={theme}
+          onThemeChange={setTheme}
           onNavigate={navigate}
           onRequestSignIn={() => {
             setAuthDialogOpen(true);

@@ -1,0 +1,156 @@
+.account-appearance-controls {
+  display: grid;
+  gap: 22px;
+}
+
+.account-appearance-field {
+  display: grid;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.account-appearance-field select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--button-radius);
+}
+
+.account-appearance-mode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+}
+
+.account-appearance-mode strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.account-appearance-mode .account-muted {
+  margin: 0;
+}
+
+.account-toast {
+  position: fixed;
+  z-index: 1100;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  width: max-content;
+  max-width: min(32rem, calc(100vw - 32px));
+  padding: 12px 18px;
+  color: var(--action-text);
+  background: var(--action);
+  border: 1px solid var(--action);
+  border-radius: var(--button-radius);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.account-shell[data-appearance="light"] {
+  color-scheme: light;
+}
+
+.account-shell[data-appearance="dark"] {
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+:root[data-theme="baseline"]
+.account-shell[data-appearance="dark"] {
+  --surface-0: #101613;
+  --surface-1: #151d19;
+  --surface-2: #1b2521;
+  --ink: #eef3ef;
+  --ink-muted: #adb9b2;
+  --action: #d9e7df;
+  --action-text: #101613;
+  --hairline: #33423b;
+  --accent: #9fcab9;
+  --focus-ring: #72c7aa;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="quiet-mineral"]
+.account-shell[data-appearance="dark"] {
+  --surface-0: #141410;
+  --surface-1: #1b1a16;
+  --surface-2: #23221c;
+  --ink: #f0eee6;
+  --ink-muted: #b7b2a4;
+  --action: #e3dfd4;
+  --action-text: #161611;
+  --hairline: #444138;
+  --accent: #c7c0ad;
+  --focus-ring: #a8dadd;
+  --control-highlight: #0a5960;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="lagoon-editorial"]
+.account-shell[data-appearance="dark"] {
+  --surface-0: #06191b;
+  --surface-1: #0a2224;
+  --surface-2: #0f2a2d;
+  --ink: #e8f8f7;
+  --ink-muted: #a5c6c5;
+  --action: #b9e5e3;
+  --action-text: #062022;
+  --hairline: #285154;
+  --accent: #79d1d2;
+  --focus-ring: #79d1d2;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="culinary-atelier"]
+.account-shell[data-appearance="dark"] {
+  --surface-0: #171411;
+  --surface-1: #201c17;
+  --surface-2: #28231d;
+  --ink: #f4efe7;
+  --ink-muted: #bdb3a6;
+  --action: #eadfd1;
+  --action-text: #1a1612;
+  --hairline: #4b4238;
+  --accent: #d88b7a;
+  --focus-ring: #e29a89;
+  --control-highlight: #7b2d1f;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="performance-precision"]
+.account-shell[data-appearance="dark"] {
+  --surface-0: #0c1110;
+  --surface-1: #121817;
+  --surface-2: #18201e;
+  --ink: #eff4f1;
+  --ink-muted: #aeb9b3;
+  --action: #dfe8e3;
+  --action-text: #101513;
+  --hairline: #33403b;
+  --accent: #75c7ca;
+  --focus-ring: #75c7ca;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+@media (max-width: 560px) {
+  .account-appearance-mode {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

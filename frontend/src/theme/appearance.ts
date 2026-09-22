@@ -7,10 +7,16 @@ export type AppearanceMode =
   (typeof APPEARANCE_MODES)[number];
 
 export const DEFAULT_APPEARANCE:
+  AppearanceMode = "dark";
+
+export const DEFAULT_ACCOUNT_APPEARANCE:
   AppearanceMode = "light";
 
-const APPEARANCE_STORAGE_KEY =
+const OPERATIONS_APPEARANCE_STORAGE_KEY =
   "dacqua-dolce-appearance-v1";
+
+const ACCOUNT_APPEARANCE_STORAGE_KEY =
+  "dacqua-dolce-account-appearance-v1";
 
 export function isAppearanceMode(
   value: string,
@@ -20,10 +26,12 @@ export function isAppearanceMode(
   );
 }
 
-export function getInitialAppearance():
-  AppearanceMode {
+function getStoredAppearance(
+  storageKey: string,
+  fallback: AppearanceMode,
+): AppearanceMode {
   const stored = localStorage.getItem(
-    APPEARANCE_STORAGE_KEY,
+    storageKey,
   );
 
   if (
@@ -33,14 +41,39 @@ export function getInitialAppearance():
     return stored;
   }
 
-  return DEFAULT_APPEARANCE;
+  return fallback;
+}
+
+export function getInitialAppearance():
+  AppearanceMode {
+  return getStoredAppearance(
+    OPERATIONS_APPEARANCE_STORAGE_KEY,
+    DEFAULT_APPEARANCE,
+  );
 }
 
 export function saveAppearance(
   appearance: AppearanceMode,
 ): void {
   localStorage.setItem(
-    APPEARANCE_STORAGE_KEY,
+    OPERATIONS_APPEARANCE_STORAGE_KEY,
+    appearance,
+  );
+}
+
+export function getInitialAccountAppearance():
+  AppearanceMode {
+  return getStoredAppearance(
+    ACCOUNT_APPEARANCE_STORAGE_KEY,
+    DEFAULT_ACCOUNT_APPEARANCE,
+  );
+}
+
+export function saveAccountAppearance(
+  appearance: AppearanceMode,
+): void {
+  localStorage.setItem(
+    ACCOUNT_APPEARANCE_STORAGE_KEY,
     appearance,
   );
 }

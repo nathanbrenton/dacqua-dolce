@@ -4,6 +4,8 @@ import {
   useState,
 } from "react";
 
+import "./AccountAppearance.css";
+
 import {
   createAddress,
   deleteAddress,
@@ -27,6 +29,20 @@ import {
   type Order,
 } from "../../api/orders";
 import {
+  AppearanceToggle,
+} from "../theme/AppearanceToggle";
+import {
+  getInitialAccountAppearance,
+  saveAccountAppearance,
+  type AppearanceMode,
+} from "../../theme/appearance";
+import {
+  DEFAULT_THEME,
+  isThemeId,
+  THEMES,
+  type ThemeId,
+} from "../../theme/themes";
+import {
   formatUsPhoneInput,
   isCompleteUsPhone,
 } from "../../utils/phone";
@@ -35,6 +51,8 @@ type AccountPageProps = {
   onNavigate: (path: string) => void;
   onRequestSignIn: () => void;
   account: AuthenticationStatus | null;
+  theme: ThemeId;
+  onThemeChange: (theme: ThemeId) => void;
   onMfaReconfigurationStarted: (
     account: AuthenticationStatus,
   ) => void;
@@ -385,10 +403,83 @@ function SecurityPanel({
   );
 }
 
+type AppearancePanelProps = {
+  theme: ThemeId;
+  onThemeChange: (theme: ThemeId) => void;
+  appearance: AppearanceMode;
+  onAppearanceChange: (
+    appearance: AppearanceMode,
+  ) => void;
+};
+
+function AppearancePanel({
+  theme,
+  onThemeChange,
+  appearance,
+  onAppearanceChange,
+}: AppearancePanelProps) {
+  return (
+    <section className="account-panel">
+      <h2>Appearance</h2>
+
+      <div className="account-appearance-controls">
+        <label
+          className="account-appearance-field"
+          htmlFor="account-theme"
+        >
+          <span>Visual theme</span>
+
+          <select
+            id="account-theme"
+            value={theme}
+            onChange={(event) => {
+              const value = event.target.value;
+
+              onThemeChange(
+                isThemeId(value)
+                  ? value
+                  : DEFAULT_THEME,
+              );
+            }}
+          >
+            {THEMES.map((option) => (
+              <option
+                key={option.id}
+                value={option.id}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="account-appearance-mode">
+          <div>
+            <strong>Page appearance</strong>
+            <p className="account-muted">
+              Choose light or dark mode for
+              your account workspace.
+            </p>
+          </div>
+
+          <AppearanceToggle
+            appearance={appearance}
+            onAppearanceChange={
+              onAppearanceChange
+            }
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function AccountPage({
   onNavigate,
   onRequestSignIn,
   account,
+  theme,
+  onThemeChange,
   onMfaReconfigurationStarted,
 }: AccountPageProps) {
   const authenticated =
@@ -408,10 +499,37 @@ export function AccountPage({
     useState<string | null>(null);
   const [saving, setSaving] =
     useState(false);
+  const [saveNotice, setSaveNotice] =
+    useState<string | null>(null);
+  const [appearance, setAppearance] =
+    useState<AppearanceMode>(
+      getInitialAccountAppearance,
+    );
   const [addressDraft, setAddressDraft] =
     useState<AddressCreate>(
       EMPTY_ADDRESS,
     );
+
+  useEffect(() => {
+    saveAccountAppearance(appearance);
+  }, [appearance]);
+
+  useEffect(() => {
+    if (saveNotice === null) {
+      return;
+    }
+
+    const timeout = window.setTimeout(
+      () => {
+        setSaveNotice(null);
+      },
+      3500,
+    );
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [saveNotice]);
 
   useEffect(() => {
     if (
@@ -455,7 +573,10 @@ export function AccountPage({
     || !authenticated
   ) {
     return (
-      <main className="account-shell">
+      <main
+        className="account-shell"
+        data-appearance={appearance}
+      >
         <button
           type="button"
           className="text-button"
@@ -487,7 +608,10 @@ export function AccountPage({
 
   if (!isCustomer) {
     return (
-      <main className="account-shell">
+      <main
+        className="account-shell"
+        data-appearance={appearance}
+      >
         <button
           type="button"
           className="text-button"
@@ -515,6 +639,13 @@ export function AccountPage({
               onMfaReconfigurationStarted
             }
           />
+
+          <AppearancePanel
+            theme={theme}
+            onThemeChange={onThemeChange}
+            appearance={appearance}
+            onAppearanceChange={setAppearance}
+          />
         </div>
       </main>
     );
@@ -522,7 +653,10 @@ export function AccountPage({
 
   if (profile === null) {
     return (
-      <main className="account-shell">
+      <main
+        className="account-shell"
+        data-appearance={appearance}
+      >
         <p role="status">
           Loading account…
         </p>
@@ -560,6 +694,7 @@ export function AccountPage({
 
     setSaving(true);
     setError(null);
+    setSaveNotice(null);
 
     try {
       const updated =
@@ -572,6 +707,7 @@ export function AccountPage({
         });
 
       setProfile(updated);
+      setSaveNotice("Profile updated.");
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -589,6 +725,7 @@ export function AccountPage({
     event.preventDefault();
     setSaving(true);
     setError(null);
+    setSaveNotice(null);
 
     try {
       await createAddress(
@@ -602,6 +739,7 @@ export function AccountPage({
       setAddressDraft(
         EMPTY_ADDRESS,
       );
+      setSaveNotice("Address added.");
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -614,7 +752,10 @@ export function AccountPage({
   }
 
   return (
-    <main className="account-shell">
+    <main
+        className="account-shell"
+        data-appearance={appearance}
+      >
       <button
         type="button"
         className="text-button"
@@ -644,12 +785,29 @@ export function AccountPage({
         </p>
       ) : null}
 
+      {saveNotice !== null ? (
+        <div
+          className="account-toast"
+          role="status"
+          aria-live="polite"
+        >
+          {saveNotice}
+        </div>
+      ) : null}
+
       <div className="account-grid">
         <SecurityPanel
           account={account}
           onMfaReconfigurationStarted={
             onMfaReconfigurationStarted
           }
+        />
+
+        <AppearancePanel
+          theme={theme}
+          onThemeChange={onThemeChange}
+          appearance={appearance}
+          onAppearanceChange={setAppearance}
         />
 
         <section className="account-panel">
@@ -826,15 +984,29 @@ export function AccountPage({
                       type="button"
                       className="text-button compact"
                       onClick={() => {
+                        setError(null);
+                        setSaveNotice(null);
+
                         void deleteAddress(
                           address.id,
-                        ).then(
-                          async () => {
-                            setProfile(
-                              await getProfile(),
+                        )
+                          .then(
+                            async () => {
+                              setProfile(
+                                await getProfile(),
+                              );
+                              setSaveNotice(
+                                "Address removed.",
+                              );
+                            },
+                          )
+                          .catch((caught) => {
+                            setError(
+                              caught instanceof Error
+                                ? caught.message
+                                : "Address removal failed.",
                             );
-                          },
-                        );
+                          });
                       }}
                     >
                       Remove
