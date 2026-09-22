@@ -1270,401 +1270,6 @@ export function OperationsPage({
         )}
       </section>
 
-      {administrationAllowed ? (
-        <details
-          id="account-administration"
-          className="operations-section operations-disclosure"
-          onToggle={(event) => {
-            if (
-              event.currentTarget.open
-              && !administrationLoaded
-            ) {
-              void loadAdministrationAccounts();
-            }
-          }}
-        >
-          <summary className="operations-disclosure-summary">
-            <span>
-              <strong>User access &amp; roles</strong>
-              <small>Administrator account management</small>
-            </span>
-          </summary>
-
-          <div className="operations-disclosure-content">
-            <div className="operations-section-heading">
-              <p className="eyebrow">Account Administration</p>
-              <h2>User access &amp; roles</h2>
-              <p>
-                Customer registration remains self-service. Employee,
-                manager, and administrator access is granted here.
-                Developer access remains local-only.
-              </p>
-            </div>
-
-            {administrationLoading ? (
-              <p className="account-muted">
-                Loading user accounts…
-              </p>
-            ) : administrationError !== null ? (
-              <p
-                className="operations-alert operations-error"
-                role="alert"
-              >
-                {administrationError}
-              </p>
-            ) : (
-              <>
-                <label
-                  className={
-                    "operations-field "
-                    + "operations-customer-search"
-                  }
-                >
-                  <span>Search user accounts</span>
-                  <input
-                    type="search"
-                    placeholder="Email, status, role…"
-                    value={administrationSearch}
-                    onChange={(event) => {
-                      setAdministrationSearch(
-                        event.target.value,
-                      );
-                    }}
-                  />
-                </label>
-
-                {administrationAccounts.length === 0 ? (
-                  <p className="account-muted">
-                    No persisted user accounts.
-                  </p>
-                ) : filteredAdministrationAccounts.length === 0 ? (
-                  <p className="account-muted">
-                    No accounts match this search.
-                  </p>
-                ) : (
-                  <div className="operations-customer-list">
-                    {filteredAdministrationAccounts.map((account) => {
-                      const roleDraft =
-                        administrationRoleDrafts[account.id]
-                        ?? [];
-                      const developerManaged =
-                        account.roles.includes("developer");
-                      const ownAccount = (
-                        currentUserEmail !== null
-                        && account.email.toLowerCase()
-                          === currentUserEmail.toLowerCase()
-                      );
-                      const saveState =
-                        administrationSaveStates[account.id]
-                        ?? "idle";
-
-                      return (
-                        <article
-                          key={account.id}
-                          className="operations-customer"
-                        >
-                          <header>
-                            <div>
-                              <p className="product-meta">
-                                Account · {account.status}
-                              </p>
-                              <h3>{account.email}</h3>
-                              <small>
-                                Created{" "}
-                                {new Date(
-                                  account.created_at,
-                                ).toLocaleString()}
-                                {account.last_login_at !== null
-                                  ? ` · Last login ${new Date(
-                                      account.last_login_at,
-                                    ).toLocaleString()}`
-                                  : " · Never logged in"}
-                              </small>
-                            </div>
-                          </header>
-
-                          <div className="operations-address-list">
-                            <div className="operations-address">
-                              <strong>Identity</strong>
-                              <address>
-                                Email {account.email_verified
-                                  ? "verified"
-                                  : "not verified"}
-                                <br />
-                                MFA {account.mfa_required
-                                  ? account.mfa_enrolled
-                                    ? "required · enrolled"
-                                    : "required · enrollment pending"
-                                  : "not required"}
-                              </address>
-                              <small>
-                                Persisted roles:{" "}
-                                {account.roles.length > 0
-                                  ? account.roles.join(", ")
-                                  : "none"}
-                              </small>
-                            </div>
-
-                            <div className="operations-address">
-                              <strong>Operations roles</strong>
-
-                              {WEB_MANAGED_ROLES.map((role) => {
-                                const lockedSelfAdmin = (
-                                  ownAccount
-                                  && role === "administrator"
-                                  && roleDraft.includes(role)
-                                );
-
-                                return (
-                                  <label key={role}>
-                                    <input
-                                      type="checkbox"
-                                      checked={roleDraft.includes(role)}
-                                      disabled={
-                                        developerManaged
-                                        || lockedSelfAdmin
-                                        || saveState === "saving"
-                                      }
-                                      onChange={(event) => {
-                                        toggleAdministrationRole(
-                                          account.id,
-                                          role,
-                                          event.target.checked,
-                                        );
-                                      }}
-                                    />{" "}
-                                    {role}
-                                  </label>
-                                );
-                              })}
-
-                              <button
-                                type="button"
-                                className={
-                                  "operations-action secondary "
-                                  + (
-                                    saveState === "saved"
-                                      ? "is-saved"
-                                      : ""
-                                  )
-                                }
-                                disabled={
-                                  developerManaged
-                                  || saveState === "saving"
-                                }
-                                onClick={() => {
-                                  void saveAdministrationRoles(account);
-                                }}
-                              >
-                                {saveState === "saving"
-                                  ? "Saving…"
-                                  : saveState === "saved"
-                                    ? "Saved ✓"
-                                    : "Save Roles"}
-                              </button>
-
-                              <small>
-                                {developerManaged
-                                  ? "Developer roles are managed locally, not from the web console."
-                                  : lockedSelfAdminText(
-                                      ownAccount,
-                                      roleDraft,
-                                    )}
-                              </small>
-                            </div>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </details>
-      ) : null}
-
-      <details
-        id="customer-roster"
-        className="operations-section operations-disclosure"
-      >
-        <summary className="operations-disclosure-summary">
-          <span>
-            <strong>Accounts & address book</strong>
-            <small>Customer roster</small>
-          </span>
-        </summary>
-
-        <div className="operations-disclosure-content">
-
-        <div className="operations-section-heading">
-          <p className="eyebrow">Customer Roster</p>
-          <h2>Accounts &amp; address book</h2>
-          <p>
-            Registered customer accounts and saved addresses.
-            This P0 view is read-only.
-          </p>
-        </div>
-
-        <label
-          className={
-            "operations-field "
-            + "operations-customer-search"
-          }
-        >
-          <span>Search customers</span>
-          <input
-            type="search"
-            placeholder="Name, email, phone, city, ZIP…"
-            value={customerSearch}
-            onChange={(event) => {
-              setCustomerSearch(
-                event.target.value,
-              );
-            }}
-          />
-        </label>
-
-        {customers.length === 0 ? (
-          <p className="account-muted">
-            No registered customer accounts.
-          </p>
-        ) : filteredCustomers.length === 0 ? (
-          <p className="account-muted">
-            No customers match this search.
-          </p>
-        ) : (
-          <div className="operations-customer-list">
-            {filteredCustomers.map((customer) => {
-              const fullName = [
-                customer.first_name,
-                customer.last_name,
-              ]
-                .filter(
-                  (value): value is string =>
-                    value !== null,
-                )
-                .join(" ");
-
-              return (
-                <article
-                  key={customer.id}
-                  className="operations-customer"
-                >
-                  <header>
-                    <div>
-                      <p className="product-meta">
-                        Account · {customer.status}
-                      </p>
-
-                      <h3>
-                        {fullName || customer.email}
-                      </h3>
-
-                      {fullName.length > 0 ? (
-                        <p>
-                          <a
-                            href={
-                              `mailto:${customer.email}`
-                            }
-                          >
-                            {customer.email}
-                          </a>
-                        </p>
-                      ) : null}
-
-                      {customer.phone !== null ? (
-                        <p>
-                          <a
-                            href={
-                              `tel:${customer.phone}`
-                            }
-                          >
-                            {formatUsPhoneInput(
-                              customer.phone,
-                            )}
-                          </a>
-                        </p>
-                      ) : null}
-
-                      <small>
-                        Account created{" "}
-                        {new Date(
-                          customer.created_at,
-                        ).toLocaleDateString()}
-                      </small>
-                    </div>
-                  </header>
-
-                  <div className="operations-address-list">
-                    {customer.addresses.length === 0 ? (
-                      <p className="account-muted">
-                        No saved addresses.
-                      </p>
-                    ) : (
-                      customer.addresses.map(
-                        (address) => (
-                          <div
-                            key={address.id}
-                            className="operations-address"
-                          >
-                            <strong>
-                              {address.label}
-                            </strong>
-
-                            <address>
-                              {address.line1}
-
-                              {address.line2 !== null ? (
-                                <>
-                                  <br />
-                                  {address.line2}
-                                </>
-                              ) : null}
-
-                              <br />
-                              {address.city},{" "}
-                              {address.region_code}{" "}
-                              {address.postal_code}
-                              <br />
-                              {address.country_code}
-                            </address>
-
-                            {(
-                              address.is_default_shipping
-                              || address.is_default_billing
-                            ) ? (
-                              <small>
-                                {address.is_default_shipping
-                                  ? "Default shipping"
-                                  : ""}
-
-                                {(
-                                  address.is_default_shipping
-                                  && address.is_default_billing
-                                )
-                                  ? " · "
-                                  : ""}
-
-                                {address.is_default_billing
-                                  ? "Default billing"
-                                  : ""}
-                              </small>
-                            ) : null}
-                          </div>
-                        )
-                      )
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      
-        </div>
-      </details>
-
       <section
         id="order-history"
         className="operations-section"
@@ -1818,174 +1423,6 @@ export function OperationsPage({
           </div>
         )}
       </section>
-
-      <details
-        id="communications-history"
-        className="operations-section operations-disclosure"
-      >
-        <summary className="operations-disclosure-summary">
-          <span>
-            <strong>Customer email activity</strong>
-            <small>Communications history</small>
-          </span>
-        </summary>
-
-        <div className="operations-disclosure-content">
-
-        <div className="operations-section-heading">
-          <p className="eyebrow">
-            Communications History
-          </p>
-          <h2>Customer email activity</h2>
-          <p>
-            Read-only delivery metadata for
-            application-generated communications.
-            Message bodies and provider-private details
-            are not exposed.
-          </p>
-        </div>
-
-        <label
-          className={
-            "operations-field "
-            + "operations-customer-search"
-          }
-        >
-          <span>Search communications</span>
-          <input
-            type="search"
-            placeholder={
-              "Recipient, sender, subject, category, status…"
-            }
-            value={communicationSearch}
-            onChange={(event) => {
-              setCommunicationSearch(
-                event.target.value,
-              );
-            }}
-          />
-        </label>
-
-        {communications.length === 0 ? (
-          <p className="account-muted">
-            No communications recorded.
-          </p>
-        ) : filteredCommunications.length === 0 ? (
-          <p className="account-muted">
-            No communications match this search.
-          </p>
-        ) : (
-          <div className="operations-customer-list">
-            {filteredCommunications.map(
-              (communication) => (
-                <article
-                  key={communication.id}
-                  className="operations-customer"
-                >
-                  <header>
-                    <div>
-                      <p className="product-meta">
-                        {communication.category}
-                        {" · "}
-                        {communication.status}
-                      </p>
-
-                      <h3>
-                        {communication.subject}
-                      </h3>
-
-                      <p>
-                        To:{" "}
-                        <a
-                          href={
-                            `mailto:${communication.recipient}`
-                          }
-                        >
-                          {communication.recipient}
-                        </a>
-                      </p>
-
-                      <small>
-                        Created{" "}
-                        {new Date(
-                          communication.created_at,
-                        ).toLocaleString()}
-                      </small>
-                    </div>
-                  </header>
-
-                  <div className="operations-address-list">
-                    <div className="operations-address">
-                      <strong>Delivery</strong>
-
-                      <address>
-                        From:{" "}
-                        <a
-                          href={
-                            `mailto:${communication.sender}`
-                          }
-                        >
-                          {communication.sender}
-                        </a>
-                        <br />
-                        Status: {communication.status}
-                      </address>
-
-                      <small>
-                        {communication.sent_at !== null
-                          ? (
-                              "Sent "
-                              + new Date(
-                                communication.sent_at,
-                              ).toLocaleString()
-                            )
-                          : "Not marked sent"}
-                      </small>
-                    </div>
-
-                    <div className="operations-address">
-                      <strong>
-                        Related record
-                      </strong>
-
-                      {(
-                        communication.related_entity_type
-                        !== null
-                        || communication.related_entity_id
-                        !== null
-                      ) ? (
-                        <>
-                          <address>
-                            {
-                              communication.related_entity_type
-                              ?? "Record"
-                            }
-                            <br />
-                            {
-                              communication.related_entity_id
-                              ?? "No identifier"
-                            }
-                          </address>
-
-                          <small>
-                            Application relationship
-                          </small>
-                        </>
-                      ) : (
-                        <p className="account-muted">
-                          No related record.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              )
-            )}
-          </div>
-        )}
-      
-        </div>
-      </details>
 
       <details
         id="catalog-governance"
@@ -2229,7 +1666,570 @@ export function OperationsPage({
             );
           })}
         </div>
-      
+
+        </div>
+      </details>
+
+      <details
+        id="customer-roster"
+        className="operations-section operations-disclosure"
+      >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Accounts & address book</strong>
+            <small>Customer roster</small>
+          </span>
+        </summary>
+
+        <div className="operations-disclosure-content">
+
+        <div className="operations-section-heading">
+          <p className="eyebrow">Customer Roster</p>
+          <h2>Accounts &amp; address book</h2>
+          <p>
+            Registered customer accounts and saved addresses.
+            This P0 view is read-only.
+          </p>
+        </div>
+
+        <label
+          className={
+            "operations-field "
+            + "operations-customer-search"
+          }
+        >
+          <span>Search customers</span>
+          <input
+            type="search"
+            placeholder="Name, email, phone, city, ZIP…"
+            value={customerSearch}
+            onChange={(event) => {
+              setCustomerSearch(
+                event.target.value,
+              );
+            }}
+          />
+        </label>
+
+        {customers.length === 0 ? (
+          <p className="account-muted">
+            No registered customer accounts.
+          </p>
+        ) : filteredCustomers.length === 0 ? (
+          <p className="account-muted">
+            No customers match this search.
+          </p>
+        ) : (
+          <div className="operations-customer-list">
+            {filteredCustomers.map((customer) => {
+              const fullName = [
+                customer.first_name,
+                customer.last_name,
+              ]
+                .filter(
+                  (value): value is string =>
+                    value !== null,
+                )
+                .join(" ");
+
+              return (
+                <article
+                  key={customer.id}
+                  className="operations-customer"
+                >
+                  <header>
+                    <div>
+                      <p className="product-meta">
+                        Account · {customer.status}
+                      </p>
+
+                      <h3>
+                        {fullName || customer.email}
+                      </h3>
+
+                      {fullName.length > 0 ? (
+                        <p>
+                          <a
+                            href={
+                              `mailto:${customer.email}`
+                            }
+                          >
+                            {customer.email}
+                          </a>
+                        </p>
+                      ) : null}
+
+                      {customer.phone !== null ? (
+                        <p>
+                          <a
+                            href={
+                              `tel:${customer.phone}`
+                            }
+                          >
+                            {formatUsPhoneInput(
+                              customer.phone,
+                            )}
+                          </a>
+                        </p>
+                      ) : null}
+
+                      <small>
+                        Account created{" "}
+                        {new Date(
+                          customer.created_at,
+                        ).toLocaleDateString()}
+                      </small>
+                    </div>
+                  </header>
+
+                  <div className="operations-address-list">
+                    {customer.addresses.length === 0 ? (
+                      <p className="account-muted">
+                        No saved addresses.
+                      </p>
+                    ) : (
+                      customer.addresses.map(
+                        (address) => (
+                          <div
+                            key={address.id}
+                            className="operations-address"
+                          >
+                            <strong>
+                              {address.label}
+                            </strong>
+
+                            <address>
+                              {address.line1}
+
+                              {address.line2 !== null ? (
+                                <>
+                                  <br />
+                                  {address.line2}
+                                </>
+                              ) : null}
+
+                              <br />
+                              {address.city},{" "}
+                              {address.region_code}{" "}
+                              {address.postal_code}
+                              <br />
+                              {address.country_code}
+                            </address>
+
+                            {(
+                              address.is_default_shipping
+                              || address.is_default_billing
+                            ) ? (
+                              <small>
+                                {address.is_default_shipping
+                                  ? "Default shipping"
+                                  : ""}
+
+                                {(
+                                  address.is_default_shipping
+                                  && address.is_default_billing
+                                )
+                                  ? " · "
+                                  : ""}
+
+                                {address.is_default_billing
+                                  ? "Default billing"
+                                  : ""}
+                              </small>
+                            ) : null}
+                          </div>
+                        )
+                      )
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+
+        </div>
+      </details>
+
+      {administrationAllowed ? (
+        <details
+          id="account-administration"
+          className="operations-section operations-disclosure"
+          onToggle={(event) => {
+            if (
+              event.currentTarget.open
+              && !administrationLoaded
+            ) {
+              void loadAdministrationAccounts();
+            }
+          }}
+        >
+          <summary className="operations-disclosure-summary">
+            <span>
+              <strong>User access &amp; roles</strong>
+              <small>Administrator account management</small>
+            </span>
+          </summary>
+
+          <div className="operations-disclosure-content">
+            <div className="operations-section-heading">
+              <p className="eyebrow">Account Administration</p>
+              <h2>User access &amp; roles</h2>
+              <p>
+                Customer registration remains self-service. Employee,
+                manager, and administrator access is granted here.
+                Developer access remains local-only.
+              </p>
+            </div>
+
+            {administrationLoading ? (
+              <p className="account-muted">
+                Loading user accounts…
+              </p>
+            ) : administrationError !== null ? (
+              <p
+                className="operations-alert operations-error"
+                role="alert"
+              >
+                {administrationError}
+              </p>
+            ) : (
+              <>
+                <label
+                  className={
+                    "operations-field "
+                    + "operations-customer-search"
+                  }
+                >
+                  <span>Search user accounts</span>
+                  <input
+                    type="search"
+                    placeholder="Email, status, role…"
+                    value={administrationSearch}
+                    onChange={(event) => {
+                      setAdministrationSearch(
+                        event.target.value,
+                      );
+                    }}
+                  />
+                </label>
+
+                {administrationAccounts.length === 0 ? (
+                  <p className="account-muted">
+                    No persisted user accounts.
+                  </p>
+                ) : filteredAdministrationAccounts.length === 0 ? (
+                  <p className="account-muted">
+                    No accounts match this search.
+                  </p>
+                ) : (
+                  <div className="operations-customer-list">
+                    {filteredAdministrationAccounts.map((account) => {
+                      const roleDraft =
+                        administrationRoleDrafts[account.id]
+                        ?? [];
+                      const developerManaged =
+                        account.roles.includes("developer");
+                      const ownAccount = (
+                        currentUserEmail !== null
+                        && account.email.toLowerCase()
+                          === currentUserEmail.toLowerCase()
+                      );
+                      const saveState =
+                        administrationSaveStates[account.id]
+                        ?? "idle";
+
+                      return (
+                        <article
+                          key={account.id}
+                          className="operations-customer"
+                        >
+                          <header>
+                            <div>
+                              <p className="product-meta">
+                                Account · {account.status}
+                              </p>
+                              <h3>{account.email}</h3>
+                              <small>
+                                Created{" "}
+                                {new Date(
+                                  account.created_at,
+                                ).toLocaleString()}
+                                {account.last_login_at !== null
+                                  ? ` · Last login ${new Date(
+                                      account.last_login_at,
+                                    ).toLocaleString()}`
+                                  : " · Never logged in"}
+                              </small>
+                            </div>
+                          </header>
+
+                          <div className="operations-address-list">
+                            <div className="operations-address">
+                              <strong>Identity</strong>
+                              <address>
+                                Email {account.email_verified
+                                  ? "verified"
+                                  : "not verified"}
+                                <br />
+                                MFA {account.mfa_required
+                                  ? account.mfa_enrolled
+                                    ? "required · enrolled"
+                                    : "required · enrollment pending"
+                                  : "not required"}
+                              </address>
+                              <small>
+                                Persisted roles:{" "}
+                                {account.roles.length > 0
+                                  ? account.roles.join(", ")
+                                  : "none"}
+                              </small>
+                            </div>
+
+                            <div className="operations-address">
+                              <strong>Operations roles</strong>
+
+                              {WEB_MANAGED_ROLES.map((role) => {
+                                const lockedSelfAdmin = (
+                                  ownAccount
+                                  && role === "administrator"
+                                  && roleDraft.includes(role)
+                                );
+
+                                return (
+                                  <label key={role}>
+                                    <input
+                                      type="checkbox"
+                                      checked={roleDraft.includes(role)}
+                                      disabled={
+                                        developerManaged
+                                        || lockedSelfAdmin
+                                        || saveState === "saving"
+                                      }
+                                      onChange={(event) => {
+                                        toggleAdministrationRole(
+                                          account.id,
+                                          role,
+                                          event.target.checked,
+                                        );
+                                      }}
+                                    />{" "}
+                                    {role}
+                                  </label>
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                className={
+                                  "operations-action secondary "
+                                  + (
+                                    saveState === "saved"
+                                      ? "is-saved"
+                                      : ""
+                                  )
+                                }
+                                disabled={
+                                  developerManaged
+                                  || saveState === "saving"
+                                }
+                                onClick={() => {
+                                  void saveAdministrationRoles(account);
+                                }}
+                              >
+                                {saveState === "saving"
+                                  ? "Saving…"
+                                  : saveState === "saved"
+                                    ? "Saved ✓"
+                                    : "Save Roles"}
+                              </button>
+
+                              <small>
+                                {developerManaged
+                                  ? "Developer roles are managed locally, not from the web console."
+                                  : lockedSelfAdminText(
+                                      ownAccount,
+                                      roleDraft,
+                                    )}
+                              </small>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </details>
+      ) : null}
+
+      <details
+        id="communications-history"
+        className="operations-section operations-disclosure"
+      >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Customer email activity</strong>
+            <small>Communications history</small>
+          </span>
+        </summary>
+
+        <div className="operations-disclosure-content">
+
+        <div className="operations-section-heading">
+          <p className="eyebrow">
+            Communications History
+          </p>
+          <h2>Customer email activity</h2>
+          <p>
+            Read-only delivery metadata for
+            application-generated communications.
+            Message bodies and provider-private details
+            are not exposed.
+          </p>
+        </div>
+
+        <label
+          className={
+            "operations-field "
+            + "operations-customer-search"
+          }
+        >
+          <span>Search communications</span>
+          <input
+            type="search"
+            placeholder={
+              "Recipient, sender, subject, category, status…"
+            }
+            value={communicationSearch}
+            onChange={(event) => {
+              setCommunicationSearch(
+                event.target.value,
+              );
+            }}
+          />
+        </label>
+
+        {communications.length === 0 ? (
+          <p className="account-muted">
+            No communications recorded.
+          </p>
+        ) : filteredCommunications.length === 0 ? (
+          <p className="account-muted">
+            No communications match this search.
+          </p>
+        ) : (
+          <div className="operations-customer-list">
+            {filteredCommunications.map(
+              (communication) => (
+                <article
+                  key={communication.id}
+                  className="operations-customer"
+                >
+                  <header>
+                    <div>
+                      <p className="product-meta">
+                        {communication.category}
+                        {" · "}
+                        {communication.status}
+                      </p>
+
+                      <h3>
+                        {communication.subject}
+                      </h3>
+
+                      <p>
+                        To:{" "}
+                        <a
+                          href={
+                            `mailto:${communication.recipient}`
+                          }
+                        >
+                          {communication.recipient}
+                        </a>
+                      </p>
+
+                      <small>
+                        Created{" "}
+                        {new Date(
+                          communication.created_at,
+                        ).toLocaleString()}
+                      </small>
+                    </div>
+                  </header>
+
+                  <div className="operations-address-list">
+                    <div className="operations-address">
+                      <strong>Delivery</strong>
+
+                      <address>
+                        From:{" "}
+                        <a
+                          href={
+                            `mailto:${communication.sender}`
+                          }
+                        >
+                          {communication.sender}
+                        </a>
+                        <br />
+                        Status: {communication.status}
+                      </address>
+
+                      <small>
+                        {communication.sent_at !== null
+                          ? (
+                              "Sent "
+                              + new Date(
+                                communication.sent_at,
+                              ).toLocaleString()
+                            )
+                          : "Not marked sent"}
+                      </small>
+                    </div>
+
+                    <div className="operations-address">
+                      <strong>
+                        Related record
+                      </strong>
+
+                      {(
+                        communication.related_entity_type
+                        !== null
+                        || communication.related_entity_id
+                        !== null
+                      ) ? (
+                        <>
+                          <address>
+                            {
+                              communication.related_entity_type
+                              ?? "Record"
+                            }
+                            <br />
+                            {
+                              communication.related_entity_id
+                              ?? "No identifier"
+                            }
+                          </address>
+
+                          <small>
+                            Application relationship
+                          </small>
+                        </>
+                      ) : (
+                        <p className="account-muted">
+                          No related record.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              )
+            )}
+          </div>
+        )}
+
         </div>
       </details>
 

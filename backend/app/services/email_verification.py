@@ -108,8 +108,11 @@ def issue_email_verification(
     body_text = (
         "Verify the email address for "
         "your D'Acqua Dolce account.\n\n"
-        "Verification link:\n"
+        "Verification page:\n"
         f"{verification_url}\n\n"
+        "After opening the page, select "
+        '"Verify email address" to complete '
+        "verification.\n\n"
         "This single-use link expires in "
         f"{ttl_hours:g} hours.\n\n"
         "If you did not create this "
@@ -122,9 +125,12 @@ def issue_email_verification(
         "</p>"
         "<p>"
         f'<a href="{verification_url}">'
-        "Verify email address"
+        "Open verification page"
         "</a>"
         "</p>"
+        "<p>After opening the page, select "
+        "<strong>Verify email address</strong> "
+        "to complete verification.</p>"
         "<p>This single-use link expires "
         f"in {ttl_hours:g} hours.</p>"
         "<p>If you did not create this "

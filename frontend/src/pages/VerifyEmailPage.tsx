@@ -15,9 +15,14 @@ type VerifyEmailPageProps = {
 };
 
 type VerificationState =
+  | "ready"
   | "verifying"
   | "verified"
   | "error";
+
+const READY_MESSAGE = (
+  "Select Verify email address to complete verification."
+);
 
 export function VerifyEmailPage({
   token,
@@ -26,76 +31,61 @@ export function VerifyEmailPage({
 }: VerifyEmailPageProps) {
   const [state, setState] =
     useState<VerificationState>(
-      "verifying",
+      "ready",
     );
 
   const [message, setMessage] =
-    useState(
+    useState(READY_MESSAGE);
+
+  useEffect(() => {
+    setState("ready");
+    setMessage(READY_MESSAGE);
+  }, [token]);
+
+  async function verifyEmail() {
+    setState("verifying");
+    setMessage(
       "Verifying your email address…",
     );
 
-  useEffect(() => {
-    let active = true;
-
-    void completeEmailVerification(
-      token,
-    )
-      .then(async (result) => {
-        if (!active) {
-          return;
-        }
-
-        setState("verified");
-        setMessage(result);
-
-        await onVerified();
-      })
-      .catch(async (caught) => {
-        if (!active) {
-          return;
-        }
-
-        try {
-          const account =
-            await getCurrentAccount();
-
-          if (
-            active
-            && account?.email_verified
-          ) {
-            setState("verified");
-            setMessage(
-              "This email address is already verified.",
-            );
-            return;
-          }
-        } catch {
-          // Fall through to the token error.
-        }
-
-        if (!active) {
-          return;
-        }
-
-        setState("error");
-
-        setMessage(
-          caught instanceof Error
-            ? caught.message
-            : (
-                "Email verification "
-                + "could not be completed."
-              ),
+    try {
+      const result =
+        await completeEmailVerification(
+          token,
         );
-      });
 
-    return () => {
-      active = false;
-    };
-  }, [
-    token,
-    onVerified,
-  ]);
+      setState("verified");
+      setMessage(result);
+
+      await onVerified();
+    } catch (caught) {
+      try {
+        const account =
+          await getCurrentAccount();
+
+        if (account?.email_verified) {
+          setState("verified");
+          setMessage(
+            "This email address is already verified.",
+          );
+          return;
+        }
+      } catch {
+        // Fall through to the token error.
+      }
+
+      setState("error");
+
+      setMessage(
+        caught instanceof Error
+          ? caught.message
+          : (
+              "Email verification "
+              + "could not be completed."
+            ),
+      );
+    }
+  }
 
   return (
     <main className="detail-shell">
@@ -115,11 +105,13 @@ export function VerifyEmailPage({
         </p>
 
         <h1>
-          {state === "verifying"
-            ? "Verifying your email."
-            : state === "verified"
-              ? "Email verified."
-              : "Verification link unavailable."}
+          {state === "ready"
+            ? "Verify your email."
+            : state === "verifying"
+              ? "Verifying your email."
+              : state === "verified"
+                ? "Email verified."
+                : "Verification link unavailable."}
         </h1>
 
         <p
@@ -132,7 +124,17 @@ export function VerifyEmailPage({
           {message}
         </p>
 
-        {state !== "verifying" ? (
+        {state === "ready" ? (
+          <button
+            type="button"
+            className="detail-primary-action"
+            onClick={() => {
+              void verifyEmail();
+            }}
+          >
+            Verify email address
+          </button>
+        ) : state !== "verifying" ? (
           <button
             type="button"
             className="detail-primary-action"
