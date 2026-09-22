@@ -32,8 +32,6 @@ import {
   AppearanceToggle,
 } from "../theme/AppearanceToggle";
 import {
-  getInitialAccountAppearance,
-  saveAccountAppearance,
   type AppearanceMode,
 } from "../../theme/appearance";
 import {
@@ -53,6 +51,10 @@ type AccountPageProps = {
   account: AuthenticationStatus | null;
   theme: ThemeId;
   onThemeChange: (theme: ThemeId) => void;
+  appearance: AppearanceMode;
+  onAppearanceChange: (
+    appearance: AppearanceMode,
+  ) => void;
   onMfaReconfigurationStarted: (
     account: AuthenticationStatus,
   ) => void;
@@ -480,6 +482,8 @@ export function AccountPage({
   account,
   theme,
   onThemeChange,
+  appearance,
+  onAppearanceChange,
   onMfaReconfigurationStarted,
 }: AccountPageProps) {
   const authenticated =
@@ -501,18 +505,10 @@ export function AccountPage({
     useState(false);
   const [saveNotice, setSaveNotice] =
     useState<string | null>(null);
-  const [appearance, setAppearance] =
-    useState<AppearanceMode>(
-      getInitialAccountAppearance,
-    );
   const [addressDraft, setAddressDraft] =
     useState<AddressCreate>(
       EMPTY_ADDRESS,
     );
-
-  useEffect(() => {
-    saveAccountAppearance(appearance);
-  }, [appearance]);
 
   useEffect(() => {
     if (saveNotice === null) {
@@ -644,7 +640,7 @@ export function AccountPage({
             theme={theme}
             onThemeChange={onThemeChange}
             appearance={appearance}
-            onAppearanceChange={setAppearance}
+            onAppearanceChange={onAppearanceChange}
           />
         </div>
       </main>
@@ -807,7 +803,7 @@ export function AccountPage({
           theme={theme}
           onThemeChange={onThemeChange}
           appearance={appearance}
-          onAppearanceChange={setAppearance}
+          onAppearanceChange={onAppearanceChange}
         />
 
         <section className="account-panel">

@@ -117,6 +117,94 @@
   --button-radius: 999px;
 }
 
+/*
+ * Global light/dark appearance axis. Appearance is applied on
+ * the document root so every route consumes the same palette.
+ */
+
+:root[data-appearance="light"] {
+  color-scheme: light;
+}
+
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="baseline"][data-appearance="dark"] {
+  --surface-0: #101613;
+  --surface-1: #151d19;
+  --surface-2: #1b2521;
+  --ink: #eef3ef;
+  --ink-muted: #adb9b2;
+  --action: #d9e7df;
+  --action-text: #101613;
+  --hairline: #33423b;
+  --accent: #9fcab9;
+  --focus-ring: #72c7aa;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="quiet-mineral"][data-appearance="dark"] {
+  --surface-0: #141410;
+  --surface-1: #1b1a16;
+  --surface-2: #23221c;
+  --ink: #f0eee6;
+  --ink-muted: #b7b2a4;
+  --action: #e3dfd4;
+  --action-text: #161611;
+  --hairline: #444138;
+  --accent: #c7c0ad;
+  --focus-ring: #a8dadd;
+  --control-highlight: #0a5960;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="lagoon-editorial"][data-appearance="dark"] {
+  --surface-0: #06191b;
+  --surface-1: #0a2224;
+  --surface-2: #0f2a2d;
+  --ink: #e8f8f7;
+  --ink-muted: #a5c6c5;
+  --action: #b9e5e3;
+  --action-text: #062022;
+  --hairline: #285154;
+  --accent: #79d1d2;
+  --focus-ring: #79d1d2;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="culinary-atelier"][data-appearance="dark"] {
+  --surface-0: #171411;
+  --surface-1: #201c17;
+  --surface-2: #28231d;
+  --ink: #f4efe7;
+  --ink-muted: #bdb3a6;
+  --action: #eadfd1;
+  --action-text: #1a1612;
+  --hairline: #4b4238;
+  --accent: #d88b7a;
+  --focus-ring: #e29a89;
+  --control-highlight: #7b2d1f;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="performance-precision"][data-appearance="dark"] {
+  --surface-0: #0c1110;
+  --surface-1: #121817;
+  --surface-2: #18201e;
+  --ink: #eff4f1;
+  --ink-muted: #aeb9b3;
+  --action: #dfe8e3;
+  --action-text: #101513;
+  --hairline: #33403b;
+  --accent: #75c7ca;
+  --focus-ring: #75c7ca;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
 * {
   box-sizing: border-box;
 }

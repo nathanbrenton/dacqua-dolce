@@ -54,6 +54,11 @@ import {
   VerifyEmailPage,
 } from "./pages/VerifyEmailPage";
 import {
+  getInitialAppearance,
+  saveAppearance,
+  type AppearanceMode,
+} from "./theme/appearance";
+import {
   DEFAULT_LOGO_VARIANT,
   isLogoVariantId,
   type LogoVariantId,
@@ -138,6 +143,11 @@ export function App() {
       getInitialTheme,
     );
 
+  const [appearance, setAppearance] =
+    useState<AppearanceMode>(
+      getInitialAppearance,
+    );
+
   const [
     logoVariant,
     setLogoVariant,
@@ -191,6 +201,13 @@ export function App() {
       theme,
     );
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement
+      .dataset.appearance = appearance;
+
+    saveAppearance(appearance);
+  }, [appearance]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -505,6 +522,8 @@ export function App() {
           roles={account?.roles ?? []}
           currentUserEmail={account?.email ?? null}
           onNavigate={navigate}
+          appearance={appearance}
+          onAppearanceChange={setAppearance}
           logoVariant={logoVariant}
           developerControlsOpen={
             developerControlsOpen
@@ -520,6 +539,8 @@ export function App() {
           account={account}
           theme={theme}
           onThemeChange={setTheme}
+          appearance={appearance}
+          onAppearanceChange={setAppearance}
           onNavigate={navigate}
           onRequestSignIn={() => {
             setAuthDialogOpen(true);

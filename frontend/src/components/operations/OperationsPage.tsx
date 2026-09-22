@@ -49,8 +49,6 @@ import {
 } from "./CommunicationsInbox";
 
 import {
-  getInitialAppearance,
-  saveAppearance,
   type AppearanceMode,
 } from "../../theme/appearance";
 import {
@@ -65,6 +63,10 @@ type OperationsPageProps = {
   roles: string[];
   currentUserEmail: string | null;
   onNavigate: (path: string) => void;
+  appearance: AppearanceMode;
+  onAppearanceChange: (
+    appearance: AppearanceMode,
+  ) => void;
   logoVariant: LogoVariantId;
   developerControlsOpen: boolean;
   onToggleDeveloperControls: () => void;
@@ -215,6 +217,8 @@ export function OperationsPage({
   roles,
   currentUserEmail,
   onNavigate,
+  appearance,
+  onAppearanceChange,
   logoVariant,
   developerControlsOpen,
   onToggleDeveloperControls,
@@ -233,15 +237,6 @@ export function OperationsPage({
     () => roles.some((role) => ADMINISTRATION_ROLES.has(role)),
     [roles],
   );
-
-  const [appearance, setAppearance] =
-    useState<AppearanceMode>(
-      getInitialAppearance,
-    );
-
-  useEffect(() => {
-    saveAppearance(appearance);
-  }, [appearance]);
 
   const [summary, setSummary] =
     useState<OperationsSummary | null>(null);
@@ -1036,7 +1031,7 @@ export function OperationsPage({
           <AppearanceToggle
             appearance={appearance}
             onAppearanceChange={
-              setAppearance
+              onAppearanceChange
             }
           />
         </div>
