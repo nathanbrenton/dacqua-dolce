@@ -72,6 +72,45 @@ Inspect effective configuration:
 
     sudo nginx -T
 
+### Public documentation boundary
+
+The production edge deliberately returns HTTP 404 for the internal readiness
+endpoint and conventional FastAPI documentation/OpenAPI paths. This prevents
+the frontend SPA fallback from making disabled documentation routes appear
+publicly available.
+
+Validate the public boundary:
+
+    for path in \
+      /readiness \
+      /docs \
+      /docs/ \
+      /redoc \
+      /redoc/ \
+      /api/docs \
+      /api/docs/ \
+      /api/redoc \
+      /api/redoc/ \
+      /openapi.json \
+      /api/openapi.json
+    do
+        printf '%-24s ' "$path"
+        curl -sS \
+          -o /dev/null \
+          -w '%{http_code}\n' \
+          "https://dacquadolce.com$path"
+    done
+
+Every path above should return `404`.
+
+The normal public checks remain:
+
+    curl -fsS https://dacquadolce.com/
+    curl -fsS https://dacquadolce.com/health
+
+Production FastAPI disables its documentation/OpenAPI endpoints independently;
+the Nginx rules provide a second public-edge boundary.
+
 ## TLS / Certbot
 
     sudo certbot certificates

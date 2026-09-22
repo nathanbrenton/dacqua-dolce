@@ -80,12 +80,46 @@ server {
     }
 
     # Production API documentation is disabled in FastAPI
-    # and independently blocked at the public edge.
+    # and independently blocked at the public edge. Explicitly block
+    # conventional documentation paths so SPA fallback cannot make
+    # them appear publicly available.
+    location = /docs {
+        return 404;
+    }
+
+    location ^~ /docs/ {
+        return 404;
+    }
+
+    location = /redoc {
+        return 404;
+    }
+
+    location ^~ /redoc/ {
+        return 404;
+    }
+
     location = /api/docs {
         return 404;
     }
 
+    location ^~ /api/docs/ {
+        return 404;
+    }
+
+    location = /api/redoc {
+        return 404;
+    }
+
+    location ^~ /api/redoc/ {
+        return 404;
+    }
+
     location = /openapi.json {
+        return 404;
+    }
+
+    location = /api/openapi.json {
         return 404;
     }
 

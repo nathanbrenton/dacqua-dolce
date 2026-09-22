@@ -280,8 +280,12 @@ The validated Nginx behavior must include:
 - `/health` proxied to FastAPI;
 - `/api/` proxied to FastAPI;
 - `/readiness` blocked publicly with 404;
-- `/api/docs` blocked publicly with 404;
+- `/docs` and `/docs/` descendants blocked publicly with 404;
+- `/redoc` and `/redoc/` descendants blocked publicly with 404;
+- `/api/docs` and `/api/docs/` descendants blocked publicly with 404;
+- `/api/redoc` and `/api/redoc/` descendants blocked publicly with 404;
 - `/openapi.json` blocked publicly with 404;
+- `/api/openapi.json` blocked publicly with 404;
 - SPA fallback to `/index.html`;
 - immutable one-year caching for built `/assets/`;
 - 2 MiB request-body limit;
