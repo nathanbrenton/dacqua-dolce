@@ -325,23 +325,63 @@ Local backup/restore validation is commissioned; off-host disaster recovery rema
 
 ### Application transactional email — commissioned
 
-FastAPI sends transactional application email directly through the Postmark HTTPS API. The production Postmark server token is stored outside Git in the root-controlled application environment.
+FastAPI sends transactional application email through the Postmark HTTPS API. The production Postmark server token is stored outside Git in the protected application environment.
 
-The `dacquadolce.com` sending domain is verified and live delivery was validated on 2026-09-22. Production account verification email was also validated end-to-end after the explicit-confirmation flow was deployed.
+The `dacquadolce.com` sending domain is verified and live delivery was validated on 2026-09-22. Production verification/password-recovery/quote notification paths have been exercised successfully.
 
-Direct outbound TCP/25 from the Vultr host remains blocked. This does not block the Postmark HTTPS API and does not require a local Postfix-to-MX architecture for application mail.
+Direct outbound TCP/25 from the Vultr host remains blocked. This does not affect the Postmark HTTPS API and does not require a local Postfix-to-MX architecture.
 
-`email_deliveries` stores delivery metadata and bounded provider errors, not rendered message bodies or raw provider payloads.
+`email_deliveries` remains the transport metadata ledger. It stores delivery metadata, provider references, and bounded error information rather than complete correspondence bodies.
 
-### Customer communications archive — pending
+### Durable communications archive — commissioned
 
-The current delivery table is not a complete correspondence archive. The planned business communications architecture is:
+The application now has a dedicated PostgreSQL communications archive:
 
-    inbound reply -> Postmark inbound webhook -> FastAPI -> PostgreSQL communications archive
+    communication_threads
+    communication_messages
+    communication_recipients
+    communication_attachments
+    communication_events
 
-    employee reply -> authenticated web Operations UI -> FastAPI -> PostgreSQL archive -> Postmark API
+The schema was introduced by Alembic revision `c41b7e2a9d63` and is owned by `dacqua_dolce_migrator`; the runtime role `dacqua_dolce_app` has the required CRUD privileges.
 
-The future archive should model threads/messages/recipients/attachments/delivery events/assignment as appropriate and should preserve customer/company correspondence durably in PostgreSQL.
+Outbound transactional email is archived through this model. Sensitive authentication values are redacted in the archive copy where required while the live outbound message still contains the value needed by the recipient.
+
+### Postmark inbound processing — commissioned
+
+Inbound architecture:
+
+    external sender
+        -> Postmark inbound processing
+        -> HTTPS /api/webhooks/postmark/inbound
+        -> Nginx
+        -> FastAPI
+        -> PostgreSQL communications archive
+
+The webhook uses HTTP Basic authentication with credentials held only in protected runtime configuration. The exact webhook path is the only browser-CSRF exemption for this machine-to-machine integration.
+
+Nginx preserves the normal 2 MiB site request-body limit and grants only the exact inbound webhook a 64 MiB envelope for Postmark JSON/base64 attachment transport.
+
+Inbound Postmark `MessageID` is the idempotency key. Duplicate/retried webhook delivery resolves to the existing archived message rather than creating a duplicate.
+
+Inbound thread matching attempts:
+
+1. Postmark `MailboxHash` -> existing communication thread UUID;
+2. RFC `In-Reply-To` -> prior archived internet Message-ID;
+3. otherwise a new thread.
+
+A real Gmail -> Postmark -> production webhook -> PostgreSQL message was validated on 2026-09-22. Provider retries resulted in one archived database message for the provider MessageID.
+
+The full implementation/rebuild boundary is documented in `COMMUNICATIONS_AND_POSTMARK.md`.
+
+### Employee inbox/reply workflow — pending
+
+The durable archive and inbound transport are commissioned, but the authenticated employee shared-inbox list/detail/reply experience is not yet commissioned.
+
+The intended reply path is:
+
+    employee -> authenticated Operations UI -> FastAPI
+             -> PostgreSQL archive -> Postmark HTTPS API
 
 A general-purpose IMAP/Dovecot mailbox on the production host is not required for this application design.
 
@@ -363,6 +403,8 @@ Commissioned:
 - privileged MFA and account-role administration;
 - customer profile/address and account appearance controls;
 - Postmark transactional application email;
+- durable PostgreSQL communications archive;
+- authenticated Postmark inbound webhook with attachment/event archival and idempotent retry handling;
 - local health/readiness checks;
 - full local observability stack;
 - repo-managed Grafana dashboards;
@@ -374,10 +416,9 @@ Not yet commissioned:
 
 - off-host AWS S3/restic repository and off-host restore rehearsal;
 - observability report email delivery/timers and corresponding Better Stack report heartbeats;
-- durable body-level customer communications archive, Postmark inbound webhook, and employee shared-inbox/reply workflow;
+- employee shared-inbox/reply workflow and explicit communications retention policy;
 - remaining observability service systemd hardening beyond the already hardened FastAPI service;
 - payment-provider checkout;
-- rsync-based local-to-production source staging as the documented/validated standard transport.
 
 ### FastAPI systemd sandbox
 

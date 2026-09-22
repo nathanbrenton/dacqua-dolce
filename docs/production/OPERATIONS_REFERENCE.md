@@ -374,18 +374,72 @@ The restic repository password is intentionally stored outside Git and has an ad
 
 The application Postmark server token lives in `/etc/dacqua-dolce/backend.env`. The observability reporting token/configuration is separate under `/etc/dacqua-observability/reporting.env`. Never print either token during routine checks.
 
-## Application email
+## Application email and communications archive
 
 Application transactional mail is commissioned through the Postmark HTTPS API. Direct outbound TCP/25 remains blocked by Vultr and is not required for the application mail path.
 
+Inbound customer/company mail is also commissioned:
+
+    sender
+      -> Postmark inbound processing
+      -> /api/webhooks/postmark/inbound
+      -> FastAPI
+      -> PostgreSQL communications archive
+
 Useful boundaries:
 
-- `email_deliveries` stores delivery metadata, provider reference, and bounded error text;
-- rendered bodies and raw Postmark payloads are not persisted in that table;
-- the future durable customer-communications archive is a separate milestone;
+- `email_deliveries` remains transport metadata only;
+- complete durable correspondence lives in the `communication_*` tables;
+- outbound password-reset/verification secrets are redacted in the archive copy where required;
+- inbound attachments are stored in PostgreSQL with size/hash/content metadata;
+- provider MessageID is used for inbound idempotency;
+- raw Postmark payload duplication is not required;
+- employee shared-inbox/reply UI remains pending;
 - observability report delivery/timers remain separate and pending.
 
-When diagnosing a transactional send, prefer database delivery state plus bounded application logs. Do not paste production tokens or complete customer message content into diagnostics.
+Protected application configuration:
+
+    /etc/dacqua-dolce/backend.env
+
+Relevant inbound variables:
+
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
+
+Do not print their values.
+
+Public webhook:
+
+    POST https://dacquadolce.com/api/webhooks/postmark/inbound
+
+Expected authentication-boundary behavior:
+
+    no/wrong Basic Auth -> 401
+    valid Basic Auth + malformed payload -> 422
+    valid new Postmark inbound payload -> 200
+    duplicate Postmark MessageID -> 200
+
+Nginx keeps the general site at `client_max_body_size 2m` and grants only the exact inbound webhook path a 64 MiB envelope.
+
+Safe request-status check:
+
+    sudo grep \
+      'POST /api/webhooks/postmark/inbound' \
+      /var/log/nginx/access.log \
+      | tail -n 20
+
+Safe API log check:
+
+    sudo journalctl \
+      -u dacqua-dolce-api.service \
+      --since "30 minutes ago" \
+      --no-pager
+
+When diagnosing communications, prefer counts, timestamps, statuses, body character counts, attachment counts/digests, and short MessageID fingerprints. Do not paste production tokens, authenticated webhook URLs, complete inbound addresses, full customer message bodies, or attachment bytes into diagnostics.
+
+Detailed architecture/rebuild/acceptance procedure:
+
+    docs/production/COMMUNICATIONS_AND_POSTMARK.md
 
 ## Account and role administration
 

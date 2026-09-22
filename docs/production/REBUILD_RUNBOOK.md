@@ -397,27 +397,162 @@ Use the repository verifier when applicable:
 
     scripts/production/verify_release.sh https://dacquadolce.com
 
-## 20. Configure and validate application Postmark email
+## 20. Configure and validate application Postmark email and inbound communications
 
-Application transactional email is commissioned through the Postmark HTTPS API. Configure only through the protected runtime environment:
+Application outbound and inbound communications are commissioned through Postmark plus the PostgreSQL communications archive.
+
+The detailed technical procedure is maintained in:
+
+    docs/production/COMMUNICATIONS_AND_POSTMARK.md
+
+Use the following clean rebuild order.
+
+### 20.1 Configure outbound application email
+
+Populate only the protected runtime environment:
 
     DACQUA_PUBLIC_ORIGIN=https://dacquadolce.com
     DACQUA_EMAIL_PROVIDER=postmark
     DACQUA_POSTMARK_SERVER_TOKEN=<secret>
     DACQUA_EMAIL_FROM=<verified-sender>
+    DACQUA_EMAIL_OPERATOR_TO=<business-operator-address>
 
-The `dacquadolce.com` sending domain must be verified in Postmark. Never place the server token in Git, shell history, tickets, or documentation.
+The `dacquadolce.com` sending domain must be verified in Postmark.
+
+Never place populated tokens or credentials in Git, documentation, screenshots, tickets, or shell history.
 
 After configuration:
 
 1. restart `dacqua-dolce-api.service`;
 2. verify local readiness;
-3. perform a controlled Postmark test send;
-4. verify a real registration/email-verification flow;
-5. confirm the verification landing page requires an explicit **Verify email address** action before the token is consumed;
-6. inspect only bounded delivery metadata/errors rather than exposing credentials or full customer message bodies.
+3. use the smallest practical controlled outbound acceptance test;
+4. verify delivery/archive metadata without printing complete customer bodies or secrets.
 
-Direct TCP/25 from the Vultr host is not required for this application email path.
+Direct TCP/25 is not required.
+
+### 20.2 Confirm communications schema
+
+Deploy through the normal release workflow and verify Alembic is at the intended current head. The communications schema was introduced by:
+
+    c41b7e2a9d63
+
+Expected tables:
+
+    communication_threads
+    communication_messages
+    communication_recipients
+    communication_attachments
+    communication_events
+
+Expected ownership:
+
+    dacqua_dolce_migrator
+
+Expected runtime role:
+
+    dacqua_dolce_app
+
+The runtime role requires ordinary CRUD privileges but must not own the application schema.
+
+### 20.3 Provision inbound webhook credentials
+
+Generate strong values and store them only in:
+
+    /etc/dacqua-dolce/backend.env
+
+Variable names:
+
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
+
+Do not print the values during routine provisioning or validation.
+
+Restart the API after adding the variables.
+
+### 20.4 Validate the API authentication boundary over loopback
+
+Expected behavior:
+
+    wrong/missing Basic Auth -> HTTP 401
+    valid Basic Auth + {}    -> HTTP 422
+
+The `422` proves authentication succeeded and schema validation rejected the intentionally incomplete Postmark payload.
+
+This test does not send email or create a valid inbound archive record.
+
+### 20.5 Install the HTTPS edge configuration
+
+The canonical Nginx template keeps:
+
+    client_max_body_size 2m;
+
+for the ordinary site and grants only:
+
+    /api/webhooks/postmark/inbound
+
+a 64 MiB request envelope.
+
+Install the canonical template:
+
+    sudo scripts/production/install_nginx_site.sh \
+      https \
+      dacquadolce.com \
+      www.dacquadolce.com
+
+Validate:
+
+    sudo nginx -t
+    systemctl is-active nginx
+
+Repeat the same `401`/`422` webhook-boundary test through public HTTPS.
+
+### 20.6 Configure the Postmark Default Inbound Stream
+
+In the D'Acqua Dolce Postmark Server:
+
+1. open **Default Inbound Stream**;
+2. open **Settings**;
+3. set the webhook to the authenticated production URL;
+4. keep the complete populated authenticated URL out of documentation and diagnostics;
+5. keep raw-email inclusion disabled unless a later requirement explicitly justifies it;
+6. save the configuration;
+7. use Postmark **Check**.
+
+Postmark Check should receive HTTP 200 and create a synthetic inbound archive record.
+
+### 20.7 Perform one real inbound acceptance test
+
+Send one controlled message to the provider-assigned inbound address.
+
+Then verify:
+
+- an inbound `communication_messages` row exists;
+- direction is `inbound`;
+- status is `received`;
+- provider is `postmark`;
+- provider message identifier is present;
+- recipient/event rows exist as appropriate;
+- body character counts are plausible without printing the body;
+- attachment rows exist when an attachment was deliberately included;
+- retry attempts for the same provider MessageID do not create duplicate message rows.
+
+Use MessageID fingerprints rather than printing full provider IDs when correlation is needed.
+
+Avoid repeated live-email tests. The provider account has a limited monthly allowance and production test messages create real durable records.
+
+### 20.8 Security/privacy boundary
+
+The communications archive contains durable message bodies and may contain attachment bytes. Treat it as sensitive application data.
+
+Do not:
+
+- log full inbound payloads;
+- dump message bodies into tickets/chat;
+- expose the full assigned inbound address unnecessarily;
+- expose Basic Auth credentials;
+- store raw provider payload duplicates without a documented requirement.
+
+Include this data in backup/restore planning and define a business retention/deletion policy before broad employee use.
 
 ## 21. Install observability stack
 

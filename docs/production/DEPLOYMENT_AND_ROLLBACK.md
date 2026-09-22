@@ -200,17 +200,30 @@ For a release that changes customer/account UI, perform the corresponding live b
 
 ## Last validated checkpoint
 
-On 2026-09-22, source commit:
+The exact-revision rsync staging workflow and immutable deployment process are production validated.
 
-    75abfd78a00c0013fb7cd91eeb3e7a873159cf7e
+The communications/Postmark production candidate:
 
-activated successfully as:
+    f5b7622126c57c0fae2fe06c343b225fec7e02af
 
-    /srv/dacqua-dolce/releases/20260922T173923Z
+was staged by the repo-managed rsync exact-revision helper and deployed through the normal immutable release workflow on 2026-09-22.
 
-The deployment created a fresh pre-migration PostgreSQL backup, reported zero catalog changes, passed local readiness/public route/security-header validation, retained the prior release for rollback, and kept five releases.
+The release passed:
 
-These identifiers document a checkpoint only; future operators must deploy the intended current Git revision rather than reusing this revision blindly.
+- staged-source revision verification;
+- immutable-release source verification;
+- backend/frontend build;
+- pre-migration PostgreSQL backup;
+- Alembic/current-schema validation;
+- canonical catalog reconciliation;
+- local readiness;
+- public route checks;
+- private documentation/readiness boundary checks;
+- HTTPS security-header validation.
+
+Post-deployment, the Postmark inbound webhook authentication path and public Nginx edge were validated separately, followed by synthetic and real inbound-email acceptance.
+
+This revision is a historical checkpoint only. Future operators must deploy the intended current Git revision rather than reusing it blindly.
 
 ## Rollback decision boundary
 

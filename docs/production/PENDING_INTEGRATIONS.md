@@ -56,42 +56,47 @@ Future milestone must:
 - submit the corresponding Better Stack heartbeat only after successful report delivery;
 - monitor timer/job failure and report freshness.
 
-## 3. Durable customer communications archive and employee inbox
+## 3. Employee communications inbox and reply workflow
 
-Current application email storage is intentionally metadata-only. `email_deliveries` does not store rendered message bodies or raw provider payloads.
+Commissioned foundation:
 
-The planned application boundary is:
+- dedicated PostgreSQL communication threads/messages/recipients/attachments/events;
+- outbound transactional message archival;
+- sensitive authentication-value redaction in archive copies where required;
+- authenticated Postmark inbound webhook;
+- normalized inbound body/recipient/attachment/event archival;
+- customer matching by normalized sender email;
+- thread resolution by Postmark `MailboxHash` or RFC `In-Reply-To`;
+- Postmark MessageID idempotency;
+- synthetic Postmark Check validation;
+- real Gmail -> Postmark -> production archive validation under provider retry.
 
-    inbound customer reply
-        -> Postmark inbound webhook
-        -> FastAPI
-        -> PostgreSQL communications archive
+Still pending:
 
-    employee reply
-        -> authenticated Operations UI
-        -> FastAPI
-        -> PostgreSQL communications archive
-        -> Postmark API
+- employee inbox list in the authenticated Operations UI;
+- conversation/thread detail view;
+- role-controlled employee reply endpoint/UI;
+- durable employee-authored reply archival before/around provider send;
+- thread assignment/status controls where needed;
+- audit coverage for employee reply/assignment actions;
+- explicit communications retention/deletion policy;
+- optional delivery/bounce webhook ingestion if operational requirements justify it.
 
-Future milestone should define dedicated models for communication threads/messages, participants/recipients, attachments or attachment metadata, delivery events, and assignment/status where appropriate.
+The intended reply path remains:
 
-Requirements:
+    employee
+      -> authenticated Operations UI
+      -> FastAPI
+      -> PostgreSQL archive
+      -> Postmark HTTPS API
 
-- customer/company correspondence is durably archived in PostgreSQL;
-- employees can work from the authenticated D'Acqua Dolce website;
-- inbound Postmark webhook requests are authenticated/validated according to Postmark's supported mechanism;
-- outbound messages are persisted transactionally with appropriate delivery state;
-- access is role-controlled and audited;
-- retention/privacy policy is explicit;
-- do not repurpose `email_deliveries` into an unstructured body store merely to accelerate implementation.
-
-A self-hosted general-purpose IMAP/Dovecot stack is not required by the current application design.
+Do not introduce a general-purpose IMAP/Dovecot stack solely for this workflow.
 
 ## 4. Observability service systemd hardening
 
-FastAPI systemd hardening is commissioned and validated. The observability services were subsequently inspected service-by-service and still require an incremental hardening pass where compatible with each vendor unit.
+FastAPI systemd hardening is commissioned and validated. The observability services still require incremental hardening where compatible with each vendor unit.
 
-Continue with measured changes rather than copying the FastAPI sandbox wholesale. Alertmanager was identified as an early candidate because its effective systemd security exposure remained materially higher than the hardened API service.
+Continue with measured changes rather than copying the FastAPI sandbox wholesale. Alertmanager remains an early candidate because its effective systemd security exposure was materially higher than the hardened API service.
 
 For each service:
 
@@ -102,18 +107,31 @@ For each service:
 - run a non-interactive `systemd-analyze security ... --no-pager` comparison;
 - document the final validated state only.
 
-## 5. Rsync-based local-to-production source staging
+## 5. Pricing activation, checkout policy, and payment provider
 
-The immutable release mechanism itself already uses server-side `rsync` from the supplied source tree into a timestamped release. The remaining validation item is the **local workstation -> production staging** transport.
+The application preserves a strict third-party hosted/tokenized payment-data boundary, but authoritative production prices and a production payment processor/checkout flow are not yet commissioned.
 
-The repository now includes `scripts/production/stage_release_rsync.sh` and `scripts/production/verify_staged_source.py`. The helper exports an exact Git revision, creates and validates a SHA-256 source manifest, transfers the tree with checksum-based `rsync --delete` semantics to a persistent production-admin staging cache, and verifies the remote tree before activation. `deploy_release.sh` revalidates manifested source trees before release creation and again after copying them into the immutable release directory.
+Before enabling live checkout:
 
-Status: implementation ready; first end-to-end production use still requires validation. Until that succeeds, retain the previously validated `git archive` + SHA-256 + `scp` workflow as the production fallback.
+1. populate authoritative backend/database pricing rather than frontend/static prices;
+2. confirm MAP/list/cart-only/private-quote/no-online-sale policy per product;
+3. define tax, shipping/delivery, installation, deposit, quote-only, and inventory-reservation behavior;
+4. select the payment processor;
+5. integrate through the existing payment-provider boundary;
+6. use sandbox/test mode first;
+7. create payment sessions/intents server-side;
+8. keep raw PAN/CVV/track/PIN data entirely outside D'Acqua Dolce;
+9. authenticate and idempotently process provider webhooks;
+10. map provider payment states to internal order states;
+11. validate authorization/capture/cancel/refund/failure/retry paths;
+12. perform a controlled production acceptance only after the business approves go-live.
 
-Never rsync directly into `/srv/dacqua-dolce/current` or mutate a timestamped release in place.
+## Commissioned items removed from this file
 
-## 6. Payment provider / live checkout
+The following are no longer pending and belong in the commissioned production documents:
 
-The application preserves a strict third-party hosted/tokenized payment-data boundary, but a production payment provider and checkout flow are not commissioned.
-
-Do not enable live checkout until the business selects the provider and validates authoritative prices, provider documentation, hosted/tokenized collection, webhook authentication, idempotency, refunds/voids/chargebacks, and the PCI responsibility split.
+- rsync exact-revision workstation -> production staging;
+- durable communications archive;
+- outbound communication archival;
+- authenticated Postmark inbound webhook;
+- real inbound-email archival/idempotency validation.
