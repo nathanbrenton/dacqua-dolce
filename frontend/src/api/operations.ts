@@ -32,6 +32,59 @@ export type OperationsCommunication = {
   sent_at: string | null;
 };
 
+export type OperationsCommunicationRecipient = {
+  recipient_type: string;
+  address: string;
+  display_name: string | null;
+};
+
+export type OperationsCommunicationAttachment = {
+  id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  sha256: string;
+};
+
+export type OperationsCommunicationMessage = {
+  id: string;
+  direction: string;
+  status: string;
+  author_user_id: string | null;
+  sender_address: string;
+  sender_name: string | null;
+  subject: string;
+  body_text: string | null;
+  content_redacted: boolean;
+  sent_at: string | null;
+  received_at: string | null;
+  created_at: string;
+  recipients: OperationsCommunicationRecipient[];
+  attachments: OperationsCommunicationAttachment[];
+};
+
+export type OperationsCommunicationThread = {
+  id: string;
+  customer_user_id: string | null;
+  customer_email: string | null;
+  assigned_user_id: string | null;
+  subject: string | null;
+  related_entity_type: string | null;
+  related_entity_id: string | null;
+  status: string;
+  last_message_at: string | null;
+  created_at: string;
+  message_count: number;
+  latest_direction: string | null;
+  latest_sender_address: string | null;
+  latest_subject: string | null;
+};
+
+export type OperationsCommunicationThreadDetail =
+  OperationsCommunicationThread & {
+    messages: OperationsCommunicationMessage[];
+  };
+
 export type OperationsQuote = {
   id: string;
   product_id: string | null;
@@ -223,6 +276,22 @@ export function getOperationsCommunications(): Promise<
 > {
   return getJson(
     "/api/operations/communications",
+  );
+}
+
+export function getOperationsCommunicationThreads(): Promise<
+  OperationsCommunicationThread[]
+> {
+  return getJson(
+    "/api/operations/communication-threads",
+  );
+}
+
+export function getOperationsCommunicationThread(
+  threadId: string,
+): Promise<OperationsCommunicationThreadDetail> {
+  return getJson(
+    `/api/operations/communication-threads/${encodeURIComponent(threadId)}`,
   );
 }
 

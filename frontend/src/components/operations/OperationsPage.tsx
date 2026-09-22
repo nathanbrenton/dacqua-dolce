@@ -15,7 +15,6 @@ import {
 import {
   getOperationsAuditEvents,
   getOperationsCatalog,
-  getOperationsCommunications,
   getOperationsCustomers,
   getOperationsOrders,
   getOperationsQuotes,
@@ -25,7 +24,6 @@ import {
   updateQuoteNotes,
   updateQuoteStatus,
   type OperationsAuditEvent,
-  type OperationsCommunication,
   type OperationsCustomer,
   type OperationsOrder,
   type OperationsProduct,
@@ -45,6 +43,10 @@ import {
 import {
   AppearanceToggle,
 } from "../theme/AppearanceToggle";
+
+import {
+  CommunicationsInbox,
+} from "./CommunicationsInbox";
 
 import {
   getInitialAppearance,
@@ -245,10 +247,6 @@ export function OperationsPage({
     useState<OperationsSummary | null>(null);
   const [quotes, setQuotes] =
     useState<OperationsQuote[]>([]);
-  const [communications, setCommunications] =
-    useState<OperationsCommunication[]>([]);
-  const [communicationSearch, setCommunicationSearch] =
-    useState("");
   const [auditEvents, setAuditEvents] =
     useState<OperationsAuditEvent[]>([]);
   const [auditSearch, setAuditSearch] =
@@ -319,7 +317,6 @@ export function OperationsPage({
       getOperationsQuotes(),
       getOperationsCustomers(),
       getOperationsOrders(),
-      getOperationsCommunications(),
       getOperationsCatalog(),
     ])
       .then(([
@@ -327,16 +324,12 @@ export function OperationsPage({
         quoteResult,
         customerResult,
         orderResult,
-        communicationResult,
         productResult,
       ]) => {
         setSummary(summaryResult);
         setQuotes(quoteResult);
         setCustomers(customerResult);
         setOrders(orderResult);
-        setCommunications(
-          communicationResult,
-        );
         setProducts(productResult);
 
         const nextQuoteNotes: Record<string, string> = {};
@@ -543,35 +536,6 @@ export function OperationsPage({
   }, [
     orders,
     orderSearch,
-  ]);
-
-  const filteredCommunications = useMemo(() => {
-    const query =
-      communicationSearch.trim().toLowerCase();
-
-    if (query.length === 0) {
-      return communications;
-    }
-
-    return communications.filter((communication) => {
-      const searchable = [
-        communication.id,
-        communication.category,
-        communication.related_entity_type ?? "",
-        communication.related_entity_id ?? "",
-        communication.sender,
-        communication.recipient,
-        communication.subject,
-        communication.status,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return searchable.includes(query);
-    });
-  }, [
-    communications,
-    communicationSearch,
   ]);
 
   const filteredAuditEvents = useMemo(() => {
@@ -2072,164 +2036,12 @@ export function OperationsPage({
         <summary className="operations-disclosure-summary">
           <span>
             <strong>Customer email activity</strong>
-            <small>Communications history</small>
+            <small>Conversation inbox</small>
           </span>
         </summary>
 
         <div className="operations-disclosure-content">
-
-        <div className="operations-section-heading">
-          <p className="eyebrow">
-            Communications History
-          </p>
-          <h2>Customer email activity</h2>
-          <p>
-            Read-only delivery metadata for
-            application-generated communications.
-            Message bodies and provider-private details
-            are not exposed.
-          </p>
-        </div>
-
-        <label
-          className={
-            "operations-field "
-            + "operations-customer-search"
-          }
-        >
-          <span>Search communications</span>
-          <input
-            type="search"
-            placeholder={
-              "Recipient, sender, subject, category, status…"
-            }
-            value={communicationSearch}
-            onChange={(event) => {
-              setCommunicationSearch(
-                event.target.value,
-              );
-            }}
-          />
-        </label>
-
-        {communications.length === 0 ? (
-          <p className="account-muted">
-            No communications recorded.
-          </p>
-        ) : filteredCommunications.length === 0 ? (
-          <p className="account-muted">
-            No communications match this search.
-          </p>
-        ) : (
-          <div className="operations-customer-list">
-            {filteredCommunications.map(
-              (communication) => (
-                <article
-                  key={communication.id}
-                  className="operations-customer"
-                >
-                  <header>
-                    <div>
-                      <p className="product-meta">
-                        {communication.category}
-                        {" · "}
-                        {communication.status}
-                      </p>
-
-                      <h3>
-                        {communication.subject}
-                      </h3>
-
-                      <p>
-                        To:{" "}
-                        <a
-                          href={
-                            `mailto:${communication.recipient}`
-                          }
-                        >
-                          {communication.recipient}
-                        </a>
-                      </p>
-
-                      <small>
-                        Created{" "}
-                        {new Date(
-                          communication.created_at,
-                        ).toLocaleString()}
-                      </small>
-                    </div>
-                  </header>
-
-                  <div className="operations-address-list">
-                    <div className="operations-address">
-                      <strong>Delivery</strong>
-
-                      <address>
-                        From:{" "}
-                        <a
-                          href={
-                            `mailto:${communication.sender}`
-                          }
-                        >
-                          {communication.sender}
-                        </a>
-                        <br />
-                        Status: {communication.status}
-                      </address>
-
-                      <small>
-                        {communication.sent_at !== null
-                          ? (
-                              "Sent "
-                              + new Date(
-                                communication.sent_at,
-                              ).toLocaleString()
-                            )
-                          : "Not marked sent"}
-                      </small>
-                    </div>
-
-                    <div className="operations-address">
-                      <strong>
-                        Related record
-                      </strong>
-
-                      {(
-                        communication.related_entity_type
-                        !== null
-                        || communication.related_entity_id
-                        !== null
-                      ) ? (
-                        <>
-                          <address>
-                            {
-                              communication.related_entity_type
-                              ?? "Record"
-                            }
-                            <br />
-                            {
-                              communication.related_entity_id
-                              ?? "No identifier"
-                            }
-                          </address>
-
-                          <small>
-                            Application relationship
-                          </small>
-                        </>
-                      ) : (
-                        <p className="account-muted">
-                          No related record.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              )
-            )}
-          </div>
-        )}
-
+          <CommunicationsInbox />
         </div>
       </details>
 
