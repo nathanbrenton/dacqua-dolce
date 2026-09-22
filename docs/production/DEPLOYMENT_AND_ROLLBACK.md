@@ -15,6 +15,11 @@ Production layout:
 Production configuration remains external to releases:
 
     /etc/dacqua-dolce/backend.env
+    /etc/dacqua-dolce/migration.env
+
+The FastAPI service receives only `backend.env`. The root-only
+`migration.env` is consumed by the deployment helper for Alembic and is not
+part of the runtime service environment.
 
 ## Release invariants
 
@@ -44,21 +49,23 @@ From a complete release-source tree on the production host:
 
 The deployment helper performs the following ordered workflow:
 
-1. validate root execution, source structure, environment file, required production values, and retention policy;
-2. capture the currently active release for possible rollback;
-3. create a new timestamped release directory;
-4. copy source while excluding Git metadata, `.env*`, `node_modules`, and `.venv`;
-5. create the backend virtual environment and install the constrained runtime package;
-6. run `npm ci` and the frontend production build;
-7. if the commissioned local PostgreSQL backup helper exists, create an on-demand pre-migration backup;
-8. run `alembic upgrade head`;
-9. normalize the release tree to root ownership and remove group/other write permission;
-10. atomically switch `current` to the candidate release;
-11. restart the FastAPI systemd service;
-12. wait up to approximately 30 seconds for local readiness;
-13. run the public production verifier when it is included in the release;
-14. automatically restore the previous application release if post-switch validation fails;
-15. after successful activation, prune timestamped releases beyond the configured retention count.
+1. validate root execution, source structure, both production environment files, required production values, and retention policy;
+2. load the runtime configuration and separate root-only migration configuration;
+3. capture the currently active release for possible rollback;
+4. create a new timestamped release directory;
+5. copy source while excluding Git metadata, `.env*`, `node_modules`, and `.venv`;
+6. create the backend virtual environment and install the constrained runtime package;
+7. run `npm ci` and the frontend production build;
+8. if the commissioned local PostgreSQL backup helper exists, create an on-demand pre-migration backup;
+9. run `alembic upgrade head` using `DACQUA_MIGRATION_DATABASE_URL`;
+10. remove the migration URL from the deployment process environment;
+11. normalize the release tree to root ownership and remove group/other write permission;
+12. atomically switch `current` to the candidate release;
+13. restart the FastAPI systemd service;
+14. wait up to approximately 30 seconds for local readiness;
+15. run the public production verifier when it is included in the release;
+16. automatically restore the previous application release if post-switch validation fails;
+17. after successful activation, prune timestamped releases beyond the configured retention count.
 
 A candidate that fails before activation is removed automatically. A candidate that fails post-switch validation is
 removed after a successful automatic rollback.

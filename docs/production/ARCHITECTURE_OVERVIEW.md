@@ -60,10 +60,27 @@ The public Nginx edge proxies application API traffic to this listener.
 
 - PostgreSQL 17.11
 - database: `dacqua_dolce`
-- application role: `dacqua_dolce_app`
+- migration/ownership role: `dacqua_dolce_migrator`
+- runtime application role: `dacqua_dolce_app`
 - loopback-only listener on `127.0.0.1:5432` and `[::1]:5432`
+- SCRAM-SHA-256 password authentication for loopback TCP connections
 
 PostgreSQL is not exposed through the public firewall.
+
+The database privilege boundary separates deployment-time schema authority
+from runtime application access:
+
+- `dacqua_dolce_migrator` owns the database and application objects and is
+  used by Alembic only during deployments;
+- `dacqua_dolce_app` has runtime DML and sequence privileges but does not own
+  application objects and cannot create schema objects;
+- neither application-specific login role has superuser, `CREATEDB`,
+  `CREATEROLE`, replication, or `BYPASSRLS` privileges;
+- default privileges created under `dacqua_dolce_migrator` grant the runtime
+  role the required access to future Alembic-created tables and sequences.
+
+This limits the database DDL authority available to a compromised web
+application process.
 
 ## 4. Public request flow
 
@@ -168,6 +185,14 @@ Shared runtime state belongs under:
 Production environment configuration is external to the release tree:
 
     /etc/dacqua-dolce/backend.env
+    /etc/dacqua-dolce/migration.env
+
+`backend.env` contains runtime application configuration and is the only
+environment file loaded by `dacqua-dolce-api.service`.
+
+`migration.env` contains the separate deploy-time PostgreSQL URL. It is
+root-only, is sourced by the deployment helper only while running Alembic,
+and is never loaded into the FastAPI systemd service.
 
 The FastAPI service runs as the dedicated `dacqua-app` account.
 

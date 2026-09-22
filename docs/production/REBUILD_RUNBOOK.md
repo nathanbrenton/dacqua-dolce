@@ -185,11 +185,26 @@ Repository configuration assets:
 Create:
 
 - database `dacqua_dolce`;
+- login role `dacqua_dolce_migrator`;
 - login role `dacqua_dolce_app`;
-- no superuser, create-database, create-role, or replication privileges for the application role.
+- database and application-object ownership assigned to
+  `dacqua_dolce_migrator`;
+- runtime DML/sequence access assigned to `dacqua_dolce_app`;
+- no schema `CREATE` privilege for `dacqua_dolce_app`;
+- no superuser, create-database, create-role, replication, or bypass-RLS
+  privileges for either application-specific login role.
 
-Supply the application password only through a protected process/environment boundary while initializing the
-database. Do not write it into the repository.
+`dacqua_dolce_migrator` is the deploy-time DDL/Alembic identity.
+`dacqua_dolce_app` is the runtime web-application identity.
+
+The bootstrap configures default privileges for objects created by
+`dacqua_dolce_migrator` so future Alembic-created tables and sequences
+automatically receive the runtime privileges required by
+`dacqua_dolce_app`.
+
+Supply both database passwords only through protected process/environment
+boundaries while initializing the database. Do not write either populated
+credential into the repository.
 
 Verify:
 
@@ -210,6 +225,13 @@ Required model:
 
     /etc/dacqua-dolce/
       backend.env
+      migration.env
+
+`backend.env` should be owned by `root:dacqua-app` and readable by the
+application service without being world-readable.
+
+`migration.env` must be owned by `root:root`, mode `0600`, and must never be
+loaded by the FastAPI systemd service.
 
 The API runs as dedicated service account:
 
@@ -225,12 +247,22 @@ before activation. `/srv/dacqua-dolce/current` is changed only through an atomic
 Start from:
 
     infra/production/backend.env.example
+    infra/production/migration.env.example
 
-Install the populated production copy at:
+Install populated production copies at:
 
     /etc/dacqua-dolce/backend.env
+    /etc/dacqua-dolce/migration.env
 
-Never commit the populated file.
+Required boundaries:
+
+- `backend.env`: runtime configuration, readable by `dacqua-app`;
+- `migration.env`: deploy-only database URL, `root:root`, mode `0600`;
+- `dacqua-dolce-api.service` loads only `backend.env`;
+- `deploy_release.sh` sources `migration.env` only for Alembic and removes
+  `DACQUA_MIGRATION_DATABASE_URL` from its environment after migration.
+
+Never commit either populated production file.
 
 The application currently has configuration namespaces for environment/database/session/CSRF/MFA/security,
 public origin, email provider/from/operator destination, Postmark token, password-reset TTL, and email

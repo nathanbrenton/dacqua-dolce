@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_prefix: str = "/api"
     database_url: str
+    migration_database_url: str | None = None
 
     # Production-safe default. Local development explicitly overrides this.
     session_cookie_name: str = "dacqua_session"
@@ -44,6 +45,11 @@ class Settings(BaseSettings):
     mfa_recovery_code_count: int = 10
     mfa_rate_limit_ip_attempts: int = 20
     mfa_rate_limit_account_attempts: int = 10
+
+    @property
+    def alembic_database_url(self) -> str:
+        """Use the deploy-only database identity when one is supplied."""
+        return self.migration_database_url or self.database_url
 
     @property
     def is_production(self) -> bool:

@@ -135,6 +135,82 @@ Database size:
     sudo -u postgres psql -Atqc \
       "SELECT pg_size_pretty(pg_database_size('dacqua_dolce'));"
 
+Production database identities:
+
+- `dacqua_dolce_migrator` — database/object owner and deploy-time Alembic
+  identity;
+- `dacqua_dolce_app` — runtime identity with DML/sequence privileges only.
+
+Confirm database ownership:
+
+    sudo -u postgres psql -X -Atqc \
+      "SELECT datname || ' | ' || pg_get_userbyid(datdba)
+       FROM pg_database
+       WHERE datname = 'dacqua_dolce';"
+
+Expected owner:
+
+    dacqua_dolce | dacqua_dolce_migrator
+
+Confirm application-object ownership:
+
+    sudo -u postgres psql \
+      -X \
+      -d dacqua_dolce \
+      -P pager=off \
+      -F ' | ' \
+      -Atqc "
+    SELECT
+      pg_get_userbyid(c.relowner),
+      count(*)
+    FROM pg_class c
+    JOIN pg_namespace n
+      ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public'
+      AND c.relkind IN ('r','p','S','v','m')
+    GROUP BY c.relowner
+    ORDER BY 1;
+    "
+
+Application objects should be owned by `dacqua_dolce_migrator`, not the
+runtime role.
+
+Confirm the runtime role cannot create schema objects:
+
+    sudo -u postgres psql \
+      -X \
+      -d dacqua_dolce \
+      -P pager=off \
+      -Atqc "
+    SELECT
+      CASE
+        WHEN has_schema_privilege(
+          'dacqua_dolce_app',
+          'public',
+          'CREATE'
+        )
+        THEN 'FAIL: runtime role has CREATE'
+        ELSE 'PASS: runtime role has no CREATE'
+      END;
+    "
+
+Credential files:
+
+    /etc/dacqua-dolce/backend.env
+    /etc/dacqua-dolce/migration.env
+    /etc/dacqua-dolce/postgres-app-password
+    /etc/dacqua-dolce/postgres-migrator-password
+
+Expected boundary:
+
+- runtime files required by the API remain accessible only as necessary to
+  `root`/`dacqua-app`;
+- migration credential files are `root:root`, mode `0600`;
+- the API systemd unit never loads `migration.env`.
+
+Do not print populated database URLs or password files during routine
+operations.
+
 ## Prometheus
 
 Readiness:

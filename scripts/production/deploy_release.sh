@@ -11,6 +11,7 @@ RELEASES="${APP_ROOT}/releases"
 SHARED="${APP_ROOT}/shared"
 CURRENT="${APP_ROOT}/current"
 ENV_FILE="/etc/dacqua-dolce/backend.env"
+MIGRATION_ENV_FILE="/etc/dacqua-dolce/migration.env"
 READINESS_URL="http://127.0.0.1:8000/readiness"
 READINESS_ATTEMPTS=30
 READINESS_DELAY_SECONDS=1
@@ -163,6 +164,10 @@ if [ ! -r "${ENV_FILE}" ]; then
   fail "production environment file is missing: ${ENV_FILE}"
 fi
 
+if [ ! -r "${MIGRATION_ENV_FILE}" ]; then
+  fail "migration environment file is missing: ${MIGRATION_ENV_FILE}"
+fi
+
 if ! [[ "${RELEASE_RETENTION_COUNT}" =~ ^[0-9]+$ ]] \
   || [ "${RELEASE_RETENTION_COUNT}" -lt 2 ]; then
   fail "DACQUA_RELEASE_RETENTION_COUNT must be an integer >= 2"
@@ -171,9 +176,12 @@ fi
 set -a
 # shellcheck disable=SC1090
 . "${ENV_FILE}"
+# shellcheck disable=SC1090
+. "${MIGRATION_ENV_FILE}"
 set +a
 
 : "${DACQUA_DATABASE_URL:?DACQUA_DATABASE_URL is required}"
+: "${DACQUA_MIGRATION_DATABASE_URL:?DACQUA_MIGRATION_DATABASE_URL is required}"
 : "${DACQUA_MFA_ENCRYPTION_KEY:?DACQUA_MFA_ENCRYPTION_KEY is required}"
 : "${DACQUA_PUBLIC_ORIGIN:?DACQUA_PUBLIC_ORIGIN is required}"
 
@@ -268,6 +276,9 @@ fi
 
 cd "${RELEASE}/backend"
 ./.venv/bin/alembic upgrade head
+
+# The deploy-only database credential is no longer needed after migrations.
+unset DACQUA_MIGRATION_DATABASE_URL
 
 normalize_release_permissions "${RELEASE}"
 
