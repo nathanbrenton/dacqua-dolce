@@ -251,6 +251,7 @@ echo "Creating release: ${RELEASE}"
 rsync -a \
   --delete \
   --exclude '.git/' \
+  --include '.env*.example' \
   --exclude '.env' \
   --exclude '.env.*' \
   --exclude 'node_modules/' \
