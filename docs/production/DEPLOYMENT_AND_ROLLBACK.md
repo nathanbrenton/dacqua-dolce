@@ -57,7 +57,7 @@ Through the 2026-09-22 checkpoint, the validated operator workflow was:
 
 This workflow is reproducible but retransmits the complete compressed repository snapshot for every release.
 
-### Rsync staging helper — implementation ready, production validation pending
+### Rsync staging helper — production validated
 
 The repository now contains:
 
