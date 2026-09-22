@@ -29,6 +29,9 @@ class EmailRuntimeSettings(BaseSettings):
 
     postmark_server_token: SecretStr | None = None
 
+    postmark_inbound_webhook_username: SecretStr | None = None
+    postmark_inbound_webhook_password: SecretStr | None = None
+
     email_from: str = "no-reply@localhost.invalid"
 
     email_operator_to: str | None = None
@@ -80,16 +83,37 @@ class EmailRuntimeSettings(BaseSettings):
 
         return f"{self.public_origin}{normalized_path}"
 
+    @staticmethod
+    def _secret_value(
+        value: SecretStr | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        normalized = value.get_secret_value().strip()
+        return normalized or None
+
     @property
     def postmark_token_value(
         self,
     ) -> str | None:
-        if self.postmark_server_token is None:
-            return None
+        return self._secret_value(self.postmark_server_token)
 
-        value = self.postmark_server_token.get_secret_value().strip()
+    @property
+    def postmark_inbound_webhook_username_value(
+        self,
+    ) -> str | None:
+        return self._secret_value(
+            self.postmark_inbound_webhook_username
+        )
 
-        return value or None
+    @property
+    def postmark_inbound_webhook_password_value(
+        self,
+    ) -> str | None:
+        return self._secret_value(
+            self.postmark_inbound_webhook_password
+        )
 
 
 @lru_cache

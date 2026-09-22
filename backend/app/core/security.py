@@ -57,6 +57,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         "/api/operations",
         "/api/portal",
         "/api/payments",
+        "/api/webhooks",
     )
 
     def __init__(
@@ -133,16 +134,24 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         settings: Settings,
+        exempt_paths: frozenset[str] | None = None,
     ) -> None:
         super().__init__(app)
         self.settings = settings
+        self.exempt_paths = exempt_paths or frozenset()
 
     async def dispatch(
         self,
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        if self.settings.csrf_protection_enabled and request.method in self.unsafe_methods:
+        csrf_required = (
+            self.settings.csrf_protection_enabled
+            and request.method in self.unsafe_methods
+            and request.url.path not in self.exempt_paths
+        )
+
+        if csrf_required:
             cookie_token = request.cookies.get(self.settings.csrf_cookie_name)
             header_token = request.headers.get(self.settings.csrf_request_header_name)
 

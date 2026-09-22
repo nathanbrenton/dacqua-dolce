@@ -10,6 +10,7 @@ from app.api.operations import router as operations_router
 from app.api.orders import router as orders_router
 from app.api.password_reset import router as password_reset_router
 from app.api.quotes import router as quotes_router
+from app.api.webhooks import router as webhooks_router
 from app.core.config import get_settings
 from app.core.security import CSRFMiddleware, SecurityHeadersMiddleware
 
@@ -45,6 +46,11 @@ def create_app(
     application.add_middleware(
         CSRFMiddleware,
         settings=resolved_settings,
+        exempt_paths=frozenset(
+            {
+                f"{resolved_settings.api_prefix}/webhooks/postmark/inbound",
+            }
+        ),
     )
     application.add_middleware(
         SecurityHeadersMiddleware,
@@ -86,6 +92,10 @@ def create_app(
     )
     application.include_router(
         quotes_router,
+        prefix=resolved_settings.api_prefix,
+    )
+    application.include_router(
+        webhooks_router,
         prefix=resolved_settings.api_prefix,
     )
 
