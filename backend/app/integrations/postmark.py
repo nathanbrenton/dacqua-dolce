@@ -18,6 +18,60 @@ class PostmarkEmailProvider:
         self._server_token = server_token
         self._timeout_seconds = timeout_seconds
 
+    @staticmethod
+    def _rejection_detail(
+        response: httpx.Response,
+    ) -> tuple[int | None, str | None]:
+        try:
+            data = response.json()
+        except ValueError:
+            return None, None
+
+        if not isinstance(data, dict):
+            return None, None
+
+        error_code = data.get("ErrorCode")
+        message = data.get("Message")
+
+        try:
+            parsed_code = (
+                int(error_code)
+                if error_code is not None
+                else None
+            )
+        except (TypeError, ValueError):
+            parsed_code = None
+
+        parsed_message = (
+            str(message).strip()
+            if message is not None
+            else None
+        )
+
+        return (
+            parsed_code,
+            parsed_message or None,
+        )
+
+    @classmethod
+    def _raise_http_rejection(
+        cls,
+        response: httpx.Response,
+    ) -> None:
+        error_code, message = cls._rejection_detail(response)
+
+        details = [f"HTTP {response.status_code}"]
+
+        if error_code is not None:
+            details.append(f"code {error_code}")
+
+        suffix = f": {message}" if message else ""
+
+        raise RuntimeError(
+            "Postmark rejected the message "
+            f"({', '.join(details)}){suffix}"
+        )
+
     def send(
         self,
         message: EmailMessage,
@@ -44,14 +98,26 @@ class PostmarkEmailProvider:
             timeout=self._timeout_seconds,
         )
 
-        response.raise_for_status()
+        if response.is_error:
+            self._raise_http_rejection(response)
 
         data = response.json()
 
         error_code = int(data.get("ErrorCode", 0))
 
         if error_code != 0:
-            raise RuntimeError(f"Postmark rejected the message (code {error_code}).")
+            message_text = str(
+                data.get("Message") or ""
+            ).strip()
+            suffix = (
+                f": {message_text}"
+                if message_text
+                else ""
+            )
+            raise RuntimeError(
+                "Postmark rejected the message "
+                f"(code {error_code}){suffix}"
+            )
 
         reference = data.get("MessageID")
 
