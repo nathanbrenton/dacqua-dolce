@@ -28,21 +28,23 @@ export function DeveloperControls({
   logoVariant,
   onLogoVariantChange,
 }: DeveloperControlsProps) {
-  if (
-    import.meta.env.VITE_DEVELOPER_MODE
-    !== "true"
-    || !open
-  ) {
+  if (!open) {
     return null;
   }
+
+  const developerMode =
+    import.meta.env.VITE_DEVELOPER_MODE
+    === "true";
 
   return (
     <aside
       className="developer-controls"
-      aria-label="Developer visual controls"
+      aria-label="Appearance controls"
     >
       <span className="developer-mode-label">
-        Developer Mode
+        {developerMode
+          ? "Developer Mode"
+          : "Appearance"}
       </span>
 
       <label htmlFor="developer-theme">
@@ -72,32 +74,36 @@ export function DeveloperControls({
         ))}
       </select>
 
-      <label htmlFor="developer-logo">
-        Logo artwork
-      </label>
+      {developerMode ? (
+        <>
+          <label htmlFor="developer-logo">
+            Logo artwork
+          </label>
 
-      <select
-        id="developer-logo"
-        value={logoVariant}
-        onChange={(event) => {
-          const value = event.target.value;
+          <select
+            id="developer-logo"
+            value={logoVariant}
+            onChange={(event) => {
+              const value = event.target.value;
 
-          onLogoVariantChange(
-            isLogoVariantId(value)
-              ? value
-              : DEFAULT_LOGO_VARIANT,
-          );
-        }}
-      >
-        {LOGO_VARIANTS.map((option) => (
-          <option
-            key={option.id}
-            value={option.id}
+              onLogoVariantChange(
+                isLogoVariantId(value)
+                  ? value
+                  : DEFAULT_LOGO_VARIANT,
+              );
+            }}
           >
-            {option.label}
-          </option>
-        ))}
-      </select>
+            {LOGO_VARIANTS.map((option) => (
+              <option
+                key={option.id}
+                value={option.id}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : null}
     </aside>
   );
 }

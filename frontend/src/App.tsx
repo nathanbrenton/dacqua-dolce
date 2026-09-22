@@ -24,6 +24,9 @@ import {
   DeveloperFooterLogo,
 } from "./components/brand/DeveloperFooterLogo";
 import {
+  FooterCopyright,
+} from "./components/brand/FooterCopyright";
+import {
   CatalogSection,
 } from "./components/catalog/CatalogSection";
 import {
@@ -500,6 +503,7 @@ export function App() {
       ) : path === "/operations" ? (
         <OperationsPage
           roles={account?.roles ?? []}
+          currentUserEmail={account?.email ?? null}
           onNavigate={navigate}
           logoVariant={logoVariant}
           developerControlsOpen={
@@ -794,6 +798,8 @@ export function App() {
                   Terms & Policies
                 </a>
               </nav>
+
+              <FooterCopyright />
 
               <div className="development-status">
                 <span

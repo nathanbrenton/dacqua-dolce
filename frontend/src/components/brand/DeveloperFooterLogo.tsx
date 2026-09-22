@@ -16,27 +16,11 @@ export function DeveloperFooterLogo({
   controlsOpen,
   onToggleControls,
 }: DeveloperFooterLogoProps) {
-  const developerMode =
-    import.meta.env.VITE_DEVELOPER_MODE
-    === "true";
-
-  if (!developerMode) {
-    return (
-      <div className="footer-brand-frame">
-        <BrandLogo
-          variant={variant}
-          filtrationSystems
-          className="footer-logo"
-        />
-      </div>
-    );
-  }
-
   return (
     <button
       type="button"
       className="footer-logo-trigger"
-      aria-label="Toggle developer visual controls"
+      aria-label="Toggle appearance controls"
       aria-expanded={controlsOpen}
       onClick={onToggleControls}
     >

@@ -31,6 +31,14 @@ PRIVILEGED_OPERATIONS_ROLES = frozenset(
 )
 
 
+ADMINISTRATION_ROLES = frozenset(
+    {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
+
 def user_role_names(
     db: Session,
     *,
@@ -81,4 +89,16 @@ def require_privileged_operations(
         db,
         user=user,
         allowed_roles=PRIVILEGED_OPERATIONS_ROLES,
+    )
+
+
+def require_administration(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=ADMINISTRATION_ROLES,
     )

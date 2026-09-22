@@ -6,6 +6,13 @@ import {
 } from "react";
 
 import {
+  getAdministrationAccounts,
+  updateAdministrationRoles,
+  type AdministrationAccount,
+  type WebManagedRole,
+} from "../../api/administration";
+
+import {
   getOperationsAuditEvents,
   getOperationsCatalog,
   getOperationsCommunications,
@@ -33,6 +40,9 @@ import {
   DeveloperFooterLogo,
 } from "../brand/DeveloperFooterLogo";
 import {
+  FooterCopyright,
+} from "../brand/FooterCopyright";
+import {
   AppearanceToggle,
 } from "../theme/AppearanceToggle";
 
@@ -51,6 +61,7 @@ import {
 
 type OperationsPageProps = {
   roles: string[];
+  currentUserEmail: string | null;
   onNavigate: (path: string) => void;
   logoVariant: LogoVariantId;
   developerControlsOpen: boolean;
@@ -69,6 +80,17 @@ const PRIVILEGED_ROLES = new Set([
   "administrator",
   "developer",
 ]);
+
+const ADMINISTRATION_ROLES = new Set([
+  "administrator",
+  "developer",
+]);
+
+const WEB_MANAGED_ROLES: WebManagedRole[] = [
+  "employee",
+  "manager",
+  "administrator",
+];
 
 const QUOTE_STATUSES = [
   "new",
@@ -161,6 +183,23 @@ function formatMoney(
   ).format(amountMinor / 100);
 }
 
+function lockedSelfAdminText(
+  ownAccount: boolean,
+  roles: WebManagedRole[],
+): string {
+  if (
+    ownAccount
+    && roles.includes("administrator")
+  ) {
+    return "Your own administrator role is protected from removal.";
+  }
+
+  return (
+    "Customer access is preserved automatically. "
+    + "Role changes are audited."
+  );
+}
+
 function replaceProduct(
   products: OperationsProduct[],
   replacement: OperationsProduct,
@@ -172,6 +211,7 @@ function replaceProduct(
 
 export function OperationsPage({
   roles,
+  currentUserEmail,
   onNavigate,
   logoVariant,
   developerControlsOpen,
@@ -184,6 +224,11 @@ export function OperationsPage({
 
   const privileged = useMemo(
     () => roles.some((role) => PRIVILEGED_ROLES.has(role)),
+    [roles],
+  );
+
+  const administrationAllowed = useMemo(
+    () => roles.some((role) => ADMINISTRATION_ROLES.has(role)),
     [roles],
   );
 
@@ -214,6 +259,20 @@ export function OperationsPage({
     useState(false);
   const [auditError, setAuditError] =
     useState<string | null>(null);
+  const [administrationAccounts, setAdministrationAccounts] =
+    useState<AdministrationAccount[]>([]);
+  const [administrationSearch, setAdministrationSearch] =
+    useState("");
+  const [administrationLoaded, setAdministrationLoaded] =
+    useState(false);
+  const [administrationLoading, setAdministrationLoading] =
+    useState(false);
+  const [administrationError, setAdministrationError] =
+    useState<string | null>(null);
+  const [administrationRoleDrafts, setAdministrationRoleDrafts] =
+    useState<Record<string, WebManagedRole[]>>({});
+  const [administrationSaveStates, setAdministrationSaveStates] =
+    useState<Record<string, SaveState>>({});
   const [customers, setCustomers] =
     useState<OperationsCustomer[]>([]);
   const [customerSearch, setCustomerSearch] =
@@ -323,6 +382,45 @@ export function OperationsPage({
       });
   }, [authorized]);
 
+  async function loadAdministrationAccounts(): Promise<void> {
+    if (
+      !administrationAllowed
+      || administrationLoaded
+      || administrationLoading
+    ) {
+      return;
+    }
+
+    setAdministrationLoading(true);
+    setAdministrationError(null);
+
+    try {
+      const result =
+        await getAdministrationAccounts();
+
+      setAdministrationAccounts(result);
+      setAdministrationRoleDrafts(
+        Object.fromEntries(
+          result.map((account) => [
+            account.id,
+            WEB_MANAGED_ROLES.filter(
+              (role) => account.roles.includes(role),
+            ),
+          ]),
+        ),
+      );
+      setAdministrationLoaded(true);
+    } catch (caught) {
+      setAdministrationError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load user accounts.",
+      );
+    } finally {
+      setAdministrationLoading(false);
+    }
+  }
+
   async function loadAuditEvents(): Promise<void> {
     if (
       !privileged
@@ -349,6 +447,32 @@ export function OperationsPage({
       setAuditLoading(false);
     }
   }
+
+  const filteredAdministrationAccounts = useMemo(() => {
+    const query =
+      administrationSearch.trim().toLowerCase();
+
+    if (query.length === 0) {
+      return administrationAccounts;
+    }
+
+    return administrationAccounts.filter((account) => {
+      const searchable = [
+        account.email,
+        account.status,
+        ...account.roles,
+        account.email_verified ? "verified" : "unverified",
+        account.mfa_enrolled ? "mfa enrolled" : "mfa not enrolled",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return searchable.includes(query);
+    });
+  }, [
+    administrationAccounts,
+    administrationSearch,
+  ]);
 
   const filteredCustomers = useMemo(() => {
     const query =
@@ -597,6 +721,87 @@ export function OperationsPage({
         caught instanceof Error
           ? caught.message
           : "Internal quote notes could not be saved.",
+      );
+    }
+  }
+
+  function toggleAdministrationRole(
+    accountId: string,
+    role: WebManagedRole,
+    checked: boolean,
+  ): void {
+    setAdministrationRoleDrafts((current) => {
+      const existing = current[accountId] ?? [];
+      const next = checked
+        ? Array.from(new Set([...existing, role]))
+        : existing.filter((value) => value !== role);
+
+      return {
+        ...current,
+        [accountId]: WEB_MANAGED_ROLES.filter(
+          (candidate) => next.includes(candidate),
+        ),
+      };
+    });
+  }
+
+  async function saveAdministrationRoles(
+    account: AdministrationAccount,
+  ): Promise<void> {
+    const desiredRoles =
+      administrationRoleDrafts[account.id] ?? [];
+
+    setAdministrationError(null);
+    setMessage(null);
+    setAdministrationSaveStates((current) => ({
+      ...current,
+      [account.id]: "saving",
+    }));
+
+    try {
+      const updated = await updateAdministrationRoles(
+        account.id,
+        desiredRoles,
+      );
+
+      setAdministrationAccounts((current) =>
+        current.map((candidate) =>
+          candidate.id === updated.id
+            ? updated
+            : candidate,
+        ),
+      );
+
+      setAdministrationRoleDrafts((current) => ({
+        ...current,
+        [updated.id]: WEB_MANAGED_ROLES.filter(
+          (role) => updated.roles.includes(role),
+        ),
+      }));
+
+      setMessage(
+        `Access roles saved for ${updated.email}.`,
+      );
+      setAdministrationSaveStates((current) => ({
+        ...current,
+        [account.id]: "saved",
+      }));
+
+      window.setTimeout(() => {
+        setAdministrationSaveStates((current) => ({
+          ...current,
+          [account.id]: "idle",
+        }));
+      }, 1800);
+    } catch (caught) {
+      setAdministrationSaveStates((current) => ({
+        ...current,
+        [account.id]: "idle",
+      }));
+      setAdministrationError(
+        caught instanceof Error
+          ? caught.message
+          : "Account role update failed.",
       );
     }
   }
@@ -1064,6 +1269,220 @@ export function OperationsPage({
           </div>
         )}
       </section>
+
+      {administrationAllowed ? (
+        <details
+          id="account-administration"
+          className="operations-section operations-disclosure"
+          onToggle={(event) => {
+            if (
+              event.currentTarget.open
+              && !administrationLoaded
+            ) {
+              void loadAdministrationAccounts();
+            }
+          }}
+        >
+          <summary className="operations-disclosure-summary">
+            <span>
+              <strong>User access &amp; roles</strong>
+              <small>Administrator account management</small>
+            </span>
+          </summary>
+
+          <div className="operations-disclosure-content">
+            <div className="operations-section-heading">
+              <p className="eyebrow">Account Administration</p>
+              <h2>User access &amp; roles</h2>
+              <p>
+                Customer registration remains self-service. Employee,
+                manager, and administrator access is granted here.
+                Developer access remains local-only.
+              </p>
+            </div>
+
+            {administrationLoading ? (
+              <p className="account-muted">
+                Loading user accounts…
+              </p>
+            ) : administrationError !== null ? (
+              <p
+                className="operations-alert operations-error"
+                role="alert"
+              >
+                {administrationError}
+              </p>
+            ) : (
+              <>
+                <label
+                  className={
+                    "operations-field "
+                    + "operations-customer-search"
+                  }
+                >
+                  <span>Search user accounts</span>
+                  <input
+                    type="search"
+                    placeholder="Email, status, role…"
+                    value={administrationSearch}
+                    onChange={(event) => {
+                      setAdministrationSearch(
+                        event.target.value,
+                      );
+                    }}
+                  />
+                </label>
+
+                {administrationAccounts.length === 0 ? (
+                  <p className="account-muted">
+                    No persisted user accounts.
+                  </p>
+                ) : filteredAdministrationAccounts.length === 0 ? (
+                  <p className="account-muted">
+                    No accounts match this search.
+                  </p>
+                ) : (
+                  <div className="operations-customer-list">
+                    {filteredAdministrationAccounts.map((account) => {
+                      const roleDraft =
+                        administrationRoleDrafts[account.id]
+                        ?? [];
+                      const developerManaged =
+                        account.roles.includes("developer");
+                      const ownAccount = (
+                        currentUserEmail !== null
+                        && account.email.toLowerCase()
+                          === currentUserEmail.toLowerCase()
+                      );
+                      const saveState =
+                        administrationSaveStates[account.id]
+                        ?? "idle";
+
+                      return (
+                        <article
+                          key={account.id}
+                          className="operations-customer"
+                        >
+                          <header>
+                            <div>
+                              <p className="product-meta">
+                                Account · {account.status}
+                              </p>
+                              <h3>{account.email}</h3>
+                              <small>
+                                Created{" "}
+                                {new Date(
+                                  account.created_at,
+                                ).toLocaleString()}
+                                {account.last_login_at !== null
+                                  ? ` · Last login ${new Date(
+                                      account.last_login_at,
+                                    ).toLocaleString()}`
+                                  : " · Never logged in"}
+                              </small>
+                            </div>
+                          </header>
+
+                          <div className="operations-address-list">
+                            <div className="operations-address">
+                              <strong>Identity</strong>
+                              <address>
+                                Email {account.email_verified
+                                  ? "verified"
+                                  : "not verified"}
+                                <br />
+                                MFA {account.mfa_required
+                                  ? account.mfa_enrolled
+                                    ? "required · enrolled"
+                                    : "required · enrollment pending"
+                                  : "not required"}
+                              </address>
+                              <small>
+                                Persisted roles:{" "}
+                                {account.roles.length > 0
+                                  ? account.roles.join(", ")
+                                  : "none"}
+                              </small>
+                            </div>
+
+                            <div className="operations-address">
+                              <strong>Operations roles</strong>
+
+                              {WEB_MANAGED_ROLES.map((role) => {
+                                const lockedSelfAdmin = (
+                                  ownAccount
+                                  && role === "administrator"
+                                  && roleDraft.includes(role)
+                                );
+
+                                return (
+                                  <label key={role}>
+                                    <input
+                                      type="checkbox"
+                                      checked={roleDraft.includes(role)}
+                                      disabled={
+                                        developerManaged
+                                        || lockedSelfAdmin
+                                        || saveState === "saving"
+                                      }
+                                      onChange={(event) => {
+                                        toggleAdministrationRole(
+                                          account.id,
+                                          role,
+                                          event.target.checked,
+                                        );
+                                      }}
+                                    />{" "}
+                                    {role}
+                                  </label>
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                className={
+                                  "operations-action secondary "
+                                  + (
+                                    saveState === "saved"
+                                      ? "is-saved"
+                                      : ""
+                                  )
+                                }
+                                disabled={
+                                  developerManaged
+                                  || saveState === "saving"
+                                }
+                                onClick={() => {
+                                  void saveAdministrationRoles(account);
+                                }}
+                              >
+                                {saveState === "saving"
+                                  ? "Saving…"
+                                  : saveState === "saved"
+                                    ? "Saved ✓"
+                                    : "Save Roles"}
+                              </button>
+
+                              <small>
+                                {developerManaged
+                                  ? "Developer roles are managed locally, not from the web console."
+                                  : lockedSelfAdminText(
+                                      ownAccount,
+                                      roleDraft,
+                                    )}
+                              </small>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </details>
+      ) : null}
 
       <details
         id="customer-roster"
@@ -1958,7 +2377,8 @@ export function OperationsPage({
         />
 
         <div className="operations-footer-label">
-          Operations Workspace
+          <span>Operations Workspace</span>
+          <FooterCopyright />
         </div>
       </footer>
     </main>

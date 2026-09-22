@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.account import router as account_router
+from app.api.administration import router as administration_router
 from app.api.authentication import router as authentication_router
 from app.api.cart import router as cart_router
 from app.api.catalog import router as catalog_router
@@ -61,6 +62,10 @@ def create_app(
     )
     application.include_router(
         account_router,
+        prefix=resolved_settings.api_prefix,
+    )
+    application.include_router(
+        administration_router,
         prefix=resolved_settings.api_prefix,
     )
     application.include_router(
