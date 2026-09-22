@@ -45,6 +45,66 @@ class OperationsCommunicationRead(BaseModel):
     sent_at: str | None
 
 
+class OperationsCommunicationRecipientRead(BaseModel):
+    recipient_type: str
+    address: str
+    display_name: str | None
+
+
+class OperationsCommunicationAttachmentRead(BaseModel):
+    id: str
+    filename: str
+    content_type: str
+    size_bytes: int
+    sha256: str
+
+
+class OperationsCommunicationMessageRead(BaseModel):
+    id: str
+    direction: str
+    status: str
+    author_user_id: str | None
+    sender_address: str
+    sender_name: str | None
+    subject: str
+    body_text: str | None
+    content_redacted: bool
+    sent_at: str | None
+    received_at: str | None
+    created_at: str
+    recipients: list[OperationsCommunicationRecipientRead] = Field(
+        default_factory=list,
+    )
+    attachments: list[OperationsCommunicationAttachmentRead] = Field(
+        default_factory=list,
+    )
+
+
+class OperationsCommunicationThreadRead(BaseModel):
+    id: str
+    customer_user_id: str | None
+    customer_email: str | None
+    assigned_user_id: str | None
+    subject: str | None
+    related_entity_type: str | None
+    related_entity_id: str | None
+    status: str
+    last_message_at: str | None
+    created_at: str
+    message_count: int
+    latest_direction: str | None
+    latest_sender_address: str | None
+    latest_subject: str | None
+
+
+class OperationsCommunicationThreadDetailRead(
+    OperationsCommunicationThreadRead
+):
+    messages: list[OperationsCommunicationMessageRead] = Field(
+        default_factory=list,
+    )
+
+
 class OperationsQuoteRead(BaseModel):
     id: str
     product_id: str | None

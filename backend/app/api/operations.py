@@ -12,6 +12,12 @@ from app.models.commerce import (
     Order,
     OrderItem,
 )
+from app.models.communications import (
+    CommunicationAttachment,
+    CommunicationMessage,
+    CommunicationRecipient,
+    CommunicationThread,
+)
 from app.models.customer import (
     CustomerAddress,
     CustomerProfile,
@@ -26,7 +32,12 @@ from app.models.quote import QuoteRequest, QuoteRequestStatus
 from app.schemas.operations import (
     InventoryUpdateRequest,
     OperationsAuditEventRead,
+    OperationsCommunicationAttachmentRead,
+    OperationsCommunicationMessageRead,
     OperationsCommunicationRead,
+    OperationsCommunicationRecipientRead,
+    OperationsCommunicationThreadDetailRead,
+    OperationsCommunicationThreadRead,
     OperationsCustomerAddressRead,
     OperationsCustomerRead,
     OperationsInventoryRead,
@@ -251,6 +262,316 @@ def list_communications(
         )
         for delivery in deliveries
     ]
+
+
+def _communication_customer_emails(
+    db: DatabaseSession,
+    *,
+    user_ids: set[uuid.UUID],
+) -> dict[uuid.UUID, str]:
+    if not user_ids:
+        return {}
+
+    rows = db.execute(
+        select(
+            User.id,
+            User.email,
+        ).where(User.id.in_(user_ids))
+    ).all()
+
+    return {
+        user_id: email
+        for user_id, email in rows
+    }
+
+
+def _communication_thread_list_reads(
+    db: DatabaseSession,
+    *,
+    threads: list[CommunicationThread],
+) -> list[OperationsCommunicationThreadRead]:
+    if not threads:
+        return []
+
+    thread_ids = [thread.id for thread in threads]
+    customer_user_ids = {
+        thread.customer_user_id
+        for thread in threads
+        if thread.customer_user_id is not None
+    }
+    customer_emails = _communication_customer_emails(
+        db,
+        user_ids=customer_user_ids,
+    )
+
+    messages = db.scalars(
+        select(CommunicationMessage)
+        .where(
+            CommunicationMessage.thread_id.in_(thread_ids)
+        )
+        .order_by(
+            CommunicationMessage.created_at,
+            CommunicationMessage.id,
+        )
+    ).all()
+
+    messages_by_thread: dict[
+        uuid.UUID,
+        list[CommunicationMessage],
+    ] = {
+        thread_id: []
+        for thread_id in thread_ids
+    }
+
+    for message in messages:
+        messages_by_thread[message.thread_id].append(message)
+
+    response: list[OperationsCommunicationThreadRead] = []
+
+    for thread in threads:
+        thread_messages = messages_by_thread[thread.id]
+        latest = (
+            thread_messages[-1]
+            if thread_messages
+            else None
+        )
+
+        response.append(
+            OperationsCommunicationThreadRead(
+                id=str(thread.id),
+                customer_user_id=(
+                    str(thread.customer_user_id)
+                    if thread.customer_user_id is not None
+                    else None
+                ),
+                customer_email=(
+                    customer_emails.get(thread.customer_user_id)
+                    if thread.customer_user_id is not None
+                    else None
+                ),
+                assigned_user_id=(
+                    str(thread.assigned_user_id)
+                    if thread.assigned_user_id is not None
+                    else None
+                ),
+                subject=thread.subject,
+                related_entity_type=thread.related_entity_type,
+                related_entity_id=thread.related_entity_id,
+                status=thread.status.value,
+                last_message_at=(
+                    thread.last_message_at.isoformat()
+                    if thread.last_message_at is not None
+                    else None
+                ),
+                created_at=thread.created_at.isoformat(),
+                message_count=len(thread_messages),
+                latest_direction=(
+                    latest.direction.value
+                    if latest is not None
+                    else None
+                ),
+                latest_sender_address=(
+                    latest.sender_address
+                    if latest is not None
+                    else None
+                ),
+                latest_subject=(
+                    latest.subject
+                    if latest is not None
+                    else None
+                ),
+            )
+        )
+
+    return response
+
+
+@router.get(
+    "/communication-threads",
+    response_model=list[
+        OperationsCommunicationThreadRead
+    ],
+)
+def list_communication_threads(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsCommunicationThreadRead]:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    threads = db.scalars(
+        select(CommunicationThread)
+        .order_by(
+            CommunicationThread.last_message_at.desc().nullslast(),
+            CommunicationThread.created_at.desc(),
+            CommunicationThread.id,
+        )
+        .limit(200)
+    ).all()
+
+    return _communication_thread_list_reads(
+        db,
+        threads=list(threads),
+    )
+
+
+def _communication_message_reads(
+    db: DatabaseSession,
+    *,
+    messages: list[CommunicationMessage],
+) -> list[OperationsCommunicationMessageRead]:
+    if not messages:
+        return []
+
+    message_ids = [message.id for message in messages]
+
+    recipients = db.scalars(
+        select(CommunicationRecipient)
+        .where(
+            CommunicationRecipient.message_id.in_(message_ids)
+        )
+        .order_by(
+            CommunicationRecipient.message_id,
+            CommunicationRecipient.recipient_type,
+            CommunicationRecipient.position,
+            CommunicationRecipient.id,
+        )
+    ).all()
+
+    attachments = db.scalars(
+        select(CommunicationAttachment)
+        .where(
+            CommunicationAttachment.message_id.in_(message_ids)
+        )
+        .order_by(
+            CommunicationAttachment.message_id,
+            CommunicationAttachment.created_at,
+            CommunicationAttachment.id,
+        )
+    ).all()
+
+    recipients_by_message: dict[
+        uuid.UUID,
+        list[CommunicationRecipient],
+    ] = {
+        message_id: []
+        for message_id in message_ids
+    }
+    attachments_by_message: dict[
+        uuid.UUID,
+        list[CommunicationAttachment],
+    ] = {
+        message_id: []
+        for message_id in message_ids
+    }
+
+    for recipient in recipients:
+        recipients_by_message[recipient.message_id].append(recipient)
+
+    for attachment in attachments:
+        attachments_by_message[attachment.message_id].append(attachment)
+
+    return [
+        OperationsCommunicationMessageRead(
+            id=str(message.id),
+            direction=message.direction.value,
+            status=message.status.value,
+            author_user_id=(
+                str(message.author_user_id)
+                if message.author_user_id is not None
+                else None
+            ),
+            sender_address=message.sender_address,
+            sender_name=message.sender_name,
+            subject=message.subject,
+            body_text=message.body_text,
+            content_redacted=message.content_redacted,
+            sent_at=(
+                message.sent_at.isoformat()
+                if message.sent_at is not None
+                else None
+            ),
+            received_at=(
+                message.received_at.isoformat()
+                if message.received_at is not None
+                else None
+            ),
+            created_at=message.created_at.isoformat(),
+            recipients=[
+                OperationsCommunicationRecipientRead(
+                    recipient_type=recipient.recipient_type.value,
+                    address=recipient.address,
+                    display_name=recipient.display_name,
+                )
+                for recipient in recipients_by_message[message.id]
+            ],
+            attachments=[
+                OperationsCommunicationAttachmentRead(
+                    id=str(attachment.id),
+                    filename=attachment.filename,
+                    content_type=attachment.content_type,
+                    size_bytes=attachment.size_bytes,
+                    sha256=attachment.sha256,
+                )
+                for attachment in attachments_by_message[message.id]
+            ],
+        )
+        for message in messages
+    ]
+
+
+@router.get(
+    "/communication-threads/{thread_id}",
+    response_model=OperationsCommunicationThreadDetailRead,
+)
+def get_communication_thread(
+    thread_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsCommunicationThreadDetailRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    thread = db.get(
+        CommunicationThread,
+        thread_id,
+    )
+
+    if thread is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Communication thread not found.",
+        )
+
+    summary = _communication_thread_list_reads(
+        db,
+        threads=[thread],
+    )[0]
+
+    messages = list(
+        db.scalars(
+            select(CommunicationMessage)
+            .where(
+                CommunicationMessage.thread_id == thread.id
+            )
+            .order_by(
+                CommunicationMessage.created_at,
+                CommunicationMessage.id,
+            )
+        ).all()
+    )
+
+    return OperationsCommunicationThreadDetailRead(
+        **summary.model_dump(),
+        messages=_communication_message_reads(
+            db,
+            messages=messages,
+        ),
+    )
 
 
 @router.get("/quotes", response_model=list[OperationsQuoteRead])
