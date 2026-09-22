@@ -126,6 +126,7 @@ def send_quote_emails(
         category=("quote_customer_receipt"),
         related_entity_type=("quote_request"),
         related_entity_id=str(quote.id),
+        customer_user_id=quote.user_id,
     )
 
     operator_to = email_settings.email_operator_to

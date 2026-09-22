@@ -131,6 +131,8 @@ def issue_password_reset(
         category="password_reset",
         related_entity_type="user",
         related_entity_id=str(user.id),
+        customer_user_id=user.id,
+        archive_sensitive_values=(raw_token,),
     )
 
     record_audit_event(

@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -11,9 +12,15 @@ from app.integrations.email import (
 from app.integrations.postmark import (
     PostmarkEmailProvider,
 )
+from app.models.communications import (
+    CommunicationMessageStatus,
+)
 from app.models.email import (
     EmailDelivery,
     EmailDeliveryStatus,
+)
+from app.services.communications_archive import (
+    archive_outbound_email,
 )
 
 
@@ -25,6 +32,8 @@ def deliver_email(
     category: str,
     related_entity_type: (str | None) = None,
     related_entity_id: (str | None) = None,
+    customer_user_id: uuid.UUID | None = None,
+    archive_sensitive_values: tuple[str, ...] = (),
 ) -> EmailDelivery:
     delivery = EmailDelivery(
         category=category,
@@ -40,9 +49,22 @@ def deliver_email(
     db.add(delivery)
     db.flush()
 
+    archived_message = archive_outbound_email(
+        db,
+        delivery=delivery,
+        message=message,
+        related_entity_type=related_entity_type,
+        related_entity_id=related_entity_id,
+        customer_user_id=customer_user_id,
+        sensitive_values=archive_sensitive_values,
+    )
+
     if settings.email_provider == "disabled":
         delivery.status = EmailDeliveryStatus.suppressed
         delivery.error_summary = "Email provider disabled."
+        archived_message.status = (
+            CommunicationMessageStatus.suppressed
+        )
         db.flush()
 
         return delivery
@@ -52,6 +74,7 @@ def deliver_email(
     if token is None:
         delivery.status = EmailDeliveryStatus.failed
         delivery.error_summary = "Postmark server token not configured."
+        archived_message.status = CommunicationMessageStatus.failed
         db.flush()
 
         return delivery
@@ -66,10 +89,15 @@ def deliver_email(
         # description bounded.
         delivery.status = EmailDeliveryStatus.failed
         delivery.error_summary = str(exc)[:500]
+        archived_message.status = CommunicationMessageStatus.failed
     else:
+        sent_at = datetime.now(UTC)
         delivery.status = EmailDeliveryStatus.sent
         delivery.provider_reference = result.provider_reference
-        delivery.sent_at = datetime.now(UTC)
+        delivery.sent_at = sent_at
+        archived_message.status = CommunicationMessageStatus.sent
+        archived_message.provider_message_id = result.provider_reference
+        archived_message.sent_at = sent_at
 
     db.flush()
 
