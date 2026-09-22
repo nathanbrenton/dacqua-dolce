@@ -3018,6 +3018,35 @@ textarea:focus-visible {
 
 /* M7.4 — archived customer communications inbox */
 
+.operations-customer-inbox-section {
+  padding-top: 42px;
+}
+
+.operations-inbox-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.operations-inbox-heading .operations-section-heading {
+  margin-bottom: 0;
+}
+
+.operations-inbox-refresh {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.operations-inbox-refresh small {
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
 .operations-inbox .operations-section-heading {
   grid-template-columns: 1fr;
   gap: 7px;
@@ -3259,6 +3288,25 @@ textarea:focus-visible {
   color: var(--ink-muted);
 }
 
+.operations-inbox-quoted-history {
+  margin-top: 10px;
+  border-top: 1px solid var(--hairline);
+  padding-top: 8px;
+}
+
+.operations-inbox-quoted-history summary {
+  width: fit-content;
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.operations-inbox-quoted-history p {
+  margin-top: 9px;
+  color: var(--ink-muted);
+}
+
 .operations-inbox-attachments {
   margin-top: 10px;
 }
@@ -3348,6 +3396,14 @@ textarea:focus-visible {
 }
 
 @media (max-width: 900px) {
+  .operations-inbox-heading {
+    display: grid;
+  }
+
+  .operations-inbox-refresh {
+    justify-items: start;
+  }
+
   .operations-inbox-layout {
     grid-template-columns: 1fr;
   }

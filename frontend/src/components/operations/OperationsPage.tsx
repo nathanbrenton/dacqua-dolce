@@ -1107,6 +1107,13 @@ export function OperationsPage({
       ) : null}
 
       <section
+        id="communications-history"
+        className="operations-section operations-customer-inbox-section"
+      >
+        <CommunicationsInbox />
+      </section>
+
+      <section
         id="quote-queue"
         className="operations-section"
       >
@@ -2023,22 +2030,6 @@ export function OperationsPage({
           </div>
         </details>
       ) : null}
-
-      <details
-        id="communications-history"
-        className="operations-section operations-disclosure"
-      >
-        <summary className="operations-disclosure-summary">
-          <span>
-            <strong>Customer email activity</strong>
-            <small>Conversation inbox</small>
-          </span>
-        </summary>
-
-        <div className="operations-disclosure-content">
-          <CommunicationsInbox />
-        </div>
-      </details>
 
       {privileged ? (
         <section

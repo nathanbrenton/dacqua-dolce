@@ -77,7 +77,7 @@ def test_communication_thread_list_and_detail_expose_archive(
             CommunicationRecipient(
                 message_id=inbound.id,
                 recipient_type=CommunicationRecipientType.to,
-                address="inbound@example.test",
+                address="abc123+thread-id@inbound.postmarkapp.com",
                 position=0,
             )
         )
@@ -124,7 +124,7 @@ def test_communication_thread_list_and_detail_expose_archive(
         assert message.status == "received"
         assert message.body_text == "Can you tell me what happens next?"
         assert message.content_redacted is False
-        assert message.recipients[0].address == "inbound@example.test"
+        assert message.recipients == []
         assert message.attachments[0].filename == "water-report.txt"
         assert message.attachments[0].size_bytes == 6
         assert message.attachments[0].sha256 == "a" * 64
@@ -133,6 +133,7 @@ def test_communication_thread_list_and_detail_expose_archive(
         assert "body_html" not in payload
         assert "provider_message_id" not in payload
         assert "internet_message_id" not in payload
+        assert "inbound.postmarkapp.com" not in str(payload)
         assert "content" not in payload["attachments"][0]
 
         db.rollback()
@@ -238,7 +239,8 @@ def test_reply_archives_into_existing_thread_without_live_email(
             "get_email_runtime_settings",
             lambda: EmailRuntimeSettings(
                 email_provider="disabled",
-                email_from="support@dacquadolce.com",
+                email_from="no-reply@dacquadolce.com",
+                email_support_from="support@dacquadolce.com",
                 postmark_inbound_address=(
                     "abc123@inbound.postmarkapp.com"
                 ),
@@ -269,6 +271,7 @@ def test_reply_archives_into_existing_thread_without_live_email(
         assert reply.direction == "outbound"
         assert reply.status == "suppressed"
         assert reply.author_user_id == str(employee.id)
+        assert reply.sender_address == "support@dacquadolce.com"
         assert reply.body_text == "We can help with the next step."
         assert reply.recipients[0].address == "customer@example.test"
 

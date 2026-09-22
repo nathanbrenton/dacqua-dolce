@@ -157,7 +157,7 @@ def send_communication_reply(
         db,
         settings=settings,
         message=EmailMessage(
-            sender=settings.email_from,
+            sender=(settings.email_support_from or settings.email_from),
             recipient=recipient,
             subject=_reply_subject(db, thread=thread),
             body_text=body_text,

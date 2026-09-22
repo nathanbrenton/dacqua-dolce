@@ -46,3 +46,18 @@ def test_postmark_inbound_address_rejects_plus_alias() -> None:
                 "abc123+already-threaded@inbound.postmarkapp.com"
             )
         )
+
+def test_support_sender_is_normalized() -> None:
+    settings = EmailRuntimeSettings(
+        email_support_from=" Support@DacquaDolce.com ",
+    )
+
+    assert settings.email_support_from == "support@dacquadolce.com"
+
+
+def test_blank_support_sender_uses_fallback_path() -> None:
+    settings = EmailRuntimeSettings(
+        email_support_from="   ",
+    )
+
+    assert settings.email_support_from is None

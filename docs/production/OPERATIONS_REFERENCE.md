@@ -388,6 +388,15 @@ Inbound customer/company mail is also commissioned:
 
 Useful boundaries:
 
+- Operations exposes the durable correspondence as **Customer Inbox**, positioned
+  ahead of the quote queue for routine customer-service work;
+- the inbox can be refreshed manually and polls the local API every 30 seconds
+  while the Operations page is open; polling does not consume Postmark email
+  allowance;
+- employee replies use the configured customer-facing support sender, while
+  thread-specific Postmark routing remains only in `Reply-To`;
+- Postmark inbound-routing recipient addresses are filtered out of Operations
+  API responses and should never be shown in the employee UI;
 - `email_deliveries` remains transport metadata only;
 - complete durable correspondence lives in the `communication_*` tables;
 - outbound password-reset/verification secrets are redacted in the archive copy where required;

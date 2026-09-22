@@ -37,6 +37,7 @@ class EmailRuntimeSettings(BaseSettings):
     postmark_inbound_address: str | None = None
 
     email_from: str = "no-reply@localhost.invalid"
+    email_support_from: str | None = None
 
     email_operator_to: str | None = None
 
@@ -74,6 +75,21 @@ class EmailRuntimeSettings(BaseSettings):
             )
 
         return normalized
+
+    @field_validator("email_support_from")
+    @classmethod
+    def validate_email_support_from(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        stripped = value.strip()
+        if not stripped:
+            return None
+
+        return normalize_email_address(stripped)
 
     @field_validator("public_origin")
     @classmethod

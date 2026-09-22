@@ -230,11 +230,19 @@ Relevant non-secret variable names:
     DACQUA_EMAIL_PROVIDER
     DACQUA_POSTMARK_SERVER_TOKEN
     DACQUA_EMAIL_FROM
+    DACQUA_EMAIL_SUPPORT_FROM
     DACQUA_EMAIL_OPERATOR_TO
     DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
     DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
 
 Never put populated secret values into the repository.
+
+`DACQUA_EMAIL_FROM` is the transactional no-reply identity used for account
+mail. `DACQUA_EMAIL_SUPPORT_FROM` is the customer-facing sender for employee
+conversation replies. The thread-specific Postmark inbound alias belongs only
+in the outbound `Reply-To` header and protected server configuration; the
+Operations API filters Postmark inbound-routing recipient addresses so the
+assigned inbound mailbox is not exposed in the employee web UI.
 
 The observability reporting environment is separate:
 
@@ -387,10 +395,20 @@ Operational requirements:
 
 ## 14. Current pending work
 
+Commissioned in M7.4:
+
+- authenticated employee Customer Inbox list/detail UI;
+- employee replies archived into the existing communication thread;
+- thread-specific Postmark `Reply-To` routing using `MailboxHash`;
+- a production round trip proving employee outbound -> customer reply ->
+  the same archived thread;
+- Operations API filtering that keeps Postmark inbound-routing addresses out
+  of the employee UI;
+- manual refresh plus lightweight 30-second polling while the Operations page
+  is open.
+
 Not yet commissioned:
 
-- employee shared-inbox list/detail UI;
-- authenticated employee reply UI/API;
 - final customer-thread assignment/status workflow;
 - explicit communications retention/deletion policy;
 - additional Postmark delivery/bounce event ingestion if required;

@@ -1,5 +1,6 @@
 import {
   type FormEvent,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -65,16 +66,100 @@ function threadSearchText(
 function recipientLabel(
   message: OperationsCommunicationMessage,
 ): string {
+  if (message.direction === "inbound") {
+    return "Received by D’Acqua Dolce";
+  }
+
   const recipients = message.recipients
     .filter((recipient) => recipient.recipient_type === "to")
     .map((recipient) => recipient.address);
 
   if (recipients.length === 0) {
-    return "No To recipient archived";
+    return "Recipient unavailable";
   }
 
-  return recipients.join(", ");
+  return `To ${recipients.join(", ")}`;
 }
+
+type VisibleMessageBody = {
+  visible: string;
+  quoted: string | null;
+};
+
+function splitQuotedHistory(body: string): VisibleMessageBody {
+  const markers = [
+    /^On .+ wrote:\s*$/im,
+    /^-{2,}\s*Original Message\s*-{2,}\s*$/im,
+  ];
+
+  let firstIndex: number | null = null;
+
+  for (const marker of markers) {
+    const match = marker.exec(body);
+
+    if (
+      match !== null
+      && (
+        firstIndex === null
+        || match.index < firstIndex
+      )
+    ) {
+      firstIndex = match.index;
+    }
+  }
+
+  if (firstIndex === null) {
+    return {
+      visible: body.trim(),
+      quoted: null,
+    };
+  }
+
+  const visible = body.slice(0, firstIndex).trim();
+  const quoted = body.slice(firstIndex).trim();
+
+  return {
+    visible,
+    quoted: quoted.length > 0 ? quoted : null,
+  };
+}
+
+function ArchivedMessageBody({
+  message,
+}: {
+  message: OperationsCommunicationMessage;
+}) {
+  if (message.content_redacted) {
+    return (
+      <em>
+        Sensitive message content is redacted from the archive.
+      </em>
+    );
+  }
+
+  if (
+    message.body_text === null
+    || message.body_text.trim().length === 0
+  ) {
+    return <em>No plain-text body archived.</em>;
+  }
+
+  const body = splitQuotedHistory(message.body_text);
+
+  return (
+    <>
+      <p>{body.visible}</p>
+      {body.quoted !== null ? (
+        <details className="operations-inbox-quoted-history">
+          <summary>Show quoted history</summary>
+          <p>{body.quoted}</p>
+        </details>
+      ) : null}
+    </>
+  );
+}
+
+const AUTO_REFRESH_MS = 30_000;
 
 function relatedRecordLabel(
   type: string | null,
@@ -117,6 +202,9 @@ export function CommunicationsInbox() {
   const [replyFailed, setReplyFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] =
+    useState<Date | null>(null);
   const [replySending, setReplySending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,6 +215,7 @@ export function CommunicationsInbox() {
       .then((result) => {
         if (!cancelled) {
           setThreads(result);
+          setLastRefreshedAt(new Date());
           setError(null);
         }
       })
@@ -149,6 +238,51 @@ export function CommunicationsInbox() {
       cancelled = true;
     };
   }, []);
+
+  const refreshInbox = useCallback(
+    async (): Promise<void> => {
+      setRefreshing(true);
+
+      try {
+        const nextThreads =
+          await getOperationsCommunicationThreads();
+
+        setThreads(nextThreads);
+
+        if (selectedThreadId !== null) {
+          const nextDetail =
+            await getOperationsCommunicationThread(
+              selectedThreadId,
+            );
+          setThreadDetail(nextDetail);
+        }
+
+        setLastRefreshedAt(new Date());
+        setError(null);
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Communication inbox could not be refreshed.",
+        );
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    [selectedThreadId],
+  );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void refreshInbox();
+      }
+    }, AUTO_REFRESH_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [refreshInbox]);
 
   const filteredThreads = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -244,13 +378,33 @@ export function CommunicationsInbox() {
 
   return (
     <div className="operations-inbox">
-      <div className="operations-section-heading">
-        <p className="eyebrow">Customer Communications</p>
-        <h2>Conversation inbox</h2>
-        <p>
-          Search the durable customer email archive, inspect a
-          conversation, and reply from the same thread.
-        </p>
+      <div className="operations-inbox-heading">
+        <div className="operations-section-heading">
+          <p className="eyebrow">Customer Communications</p>
+          <h2>Customer inbox</h2>
+          <p>
+            Search the durable customer email archive, inspect a
+            conversation, and reply from the same thread.
+          </p>
+        </div>
+
+        <div className="operations-inbox-refresh">
+          <button
+            type="button"
+            className="operations-action secondary"
+            disabled={refreshing}
+            onClick={() => {
+              void refreshInbox();
+            }}
+          >
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+          <small>
+            {lastRefreshedAt === null
+              ? "Auto-refreshes every 30 seconds"
+              : `Updated ${lastRefreshedAt.toLocaleTimeString()} · auto-refresh 30s`}
+          </small>
+        </div>
       </div>
 
       <label
@@ -420,23 +574,13 @@ export function CommunicationsInbox() {
                     </header>
 
                     <p className="operations-inbox-recipient">
-                      To: {recipientLabel(message)}
+                      {recipientLabel(message)}
                     </p>
 
                     <h4>{message.subject}</h4>
 
                     <div className="operations-inbox-body">
-                      {message.content_redacted ? (
-                        <em>
-                          Sensitive message content is redacted from
-                          the archive.
-                        </em>
-                      ) : message.body_text !== null
-                        && message.body_text.trim().length > 0 ? (
-                          <p>{message.body_text}</p>
-                        ) : (
-                          <em>No plain-text body archived.</em>
-                        )}
+                      <ArchivedMessageBody message={message} />
                     </div>
 
                     {message.attachments.length > 0 ? (

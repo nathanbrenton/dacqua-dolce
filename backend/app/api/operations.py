@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
+from app.core.email import normalize_email_address
 from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
 from app.models.catalog import Product, ProductInventory, ProductPrice
@@ -426,6 +427,18 @@ def list_communication_threads(
     )
 
 
+def _is_internal_postmark_inbound_address(
+    address: str,
+) -> bool:
+    try:
+        normalized = normalize_email_address(address)
+    except ValueError:
+        return False
+
+    _, domain = normalized.rsplit("@", 1)
+    return domain == "inbound.postmarkapp.com"
+
+
 def _communication_message_reads(
     db: DatabaseSession,
     *,
@@ -515,6 +528,9 @@ def _communication_message_reads(
                     display_name=recipient.display_name,
                 )
                 for recipient in recipients_by_message[message.id]
+                if not _is_internal_postmark_inbound_address(
+                    recipient.address
+                )
             ],
             attachments=[
                 OperationsCommunicationAttachmentRead(
