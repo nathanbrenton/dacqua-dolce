@@ -24,6 +24,17 @@ from app.models.commerce import (
     PaymentProviderReference,
     PaymentReferenceStatus,
 )
+from app.models.communications import (
+    CommunicationAttachment,
+    CommunicationDirection,
+    CommunicationEvent,
+    CommunicationMessage,
+    CommunicationMessageStatus,
+    CommunicationRecipient,
+    CommunicationRecipientType,
+    CommunicationThread,
+    CommunicationThreadStatus,
+)
 from app.models.customer import (
     CustomerAddress,
     CustomerProfile,
@@ -54,6 +65,15 @@ __all__ = [
     "Cart",
     "CartItem",
     "CartStatus",
+    "CommunicationAttachment",
+    "CommunicationDirection",
+    "CommunicationEvent",
+    "CommunicationMessage",
+    "CommunicationMessageStatus",
+    "CommunicationRecipient",
+    "CommunicationRecipientType",
+    "CommunicationThread",
+    "CommunicationThreadStatus",
     "CustomerAddress",
     "CustomerProfile",
     "EmailDelivery",
