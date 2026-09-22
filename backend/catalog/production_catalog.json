@@ -1,0 +1,730 @@
+{
+  "categories": [
+    {
+      "active": true,
+      "description": "Whole-home filtration and conditioning systems.",
+      "name": "Whole-Home Filtration",
+      "slug": "whole-home-filtration",
+      "sort_order": 10
+    },
+    {
+      "active": true,
+      "description": "Point-of-use reverse osmosis systems.",
+      "name": "Reverse Osmosis",
+      "slug": "reverse-osmosis",
+      "sort_order": 20
+    }
+  ],
+  "images": [
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce 1.5 cubic foot water conditioner with pass-through valve, prefilter, and dimensions",
+      "product_sku": "DD15CAT-TTACPTV",
+      "sort_order": 0,
+      "storage_path": "/products/media/1-5cf-pass-through-with-prefilter-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "DD15CAT-TTACPTV 1.5cf Catalytic Water Conditioner with Pass-through Valve specification dimensions",
+      "product_sku": "DD15CAT-TTACPTV",
+      "sort_order": 10,
+      "storage_path": "/products/media/dd15cat-ttacptv-spec-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce 1.5 cubic foot water conditioner with regenerating valve, prefilter, and dimensions",
+      "product_sku": "DD15CAT-TTACRV",
+      "sort_order": 0,
+      "storage_path": "/products/media/1-5cf-regenerating-with-prefilter-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "DD15CAT-TTACRV 1.5cf Catalytic Water Conditioner with Regenerating Valve specification dimensions",
+      "product_sku": "DD15CAT-TTACRV",
+      "sort_order": 10,
+      "storage_path": "/products/media/dd15cat-ttacrv-spec-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce 1.5 cubic foot filtration tank with pass-through valve and dimensions",
+      "product_sku": "DD15CATPTV",
+      "sort_order": 0,
+      "storage_path": "/products/media/1-5cf-pass-through-valve-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "DD15CATPTV 1.5cf Catalytic Carbon Filter with Pass-through Valve specification dimensions",
+      "product_sku": "DD15CATPTV",
+      "sort_order": 10,
+      "storage_path": "/products/media/dd15catptv-spec-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce 1.5 cubic foot filtration tank with regenerating valve and dimensions",
+      "product_sku": "DD15CATRV",
+      "sort_order": 0,
+      "storage_path": "/products/media/1-5cf-regenerating-valve-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "DD15CATRV 1.5cf Catalytic Carbon Filter with Regenerating Valve specification dimensions",
+      "product_sku": "DD15CATRV",
+      "sort_order": 10,
+      "storage_path": "/products/media/dd15catrv-spec-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce five-stage reverse osmosis system and storage tank with dimensions",
+      "product_sku": "DD5RO",
+      "sort_order": 0,
+      "storage_path": "/products/media/reverse-osmosis-without-remineralizer-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "DD5RO 5 Stage Reverse Osmosis specification dimensions",
+      "product_sku": "DD5RO",
+      "sort_order": 10,
+      "storage_path": "/products/media/dd5ro-spec-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce reverse osmosis system with remineralizer stage and dimensions",
+      "product_sku": "DD5ROAE",
+      "sort_order": 0,
+      "storage_path": "/products/media/reverse-osmosis-with-remineralizer-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "DD5ROAE 5 Stage Reverse Osmosis with Alkaline Enhancer specification dimensions",
+      "product_sku": "DD5ROAE",
+      "sort_order": 10,
+      "storage_path": "/products/media/dd5roae-spec-dimensions.webp"
+    }
+  ],
+  "manufacturers": [
+    {
+      "active": true,
+      "internal_policy_notes": null,
+      "name": "D'Acqua Dolce",
+      "public_summary": "Water filtration systems.",
+      "slug": "dacqua-dolce"
+    }
+  ],
+  "products": [
+    {
+      "active": true,
+      "category_slug": "whole-home-filtration",
+      "description": "Whole-home catalytic water conditioning system with 1.5 cubic feet of media, a pass-through valve, and prefilter.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Harmony - Pass-Through",
+      "online_sale_approved": false,
+      "product_family": "Catalytic Water Conditioner",
+      "public_path": "/systems/dd15cat-ttacptv",
+      "sku": "DD15CAT-TTACPTV",
+      "slug": "dd15cat-ttacptv"
+    },
+    {
+      "active": true,
+      "category_slug": "whole-home-filtration",
+      "description": "Whole-home catalytic water conditioning system with 1.5 cubic feet of media, a regenerating valve, and prefilter.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Harmony - Regenerating",
+      "online_sale_approved": false,
+      "product_family": "Catalytic Water Conditioner",
+      "public_path": "/systems/dd15cat-ttacrv",
+      "sku": "DD15CAT-TTACRV",
+      "slug": "dd15cat-ttacrv"
+    },
+    {
+      "active": true,
+      "category_slug": "whole-home-filtration",
+      "description": "Whole-home catalytic carbon filtration system with 1.5 cubic feet of media and a pass-through valve.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Refine - Pass-Through",
+      "online_sale_approved": false,
+      "product_family": "Catalytic Carbon Filter",
+      "public_path": "/systems/dd15catptv",
+      "sku": "DD15CATPTV",
+      "slug": "dd15catptv"
+    },
+    {
+      "active": true,
+      "category_slug": "whole-home-filtration",
+      "description": "Whole-home catalytic carbon filtration system with 1.5 cubic feet of media and a regenerating valve.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Refine - Regenerating",
+      "online_sale_approved": false,
+      "product_family": "Catalytic Carbon Filter",
+      "public_path": "/systems/dd15catrv",
+      "sku": "DD15CATRV",
+      "slug": "dd15catrv"
+    },
+    {
+      "active": true,
+      "category_slug": "reverse-osmosis",
+      "description": "Five-stage point-of-use reverse osmosis drinking water system.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Origin",
+      "online_sale_approved": false,
+      "product_family": "Reverse Osmosis",
+      "public_path": "/systems/dd5ro",
+      "sku": "DD5RO",
+      "slug": "dd5ro"
+    },
+    {
+      "active": true,
+      "category_slug": "reverse-osmosis",
+      "description": "Five-stage point-of-use reverse osmosis drinking water system with an alkaline remineralization stage.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Origin - Alkaline Remineralization",
+      "online_sale_approved": false,
+      "product_family": "Reverse Osmosis",
+      "public_path": "/systems/dd5roae",
+      "sku": "DD5ROAE",
+      "slug": "dd5roae"
+    }
+  ],
+  "schema_version": 1,
+  "specifications": [
+    {
+      "active": true,
+      "label": "Remineralization",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 20,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "remineralization",
+      "unit": null,
+      "value_text": "Alkaline",
+      "verified_at": "2026-09-11T04:06:48.340270+00:00"
+    },
+    {
+      "active": true,
+      "label": "Stages",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 10,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "stage_count",
+      "unit": null,
+      "value_text": "5",
+      "verified_at": "2026-09-11T04:06:48.337544+00:00"
+    },
+    {
+      "active": true,
+      "label": "Stages",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 10,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "stage_count",
+      "unit": null,
+      "value_text": "5",
+      "verified_at": "2026-09-11T04:06:48.340243+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Width",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 20,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "system_width",
+      "unit": "in",
+      "value_text": "15",
+      "verified_at": "2026-09-11T15:13:17.516547+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Height",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 30,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "system_height",
+      "unit": "in",
+      "value_text": "16",
+      "verified_at": "2026-09-11T15:13:17.516590+00:00"
+    },
+    {
+      "active": true,
+      "label": "Storage Tank Width",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 40,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "storage_tank_width",
+      "unit": "in",
+      "value_text": "11",
+      "verified_at": "2026-09-11T15:13:17.516612+00:00"
+    },
+    {
+      "active": true,
+      "label": "Storage Tank Height",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 50,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "storage_tank_height",
+      "unit": "in",
+      "value_text": "16",
+      "verified_at": "2026-09-11T15:13:17.516627+00:00"
+    },
+    {
+      "active": true,
+      "label": "RO Membrane",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 70,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "ro_membrane_model",
+      "unit": null,
+      "value_text": "Pentair GRO-50EN",
+      "verified_at": "2026-09-11T15:13:17.516650+00:00"
+    },
+    {
+      "active": true,
+      "label": "RO Membrane Nominal Flow",
+      "product_sku": "DD5RO",
+      "public": true,
+      "sort_order": 80,
+      "source_reference": "Pentair GRO Membrane Spec Sheet, GRO-50EN: https://www.pentair.com/content/dam/extranet/web/nam/pentair/spec-sheets/english/4002874-gro-membrane-spec-sheet.pdf",
+      "spec_key": "ro_membrane_nominal_flow",
+      "unit": "GPD",
+      "value_text": "50",
+      "verified_at": "2026-09-11T15:13:17.516661+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Width",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 30,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "system_width",
+      "unit": "in",
+      "value_text": "15",
+      "verified_at": "2026-09-11T15:13:17.519401+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Height",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 40,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "system_height",
+      "unit": "in",
+      "value_text": "18",
+      "verified_at": "2026-09-11T15:13:17.519419+00:00"
+    },
+    {
+      "active": true,
+      "label": "Storage Tank Width",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 50,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "storage_tank_width",
+      "unit": "in",
+      "value_text": "11",
+      "verified_at": "2026-09-11T15:13:17.519432+00:00"
+    },
+    {
+      "active": true,
+      "label": "Storage Tank Height",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 60,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "storage_tank_height",
+      "unit": "in",
+      "value_text": "16",
+      "verified_at": "2026-09-11T15:13:17.519443+00:00"
+    },
+    {
+      "active": true,
+      "label": "RO Membrane",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 80,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "ro_membrane_model",
+      "unit": null,
+      "value_text": "Pentair GRO-50EN",
+      "verified_at": "2026-09-11T15:13:17.519465+00:00"
+    },
+    {
+      "active": true,
+      "label": "RO Membrane Nominal Flow",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 90,
+      "source_reference": "Pentair GRO Membrane Spec Sheet, GRO-50EN: https://www.pentair.com/content/dam/extranet/web/nam/pentair/spec-sheets/english/4002874-gro-membrane-spec-sheet.pdf",
+      "spec_key": "ro_membrane_nominal_flow",
+      "unit": "GPD",
+      "value_text": "50",
+      "verified_at": "2026-09-11T15:13:17.519475+00:00"
+    },
+    {
+      "active": true,
+      "label": "Alkaline Cartridge",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 100,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "alkaline_cartridge_model",
+      "unit": null,
+      "value_text": "K-FLOW K5650 BB",
+      "verified_at": "2026-09-11T15:13:17.519485+00:00"
+    },
+    {
+      "active": true,
+      "label": "Alkaline Media",
+      "product_sku": "DD5ROAE",
+      "public": true,
+      "sort_order": 110,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "alkaline_media",
+      "unit": null,
+      "value_text": "Custom Alkaline Media",
+      "verified_at": "2026-09-11T15:13:17.519495+00:00"
+    },
+    {
+      "active": true,
+      "label": "Prefilter",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 30,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "prefilter",
+      "unit": null,
+      "value_text": "Included",
+      "verified_at": "2026-09-11T04:06:48.334283+00:00"
+    },
+    {
+      "active": true,
+      "label": "Valve Type",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 20,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "valve_type",
+      "unit": null,
+      "value_text": "Regenerating",
+      "verified_at": "2026-09-11T04:06:48.335903+00:00"
+    },
+    {
+      "active": true,
+      "label": "Prefilter",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 30,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "prefilter",
+      "unit": null,
+      "value_text": "Included",
+      "verified_at": "2026-09-11T04:06:48.335914+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Volume",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 10,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "media_volume",
+      "unit": "cu ft",
+      "value_text": "1.5",
+      "verified_at": "2026-09-11T04:06:48.334248+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Volume",
+      "product_sku": "DD15CATPTV",
+      "public": true,
+      "sort_order": 10,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATPTV.jpg",
+      "spec_key": "media_volume",
+      "unit": "cu ft",
+      "value_text": "1.5",
+      "verified_at": "2026-09-11T04:06:48.330541+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Volume",
+      "product_sku": "DD15CATRV",
+      "public": true,
+      "sort_order": 10,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
+      "spec_key": "media_volume",
+      "unit": "cu ft",
+      "value_text": "1.5",
+      "verified_at": "2026-09-11T04:06:48.332393+00:00"
+    },
+    {
+      "active": true,
+      "label": "Dimension Tolerance",
+      "product_sku": "DD5ROAE",
+      "public": false,
+      "sort_order": 70,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
+      "spec_key": "dimension_tolerance",
+      "unit": "in",
+      "value_text": "\u00b10.5",
+      "verified_at": "2026-09-11T15:13:17.519454+00:00"
+    },
+    {
+      "active": true,
+      "label": "Dimension Tolerance",
+      "product_sku": "DD5RO",
+      "public": false,
+      "sort_order": 60,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
+      "spec_key": "dimension_tolerance",
+      "unit": "in",
+      "value_text": "\u00b10.5",
+      "verified_at": "2026-09-11T15:13:17.516639+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Volume",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 10,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "media_volume",
+      "unit": "cu ft",
+      "value_text": "1.5",
+      "verified_at": "2026-09-11T04:06:48.335886+00:00"
+    },
+    {
+      "active": true,
+      "label": "Valve Type",
+      "product_sku": "DD15CATPTV",
+      "public": true,
+      "sort_order": 20,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATPTV.jpg",
+      "spec_key": "valve_type",
+      "unit": null,
+      "value_text": "Pass-Through",
+      "verified_at": "2026-09-11T04:06:48.330587+00:00"
+    },
+    {
+      "active": true,
+      "label": "Valve Type",
+      "product_sku": "DD15CATRV",
+      "public": true,
+      "sort_order": 20,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
+      "spec_key": "valve_type",
+      "unit": null,
+      "value_text": "Regenerating",
+      "verified_at": "2026-09-11T04:06:48.332415+00:00"
+    },
+    {
+      "active": true,
+      "label": "Valve Type",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 20,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "valve_type",
+      "unit": null,
+      "value_text": "Pass-Through",
+      "verified_at": "2026-09-11T04:06:48.334271+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Height",
+      "product_sku": "DD15CATPTV",
+      "public": true,
+      "sort_order": 40,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATPTV.jpg",
+      "spec_key": "system_height",
+      "unit": "in",
+      "value_text": "58",
+      "verified_at": "2026-09-11T18:40:59.677341+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Tank Width",
+      "product_sku": "DD15CATPTV",
+      "public": true,
+      "sort_order": 50,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATPTV.jpg",
+      "spec_key": "media_tank_width",
+      "unit": "in",
+      "value_text": "11",
+      "verified_at": "2026-09-11T18:40:59.677379+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Height",
+      "product_sku": "DD15CATRV",
+      "public": true,
+      "sort_order": 40,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
+      "spec_key": "system_height",
+      "unit": "in",
+      "value_text": "62",
+      "verified_at": "2026-09-11T18:40:59.679233+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Tank Width",
+      "product_sku": "DD15CATRV",
+      "public": true,
+      "sort_order": 50,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
+      "spec_key": "media_tank_width",
+      "unit": "in",
+      "value_text": "11",
+      "verified_at": "2026-09-11T18:40:59.679259+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Height",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 40,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "system_height",
+      "unit": "in",
+      "value_text": "58",
+      "verified_at": "2026-09-11T18:40:59.680988+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Tank Width",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 50,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "media_tank_width",
+      "unit": "in",
+      "value_text": "11",
+      "verified_at": "2026-09-11T18:40:59.681004+00:00"
+    },
+    {
+      "active": true,
+      "label": "System Height",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 40,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "system_height",
+      "unit": "in",
+      "value_text": "62",
+      "verified_at": "2026-09-11T18:40:59.682589+00:00"
+    },
+    {
+      "active": true,
+      "label": "Media Tank Width",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 50,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "media_tank_width",
+      "unit": "in",
+      "value_text": "11",
+      "verified_at": "2026-09-11T18:40:59.682610+00:00"
+    },
+    {
+      "active": true,
+      "label": "Dimension Tolerance",
+      "product_sku": "DD15CATPTV",
+      "public": false,
+      "sort_order": 90,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATPTV.jpg",
+      "spec_key": "dimension_tolerance",
+      "unit": "in",
+      "value_text": "\u00b10.5",
+      "verified_at": "2026-09-11T18:40:59.677399+00:00"
+    },
+    {
+      "active": true,
+      "label": "Prefilter Housing Width",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 70,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "prefilter_width",
+      "unit": "in",
+      "value_text": "7.5",
+      "verified_at": "2026-09-11T18:40:59.682633+00:00"
+    },
+    {
+      "active": true,
+      "label": "Dimension Tolerance",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": false,
+      "sort_order": 90,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "dimension_tolerance",
+      "unit": "in",
+      "value_text": "\u00b10.5",
+      "verified_at": "2026-09-11T18:40:59.681035+00:00"
+    },
+    {
+      "active": true,
+      "label": "Prefilter Housing Height",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 60,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "prefilter_height",
+      "unit": "in",
+      "value_text": "29",
+      "verified_at": "2026-09-11T18:40:59.681016+00:00"
+    },
+    {
+      "active": true,
+      "label": "Prefilter Housing Height",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": true,
+      "sort_order": 60,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "prefilter_height",
+      "unit": "in",
+      "value_text": "29",
+      "verified_at": "2026-09-11T18:40:59.682623+00:00"
+    },
+    {
+      "active": true,
+      "label": "Dimension Tolerance",
+      "product_sku": "DD15CAT-TTACRV",
+      "public": false,
+      "sort_order": 90,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
+      "spec_key": "dimension_tolerance",
+      "unit": "in",
+      "value_text": "\u00b10.5",
+      "verified_at": "2026-09-11T18:40:59.682643+00:00"
+    },
+    {
+      "active": true,
+      "label": "Prefilter Housing Width",
+      "product_sku": "DD15CAT-TTACPTV",
+      "public": true,
+      "sort_order": 70,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
+      "spec_key": "prefilter_width",
+      "unit": "in",
+      "value_text": "7.5",
+      "verified_at": "2026-09-11T18:40:59.681026+00:00"
+    },
+    {
+      "active": true,
+      "label": "Dimension Tolerance",
+      "product_sku": "DD15CATRV",
+      "public": false,
+      "sort_order": 90,
+      "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
+      "spec_key": "dimension_tolerance",
+      "unit": "in",
+      "value_text": "\u00b10.5",
+      "verified_at": "2026-09-11T18:40:59.679274+00:00"
+    }
+  ]
+}

@@ -277,7 +277,11 @@ fi
 cd "${RELEASE}/backend"
 ./.venv/bin/alembic upgrade head
 
-# The deploy-only database credential is no longer needed after migrations.
+echo "Reconciling canonical production catalog"
+./.venv/bin/python -m app.cli.seed_catalog apply
+
+# The deploy-only database credential is no longer needed after migrations
+# and deployment-time catalog reconciliation.
 unset DACQUA_MIGRATION_DATABASE_URL
 
 normalize_release_permissions "${RELEASE}"
