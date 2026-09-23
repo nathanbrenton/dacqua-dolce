@@ -40,7 +40,7 @@ The host is intentionally consolidated for P0. The architecture favors explicit 
 - Vite
 - production static build served directly by Nginx
 
-The customer account experience includes profile/address management, visual-theme selection, and a persistent light/dark preference. Operations keeps its own persistent appearance preference and defaults to dark when no preference has previously been stored.
+The customer account experience includes profile/address management plus site-wide visual-theme and light/dark preferences. The same persisted appearance selection applies to Operations; the current default baseline is Light + Lagoon Editorial unless the user has stored an override.
 
 ### Backend
 
@@ -323,67 +323,82 @@ Local backup/restore validation is commissioned; off-host disaster recovery rema
 
 ## 12. Email and communications boundary
 
+### Authoritative DNS and public inbound routing — commissioned
+
+The registrar remains Moniker, while authoritative DNS is hosted by Cloudflare. The current assigned authoritative nameservers are:
+
+    carrera.ns.cloudflare.com
+    earl.ns.cloudflare.com
+
+The production web records remain **DNS only**, so HTTP/HTTPS traffic still goes directly to the Vultr/Nginx origin rather than through Cloudflare's reverse proxy. Cloudflare is used here for authoritative DNS and free Email Routing.
+
+Public customer correspondence enters through:
+
+    external sender
+      -> support@dacquadolce.com
+      -> Cloudflare Email Routing
+      -> private Postmark inbound destination
+      -> Postmark Default Inbound Stream
+      -> authenticated HTTPS webhook
+      -> FastAPI
+      -> PostgreSQL communications archive
+
+Catch-all mail routing is disabled. The private Postmark destination is intentionally omitted from documentation and employee UI.
+
+Cloudflare's root MX/SPF/DKIM records coexist with Postmark's separate sending-domain authentication because the two providers use different DNS purposes/selectors. The Postmark custom Return-Path remains a DNS-only CNAME at `pm-bounces.dacquadolce.com`.
+
 ### Application transactional email — commissioned
 
-FastAPI sends transactional application email through the Postmark HTTPS API. The production Postmark server token is stored outside Git in the protected application environment.
+FastAPI sends transactional mail through the Postmark HTTPS API. Direct outbound TCP/25 is not required.
 
-The `dacquadolce.com` sending domain is verified and live delivery was validated on 2026-09-22. Production verification/password-recovery/quote notification paths have been exercised successfully.
-
-Direct outbound TCP/25 from the Vultr host remains blocked. This does not affect the Postmark HTTPS API and does not require a local Postfix-to-MX architecture.
-
-`email_deliveries` remains the transport metadata ledger. It stores delivery metadata, provider references, and bounded error information rather than complete correspondence bodies.
+Account/security mail uses the transactional no-reply sender. Employee customer-service replies use `support@dacquadolce.com` as the visible sender.
 
 ### Durable communications archive — commissioned
 
-The application now has a dedicated PostgreSQL communications archive:
+PostgreSQL stores durable threads, messages, recipients, attachments, and normalized events in the `communication_*` tables. The older `email_deliveries` table remains a transport/status ledger rather than the correspondence store.
 
-    communication_threads
-    communication_messages
-    communication_recipients
-    communication_attachments
-    communication_events
-
-The schema was introduced by Alembic revision `c41b7e2a9d63` and is owned by `dacqua_dolce_migrator`; the runtime role `dacqua_dolce_app` has the required CRUD privileges.
-
-Outbound transactional email is archived through this model. Sensitive authentication values are redacted in the archive copy where required while the live outbound message still contains the value needed by the recipient.
+Authentication/recovery secrets may be delivered live but are redacted in the durable archive when required.
 
 ### Postmark inbound processing — commissioned
 
-Inbound architecture:
+The public webhook is:
 
-    external sender
-        -> Postmark inbound processing
-        -> HTTPS /api/webhooks/postmark/inbound
-        -> Nginx
-        -> FastAPI
-        -> PostgreSQL communications archive
+    POST /api/webhooks/postmark/inbound
 
-The webhook uses HTTP Basic authentication with credentials held only in protected runtime configuration. The exact webhook path is the only browser-CSRF exemption for this machine-to-machine integration.
+It is protected with HTTP Basic authentication from protected runtime configuration. The exact Nginx path has a 64 MiB request envelope while the ordinary site remains 2 MiB. Provider MessageID uniqueness provides retry-safe idempotency.
 
-Nginx preserves the normal 2 MiB site request-body limit and grants only the exact inbound webhook a 64 MiB envelope for Postmark JSON/base64 attachment transport.
+Thread resolution prefers a Postmark `MailboxHash` thread UUID, then RFC `In-Reply-To`, then creates a new thread. A real production provider retry was validated without creating a duplicate archived message.
 
-Inbound Postmark `MessageID` is the idempotency key. Duplicate/retried webhook delivery resolves to the existing archived message rather than creating a duplicate.
+### Employee Customer Inbox and threaded replies — commissioned
 
-Inbound thread matching attempts:
+Authenticated Operations users can:
 
-1. Postmark `MailboxHash` -> existing communication thread UUID;
-2. RFC `In-Reply-To` -> prior archived internet Message-ID;
-3. otherwise a new thread.
+- search active/archived/all customer conversations;
+- archive/restore threads without deleting durable records;
+- inspect a selected conversation with independent vertical scrolling;
+- reply in the same durable thread;
+- see explicit failed-delivery provenance when associated failure data exists.
 
-A real Gmail -> Postmark -> production webhook -> PostgreSQL message was validated on 2026-09-22. Provider retries resulted in one archived database message for the provider MessageID.
+Employee reply path:
 
-The full implementation/rebuild boundary is documented in `COMMUNICATIONS_AND_POSTMARK.md`.
+    Operations UI
+      -> FastAPI
+      -> PostgreSQL archive
+      -> Postmark HTTPS API
+      -> customer
 
-### Employee inbox/reply workflow — pending
+A private thread-specific Postmark alias is used only as `Reply-To`, allowing the customer's normal Reply action to return to the same conversation. A production three-message acceptance sequence (`inbound -> outbound -> inbound`) was validated.
 
-The durable archive and inbound transport are commissioned, but the authenticated employee shared-inbox list/detail/reply experience is not yet commissioned.
+The inbox renders archived plain-text message bodies. Explicit `http://` and `https://` URLs are safely linkified in the browser; arbitrary inbound HTML is not trusted/rendered as executable markup.
 
-The intended reply path is:
+### Address roles
 
-    employee -> authenticated Operations UI -> FastAPI
-             -> PostgreSQL archive -> Postmark HTTPS API
+Current commissioned public/application addresses:
 
-A general-purpose IMAP/Dovecot mailbox on the production host is not required for this application design.
+- `support@dacquadolce.com` — customer correspondence into Customer Inbox and visible sender for employee replies;
+- `no-reply@dacquadolce.com` — application transactional/account mail sender.
+
+Addresses such as `nathan@dacquadolce.com`, `jamie@dacquadolce.com`, `info@dacquadolce.com`, and `admin@dacquadolce.com` are **not** automatically provisioned as human mailboxes by Cloudflare Email Routing. Add explicit forwarding/mailbox arrangements later if the business needs them.
 
 ### Observability reports — pending delivery
 
@@ -416,7 +431,7 @@ Not yet commissioned:
 
 - off-host AWS S3/restic repository and off-host restore rehearsal;
 - observability report email delivery/timers and corresponding Better Stack report heartbeats;
-- employee shared-inbox/reply workflow and explicit communications retention policy;
+- explicit communications retention/purge policy, including attachment and backup lifecycle;
 - remaining observability service systemd hardening beyond the already hardened FastAPI service;
 - payment-provider checkout;
 

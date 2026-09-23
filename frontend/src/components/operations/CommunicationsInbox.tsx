@@ -1,5 +1,7 @@
 import {
+  Fragment,
   type FormEvent,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -87,6 +89,114 @@ type VisibleMessageBody = {
   quoted: string | null;
 };
 
+const HTTP_URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
+const SIMPLE_TRAILING_URL_PUNCTUATION = /[.,!?;:]+$/;
+
+function splitTrailingUrlPunctuation(value: string): {
+  href: string;
+  trailing: string;
+} {
+  let href = value;
+  let trailing = "";
+
+  const simple = SIMPLE_TRAILING_URL_PUNCTUATION.exec(href);
+  if (simple !== null) {
+    trailing = simple[0] + trailing;
+    href = href.slice(0, -simple[0].length);
+  }
+
+  const pairedDelimiters: Array<[string, string]> = [
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+  ];
+
+  for (const [opening, closing] of pairedDelimiters) {
+    while (href.endsWith(closing)) {
+      const openingCount = href.split(opening).length - 1;
+      const closingCount = href.split(closing).length - 1;
+
+      if (closingCount <= openingCount) {
+        break;
+      }
+
+      trailing = closing + trailing;
+      href = href.slice(0, -1);
+    }
+  }
+
+  return { href, trailing };
+}
+
+function PlainTextWithLinks({ text }: { text: string }) {
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  let part = 0;
+
+  for (const match of text.matchAll(HTTP_URL_PATTERN)) {
+    const raw = match[0];
+    const index = match.index ?? cursor;
+
+    if (index > cursor) {
+      nodes.push(
+        <Fragment key={`text-${part}`}>
+          {text.slice(cursor, index)}
+        </Fragment>,
+      );
+      part += 1;
+    }
+
+    const { href, trailing } = splitTrailingUrlPunctuation(raw);
+    let isSafeHttpUrl = false;
+
+    try {
+      const parsed = new URL(href);
+      isSafeHttpUrl =
+        parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      isSafeHttpUrl = false;
+    }
+
+    if (isSafeHttpUrl) {
+      nodes.push(
+        <a
+          key={`link-${part}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {href}
+        </a>,
+      );
+      part += 1;
+
+      if (trailing.length > 0) {
+        nodes.push(
+          <Fragment key={`trailing-${part}`}>
+            {trailing}
+          </Fragment>,
+        );
+        part += 1;
+      }
+    } else {
+      nodes.push(
+        <Fragment key={`url-text-${part}`}>{raw}</Fragment>,
+      );
+      part += 1;
+    }
+
+    cursor = index + raw.length;
+  }
+
+  if (cursor < text.length) {
+    nodes.push(
+      <Fragment key={`text-${part}`}>{text.slice(cursor)}</Fragment>,
+    );
+  }
+
+  return <>{nodes}</>;
+}
+
 function splitQuotedHistory(body: string): VisibleMessageBody {
   const markers = [
     /^On .+ wrote:\s*$/im,
@@ -149,11 +259,11 @@ function ArchivedMessageBody({
 
   return (
     <>
-      <p>{body.visible}</p>
+      <p><PlainTextWithLinks text={body.visible} /></p>
       {body.quoted !== null ? (
         <details className="operations-inbox-quoted-history">
           <summary>Show quoted history</summary>
-          <p>{body.quoted}</p>
+          <p><PlainTextWithLinks text={body.quoted} /></p>
         </details>
       ) : null}
     </>

@@ -56,41 +56,27 @@ Future milestone must:
 - submit the corresponding Better Stack heartbeat only after successful report delivery;
 - monitor timer/job failure and report freshness.
 
-## 3. Employee communications inbox and reply workflow
+## 3. Communications retention, purge, and attachment lifecycle
 
-Commissioned foundation:
+Commissioned:
 
-- dedicated PostgreSQL communication threads/messages/recipients/attachments/events;
-- outbound transactional message archival;
-- sensitive authentication-value redaction in archive copies where required;
-- authenticated Postmark inbound webhook;
-- normalized inbound body/recipient/attachment/event archival;
-- customer matching by normalized sender email;
-- thread resolution by Postmark `MailboxHash` or RFC `In-Reply-To`;
-- Postmark MessageID idempotency;
-- synthetic Postmark Check validation;
-- real Gmail -> Postmark -> production archive validation under provider retry.
+- durable PostgreSQL communication threads/messages/recipients/attachments/events;
+- authenticated Customer Inbox with Inbox/Archived/All views;
+- archive/restore workflow with no data destruction;
+- employee replies and thread-specific return routing;
+- public `support@dacquadolce.com` inbound route through Cloudflare Email Routing -> Postmark -> production webhook;
+- safe plain-text URL linkification in the Operations inbox.
 
-Still pending:
+Still pending as a business/data-governance decision:
 
-- employee inbox list in the authenticated Operations UI;
-- conversation/thread detail view;
-- role-controlled employee reply endpoint/UI;
-- durable employee-authored reply archival before/around provider send;
-- thread assignment/status controls where needed;
-- audit coverage for employee reply/assignment actions;
-- explicit communications retention/deletion policy;
-- optional delivery/bounce webhook ingestion if operational requirements justify it.
+- retention period(s) for customer correspondence;
+- retention period(s) for attachment bytes;
+- privileged permanent-delete/purge behavior, if any;
+- how deletion requests propagate into backup retention and restore procedures;
+- legal-hold/privacy-request handling;
+- storage-growth thresholds that would justify moving attachment payloads out of PostgreSQL or introducing automated purge.
 
-The intended reply path remains:
-
-    employee
-      -> authenticated Operations UI
-      -> FastAPI
-      -> PostgreSQL archive
-      -> Postmark HTTPS API
-
-Do not introduce a general-purpose IMAP/Dovecot stack solely for this workflow.
+Do not add a routine hard-delete button merely to keep the Operations page tidy. Archive/restore is the normal workflow control. Permanent deletion should be policy-driven, auditable, and compatible with backup/privacy obligations.
 
 ## 4. Observability service systemd hardening
 
@@ -134,4 +120,8 @@ The following are no longer pending and belong in the commissioned production do
 - durable communications archive;
 - outbound communication archival;
 - authenticated Postmark inbound webhook;
-- real inbound-email archival/idempotency validation.
+- real inbound-email archival/idempotency validation;
+- authenticated Operations Customer Inbox and threaded employee replies;
+- active/archive/all communication-history workflow;
+- public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
+- safe plain-text URL linkification in Customer Inbox.

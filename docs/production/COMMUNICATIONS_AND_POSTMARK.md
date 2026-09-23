@@ -9,12 +9,13 @@ It describes the validated final implementation only. It intentionally omits tra
 Production validation checkpoint:
 
 - date: 2026-09-22;
-- application source revision: `f5b7622126c57c0fae2fe06c343b225fec7e02af`;
+- exact deployed source revisions are recorded by immutable release metadata/deployment history rather than treated as configuration constants in this runbook;
 - Postmark transactional sending: commissioned;
 - PostgreSQL communications archive: commissioned;
-- Postmark inbound webhook: commissioned;
-- real Gmail -> Postmark -> D'Acqua Dolce inbound archival: validated;
-- employee shared-inbox/reply UI: not yet commissioned.
+- authenticated Postmark inbound webhook: commissioned;
+- authenticated Operations Customer Inbox and threaded employee replies: commissioned;
+- public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing: commissioned;
+- real public-address acceptance (`support@` -> Cloudflare -> Postmark -> webhook -> Customer Inbox): validated.
 
 ## 1. Architecture
 
@@ -25,16 +26,46 @@ Application transactional mail:
       -> Postmark HTTPS API
       -> recipient mail system
 
-Inbound customer/company mail:
+Public inbound customer mail:
 
     sender
-      -> Postmark inbound processing
+      -> support@dacquadolce.com
+      -> Cloudflare Email Routing
+      -> private Postmark inbound destination
+      -> Postmark Default Inbound Stream
       -> HTTPS POST /api/webhooks/postmark/inbound
       -> Nginx
       -> FastAPI
       -> PostgreSQL communications archive
 
+Employee replies follow the reverse application path:
+
+    Operations Customer Inbox
+      -> FastAPI
+      -> PostgreSQL archive
+      -> Postmark HTTPS API
+      -> customer
+
+The visible sender for employee customer-service replies is `support@dacquadolce.com`. A thread-specific private Postmark inbound alias is used only as `Reply-To` so a customer's normal Reply action returns to the same archived conversation.
+
+Cloudflare is authoritative for DNS, but the production web `A`/`CNAME` records are intentionally **DNS only**. Cloudflare is therefore providing authoritative DNS and inbound Email Routing without acting as the HTTP reverse proxy for the site at this checkpoint.
+
 The production server does not need a general-purpose SMTP/IMAP mailbox stack for this workflow. Direct outbound TCP/25 remains blocked by the hosting provider and is not required by the Postmark HTTPS API path.
+
+### Email/DNS terminology
+
+- **DNS (Domain Name System):** translates domain names into service-routing records.
+- **Authoritative nameserver:** the DNS server whose zone data is the source of truth for a domain. The current authoritative provider is Cloudflare.
+- **MX (Mail Exchanger):** DNS records that tell other mail systems where inbound mail for a domain should be delivered.
+- **SPF (Sender Policy Framework):** a DNS TXT policy describing which infrastructure is permitted to send mail for a domain/envelope domain.
+- **DKIM (DomainKeys Identified Mail):** cryptographic signing that lets recipients verify that a message was authorized by a domain and was not altered in transit. Multiple providers can coexist by using different DKIM selectors.
+- **DMARC (Domain-based Message Authentication, Reporting, and Conformance):** a domain policy/reporting layer built on SPF and DKIM alignment. DMARC policy is a separate deployment decision from simply making inbound routing work.
+- **CNAME (Canonical Name):** a DNS alias from one hostname to another. Postmark's custom Return-Path uses a CNAME.
+- **Return-Path:** the envelope/bounce address used for delivery-status handling; it is distinct from the human-visible `From` address.
+- **TTL (Time To Live):** how long recursive DNS resolvers may cache a record before asking again.
+- **SMTP (Simple Mail Transfer Protocol):** the standard protocol used between mail systems. D'Acqua Dolce does not run a public SMTP server.
+- **IMAP (Internet Message Access Protocol):** a mailbox-access protocol. D'Acqua Dolce does not need an IMAP server for the application Customer Inbox.
+- **Webhook:** an HTTPS callback sent by one service to another when an event occurs; Postmark uses the inbound webhook to deliver normalized inbound message data to FastAPI.
 
 ## 2. Data model
 
@@ -250,27 +281,42 @@ The observability reporting environment is separate:
 
 Do not assume application-email commissioning automatically commissions observability report delivery.
 
-## 9. Clean Postmark inbound setup order
+## 9. Clean Postmark + Cloudflare inbound setup order
 
-Use this order on a rebuilt production environment.
+Use this order for a new company/domain or a D'Acqua Dolce rebuild. Vendor-generated values must be taken from the current provider dashboards rather than copied blindly from an old environment.
 
-1. Establish/restore the D'Acqua Dolce Postmark Server under business-controlled ownership.
-2. Verify the production sending domain and sender identity.
-3. Configure the application Postmark server token only in protected server configuration.
-4. Deploy the application schema/code through the normal release mechanism so Alembic reaches `c41b7e2a9d63` or a later compatible head.
-5. Generate strong inbound webhook Basic Auth credentials and store them only in `/etc/dacqua-dolce/backend.env`.
-6. Restart the API and validate the webhook over loopback:
-   - wrong credentials -> `401`;
-   - correct credentials + `{}` -> `422`.
-7. Install the canonical HTTPS Nginx template and verify the exact webhook location has the 64 MiB override while the ordinary site remains 2 MiB.
-8. Repeat the authentication-boundary test through `https://dacquadolce.com`.
-9. In Postmark, open the server's **Default Inbound Stream** settings.
-10. Configure the webhook using the authenticated HTTPS URL prepared privately in Section 10 below. Do not type, log, or record the populated credential-bearing URL in documentation.
-11. Keep raw-email inclusion disabled unless a later requirement explicitly justifies storing/processing it.
-12. Save the webhook and use Postmark's **Check** action.
-13. Confirm the synthetic inbound record appears in PostgreSQL with message, recipient, attachment/event data as applicable.
-14. Send one controlled real inbound email to the Postmark-assigned inbound address.
-15. Verify the real message appears in PostgreSQL and that repeated provider webhook attempts do not create duplicate message rows.
+1. Establish a business-controlled recovery/bootstrap email identity that does not depend on the custom domain. D'Acqua Dolce currently keeps a provider-native recovery identity for this purpose.
+2. Establish/restore the Postmark Server under business-controlled ownership.
+3. Add/verify the sending domain in Postmark and record the Postmark-generated DKIM selector/value and custom Return-Path CNAME.
+4. Configure the application Postmark server token only in protected server configuration.
+5. Deploy the application schema/code through the normal release mechanism so Alembic reaches `c41b7e2a9d63` or a later compatible head.
+6. Generate strong inbound webhook Basic Auth credentials and store them only in `/etc/dacqua-dolce/backend.env`.
+7. Restart the API and validate the webhook over loopback: wrong credentials -> `401`; correct credentials + `{}` -> `422`.
+8. Install the canonical HTTPS Nginx template and repeat the authentication-boundary test through public HTTPS.
+9. In Postmark, configure the **Default Inbound Stream** webhook using the authenticated HTTPS URL prepared privately in Section 10. Keep raw-email inclusion disabled unless a later requirement explicitly justifies it.
+10. Use Postmark **Check** and confirm the synthetic message is archived.
+11. Create the Cloudflare zone and import existing DNS **before** changing authoritative nameservers. Preserve the web origin, `www`, Postmark Return-Path, and Postmark DKIM records. Keep mail/third-party records DNS-only; D'Acqua Dolce also keeps its web records DNS-only at this checkpoint.
+12. Change the registrar delegation to the provider-assigned Cloudflare nameservers only after the imported zone is complete. Keep DNSSEC disabled during the delegation migration unless an already-correct DS/DNSSEC migration has been explicitly planned.
+13. Verify public resolvers and the Cloudflare authoritative nameservers return the expected web and Postmark records, and verify HTTPS still returns the expected status codes.
+14. Enable Cloudflare Email Routing and allow Cloudflare to create its current MX/SPF/DKIM routing records. Do not overwrite the separate Postmark DKIM selector or Postmark Return-Path CNAME.
+15. Add the private Postmark inbound address as a Cloudflare **Destination Address** and complete Cloudflare's verification message through the D'Acqua Dolce Customer Inbox. Do not record that private destination in Git/docs.
+16. Create an enabled routing rule for `support@dacquadolce.com` -> the verified private Postmark destination. Leave catch-all disabled unless the business deliberately decides otherwise.
+17. Send one controlled external message to `support@dacquadolce.com` and verify it appears as a new inbound Customer Inbox conversation.
+18. Verify one threaded employee reply/return-reply round trip when reply routing itself has materially changed. Avoid repeating live acceptance mail for unrelated releases.
+
+Current D'Acqua Dolce DNS/mail-routing shape:
+
+    registrar: Moniker
+    authoritative DNS: Cloudflare
+    web apex A: 144.202.114.17 (DNS only)
+    www: CNAME -> dacquadolce.com (DNS only)
+    Postmark Return-Path: pm-bounces -> pm.mtasv.net (DNS only)
+    Postmark DKIM selector: 20260917171819pm._domainkey
+    Cloudflare Email Routing: root MX/SPF + Cloudflare DKIM selector
+    public customer address: support@dacquadolce.com
+    catch-all: disabled
+
+The current Cloudflare Email Routing MX priorities/hostnames and DKIM/SPF values are public DNS data, but they are provider-managed implementation details. During a rebuild, prefer the values Cloudflare currently proposes rather than assuming old values can never change.
 
 ## 10. Safe credential preparation for Postmark UI
 
@@ -346,11 +392,28 @@ Use Postmark **Check**. A successful check must produce `200` and an archived in
 
 ### Real inbound acceptance
 
-Use one controlled real inbound email. To conserve provider allowance and avoid unnecessary production data, do not repeatedly resend the same test.
+For transport/webhook commissioning, one controlled message to the private Postmark inbound destination may be used before public routing exists. Once the public route is commissioned, normal acceptance should target `support@dacquadolce.com` instead of exposing or teaching operators to use the provider-assigned address.
 
-Validate by metadata only. Avoid printing full message bodies, full provider IDs, attachment bytes, tokens, or the complete assigned inbound address.
+The public-address acceptance validated on 2026-09-22 was:
+
+    external Gmail sender
+      -> support@dacquadolce.com
+      -> Cloudflare Email Routing
+      -> private Postmark inbound destination
+      -> Postmark webhook
+      -> D'Acqua Dolce Customer Inbox
+
+Validate by metadata only. Avoid printing full message bodies, full provider IDs, attachment bytes, verification tokens, or the complete assigned inbound address.
 
 A useful provider/database correlation technique is to compare short one-way fingerprints of Postmark MessageIDs rather than displaying the IDs themselves.
+
+### Threaded employee reply acceptance
+
+The production acceptance conversation contains three messages in one durable thread:
+
+    inbound received -> outbound sent -> inbound received
+
+This proves that an employee reply sent from Customer Inbox can be answered with the customer's normal Reply action and routed back into the same thread through the private thread-specific `Reply-To` alias.
 
 ## 12. Operational diagnostics
 
@@ -395,23 +458,25 @@ Operational requirements:
 
 ## 14. Current pending work
 
-Commissioned in M7.4:
+Commissioned:
 
-- authenticated employee Customer Inbox list/detail UI with active/archive/history views;
+- authenticated employee Customer Inbox list/detail UI with active/archive/all views;
+- independent scrolling for the thread list and selected conversation;
 - employee replies archived into the existing communication thread;
 - thread-specific Postmark `Reply-To` routing using `MailboxHash`;
-- a production round trip proving employee outbound -> customer reply ->
-  the same archived thread;
-- Operations API filtering that keeps Postmark inbound-routing addresses out
-  of the employee UI;
-- manual refresh plus lightweight 60-second polling while the Operations page
-  is open.
+- production round trip proving employee outbound -> customer reply -> the same archived thread;
+- Operations API filtering that keeps Postmark inbound-routing addresses out of the employee UI;
+- manual refresh plus lightweight 60-second polling while the Operations page is open;
+- public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
+- safe plain-text `http://`/`https://` URL linkification in Customer Inbox without rendering arbitrary inbound HTML.
 
 Not yet commissioned:
 
-- final customer-thread assignment/status workflow;
-- explicit communications retention/deletion policy;
+- explicit communications retention/deletion/purge policy, including attachment and backup lifecycle;
+- any privileged permanent-delete workflow;
+- final customer-thread assignment workflow if the business needs assignment/ownership;
 - additional Postmark delivery/bounce event ingestion if required;
+- general employee custom-domain mailboxes such as `nathan@`, `jamie@`, `info@`, or `admin@`;
 - observability-report delivery/timers;
 - payment-provider checkout.
 
@@ -426,6 +491,12 @@ Postmark documentation used for the current design:
 - https://postmarkapp.com/support/article/1056-what-are-the-attachment-and-email-size-limits
 - https://postmarkapp.com/support/article/understanding-inbound-webhook-retries-in-postmark
 
+Cloudflare documentation used for the public-address routing layer:
+
+- https://developers.cloudflare.com/dns/zone-setups/full-setup/setup/
+- https://developers.cloudflare.com/email-service/get-started/route-emails/
+- https://developers.cloudflare.com/email-service/configuration/email-routing-addresses/
+
 ## Operations inbox lifecycle
 
 The Operations Customer Inbox separates active work from retained history without deleting communication records.
@@ -436,3 +507,4 @@ The Operations Customer Inbox separates active work from retained history withou
 - Archiving is a workflow/presentation action only. It does not delete messages, recipients, events, or attachment bytes.
 - Permanent deletion is intentionally not exposed in the routine Operations UI. Retention or purge rules should be introduced only through an explicit documented policy.
 - Failed archived communication messages are surfaced with a failure badge. The separate delivery-issues list also exposes failed `email_deliveries`, including legacy failures that may not be associated with a durable communication thread.
+- Message bodies remain archived as plain text/HTML data, but the Operations UI renders the plain-text form and linkifies only explicit `http://` and `https://` URLs. Arbitrary inbound HTML is not executed/rendered as trusted markup.

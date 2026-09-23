@@ -2,14 +2,9 @@
 
 This directory is the authoritative documentation namespace for the D'Acqua Dolce production platform.
 
-**Production state represented:** PT12/M7.3, validated through 2026-09-22.
+**Production state represented:** PT12/M7 communications + public support routing, validated through 2026-09-22.
 
-Latest validated application deployment in this documentation pass:
-
-- source commit: `f5b7622126c57c0fae2fe06c343b225fec7e02af`
-- production release: timestamped immutable release created by the standard deployment workflow
-
-Do not treat those identifiers as configuration constants; they record the validation checkpoint for this documentation revision.
+Production releases are timestamped immutable artifacts created by the standard deployment workflow. The exact source revision for a running release is recorded by release metadata/deployment output; do not treat a historical commit hash in prose as a configuration constant.
 
 ## Document set
 
@@ -17,7 +12,7 @@ Do not treat those identifiers as configuration constants; they record the valid
 - `REBUILD_RUNBOOK.md` — ordered rebuild workflow for recreating the production host from a fresh Debian 13 Vultr instance and the application repository.
 - `OPERATIONS_REFERENCE.md` — day-to-day service, health, log, backup, account, email, deployment, and validation reference.
 - `DEPLOYMENT_AND_ROLLBACK.md` — authoritative application release, catalog reconciliation, activation, retention, migration-compatibility, validation, and rollback workflow.
-- `COMMUNICATIONS_AND_POSTMARK.md` — commissioned outbound/inbound Postmark architecture, PostgreSQL communications archive, webhook security, rebuild sequence, and production validation.
+- `COMMUNICATIONS_AND_POSTMARK.md` — commissioned Cloudflare public inbound routing + Postmark outbound/inbound architecture, PostgreSQL communications archive, webhook security, rebuild sequence, and production validation.
 - `GRAFANA_DASHBOARDS.md` — repo-managed dashboard provisioning, access, and validation.
 - `PENDING_INTEGRATIONS.md` — intentionally unfinished production items that must not be mistaken for commissioned infrastructure.
 

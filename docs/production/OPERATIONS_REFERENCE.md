@@ -378,10 +378,12 @@ The application Postmark server token lives in `/etc/dacqua-dolce/backend.env`. 
 
 Application transactional mail is commissioned through the Postmark HTTPS API. Direct outbound TCP/25 remains blocked by Vultr and is not required for the application mail path.
 
-Inbound customer/company mail is also commissioned:
+Public inbound customer mail is commissioned:
 
     sender
-      -> Postmark inbound processing
+      -> support@dacquadolce.com
+      -> Cloudflare Email Routing
+      -> private Postmark inbound destination
       -> /api/webhooks/postmark/inbound
       -> FastAPI
       -> PostgreSQL communications archive
@@ -403,7 +405,10 @@ Useful boundaries:
 - inbound attachments are stored in PostgreSQL with size/hash/content metadata;
 - provider MessageID is used for inbound idempotency;
 - raw Postmark payload duplication is not required;
-- Customer Inbox supports active/archive history views and employee replies;
+- Customer Inbox supports Inbox/Archived/All views, archive/restore, and employee replies;
+- explicit `http://` and `https://` URLs in archived plain-text bodies are rendered as safe external links; inbound HTML remains untrusted and is not rendered as executable markup;
+- `support@dacquadolce.com` is the public inbound customer address; the private Postmark destination remains hidden;
+- Cloudflare catch-all routing remains disabled;
 - observability report delivery/timers remain separate and pending.
 
 Protected application configuration:
@@ -449,6 +454,21 @@ When diagnosing communications, prefer counts, timestamps, statuses, body charac
 Detailed architecture/rebuild/acceptance procedure:
 
     docs/production/COMMUNICATIONS_AND_POSTMARK.md
+
+Safe DNS/mail-routing checks from LOCAL macOS:
+
+    dig +short NS dacquadolce.com
+    dig +short MX dacquadolce.com
+    dig +short TXT dacquadolce.com
+    dig +short CNAME pm-bounces.dacquadolce.com
+    dig +short TXT 20260917171819pm._domainkey.dacquadolce.com
+
+Expected authoritative DNS provider: Cloudflare. Current assigned nameservers:
+
+    carrera.ns.cloudflare.com
+    earl.ns.cloudflare.com
+
+The public web records remain DNS-only; do not assume Cloudflare is proxying HTTP merely because it is authoritative for DNS.
 
 ## Account and role administration
 

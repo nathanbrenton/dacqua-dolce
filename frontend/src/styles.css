@@ -3308,6 +3308,25 @@ textarea:focus-visible {
   color: var(--ink-muted);
 }
 
+.operations-inbox-body a {
+  color: var(--accent);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.operations-inbox-body a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.operations-inbox-body a:focus-visible {
+  border-radius: 2px;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .operations-inbox-quoted-history {
   margin-top: 10px;
   border-top: 1px solid var(--hairline);

@@ -397,42 +397,40 @@ Use the repository verifier when applicable:
 
     scripts/production/verify_release.sh https://dacquadolce.com
 
-## 20. Configure and validate application Postmark email and inbound communications
+## 20. Configure and validate DNS, Cloudflare Email Routing, Postmark, and customer communications
 
-Application outbound and inbound communications are commissioned through Postmark plus the PostgreSQL communications archive.
+Application outbound/inbound communications are commissioned through Cloudflare authoritative DNS + Email Routing, Postmark transport/inbound processing, and the PostgreSQL communications archive.
 
-The detailed technical procedure is maintained in:
+Detailed technical procedure:
 
     docs/production/COMMUNICATIONS_AND_POSTMARK.md
 
-Use the following clean rebuild order.
+### 20.1 Understand the service boundaries
 
-### 20.1 Configure outbound application email
+- **Registrar:** owns the domain registration/delegation. D'Acqua Dolce currently uses Moniker.
+- **Authoritative DNS:** publishes the DNS zone. D'Acqua Dolce currently uses Cloudflare.
+- **Cloudflare Email Routing:** receives mail for public custom-domain addresses and forwards selected addresses to verified destinations. It is not a human mailbox.
+- **Postmark:** sends application email through HTTPS and converts inbound mail sent to its private inbound destination into webhook requests.
+- **FastAPI/PostgreSQL:** provide the authenticated employee Customer Inbox and durable archive.
+
+Keeping these roles separate makes the design portable: another company can replace the registrar, DNS provider, or transport provider without changing the conceptual boundaries.
+
+### 20.2 Configure outbound application email
 
 Populate only the protected runtime environment:
 
     DACQUA_PUBLIC_ORIGIN=https://dacquadolce.com
     DACQUA_EMAIL_PROVIDER=postmark
     DACQUA_POSTMARK_SERVER_TOKEN=<secret>
-    DACQUA_EMAIL_FROM=<verified-sender>
+    DACQUA_EMAIL_FROM=<verified-no-reply-sender>
+    DACQUA_EMAIL_SUPPORT_FROM=support@dacquadolce.com
     DACQUA_EMAIL_OPERATOR_TO=<business-operator-address>
 
-The `dacquadolce.com` sending domain must be verified in Postmark.
+Never place populated tokens or credentials in Git, documentation, screenshots, tickets, or shell history. Direct TCP/25 is not required.
 
-Never place populated tokens or credentials in Git, documentation, screenshots, tickets, or shell history.
+### 20.3 Confirm communications schema
 
-After configuration:
-
-1. restart `dacqua-dolce-api.service`;
-2. verify local readiness;
-3. use the smallest practical controlled outbound acceptance test;
-4. verify delivery/archive metadata without printing complete customer bodies or secrets.
-
-Direct TCP/25 is not required.
-
-### 20.2 Confirm communications schema
-
-Deploy through the normal release workflow and verify Alembic is at the intended current head. The communications schema was introduced by:
+The communications schema was introduced by Alembic revision:
 
     c41b7e2a9d63
 
@@ -444,103 +442,97 @@ Expected tables:
     communication_attachments
     communication_events
 
-Expected ownership:
+Expected owner/runtime roles:
 
-    dacqua_dolce_migrator
+    owner/migrator: dacqua_dolce_migrator
+    runtime:        dacqua_dolce_app
 
-Expected runtime role:
+### 20.4 Provision and validate the Postmark inbound webhook
 
-    dacqua_dolce_app
-
-The runtime role requires ordinary CRUD privileges but must not own the application schema.
-
-### 20.3 Provision inbound webhook credentials
-
-Generate strong values and store them only in:
-
-    /etc/dacqua-dolce/backend.env
-
-Variable names:
+Generate strong Basic Auth values in `/etc/dacqua-dolce/backend.env`:
 
     DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
     DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
 
-Do not print the values during routine provisioning or validation.
-
-Restart the API after adding the variables.
-
-### 20.4 Validate the API authentication boundary over loopback
-
-Expected behavior:
+Validate over loopback and public HTTPS:
 
     wrong/missing Basic Auth -> HTTP 401
     valid Basic Auth + {}    -> HTTP 422
 
-The `422` proves authentication succeeded and schema validation rejected the intentionally incomplete Postmark payload.
+Install the canonical Nginx template. Only `/api/webhooks/postmark/inbound` receives the 64 MiB envelope; the ordinary site remains 2 MiB.
 
-This test does not send email or create a valid inbound archive record.
+Configure Postmark's Default Inbound Stream webhook privately and use Postmark **Check**. Do not record the complete authenticated URL or private Postmark inbound address.
 
-### 20.5 Install the HTTPS edge configuration
+### 20.5 Rebuild authoritative DNS safely
 
-The canonical Nginx template keeps:
+Before changing registrar nameservers, create/import the complete Cloudflare zone and verify at minimum:
 
-    client_max_body_size 2m;
+- apex web `A` record;
+- `www` alias;
+- Postmark custom Return-Path CNAME;
+- Postmark DKIM TXT selector/value;
+- any other production verification/CAA/DMARC records that exist at rebuild time.
 
-for the ordinary site and grants only:
+For D'Acqua Dolce at this checkpoint:
 
-    /api/webhooks/postmark/inbound
+    A      @            -> 144.202.114.17       DNS only
+    CNAME  www          -> dacquadolce.com      DNS only
+    CNAME  pm-bounces   -> pm.mtasv.net         DNS only
+    TXT    20260917171819pm._domainkey          Postmark-generated DKIM value
 
-a 64 MiB request envelope.
+Use the provider-generated DKIM value from Postmark; do not copy an obsolete key from prose.
 
-Install the canonical template:
+Change registrar delegation only after the zone is complete. Current D'Acqua Dolce Cloudflare nameservers are:
 
-    sudo scripts/production/install_nginx_site.sh \
-      https \
-      dacquadolce.com \
-      www.dacquadolce.com
+    carrera.ns.cloudflare.com
+    earl.ns.cloudflare.com
 
-Validate:
+For a new company/domain, use the nameservers Cloudflare actually assigns. DNSSEC should remain disabled during a nameserver migration unless the old/new DS/DNSSEC handoff has been explicitly planned; enable it later as a separate validated security change.
 
-    sudo nginx -t
-    systemctl is-active nginx
+After delegation, verify authoritative/public DNS and public HTTPS before enabling mail routing.
 
-Repeat the same `401`/`422` webhook-boundary test through public HTTPS.
+### 20.6 Enable Cloudflare Email Routing
 
-### 20.6 Configure the Postmark Default Inbound Stream
+Use Cloudflare's Email Routing onboarding so the provider creates its current root MX/SPF/DKIM records.
 
-In the D'Acqua Dolce Postmark Server:
+Definitions:
 
-1. open **Default Inbound Stream**;
-2. open **Settings**;
-3. set the webhook to the authenticated production URL;
-4. keep the complete populated authenticated URL out of documentation and diagnostics;
-5. keep raw-email inclusion disabled unless a later requirement explicitly justifies it;
-6. save the configuration;
-7. use Postmark **Check**.
+- **MX:** inbound mail-exchanger destination records;
+- **SPF:** sender-policy TXT record;
+- **DKIM:** cryptographic signing record identified by a selector;
+- **TTL:** resolver cache lifetime.
 
-Postmark Check should receive HTTP 200 and create a synthetic inbound archive record.
+Do not remove the separate Postmark DKIM selector or Postmark Return-Path CNAME. Different selectors/providers can coexist when serving different purposes.
 
-### 20.7 Perform one real inbound acceptance test
+Add the private Postmark inbound address as a Cloudflare destination and complete the destination verification message through the Customer Inbox. Keep the destination value out of documentation.
 
-Send one controlled message to the provider-assigned inbound address.
+Create:
 
-Then verify:
+    support@dacquadolce.com -> verified private Postmark inbound destination
 
-- an inbound `communication_messages` row exists;
-- direction is `inbound`;
-- status is `received`;
-- provider is `postmark`;
-- provider message identifier is present;
-- recipient/event rows exist as appropriate;
-- body character counts are plausible without printing the body;
-- attachment rows exist when an attachment was deliberately included;
-- retry attempts for the same provider MessageID do not create duplicate message rows.
+Keep catch-all disabled unless the business explicitly wants arbitrary local parts accepted.
 
-Use MessageID fingerprints rather than printing full provider IDs when correlation is needed.
+### 20.7 Perform public inbound acceptance
 
-Avoid repeated live-email tests. The provider account has a limited monthly allowance and production test messages create real durable records.
+Send one controlled external message to:
 
-### 20.8 Security/privacy boundary
+    support@dacquadolce.com
+
+Verify the message appears as a new inbound conversation in Operations -> Customer Inbox. This validates:
+
+    public address -> Cloudflare -> Postmark -> webhook -> PostgreSQL -> Operations UI
+
+Use metadata-oriented diagnostics and avoid printing the private Postmark destination, verification tokens, complete provider IDs, customer bodies, or attachment bytes.
+
+### 20.8 Validate threaded employee replies
+
+When reply plumbing has materially changed, send one employee reply from Customer Inbox, then answer it using the customer's normal Reply action. The return message should enter the same durable communication thread.
+
+Employee replies visibly originate from `support@dacquadolce.com`; the private thread-specific Postmark alias is used only as `Reply-To`.
+
+Routine releases that do not change communications transport do not need another live-email acceptance test.
+
+### 20.9 Security/privacy/storage boundary
 
 The communications archive contains durable message bodies and may contain attachment bytes. Treat it as sensitive application data.
 
@@ -548,11 +540,11 @@ Do not:
 
 - log full inbound payloads;
 - dump message bodies into tickets/chat;
-- expose the full assigned inbound address unnecessarily;
-- expose Basic Auth credentials;
-- store raw provider payload duplicates without a documented requirement.
+- expose the private Postmark inbound destination;
+- expose webhook credentials;
+- store unnecessary duplicate raw provider payloads.
 
-Include this data in backup/restore planning and define a business retention/deletion policy before broad employee use.
+Customer Inbox Archive/Restore is a workflow state, not deletion. Define a formal retention/purge policy before adding permanent deletion, especially for attachment bytes and backup copies.
 
 ## 21. Install observability stack
 
