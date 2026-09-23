@@ -10,6 +10,7 @@ import {
   getOperationsCommunicationThread,
   getOperationsCommunicationThreads,
   replyToOperationsCommunicationThread,
+  updateOperationsCommunicationThreadStatus,
   type OperationsCommunicationMessage,
   type OperationsCommunicationThread,
   type OperationsCommunicationThreadDetail,
@@ -159,7 +160,7 @@ function ArchivedMessageBody({
   );
 }
 
-const AUTO_REFRESH_MS = 30_000;
+const AUTO_REFRESH_MS = 60_000;
 
 function relatedRecordLabel(
   type: string | null,
@@ -189,6 +190,8 @@ function deliveryNotice(status: string): string {
   return "Reply attempt was archived, but email delivery failed.";
 }
 
+type InboxView = "active" | "archived" | "all";
+
 export function CommunicationsInbox() {
   const [threads, setThreads] =
     useState<OperationsCommunicationThread[]>([]);
@@ -197,12 +200,17 @@ export function CommunicationsInbox() {
   const [threadDetail, setThreadDetail] =
     useState<OperationsCommunicationThreadDetail | null>(null);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<InboxView>("active");
   const [replyBody, setReplyBody] = useState("");
   const [replyNotice, setReplyNotice] = useState<string | null>(null);
   const [replyFailed, setReplyFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [archivingThreadId, setArchivingThreadId] =
+    useState<string | null>(null);
+  const [selectionPulseThreadId, setSelectionPulseThreadId] =
+    useState<string | null>(null);
   const [lastRefreshedAt, setLastRefreshedAt] =
     useState<Date | null>(null);
   const [replySending, setReplySending] = useState(false);
@@ -284,17 +292,45 @@ export function CommunicationsInbox() {
     };
   }, [refreshInbox]);
 
+  useEffect(() => {
+    if (selectionPulseThreadId === null) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSelectionPulseThreadId(null);
+    }, 420);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [selectionPulseThreadId]);
+
   const filteredThreads = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (query.length === 0) {
-      return threads;
-    }
+    return threads.filter((thread) => {
+      const matchesView =
+        view === "all"
+        || (view === "active" && thread.status === "open")
+        || (view === "archived" && thread.status === "closed");
 
-    return threads.filter((thread) =>
-      threadSearchText(thread).includes(query),
-    );
-  }, [search, threads]);
+      if (!matchesView) {
+        return false;
+      }
+
+      return (
+        query.length === 0
+        || threadSearchText(thread).includes(query)
+      );
+    });
+  }, [search, threads, view]);
+
+  const inboxCounts = useMemo(() => ({
+    active: threads.filter((thread) => thread.status === "open").length,
+    archived: threads.filter((thread) => thread.status === "closed").length,
+    all: threads.length,
+  }), [threads]);
 
   async function openThread(threadId: string): Promise<void> {
     setSelectedThreadId(threadId);
@@ -316,6 +352,108 @@ export function CommunicationsInbox() {
       );
     } finally {
       setDetailLoading(false);
+    }
+  }
+
+  async function archiveThreadFromList(
+    threadId: string,
+  ): Promise<void> {
+    const currentIndex = filteredThreads.findIndex(
+      (thread) => thread.id === threadId,
+    );
+    const nextThread =
+      filteredThreads[currentIndex + 1]
+      ?? filteredThreads[currentIndex - 1]
+      ?? null;
+
+    setRefreshing(true);
+    setArchivingThreadId(threadId);
+    setError(null);
+
+    try {
+      const [updated] = await Promise.all([
+        updateOperationsCommunicationThreadStatus(
+          threadId,
+          "closed",
+        ),
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 180);
+        }),
+      ]);
+
+      setThreads((current) =>
+        current.map((thread) =>
+          thread.id === updated.id ? updated : thread,
+        ),
+      );
+      setReplyBody("");
+      setReplyNotice(null);
+      setReplyFailed(false);
+
+      if (nextThread === null) {
+        setSelectedThreadId(null);
+        setThreadDetail(null);
+      } else {
+        setSelectionPulseThreadId(nextThread.id);
+        await openThread(nextThread.id);
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Conversation could not be archived.",
+      );
+    } finally {
+      setArchivingThreadId(null);
+      setRefreshing(false);
+    }
+  }
+
+  async function setThreadArchived(
+    archived: boolean,
+  ): Promise<void> {
+    if (threadDetail === null) {
+      return;
+    }
+
+    setRefreshing(true);
+    setError(null);
+
+    try {
+      const updated =
+        await updateOperationsCommunicationThreadStatus(
+          threadDetail.id,
+          archived ? "closed" : "open",
+        );
+
+      setThreads((current) =>
+        current.map((thread) =>
+          thread.id === updated.id ? updated : thread,
+        ),
+      );
+      setThreadDetail((current) =>
+        current === null
+          ? null
+          : {
+              ...current,
+              status: updated.status,
+              failed_message_count: updated.failed_message_count,
+            },
+      );
+      setReplyNotice(
+        archived
+          ? "Conversation archived."
+          : "Conversation restored to the active inbox.",
+      );
+      setReplyFailed(false);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Conversation status could not be updated.",
+      );
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -401,10 +539,38 @@ export function CommunicationsInbox() {
           </button>
           <small>
             {lastRefreshedAt === null
-              ? "Auto-refreshes every 30 seconds"
-              : `Updated ${lastRefreshedAt.toLocaleTimeString()} · auto-refresh 30s`}
+              ? "Auto-refreshes every 60 seconds"
+              : `Updated ${lastRefreshedAt.toLocaleTimeString()} · auto-refresh 60s`}
           </small>
         </div>
+      </div>
+
+      <div
+        className="operations-inbox-tabs"
+        role="group"
+        aria-label="Conversation view"
+      >
+        {(["active", "archived", "all"] as InboxView[]).map(
+          (option) => (
+            <button
+              key={option}
+              type="button"
+              className={view === option ? "is-active" : ""}
+              aria-pressed={view === option}
+              onClick={() => {
+                setView(option);
+              }}
+            >
+              {option === "active"
+                ? "Inbox"
+                : option === "archived"
+                  ? "Archived"
+                  : "All"}
+              {" "}
+              <span>{inboxCounts[option]}</span>
+            </button>
+          ),
+        )}
       </div>
 
       <label
@@ -436,57 +602,102 @@ export function CommunicationsInbox() {
             <p className="account-muted">Loading conversations…</p>
           ) : threads.length === 0 ? (
             <p className="account-muted">
-              No archived conversations yet.
+              No customer conversations yet.
             </p>
           ) : filteredThreads.length === 0 ? (
             <p className="account-muted">
-              No conversations match this search.
+              No conversations match this view.
             </p>
           ) : (
             filteredThreads.map((thread) => (
-              <button
+              <div
                 key={thread.id}
-                type="button"
                 className={
-                  "operations-inbox-thread "
+                  "operations-inbox-thread-row "
                   + (
-                    selectedThreadId === thread.id
-                      ? "is-selected"
+                    archivingThreadId === thread.id
+                      ? "is-archiving"
                       : ""
                   )
                 }
-                aria-pressed={selectedThreadId === thread.id}
-                onClick={() => {
-                  void openThread(thread.id);
-                }}
               >
-                <span className="operations-inbox-thread-meta">
-                  {thread.latest_direction ?? "conversation"}
-                  {" · "}
-                  {thread.status}
-                  {" · "}
-                  {thread.message_count}
-                  {thread.message_count === 1 ? " message" : " messages"}
-                </span>
+                <button
+                  type="button"
+                  className={
+                    "operations-inbox-thread "
+                    + (
+                      selectedThreadId === thread.id
+                        ? "is-selected "
+                        : ""
+                    )
+                    + (
+                      selectionPulseThreadId === thread.id
+                        ? "is-selection-arrival "
+                        : ""
+                    )
+                    + (
+                      thread.failed_message_count > 0
+                        ? "has-failure"
+                        : ""
+                    )
+                  }
+                  aria-pressed={selectedThreadId === thread.id}
+                  onClick={() => {
+                    void openThread(thread.id);
+                  }}
+                >
+                  <span className="operations-inbox-thread-meta">
+                    {thread.latest_direction ?? "conversation"}
+                    {" · "}
+                    {thread.status === "closed" ? "archived" : "open"}
+                    {" · "}
+                    {thread.message_count}
+                    {thread.message_count === 1 ? " message" : " messages"}
+                    {thread.failed_message_count > 0 ? (
+                      <span className="operations-status-badge is-failed">
+                        Failed
+                      </span>
+                    ) : null}
+                  </span>
 
-                <strong>
-                  {thread.latest_subject
-                    ?? thread.subject
-                    ?? "Untitled conversation"}
-                </strong>
+                  <strong>
+                    {thread.latest_subject
+                      ?? thread.subject
+                      ?? "Untitled conversation"}
+                  </strong>
 
-                <span>
-                  {thread.customer_email
-                    ?? thread.latest_sender_address
-                    ?? "Unmatched sender"}
-                </span>
+                  <span>
+                    {thread.customer_email
+                      ?? thread.latest_sender_address
+                      ?? "Unmatched sender"}
+                  </span>
 
-                <small>
-                  {formatTimestamp(
-                    thread.last_message_at ?? thread.created_at,
-                  )}
-                </small>
-              </button>
+                  <small>
+                    {formatTimestamp(
+                      thread.last_message_at ?? thread.created_at,
+                    )}
+                  </small>
+                </button>
+
+                {view === "active" && thread.status === "open" ? (
+                  <button
+                    type="button"
+                    className="operations-inbox-thread-archive"
+                    disabled={refreshing}
+                    aria-busy={archivingThreadId === thread.id}
+                    aria-label={`Archive ${
+                      thread.latest_subject
+                      ?? thread.subject
+                      ?? "conversation"
+                    }`}
+                    onClick={() => {
+                      void archiveThreadFromList(thread.id);
+                    }}
+                  >
+                    Archive
+                  </button>
+                ) : null}
+              </div>
             ))
           )}
         </div>
@@ -512,14 +723,33 @@ export function CommunicationsInbox() {
           ) : (
             <>
               <header className="operations-inbox-conversation-header">
-                <p className="product-meta">
-                  {threadDetail.status}
-                  {" · "}
-                  {threadDetail.messages.length}
-                  {threadDetail.messages.length === 1
-                    ? " message"
-                    : " messages"}
-                </p>
+                <div className="operations-inbox-conversation-titlebar">
+                  <p className="product-meta">
+                    {threadDetail.status === "closed" ? "archived" : "open"}
+                    {" · "}
+                    {threadDetail.messages.length}
+                    {threadDetail.messages.length === 1
+                      ? " message"
+                      : " messages"}
+                    {threadDetail.failed_message_count > 0 ? (
+                      <span className="operations-status-badge is-failed">
+                        Failed delivery
+                      </span>
+                    ) : null}
+                  </p>
+                  <button
+                    type="button"
+                    className="operations-action secondary compact"
+                    disabled={refreshing}
+                    onClick={() => {
+                      void setThreadArchived(threadDetail.status !== "closed");
+                    }}
+                  >
+                    {threadDetail.status === "closed"
+                      ? "Restore to inbox"
+                      : "Archive"}
+                  </button>
+                </div>
                 <h3>
                   {threadDetail.subject
                     ?? threadDetail.latest_subject
@@ -549,19 +779,27 @@ export function CommunicationsInbox() {
                     key={message.id}
                     className={
                       "operations-inbox-message "
-                      + `is-${message.direction}`
+                      + `is-${message.direction} `
+                      + (message.status === "failed" ? "has-failure" : "")
                     }
                   >
                     <header>
                       <div>
-                        <span
-                          className={
-                            "operations-inbox-direction "
-                            + `is-${message.direction}`
-                          }
-                        >
-                          {message.direction}
-                        </span>
+                        <div className="operations-inbox-message-badges">
+                          <span
+                            className={
+                              "operations-inbox-direction "
+                              + `is-${message.direction}`
+                            }
+                          >
+                            {message.direction}
+                          </span>
+                          {message.status === "failed" ? (
+                            <span className="operations-status-badge is-failed">
+                              Failed
+                            </span>
+                          ) : null}
+                        </div>
                         <strong>
                           {message.sender_name !== null
                             ? `${message.sender_name} <${message.sender_address}>`
@@ -613,9 +851,11 @@ export function CommunicationsInbox() {
                 <div>
                   <strong>Reply</strong>
                   <small>
-                    {threadDetail.reply_target !== null
-                      ? `To ${threadDetail.reply_target}`
-                      : "No reply address is available for this conversation."}
+                    {threadDetail.status === "closed"
+                      ? "Restore this conversation to the inbox before replying."
+                      : threadDetail.reply_target !== null
+                        ? `To ${threadDetail.reply_target}`
+                        : "No reply address is available for this conversation."}
                   </small>
                 </div>
 
@@ -626,6 +866,7 @@ export function CommunicationsInbox() {
                   maxLength={20000}
                   disabled={
                     replySending
+                    || threadDetail.status === "closed"
                     || threadDetail.reply_target === null
                   }
                   onChange={(event) => {
@@ -657,6 +898,7 @@ export function CommunicationsInbox() {
                     className="operations-action"
                     disabled={
                       replySending
+                      || threadDetail.status === "closed"
                       || threadDetail.reply_target === null
                       || replyBody.trim().length === 0
                     }

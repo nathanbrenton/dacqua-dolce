@@ -10,6 +10,9 @@ from app.models.catalog import (
     InventoryStatus,
     PricingPolicyMode,
 )
+from app.models.communications import (
+    CommunicationThreadStatus,
+)
 from app.models.quote import (
     QuoteRequestStatus,
 )
@@ -95,6 +98,7 @@ class OperationsCommunicationThreadRead(BaseModel):
     latest_direction: str | None
     latest_sender_address: str | None
     latest_subject: str | None
+    failed_message_count: int
 
 
 class OperationsCommunicationThreadDetailRead(
@@ -104,6 +108,10 @@ class OperationsCommunicationThreadDetailRead(
     messages: list[OperationsCommunicationMessageRead] = Field(
         default_factory=list,
     )
+
+
+class OperationsCommunicationThreadStatusUpdate(BaseModel):
+    status: CommunicationThreadStatus
 
 
 class OperationsCommunicationReplyCreate(BaseModel):

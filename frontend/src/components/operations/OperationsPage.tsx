@@ -6,6 +6,11 @@ import {
 } from "react";
 
 import {
+  getProfile,
+  type CustomerProfile,
+} from "../../api/account";
+
+import {
   getAdministrationAccounts,
   updateAdministrationRoles,
   type AdministrationAccount,
@@ -14,6 +19,7 @@ import {
 
 import {
   getOperationsAuditEvents,
+  getOperationsCommunications,
   getOperationsCatalog,
   getOperationsCustomers,
   getOperationsOrders,
@@ -24,6 +30,7 @@ import {
   updateQuoteNotes,
   updateQuoteStatus,
   type OperationsAuditEvent,
+  type OperationsCommunication,
   type OperationsCustomer,
   type OperationsOrder,
   type OperationsProduct,
@@ -40,10 +47,6 @@ import {
 import {
   FooterCopyright,
 } from "../brand/FooterCopyright";
-import {
-  AppearanceToggle,
-} from "../theme/AppearanceToggle";
-
 import {
   CommunicationsInbox,
 } from "./CommunicationsInbox";
@@ -64,9 +67,6 @@ type OperationsPageProps = {
   currentUserEmail: string | null;
   onNavigate: (path: string) => void;
   appearance: AppearanceMode;
-  onAppearanceChange: (
-    appearance: AppearanceMode,
-  ) => void;
   logoVariant: LogoVariantId;
   developerControlsOpen: boolean;
   onToggleDeveloperControls: () => void;
@@ -144,6 +144,8 @@ type SaveState =
   | "saving"
   | "saved";
 
+type RequestView = "active" | "closed" | "all";
+
 function dollarsToMinor(value: string): number | null {
   const normalized = value.trim();
 
@@ -218,7 +220,6 @@ export function OperationsPage({
   currentUserEmail,
   onNavigate,
   appearance,
-  onAppearanceChange,
   logoVariant,
   developerControlsOpen,
   onToggleDeveloperControls,
@@ -242,6 +243,12 @@ export function OperationsPage({
     useState<OperationsSummary | null>(null);
   const [quotes, setQuotes] =
     useState<OperationsQuote[]>([]);
+  const [requestView, setRequestView] =
+    useState<RequestView>("active");
+  const [communications, setCommunications] =
+    useState<OperationsCommunication[]>([]);
+  const [operatorProfile, setOperatorProfile] =
+    useState<CustomerProfile | null>(null);
   const [auditEvents, setAuditEvents] =
     useState<OperationsAuditEvent[]>([]);
   const [auditSearch, setAuditSearch] =
@@ -310,6 +317,7 @@ export function OperationsPage({
     void Promise.all([
       getOperationsSummary(),
       getOperationsQuotes(),
+      getOperationsCommunications(),
       getOperationsCustomers(),
       getOperationsOrders(),
       getOperationsCatalog(),
@@ -317,12 +325,14 @@ export function OperationsPage({
       .then(([
         summaryResult,
         quoteResult,
+        communicationResult,
         customerResult,
         orderResult,
         productResult,
       ]) => {
         setSummary(summaryResult);
         setQuotes(quoteResult);
+        setCommunications(communicationResult);
         setCustomers(customerResult);
         setOrders(orderResult);
         setProducts(productResult);
@@ -368,6 +378,30 @@ export function OperationsPage({
       .finally(() => {
         setLoading(false);
       });
+  }, [authorized]);
+
+  useEffect(() => {
+    if (!authorized) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void getProfile()
+      .then((profile) => {
+        if (!cancelled) {
+          setOperatorProfile(profile);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setOperatorProfile(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [authorized]);
 
   async function loadAdministrationAccounts(): Promise<void> {
@@ -949,6 +983,38 @@ export function OperationsPage({
     });
   }
 
+  const visibleQuotes = useMemo(() => {
+    if (requestView === "all") {
+      return quotes;
+    }
+
+    return quotes.filter((quote) =>
+      requestView === "closed"
+        ? quote.status === "closed"
+        : quote.status !== "closed",
+    );
+  }, [quotes, requestView]);
+
+  const requestCounts = useMemo(() => ({
+    active: quotes.filter((quote) => quote.status !== "closed").length,
+    closed: quotes.filter((quote) => quote.status === "closed").length,
+    all: quotes.length,
+  }), [quotes]);
+
+  const failedDeliveries = useMemo(
+    () => communications.filter((item) => item.status === "failed"),
+    [communications],
+  );
+
+  const operatorName = [
+    operatorProfile?.first_name,
+    operatorProfile?.last_name,
+  ]
+    .filter((value): value is string => (
+      typeof value === "string" && value.trim().length > 0
+    ))
+    .join(" ");
+
   const nextAction = (
     summary === null
       ? null
@@ -976,7 +1042,7 @@ export function OperationsPage({
                     : "deliveries require"
                 )
                 + " review.",
-              href: "#communications-history",
+              href: "#email-delivery-issues",
             }
           : summary.open_quotes > 0
             ? {
@@ -1019,32 +1085,37 @@ export function OperationsPage({
           </span>
         </a>
 
-        <div className="operations-header-actions">
+        <div className="operations-header-account">
+          <div className="operations-header-identity">
+            {operatorName.length > 0 ? (
+              <strong>{operatorName}</strong>
+            ) : null}
+            <span title={currentUserEmail ?? undefined}>
+              {currentUserEmail ?? "Operations user"}
+            </span>
+          </div>
+
           <button
             type="button"
-            className="text-button"
+            className="operations-action operations-header-button"
             onClick={() => onNavigate("/")}
           >
-            ← Customer site
+            Customer site
           </button>
 
-          <AppearanceToggle
-            appearance={appearance}
-            onAppearanceChange={
-              onAppearanceChange
-            }
-          />
+          <button
+            type="button"
+            className="operations-action operations-header-button"
+            onClick={() => onNavigate("/account")}
+          >
+            Account
+          </button>
         </div>
       </header>
 
-      <header className="operations-heading">
+      <div className="operations-workspace-label">
         <p className="eyebrow">Operations</p>
-        <h1>Business control, without business rules in the browser.</h1>
-        <p>
-          Pricing, inventory, and quote state are authoritative
-          server-side records with role enforcement and audit events.
-        </p>
-      </header>
+      </div>
 
       {error !== null ? (
         <p className="operations-alert operations-error" role="alert">
@@ -1106,6 +1177,35 @@ export function OperationsPage({
         </section>
       ) : null}
 
+      {failedDeliveries.length > 0 ? (
+        <section
+          id="email-delivery-issues"
+          className="operations-delivery-issues"
+          aria-labelledby="email-delivery-issues-title"
+        >
+          <div>
+            <p className="eyebrow">Delivery Issues</p>
+            <h2 id="email-delivery-issues-title">Failed email deliveries</h2>
+          </div>
+          <div className="operations-delivery-issue-list">
+            {failedDeliveries.map((delivery) => (
+              <article key={delivery.id}>
+                <span className="operations-status-badge is-failed">
+                  Failed
+                </span>
+                <strong>{delivery.subject}</strong>
+                <span>{delivery.recipient}</span>
+                <small>
+                  {delivery.category.replaceAll("_", " ")}
+                  {" · "}
+                  {new Date(delivery.created_at).toLocaleString()}
+                </small>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section
         id="communications-history"
         className="operations-section operations-customer-inbox-section"
@@ -1122,11 +1222,43 @@ export function OperationsPage({
           <h2>Customer requests</h2>
         </div>
 
+        <div
+          className="operations-request-tabs"
+          role="group"
+          aria-label="Customer request view"
+        >
+          {(["active", "closed", "all"] as RequestView[]).map(
+            (option) => (
+              <button
+                key={option}
+                type="button"
+                className={requestView === option ? "is-active" : ""}
+                aria-pressed={requestView === option}
+                onClick={() => {
+                  setRequestView(option);
+                }}
+              >
+                {option === "active"
+                  ? "Active requests"
+                  : option === "closed"
+                    ? "Closed requests"
+                    : "All requests"}
+                {" "}
+                <span>{requestCounts[option]}</span>
+              </button>
+            ),
+          )}
+        </div>
+
         {quotes.length === 0 ? (
           <p className="account-muted">No quote requests.</p>
+        ) : visibleQuotes.length === 0 ? (
+          <p className="account-muted">
+            No customer requests in this view.
+          </p>
         ) : (
           <div className="operations-quote-list">
-            {quotes.map((quote) => (
+            {visibleQuotes.map((quote) => (
               <article key={quote.id} className="operations-quote">
                 <div className="operations-quote-main">
                   <p className="product-meta">

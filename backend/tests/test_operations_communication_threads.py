@@ -20,7 +20,10 @@ from app.models.communications import (
     CommunicationThreadStatus,
 )
 from app.models.identity import User
-from app.schemas.operations import OperationsCommunicationReplyCreate
+from app.schemas.operations import (
+    OperationsCommunicationReplyCreate,
+    OperationsCommunicationThreadStatusUpdate,
+)
 
 
 def _allow_operations(
@@ -109,6 +112,7 @@ def test_communication_thread_list_and_detail_expose_archive(
         assert row.latest_direction == "inbound"
         assert row.latest_sender_address == "customer@example.test"
         assert row.latest_subject == "Water test follow-up"
+        assert row.failed_message_count == 0
 
         detail = operations.get_communication_thread(
             thread.id,
@@ -274,5 +278,77 @@ def test_reply_archives_into_existing_thread_without_live_email(
         assert reply.sender_address == "support@dacquadolce.com"
         assert reply.body_text == "We can help with the next step."
         assert reply.recipients[0].address == "customer@example.test"
+
+        db.rollback()
+
+
+def test_thread_failure_count_and_archive_restore(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        actor = User(
+            email=f"operator-{uuid.uuid4()}@example.test",
+        )
+        db.add(actor)
+        db.flush()
+
+        thread = CommunicationThread(
+            subject="Delivery problem",
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+
+        db.add(
+            CommunicationMessage(
+                thread_id=thread.id,
+                direction=CommunicationDirection.outbound,
+                status=CommunicationMessageStatus.failed,
+                provider="postmark",
+                provider_message_id=f"failed-{uuid.uuid4()}",
+                message_stream="outbound",
+                sender_address="support@dacquadolce.com",
+                subject="Delivery problem",
+                body_text="Test failure",
+                content_redacted=False,
+                created_at=now,
+            )
+        )
+        db.flush()
+
+        monkeypatch.setattr(
+            db,
+            "commit",
+            lambda: db.flush(),
+        )
+
+        rows = operations.list_communication_threads(
+            db,  # type: ignore[arg-type]
+            actor,  # type: ignore[arg-type]
+        )
+        row = next(item for item in rows if item.id == str(thread.id))
+        assert row.failed_message_count == 1
+        assert row.status == "open"
+
+        archived = operations.update_communication_thread_status(
+            thread.id,
+            OperationsCommunicationThreadStatusUpdate(status="closed"),
+            db,  # type: ignore[arg-type]
+            actor,  # type: ignore[arg-type]
+        )
+        assert archived.status == "closed"
+        assert archived.failed_message_count == 1
+
+        restored = operations.update_communication_thread_status(
+            thread.id,
+            OperationsCommunicationThreadStatusUpdate(status="open"),
+            db,  # type: ignore[arg-type]
+            actor,  # type: ignore[arg-type]
+        )
+        assert restored.status == "open"
 
         db.rollback()

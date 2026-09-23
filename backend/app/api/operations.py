@@ -42,6 +42,7 @@ from app.schemas.operations import (
     OperationsCommunicationReplyRead,
     OperationsCommunicationThreadDetailRead,
     OperationsCommunicationThreadRead,
+    OperationsCommunicationThreadStatusUpdate,
     OperationsCustomerAddressRead,
     OperationsCustomerRead,
     OperationsInventoryRead,
@@ -390,6 +391,11 @@ def _communication_thread_list_reads(
                     if latest is not None
                     else None
                 ),
+                failed_message_count=sum(
+                    1
+                    for message in thread_messages
+                    if message.status.value == "failed"
+                ),
             )
         )
 
@@ -545,6 +551,56 @@ def _communication_message_reads(
         )
         for message in messages
     ]
+
+
+@router.patch(
+    "/communication-threads/{thread_id}",
+    response_model=OperationsCommunicationThreadRead,
+)
+def update_communication_thread_status(
+    thread_id: uuid.UUID,
+    payload: OperationsCommunicationThreadStatusUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsCommunicationThreadRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    thread = db.get(
+        CommunicationThread,
+        thread_id,
+    )
+
+    if thread is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Communication thread not found.",
+        )
+
+    previous_status = thread.status
+    thread.status = payload.status
+
+    record_audit_event(
+        db,
+        action="communications.thread_status_changed",
+        entity_type="communication_thread",
+        entity_id=str(thread.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "previous_status": previous_status.value,
+            "new_status": payload.status.value,
+        },
+    )
+
+    db.commit()
+    db.refresh(thread)
+
+    return _communication_thread_list_reads(
+        db,
+        threads=[thread],
+    )[0]
 
 
 @router.get(

@@ -390,7 +390,7 @@ Useful boundaries:
 
 - Operations exposes the durable correspondence as **Customer Inbox**, positioned
   ahead of the quote queue for routine customer-service work;
-- the inbox can be refreshed manually and polls the local API every 30 seconds
+- the inbox can be refreshed manually and polls the local API every 60 seconds
   while the Operations page is open; polling does not consume Postmark email
   allowance;
 - employee replies use the configured customer-facing support sender, while
@@ -403,7 +403,7 @@ Useful boundaries:
 - inbound attachments are stored in PostgreSQL with size/hash/content metadata;
 - provider MessageID is used for inbound idempotency;
 - raw Postmark payload duplication is not required;
-- employee shared-inbox/reply UI remains pending;
+- Customer Inbox supports active/archive history views and employee replies;
 - observability report delivery/timers remain separate and pending.
 
 Protected application configuration:
@@ -569,3 +569,13 @@ explicit writable application path.
 For a non-interactive systemd security report:
 
     SYSTEMD_PAGER=cat systemd-analyze security       dacqua-dolce-api.service --no-pager
+
+## Operations queue history and cleanup
+
+The Operations page keeps current work concise while preserving history:
+
+- Customer Inbox defaults to active/open conversations. Operators can switch to Archived or All and can archive or restore a selected conversation.
+- Customer Requests defaults to non-closed requests. Closed Requests and All Requests remain available through the local queue view controls. Changing a closed request back to another status automatically returns it to Active Requests.
+- Both the inbox thread list and the selected conversation have independent vertical scrolling so communication growth does not expand the page indefinitely.
+- Failed email deliveries are identified with an explicit `Failed` badge and a dedicated Delivery Issues list. The dashboard next-action link targets that list.
+- The Operations header shows the authenticated operator identity when profile data is available, with the authenticated email as the fallback.

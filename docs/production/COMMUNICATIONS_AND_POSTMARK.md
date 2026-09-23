@@ -397,14 +397,14 @@ Operational requirements:
 
 Commissioned in M7.4:
 
-- authenticated employee Customer Inbox list/detail UI;
+- authenticated employee Customer Inbox list/detail UI with active/archive/history views;
 - employee replies archived into the existing communication thread;
 - thread-specific Postmark `Reply-To` routing using `MailboxHash`;
 - a production round trip proving employee outbound -> customer reply ->
   the same archived thread;
 - Operations API filtering that keeps Postmark inbound-routing addresses out
   of the employee UI;
-- manual refresh plus lightweight 30-second polling while the Operations page
+- manual refresh plus lightweight 60-second polling while the Operations page
   is open.
 
 Not yet commissioned:
@@ -425,3 +425,14 @@ Postmark documentation used for the current design:
 - https://postmarkapp.com/developer/webhooks/inbound-webhook
 - https://postmarkapp.com/support/article/1056-what-are-the-attachment-and-email-size-limits
 - https://postmarkapp.com/support/article/understanding-inbound-webhook-retries-in-postmark
+
+## Operations inbox lifecycle
+
+The Operations Customer Inbox separates active work from retained history without deleting communication records.
+
+- `communication_threads.status = open` appears in the default Inbox view.
+- `communication_threads.status = closed` is presented to operators as Archived.
+- Archived threads remain searchable in Archived and All views and can be restored to the active inbox.
+- Archiving is a workflow/presentation action only. It does not delete messages, recipients, events, or attachment bytes.
+- Permanent deletion is intentionally not exposed in the routine Operations UI. Retention or purge rules should be introduced only through an explicit documented policy.
+- Failed archived communication messages are surfaced with a failure badge. The separate delivery-issues list also exposes failed `email_deliveries`, including legacy failures that may not be associated with a durable communication thread.

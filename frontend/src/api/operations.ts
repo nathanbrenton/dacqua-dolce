@@ -78,6 +78,7 @@ export type OperationsCommunicationThread = {
   latest_direction: string | null;
   latest_sender_address: string | null;
   latest_subject: string | null;
+  failed_message_count: number;
 };
 
 export type OperationsCommunicationThreadDetail =
@@ -299,6 +300,18 @@ export function getOperationsCommunicationThread(
 ): Promise<OperationsCommunicationThreadDetail> {
   return getJson(
     `/api/operations/communication-threads/${encodeURIComponent(threadId)}`,
+  );
+}
+
+
+export function updateOperationsCommunicationThreadStatus(
+  threadId: string,
+  status: "open" | "closed",
+): Promise<OperationsCommunicationThread> {
+  return writeJson(
+    `/api/operations/communication-threads/${encodeURIComponent(threadId)}`,
+    "PATCH",
+    { status },
   );
 }
 
