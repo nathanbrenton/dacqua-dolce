@@ -1,15 +1,11 @@
 export const THEMES = [
   {
-    id: "baseline",
-    label: "Current Baseline",
+    id: "lagoon-editorial",
+    label: "Lagoon Editorial",
   },
   {
     id: "quiet-mineral",
     label: "Quiet Mineral",
-  },
-  {
-    id: "lagoon-editorial",
-    label: "Lagoon Editorial",
   },
   {
     id: "culinary-atelier",
@@ -18,6 +14,14 @@ export const THEMES = [
   {
     id: "performance-precision",
     label: "Performance Precision",
+  },
+  {
+    id: "botanical-wellness",
+    label: "Botanical Wellness",
+  },
+  {
+    id: "coastal-stone",
+    label: "Coastal Stone",
   },
 ] as const;
 

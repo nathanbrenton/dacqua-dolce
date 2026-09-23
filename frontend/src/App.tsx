@@ -68,6 +68,11 @@ import {
   isThemeId,
   type ThemeId,
 } from "./theme/themes";
+import {
+  getInitialTypography,
+  saveTypography,
+  type TypographySchemeId,
+} from "./theme/typography";
 
 type BackendState =
   | "checking"
@@ -149,6 +154,13 @@ export function App() {
     );
 
   const [
+    typography,
+    setTypography,
+  ] = useState<TypographySchemeId>(
+    getInitialTypography,
+  );
+
+  const [
     logoVariant,
     setLogoVariant,
   ] = useState<LogoVariantId>(
@@ -208,6 +220,13 @@ export function App() {
 
     saveAppearance(appearance);
   }, [appearance]);
+
+  useEffect(() => {
+    document.documentElement
+      .dataset.typography = typography;
+
+    saveTypography(typography);
+  }, [typography]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -445,6 +464,10 @@ export function App() {
         open={developerControlsOpen}
         theme={theme}
         onThemeChange={setTheme}
+        appearance={appearance}
+        onAppearanceChange={setAppearance}
+        typography={typography}
+        onTypographyChange={setTypography}
         logoVariant={logoVariant}
         onLogoVariantChange={
           setLogoVariant

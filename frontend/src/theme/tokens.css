@@ -1,0 +1,470 @@
+:root {
+  /*
+   * Core semantic color roles. Palette themes override these values while
+   * components consume the roles rather than theme-specific colors.
+   */
+  --surface-0: #f4f1e9;
+  --surface-1: #fcfaf4;
+  --surface-2: #ffffff;
+  --surface-elevated: var(--surface-2);
+  --ink: #17201d;
+  --ink-muted: #5d6662;
+  --ink-subtle: var(--ink-muted);
+  --action: #17201d;
+  --action-text: #ffffff;
+  --hairline: #d8d4c9;
+  --accent: #17201d;
+  --danger: #9b2f2f;
+  --success: #1d6b45;
+  --status-neutral: #6f7471;
+  --focus-ring: #087c82;
+  --control-highlight: #087c82;
+  --ambient-glow: transparent;
+
+  /*
+   * Neutral form roles. Inputs stay visually neutral until focus, validation,
+   * or status explicitly gives them semantic meaning. This prevents native
+   * dark-mode textarea colors from reading like an error state.
+   */
+  --field-surface: var(--surface-2);
+  --field-border: var(--hairline);
+  --field-text: var(--ink);
+
+  /*
+   * Typography is independent from palette selection. Font schemes own
+   * families, weights, and tracking. Small UI copy intentionally stays at
+   * neutral tracking so display typography never gets squeezed into dense
+   * operational surfaces.
+   */
+  --font-display:
+    "Instrument Serif",
+    serif;
+  --font-heading:
+    "Instrument Serif",
+    serif;
+  --font-body:
+    "Manrope Variable",
+    sans-serif;
+  --font-ui:
+    "Manrope Variable",
+    sans-serif;
+  --font-data:
+    "Manrope Variable",
+    sans-serif;
+  --display-font: var(--font-display);
+  --body-font: var(--font-body);
+  --display-weight: 400;
+  --heading-weight: 400;
+  --tracking-display: -0.05em;
+  --tracking-heading: -0.035em;
+  --tracking-ui: 0;
+
+  /*
+   * Type scale/layout remain visual-system tokens. Individual palette
+   * directions may still tune hero scale or geometry without taking
+   * ownership of the selected font family.
+   */
+  --hero-size: clamp(4rem, 10vw, 9rem);
+  --hero-leading: 0.84;
+  --shell-padding: 6vw;
+  --header-height: 108px;
+
+  /*
+   * Geometry roles prevent one universal radius from turning every dense
+   * Operations surface into the same oversized pill. Most themes remain
+   * square by default; Performance Precision opts into graduated rounding.
+   */
+  --radius-button: 0;
+  --radius-field: 0;
+  --radius-dialog: 0;
+  --radius-panel: 0;
+  --radius-card: 0;
+  --radius-message: 0;
+  --radius-inset: 0;
+  --radius-dense-field: 0;
+  --radius-badge: 0;
+
+  /* Common elevation roles, centralized without changing current values. */
+  --shadow-lab: 0 8px 30px rgb(0 0 0 / 18%);
+  --shadow-overlay: 0 30px 90px rgb(0 0 0 / 24%);
+  --shadow-soft: 0 4px 16px rgb(0 0 0 / 8%);
+
+  font-family: var(--body-font);
+  color: var(--ink);
+  background: var(--surface-0);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Palette themes. Light is the baseline palette for each theme. Dark
+ * counterparts live below under the same theme id + data-appearance="dark".
+ */
+
+:root[data-theme="baseline"] {
+  --surface-0: #f4f1e9;
+  --surface-1: #fcfaf4;
+  --surface-2: #ffffff;
+  --ink: #17201d;
+  --ink-muted: #5d6662;
+  --action: #17201d;
+  --action-text: #ffffff;
+  --hairline: #d8d4c9;
+  --accent: #17201d;
+  --focus-ring: #087c82;
+  --control-highlight: #087c82;
+}
+
+:root[data-theme="quiet-mineral"] {
+  --surface-0: #f1eee6;
+  --surface-1: #faf8f2;
+  --surface-2: #ffffff;
+  --ink: #161c1a;
+  --ink-muted: #626965;
+  --action: #161c1a;
+  --action-text: #ffffff;
+  --hairline: #d6d1c6;
+  --accent: #6a675f;
+  --focus-ring: #0a5960;
+  --control-highlight: #0a5960;
+}
+
+:root[data-theme="lagoon-editorial"] {
+  --surface-0: #f4fbfa;
+  --surface-1: #e8f6f5;
+  --surface-2: #ffffff;
+  --ink: #0b2527;
+  --ink-muted: #426568;
+  --action: #0a5960;
+  --action-text: #ffffff;
+  --hairline: #bcdedc;
+  --accent: #087c82;
+  --focus-ring: #0050cb;
+  --control-highlight: #0050cb;
+  --ambient-glow: rgb(122 217 211 / 24%);
+}
+
+:root[data-theme="culinary-atelier"] {
+  --surface-0: #f7f4ed;
+  --surface-1: #fffdf8;
+  --surface-2: #ffffff;
+  --ink: #181715;
+  --ink-muted: #625e57;
+  --action: #181715;
+  --action-text: #ffffff;
+  --hairline: #d8d2c7;
+  --accent: #7b2d1f;
+  --focus-ring: #7b2d1f;
+  --control-highlight: #7b2d1f;
+}
+
+:root[data-theme="performance-precision"] {
+  --surface-0: #f7f8f7;
+  --surface-1: #ffffff;
+  --surface-2: #ffffff;
+  --ink: #111513;
+  --ink-muted: #555d59;
+  --action: #111513;
+  --action-text: #ffffff;
+  --hairline: #ccd1ce;
+  --accent: #087c82;
+  --focus-ring: #087c82;
+  --control-highlight: #087c82;
+  --radius-button: 999px;
+  --radius-field: 14px;
+  --radius-dialog: 14px;
+  --radius-panel: 18px;
+  --radius-card: 16px;
+  --radius-message: 14px;
+  --radius-inset: 10px;
+  --radius-dense-field: 12px;
+  --radius-badge: 999px;
+}
+
+:root[data-theme="botanical-wellness"] {
+  --surface-0: #f4f7f0;
+  --surface-1: #eaf0e4;
+  --surface-2: #fcfdf9;
+  --ink: #1b2a20;
+  --ink-muted: #5b6c60;
+  --action: #2d5a40;
+  --action-text: #ffffff;
+  --hairline: #cdd8ce;
+  --accent: #6c8b72;
+  --focus-ring: #2e6b47;
+  --control-highlight: #2e6b47;
+  --ambient-glow: rgb(154 180 150 / 18%);
+}
+
+:root[data-theme="coastal-stone"] {
+  --surface-0: #f2f5f4;
+  --surface-1: #e8eeee;
+  --surface-2: #fbfcfc;
+  --ink: #182327;
+  --ink-muted: #5d6c70;
+  --action: #294a53;
+  --action-text: #ffffff;
+  --hairline: #ccd7d8;
+  --accent: #648890;
+  --focus-ring: #376d7a;
+  --control-highlight: #376d7a;
+  --ambient-glow: rgb(138 174 184 / 18%);
+}
+
+/* Site-wide typography schemes. */
+
+:root[data-typography="editorial-modern"] {
+  --font-display:
+    "Instrument Serif",
+    serif;
+  --font-heading:
+    "Instrument Serif",
+    serif;
+  --font-body:
+    "Manrope Variable",
+    sans-serif;
+  --font-ui:
+    "Manrope Variable",
+    sans-serif;
+  --font-data:
+    "Manrope Variable",
+    sans-serif;
+  --display-weight: 400;
+  --heading-weight: 400;
+  --tracking-display: -0.015em;
+  --tracking-heading: -0.005em;
+  --tracking-ui: 0;
+}
+
+:root[data-typography="editorial-classic"] {
+  --font-display:
+    "Cormorant Garamond",
+    serif;
+  --font-heading:
+    "Cormorant Garamond",
+    serif;
+  --font-body:
+    "Manrope Variable",
+    sans-serif;
+  --font-ui:
+    "Manrope Variable",
+    sans-serif;
+  --font-data:
+    "Manrope Variable",
+    sans-serif;
+  --display-weight: 500;
+  --heading-weight: 500;
+  --tracking-display: -0.025em;
+  --tracking-heading: -0.012em;
+  --tracking-ui: 0;
+}
+
+:root[data-typography="literary-wellness"] {
+  --font-display:
+    "Newsreader Variable",
+    serif;
+  --font-heading:
+    "Newsreader Variable",
+    serif;
+  --font-body:
+    "Manrope Variable",
+    sans-serif;
+  --font-ui:
+    "Manrope Variable",
+    sans-serif;
+  --font-data:
+    "Manrope Variable",
+    sans-serif;
+  --display-weight: 500;
+  --heading-weight: 500;
+  --tracking-display: -0.032em;
+  --tracking-heading: -0.018em;
+  --tracking-ui: 0;
+}
+
+:root[data-typography="precision-sans"] {
+  --font-display:
+    "Manrope Variable",
+    sans-serif;
+  --font-heading:
+    "Manrope Variable",
+    sans-serif;
+  --font-body:
+    "Manrope Variable",
+    sans-serif;
+  --font-ui:
+    "Manrope Variable",
+    sans-serif;
+  --font-data:
+    "Manrope Variable",
+    sans-serif;
+  --display-weight: 650;
+  --heading-weight: 650;
+  --tracking-display: -0.035em;
+  --tracking-heading: -0.02em;
+  --tracking-ui: 0;
+}
+
+:root[data-typography="technical-neutral"] {
+  --font-display:
+    "Inter Variable",
+    sans-serif;
+  --font-heading:
+    "Inter Variable",
+    sans-serif;
+  --font-body:
+    "Inter Variable",
+    sans-serif;
+  --font-ui:
+    "Inter Variable",
+    sans-serif;
+  --font-data:
+    "Inter Variable",
+    sans-serif;
+  --display-weight: 650;
+  --heading-weight: 650;
+  --tracking-display: -0.032em;
+  --tracking-heading: -0.015em;
+  --tracking-ui: 0;
+}
+
+:root[data-typography="humanist-contemporary"] {
+  --font-display:
+    "Source Sans 3 Variable",
+    sans-serif;
+  --font-heading:
+    "Source Sans 3 Variable",
+    sans-serif;
+  --font-body:
+    "Source Sans 3 Variable",
+    sans-serif;
+  --font-ui:
+    "Source Sans 3 Variable",
+    sans-serif;
+  --font-data:
+    "Source Sans 3 Variable",
+    sans-serif;
+  --display-weight: 650;
+  --heading-weight: 650;
+  --tracking-display: -0.028em;
+  --tracking-heading: -0.012em;
+  --tracking-ui: 0;
+}
+
+/* Global appearance axis. */
+
+:root[data-appearance="light"] {
+  color-scheme: light;
+}
+
+:root[data-appearance="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="baseline"][data-appearance="dark"] {
+  --surface-0: #101613;
+  --surface-1: #151d19;
+  --surface-2: #1b2521;
+  --ink: #eef3ef;
+  --ink-muted: #adb9b2;
+  --action: #d9e7df;
+  --action-text: #101613;
+  --hairline: #33423b;
+  --accent: #9fcab9;
+  --focus-ring: #72c7aa;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="quiet-mineral"][data-appearance="dark"] {
+  --surface-0: #141410;
+  --surface-1: #1b1a16;
+  --surface-2: #23221c;
+  --ink: #f0eee6;
+  --ink-muted: #b7b2a4;
+  --action: #e3dfd4;
+  --action-text: #161611;
+  --hairline: #444138;
+  --accent: #c7c0ad;
+  --focus-ring: #a8dadd;
+  --control-highlight: #0a5960;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="lagoon-editorial"][data-appearance="dark"] {
+  --surface-0: #06191b;
+  --surface-1: #0a2224;
+  --surface-2: #0f2a2d;
+  --ink: #e8f8f7;
+  --ink-muted: #a5c6c5;
+  --action: #b9e5e3;
+  --action-text: #062022;
+  --hairline: #285154;
+  --accent: #79d1d2;
+  --focus-ring: #79d1d2;
+  --control-highlight: #087c82;
+  --ambient-glow: rgb(68 145 148 / 18%);
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="culinary-atelier"][data-appearance="dark"] {
+  --surface-0: #171411;
+  --surface-1: #201c17;
+  --surface-2: #28231d;
+  --ink: #f4efe7;
+  --ink-muted: #bdb3a6;
+  --action: #eadfd1;
+  --action-text: #1a1612;
+  --hairline: #4b4238;
+  --accent: #d88b7a;
+  --focus-ring: #e29a89;
+  --control-highlight: #7b2d1f;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="performance-precision"][data-appearance="dark"] {
+  --surface-0: #0c1110;
+  --surface-1: #121817;
+  --surface-2: #18201e;
+  --ink: #eff4f1;
+  --ink-muted: #aeb9b3;
+  --action: #dfe8e3;
+  --action-text: #101513;
+  --hairline: #33403b;
+  --accent: #75c7ca;
+  --focus-ring: #75c7ca;
+  --control-highlight: #087c82;
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="botanical-wellness"][data-appearance="dark"] {
+  --surface-0: #0e1711;
+  --surface-1: #142018;
+  --surface-2: #1a291f;
+  --ink: #edf4ee;
+  --ink-muted: #aab9ad;
+  --action: #c8decd;
+  --action-text: #102016;
+  --hairline: #344638;
+  --accent: #8db597;
+  --focus-ring: #9dd7aa;
+  --control-highlight: #2e6b47;
+  --ambient-glow: rgb(86 135 94 / 16%);
+  --danger: #ff9d9d;
+}
+
+:root[data-theme="coastal-stone"][data-appearance="dark"] {
+  --surface-0: #0f1618;
+  --surface-1: #151f22;
+  --surface-2: #1c282c;
+  --ink: #edf4f5;
+  --ink-muted: #acbec2;
+  --action: #d4e4e7;
+  --action-text: #112024;
+  --hairline: #36484d;
+  --accent: #8fb2b9;
+  --focus-ring: #9cc9d2;
+  --control-highlight: #376d7a;
+  --ambient-glow: rgb(87 139 151 / 14%);
+  --danger: #ff9d9d;
+}
