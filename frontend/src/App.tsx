@@ -523,7 +523,6 @@ export function App() {
           currentUserEmail={account?.email ?? null}
           onNavigate={navigate}
           appearance={appearance}
-          onAppearanceChange={setAppearance}
           logoVariant={logoVariant}
           developerControlsOpen={
             developerControlsOpen
