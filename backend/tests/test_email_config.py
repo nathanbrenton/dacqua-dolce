@@ -9,9 +9,9 @@ from app.core.email_config import (
 
 
 def test_local_http_origin_is_allowed() -> None:
-    settings = EmailRuntimeSettings(public_origin=("http://127.0.0.1:5173/"))
+    settings = EmailRuntimeSettings(public_origin=("http://127.0.0.1:15173/"))
 
-    assert settings.public_origin == "http://127.0.0.1:5173"
+    assert settings.public_origin == "http://127.0.0.1:15173"
 
 
 def test_remote_http_origin_is_rejected() -> None:

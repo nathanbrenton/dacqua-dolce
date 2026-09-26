@@ -20,7 +20,7 @@ from app.services.email_delivery import deliver_email
 
 def disabled_settings() -> EmailRuntimeSettings:
     return EmailRuntimeSettings(
-        public_origin="http://127.0.0.1:5173",
+        public_origin="http://127.0.0.1:15173",
         email_provider="disabled",
         email_from="no-reply@example.test",
     )

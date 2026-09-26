@@ -23,7 +23,7 @@ class EmailRuntimeSettings(BaseSettings):
         extra="ignore",
     )
 
-    public_origin: str = "http://127.0.0.1:5173"
+    public_origin: str = "http://127.0.0.1:15173"
 
     email_provider: Literal[
         "disabled",

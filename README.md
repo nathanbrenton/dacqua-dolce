@@ -66,6 +66,8 @@ Do not bulk rename or directly mutate Century Solar. Security, compliance, comme
 
 D'Acqua Dolce uses separate FastAPI backend and React/Vite frontend development servers.
 
+Canonical local ports and the host-vs-container PostgreSQL distinction are documented in `docs/LOCAL_DEVELOPMENT.md`.
+
 ### 1. Start the backend
 
 From the repository root:
@@ -75,13 +77,13 @@ From the repository root:
     .venv/bin/uvicorn app.main:app \
       --reload \
       --host 127.0.0.1 \
-      --port 8000
+      --port 18080
 
 Keep this terminal running.
 
 The backend API is available at:
 
-    http://127.0.0.1:8000
+    http://127.0.0.1:18080
 
 ### 2. Start the frontend
 
@@ -96,7 +98,7 @@ Keep this terminal running.
 
 Open the application in a browser:
 
-    http://localhost:5173
+    http://127.0.0.1:15173
 
 The Vite development server serves the frontend and forwards application API requests to the FastAPI backend.
 
