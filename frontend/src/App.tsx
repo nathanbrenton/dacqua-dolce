@@ -42,6 +42,9 @@ import {
   QuoteDialog,
 } from "./components/quotes/QuoteDialog";
 import {
+  SystemRecommendationSection,
+} from "./components/recommendation/SystemRecommendationSection";
+import {
   ForgotPasswordPage,
 } from "./pages/ForgotPasswordPage";
 import {
@@ -643,6 +646,10 @@ export function App() {
                 Systems
               </a>
 
+              <a href="#recommend-system">
+                Recommend a System
+              </a>
+
               <a href="#service">
                 Service
               </a>
@@ -762,6 +769,12 @@ export function App() {
 
           <CatalogSection
             onNavigate={navigate}
+          />
+
+          <SystemRecommendationSection
+            onRequestConsultation={() => {
+              setGeneralQuoteOpen(true);
+            }}
           />
 
           <section
