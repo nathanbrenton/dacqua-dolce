@@ -430,10 +430,12 @@ h2 {
   position: fixed;
   z-index: 1000;
   right: 16px;
-  bottom: 16px;
+  bottom: max(112px, calc(env(safe-area-inset-bottom) + 112px));
   display: grid;
   gap: 6px;
   min-width: 240px;
+  max-height: calc(100vh - 144px);
+  overflow-y: auto;
   padding: 12px;
   color: #ffffff;
   background: #111513;
@@ -684,9 +686,10 @@ h2 {
 
   .developer-controls {
     right: 10px;
-    bottom: 10px;
+    bottom: max(106px, calc(env(safe-area-inset-bottom) + 106px));
     left: 10px;
     min-width: 0;
+    max-height: calc(100vh - 132px);
   }
 
   .auth-dialog-header {
@@ -1291,6 +1294,64 @@ textarea:focus-visible {
   color: var(--danger);
   font-weight: 700;
   line-height: 1.5;
+}
+
+
+.account-address-panel {
+  scroll-margin-top: 24px;
+}
+
+.account-address-status {
+  margin: -8px 0 22px;
+  padding: 12px 14px;
+  color: var(--ink);
+  background:
+    color-mix(
+      in srgb,
+      var(--focus-ring) 10%,
+      var(--surface-1)
+    );
+  border: 1px solid var(--focus-ring);
+  border-radius: var(--radius-inset);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.address-form h3 {
+  margin: 0 0 2px;
+  font-family: var(--body-font);
+  font-size: 0.86rem;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.account-add-address-action {
+  margin-top: 24px;
+}
+
+.address-card {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.address-card.is-recent {
+  padding: 14px;
+  background:
+    color-mix(
+      in srgb,
+      var(--focus-ring) 8%,
+      var(--surface-1)
+    );
+  border: 1px solid var(--focus-ring);
+}
+
+.address-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
 .address-card-heading {

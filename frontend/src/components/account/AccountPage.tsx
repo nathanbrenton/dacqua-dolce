@@ -1,6 +1,7 @@
 import {
   type FormEvent,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -509,6 +510,12 @@ export function AccountPage({
     useState<AddressCreate>(
       EMPTY_ADDRESS,
     );
+  const [addressFormOpen, setAddressFormOpen] =
+    useState(false);
+  const [recentAddressId, setRecentAddressId] =
+    useState<string | null>(null);
+  const addressSectionRef =
+    useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (saveNotice === null) {
@@ -724,9 +731,10 @@ export function AccountPage({
     setSaveNotice(null);
 
     try {
-      await createAddress(
-        addressDraft,
-      );
+      const createdAddress =
+        await createAddress(
+          addressDraft,
+        );
 
       setProfile(
         await getProfile(),
@@ -735,7 +743,18 @@ export function AccountPage({
       setAddressDraft(
         EMPTY_ADDRESS,
       );
+      setAddressFormOpen(false);
+      setRecentAddressId(
+        createdAddress.id,
+      );
       setSaveNotice("Address added.");
+
+      window.requestAnimationFrame(() => {
+        addressSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -807,7 +826,7 @@ export function AccountPage({
         />
 
         <section className="account-panel">
-          <h2>Profile</h2>
+          <h2>Client Profile</h2>
 
           <form
             className="account-form"
@@ -911,8 +930,20 @@ export function AccountPage({
           </form>
         </section>
 
-        <section className="account-panel">
+        <section
+          ref={addressSectionRef}
+          className="account-panel account-address-panel"
+        >
           <h2>Addresses</h2>
+
+          {saveNotice === "Address added." ? (
+            <p
+              className="account-address-status"
+              role="status"
+            >
+              Address added. Your saved address is shown below.
+            </p>
+          ) : null}
 
           {profile.addresses.length
             > 0 ? (
@@ -921,7 +952,11 @@ export function AccountPage({
                 (address) => (
                   <article
                     key={address.id}
-                    className="address-card"
+                    className={
+                      address.id === recentAddressId
+                        ? "address-card is-recent"
+                        : "address-card"
+                    }
                   >
                     <div
                       className="address-card-heading"
@@ -1017,6 +1052,22 @@ export function AccountPage({
             </p>
           )}
 
+          {!addressFormOpen ? (
+            <button
+              type="button"
+              className="account-action account-add-address-action"
+              onClick={() => {
+                setAddressDraft(EMPTY_ADDRESS);
+                setAddressFormOpen(true);
+                setError(null);
+                setSaveNotice(null);
+              }}
+            >
+              {profile.addresses.length > 0
+                ? "Add Additional Address"
+                : "Add Address"}
+            </button>
+          ) : (
           <form
             className="account-form address-form"
             onSubmit={(event) => {
@@ -1025,6 +1076,11 @@ export function AccountPage({
               );
             }}
           >
+            <h3>
+              {profile.addresses.length > 0
+                ? "Add another address"
+                : "Add your address"}
+            </h3>
             <label>
               <span>Label</span>
               <input
@@ -1206,14 +1262,31 @@ export function AccountPage({
               </span>
             </label>
 
-            <button
-              type="submit"
-              className="account-action"
-              disabled={saving}
-            >
-              Add Address
-            </button>
+            <div className="address-form-actions">
+              <button
+                type="submit"
+                className="account-action"
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving..."
+                  : "Save Address"}
+              </button>
+
+              <button
+                type="button"
+                className="text-button compact"
+                disabled={saving}
+                onClick={() => {
+                  setAddressDraft(EMPTY_ADDRESS);
+                  setAddressFormOpen(false);
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
+          )}
         </section>
 
         <section className="account-panel">

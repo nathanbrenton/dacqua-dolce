@@ -114,11 +114,11 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home catalytic water conditioning system with 1.5 cubic feet of media, a pass-through valve, and prefilter.",
+      "description": "Non-backwashing whole-home water conditioner designed to help dissolved calcium and magnesium form less-adherent crystalline structures without removing hardness minerals. It requires no electrical power or drain for backwashing, making it a practical alternative where those utilities are unavailable or where high-demand irrigation or pool-fill lines cannot easily bypass the treated-water plumbing.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Harmony - Pass-Through",
+      "name": "Harmony - Water Conditioner",
       "online_sale_approved": false,
-      "product_family": "Catalytic Water Conditioner",
+      "product_family": "Water Conditioner",
       "public_path": "/systems/dd15cat-ttacptv",
       "sku": "DD15CAT-TTACPTV",
       "slug": "dd15cat-ttacptv"
@@ -392,7 +392,7 @@
     },
     {
       "active": true,
-      "label": "Prefilter",
+      "label": "Carbon Block Cartridge Housing",
       "product_sku": "DD15CAT-TTACPTV",
       "public": true,
       "sort_order": 30,
