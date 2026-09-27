@@ -104,3 +104,23 @@ The proposed description of CAM as a temporary bond between calcium and magnesiu
 ## CLEAR component naming
 
 The physical distributor/component associated with CLEAR requires a separate proprietary name. That name remains unresolved and may depend on future component redesign and licensing considerations. Do not assign a public component name yet.
+
+
+## PT14.4 public presentation architecture
+
+Public presentation should separate brand hierarchy from configuration details instead of treating the complete canonical catalog name as a single display heading.
+
+For the confirmed Harmony pass-through conditioner, the preferred hierarchy is:
+
+1. `Harmony` — family name;
+2. `Water Conditioner` — system type;
+3. `Featuring CLEAR Technology` — treatment-technology label;
+4. `Crystal Aggregate Matrix (CAM)` — supporting customer education for the microscopic crystalline forms described by D'Acqua Dolce.
+
+Capacity and hardware configuration belong below this identity hierarchy as product variants/specifications when authoritative data supports them. A 1.5 cu. ft. or 2.0 cu. ft. capacity does not create a separate branded family.
+
+The presentation layer may derive this hierarchy from a stable catalog product identifier while leaving canonical SKUs, slugs, public paths, filenames, and historical provenance unchanged.
+
+Until the second Harmony configuration is technically verified, do not infer that `Harmony - Regenerating` uses the same CLEAR process, rename it to `Backwashing`, or publish power/drain/backwash-cycle claims for it.
+
+Customer education may explain the approved CLEAR/CAM relationship, but must preserve the claims boundary in this document. In particular, do not publish the unresolved CLEAR acronym expansion or the proposed temporary calcium/magnesium bond mechanism as established fact.

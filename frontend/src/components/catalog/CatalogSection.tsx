@@ -8,6 +8,7 @@ import {
   type CatalogProduct,
 } from "../../api/catalog";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
+import { getProductPresentation } from "./productPresentation";
 
 type CatalogSectionProps = {
   onNavigate: (path: string) => void;
@@ -126,7 +127,11 @@ export function CatalogSection({
 
       {products.length > 0 ? (
         <div className="product-grid">
-          {products.map((product) => (
+          {products.map((product) => {
+            const presentation =
+              getProductPresentation(product);
+
+            return (
             <article
               className="product-card"
               key={product.id}
@@ -161,10 +166,24 @@ export function CatalogSection({
                   {product.category}
                 </p>
 
-                <h3>{product.name}</h3>
+                <div className="product-identity">
+                  <h3>{presentation.familyName}</h3>
+
+                  {presentation.systemType !== null ? (
+                    <p className="product-system-type">
+                      {presentation.systemType}
+                    </p>
+                  ) : null}
+
+                  {presentation.technologyLabel !== null ? (
+                    <p className="product-technology">
+                      {presentation.technologyLabel}
+                    </p>
+                  ) : null}
+                </div>
 
                 <p className="product-description">
-                  {product.description}
+                  {presentation.catalogSummary ?? product.description}
                 </p>
 
                 <div className="product-commerce">
@@ -205,7 +224,8 @@ export function CatalogSection({
                 </div>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       ) : null}
     </section>

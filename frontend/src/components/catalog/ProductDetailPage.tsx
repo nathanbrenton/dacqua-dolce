@@ -14,6 +14,7 @@ import {
 } from "../../api/cart";
 import { QuoteDialog } from "../quotes/QuoteDialog";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
+import { getProductPresentation } from "./productPresentation";
 
 type ProductDetailPageProps = {
   slug: string;
@@ -128,6 +129,7 @@ export function ProductDetailPage({
 
   const pricing = product.pricing;
   const productId = product.id;
+  const presentation = getProductPresentation(product);
 
   async function handlePrimaryAction() {
     setCommerceError(null);
@@ -260,11 +262,37 @@ export function ProductDetailPage({
               {product.category}
             </p>
 
-            <h1>{product.name}</h1>
+            <div className="product-detail-identity">
+              <h1>{presentation.familyName}</h1>
+
+              {presentation.systemType !== null ? (
+                <p className="product-detail-system-type">
+                  {presentation.systemType}
+                </p>
+              ) : null}
+
+              {presentation.technologyLabel !== null ? (
+                <p className="product-technology">
+                  {presentation.technologyLabel}
+                </p>
+              ) : null}
+            </div>
 
             <p className="product-detail-description">
               {product.description}
             </p>
+
+            {presentation.education !== null ? (
+              <aside
+                className="product-technology-note"
+                aria-label="About CLEAR Technology"
+              >
+                <p className="eyebrow">
+                  CLEAR Technology
+                </p>
+                <p>{presentation.education}</p>
+              </aside>
+            ) : null}
 
             <dl className="product-facts">
               <div>

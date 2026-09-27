@@ -6,7 +6,7 @@ const recommendationPaths = [
   {
     title: "Limited utilities",
     description:
-      "For installations where electrical power or a backwash drain is unavailable, start with Harmony water conditioning and cartridge filtration.",
+      "For installations where electrical power or a backwash drain is unavailable, start with Harmony water conditioning featuring CLEAR Technology and cartridge filtration.",
   },
   {
     title: "Salt-free conditioning",
