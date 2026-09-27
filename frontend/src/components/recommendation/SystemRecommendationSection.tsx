@@ -5,18 +5,21 @@ type SystemRecommendationSectionProps = {
 const recommendationPaths = [
   {
     title: "Limited utilities",
+    cue: "Start here when power or a backwash drain is unavailable.",
     description:
-      "For installations where electrical power or a backwash drain is unavailable, start with Harmony water conditioning featuring CLEAR Technology and cartridge filtration.",
+      "Harmony water conditioning featuring CLEAR Technology and cartridge filtration provides the starting point for this installation constraint.",
   },
   {
     title: "Salt-free conditioning",
+    cue: "Start here when avoiding brine-tank salt is a priority.",
     description:
-      "For homes with power and drain access that prioritize carbon filtration and deposit mitigation without brine-tank salt, consider backwashing carbon filtration with Harmony conditioning.",
+      "For homes with power and drain access, consider backwashing carbon filtration with Harmony conditioning as the starting point.",
   },
   {
     title: "Softened water",
+    cue: "Start here when softened water is the specific goal.",
     description:
-      "For homes with power and drain access that specifically want softened water, consider carbon filtration paired with a water softener.",
+      "For homes with power and drain access, consider carbon filtration paired with a water softener as the starting point.",
   },
 ] as const;
 
@@ -53,6 +56,9 @@ export function SystemRecommendationSection({
             key={path.title}
           >
             <h3>{path.title}</h3>
+            <p className="recommendation-cue">
+              {path.cue}
+            </p>
             <p>{path.description}</p>
           </article>
         ))}

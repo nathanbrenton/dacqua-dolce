@@ -278,9 +278,21 @@ export function ProductDetailPage({
               ) : null}
             </div>
 
-            <p className="product-detail-description">
-              {product.description}
-            </p>
+            <section
+              className="product-detail-overview"
+              aria-labelledby="product-overview-heading"
+            >
+              <p className="eyebrow">Overview</p>
+              <h2
+                id="product-overview-heading"
+                className="product-detail-section-title"
+              >
+                System overview
+              </h2>
+              <p className="product-detail-description">
+                {product.description}
+              </p>
+            </section>
 
             {presentation.education !== null ? (
               <aside
@@ -292,65 +304,6 @@ export function ProductDetailPage({
                 </p>
                 <p>{presentation.education}</p>
               </aside>
-            ) : null}
-
-            <dl className="product-facts">
-              <div>
-                <dt>SKU</dt>
-                <dd>{product.sku}</dd>
-              </div>
-
-              {product.product_family
-                !== null ? (
-                <div>
-                  <dt>Family</dt>
-                  <dd>
-                    {
-                      product.product_family
-                    }
-                  </dd>
-                </div>
-              ) : null}
-
-              {product.variants.length
-                > 0 ? (
-                <div>
-                  <dt>Variants</dt>
-                  <dd>
-                    {
-                      product.variants
-                        .length
-                    }
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
-
-            {product.specifications.length > 0 ? (
-              <section
-                className="product-specifications"
-                aria-labelledby="product-specifications-heading"
-              >
-                <h2 id="product-specifications-heading">
-                  Specifications
-                </h2>
-
-                <dl className="product-facts">
-                  {product.specifications.map(
-                    (specification) => (
-                      <div key={specification.spec_key}>
-                        <dt>{specification.label}</dt>
-                        <dd>
-                          {specification.value_text}
-                          {specification.unit !== null
-                            ? ` ${specification.unit}`
-                            : ""}
-                        </dd>
-                      </div>
-                    ),
-                  )}
-                </dl>
-              </section>
             ) : null}
 
             <div className="detail-commerce">
@@ -393,6 +346,56 @@ export function ProductDetailPage({
                   : pricing.action_label}
               </button>
             </div>
+
+            {product.specifications.length > 0 ? (
+              <section
+                className="product-specifications"
+                aria-labelledby="product-specifications-heading"
+              >
+                <p className="eyebrow">System details</p>
+                <h2
+                  id="product-specifications-heading"
+                  className="product-detail-section-title"
+                >
+                  Specifications
+                </h2>
+
+                <dl className="product-facts">
+                  {product.specifications.map(
+                    (specification) => (
+                      <div key={specification.spec_key}>
+                        <dt>{specification.label}</dt>
+                        <dd>
+                          {specification.value_text}
+                          {specification.unit !== null
+                            ? ` ${specification.unit}`
+                            : ""}
+                        </dd>
+                      </div>
+                    ),
+                  )}
+                </dl>
+              </section>
+            ) : null}
+
+            <section
+              className="product-reference"
+              aria-labelledby="product-reference-heading"
+            >
+              <p className="eyebrow">Reference</p>
+              <h2
+                id="product-reference-heading"
+                className="product-detail-section-title"
+              >
+                Product record
+              </h2>
+              <dl className="product-facts">
+                <div>
+                  <dt>SKU</dt>
+                  <dd>{product.sku}</dd>
+                </div>
+              </dl>
+            </section>
 
             {product.documents.length > 0 ? (
               <section className="product-documents">

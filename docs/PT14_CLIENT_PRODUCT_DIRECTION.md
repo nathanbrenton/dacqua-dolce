@@ -124,3 +124,14 @@ The presentation layer may derive this hierarchy from a stable catalog product i
 Until the second Harmony configuration is technically verified, do not infer that `Harmony - Regenerating` uses the same CLEAR process, rename it to `Backwashing`, or publish power/drain/backwash-cycle claims for it.
 
 Customer education may explain the approved CLEAR/CAM relationship, but must preserve the claims boundary in this document. In particular, do not publish the unresolved CLEAR acronym expansion or the proposed temporary calcium/magnesium bond mechanism as established fact.
+
+
+## PT14.5 product-detail and guided-selection architecture
+
+Product detail pages should prioritize customer decision information over internal catalog metadata. The preferred order is product identity, overview, verified technology education where applicable, the available commerce/quote action, public specifications, and finally stable product-reference information such as SKU. Raw implementation metadata such as variant counts should not receive primary customer-facing emphasis.
+
+Public specifications must continue to come from authoritative catalog data. The presentation layer may reorganize those values for readability, but it must not manufacture, infer, or silently broaden technical claims.
+
+Guided system selection remains a set of conversation starting points rather than a deterministic prescription. Recommendation cards should state the customer constraint or goal first, then describe the supported starting point. Final selection continues to depend on source-water conditions, installation requirements, household demand, and verified product capabilities.
+
+SKU-specific presentation rules are claims boundaries as well as visual rules. CLEAR/CAM education is currently assigned only to `DD15CAT-TTACPTV`; it must not be inferred for `DD15CAT-TTACRV` or another product without authoritative support. Unresolved family naming for carbon and softener products must likewise not be promoted or normalized by the derived presentation layer.

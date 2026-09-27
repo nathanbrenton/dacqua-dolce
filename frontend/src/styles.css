@@ -3738,3 +3738,54 @@ textarea:focus-visible {
   color: var(--ink-muted);
   line-height: 1.65;
 }
+
+
+/* PT14.5 — product detail decision hierarchy */
+.product-detail-overview {
+  margin-top: 34px;
+}
+
+.product-detail-overview .eyebrow,
+.product-specifications .eyebrow,
+.product-reference .eyebrow {
+  margin: 0 0 10px;
+}
+
+.product-detail-section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+  font-weight: var(--display-weight);
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.product-detail-overview .product-detail-description {
+  margin-top: 18px;
+}
+
+.product-specifications,
+.product-reference {
+  margin-top: 48px;
+  padding-top: 26px;
+  border-top: 1px solid var(--hairline);
+}
+
+.product-specifications .product-facts,
+.product-reference .product-facts {
+  margin-top: 20px;
+}
+
+.product-reference {
+  color: var(--ink-muted);
+}
+
+.recommendation-card .recommendation-cue {
+  margin-top: 18px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.recommendation-card .recommendation-cue + p {
+  margin-top: 10px;
+}
