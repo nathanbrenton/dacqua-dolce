@@ -144,3 +144,14 @@ Product-specific quote requests must continue to persist the selected product th
 Guided-selection and general-consultation inquiries remain unassociated with a product until a product is actually selected. Presentation context may distinguish those entry points while the dialog is open, but transient UI context must not be silently encoded into the customer's message. If durable inquiry-source attribution becomes a business requirement, add an explicit structured field and migration rather than overloading free-form customer content.
 
 Request forms should collect only useful response context. Encourage customers to describe water goals or concerns, source water when known, household needs, and installation constraints without requiring technical knowledge they may not have. Form state should reset between inquiries so details from a previous request are not carried into a later one.
+
+
+## PT14.7 Operations customer-request workspace
+
+Customer Requests should present the existing request data as an employee workspace rather than as an undifferentiated card. Keep customer identity/contact information, customer-authored request text, private internal follow-up notes, and lifecycle status visually distinct. Customer-authored content and private employee notes must never be presented as though they are the same content source.
+
+The existing request lifecycle remains authoritative: `new`, `contacted`, `quoted`, and `closed`. The Operations UI may render those values as human-readable labels (`New`, `Contacted`, `Quoted`, `Closed`) without changing persisted enum values or backend behavior. Active/Closed/All filtering and reopening through a status change remain unchanged.
+
+A request with no associated `product_id` remains a `General consultation`. Do not infer whether it originated from Help Me Choose or another transient frontend entry point because PT14.6 deliberately does not persist that attribution.
+
+PT14.7 intentionally does not add assignment, priority, next-action dates, lead scoring, or other CRM fields. Add durable workflow fields only after real operational use establishes a concrete persistence requirement; when needed, model them explicitly rather than encoding them in customer messages or private notes.

@@ -103,6 +103,16 @@ const QUOTE_STATUSES = [
   "closed",
 ] as const;
 
+const QUOTE_STATUS_LABELS: Record<
+  (typeof QUOTE_STATUSES)[number],
+  string
+> = {
+  new: "New",
+  contacted: "Contacted",
+  quoted: "Quoted",
+  closed: "Closed",
+};
+
 const PRICING_MODES = [
   "PUBLIC",
   "MAP_LIMITED",
@@ -1260,108 +1270,139 @@ export function OperationsPage({
           <div className="operations-quote-list">
             {visibleQuotes.map((quote) => (
               <article key={quote.id} className="operations-quote">
-                <div className="operations-quote-main">
-                  <p className="product-meta">
-                    {quote.product_name ?? "General consultation"}
-                  </p>
-                  <h3>{quote.name}</h3>
-                  <p>
-                    <a href={`mailto:${quote.email}`}>{quote.email}</a>
-                    {quote.phone !== null ? (
-                      <>
-                        {" · "}
+                <div className="operations-request-workspace">
+                  <header className="operations-request-header">
+                    <div>
+                      <p className="product-meta">
+                        {quote.product_name ?? "General consultation"}
+                      </p>
+                      <h3>{quote.name}</h3>
+                    </div>
+                    <span className="operations-request-created">
+                      Received {new Date(quote.created_at).toLocaleString()}
+                    </span>
+                  </header>
+
+                  <section className="operations-request-region">
+                    <p className="operations-request-region-label">Customer</p>
+                    <div className="operations-request-contact">
+                      <a href={`mailto:${quote.email}`}>{quote.email}</a>
+                      {quote.phone !== null ? (
                         <a href={`tel:${quote.phone}`}>{quote.phone}</a>
-                      </>
-                    ) : null}
-                  </p>
-                  {quote.message !== null ? (
-                    <p className="operations-customer-message">
-                      {quote.message}
-                    </p>
-                  ) : null}
+                      ) : null}
+                    </div>
+                  </section>
 
-                  <label className="operations-field">
-                    <span>Internal notes</span>
-                    <textarea
-                      rows={3}
-                      maxLength={8000}
-                      placeholder="Private operations notes"
-                      value={
-                        quoteNoteDrafts[quote.id]
-                        ?? ""
-                      }
-                      onChange={(event) => {
-                        setQuoteNoteDrafts(
-                          (current) => ({
-                            ...current,
-                            [quote.id]:
-                              event.target.value,
-                          }),
-                        );
-                      }}
-                    />
-                  </label>
+                  <section className="operations-request-region">
+                    <p className="operations-request-region-label">Request</p>
+                    {quote.message !== null ? (
+                      <p className="operations-customer-message">
+                        {quote.message}
+                      </p>
+                    ) : (
+                      <p className="operations-request-empty">
+                        No customer message was provided.
+                      </p>
+                    )}
+                  </section>
 
-                  <small className="operations-note">
-                    Private — never shown to the customer.
-                  </small>
-
-                  <button
-                    type="button"
+                  <section
                     className={
-                      "operations-action secondary "
-                      + (
+                      "operations-request-region "
+                      + "operations-request-private"
+                    }
+                  >
+                    <div className="operations-request-region-heading">
+                      <p className="operations-request-region-label">
+                        Internal follow-up
+                      </p>
+                      <span>Private — never shown to the customer.</span>
+                    </div>
+
+                    <label className="operations-field">
+                      <span className="sr-only">Internal notes</span>
+                      <textarea
+                        rows={3}
+                        maxLength={8000}
+                        placeholder="Add private follow-up notes"
+                        value={
+                          quoteNoteDrafts[quote.id]
+                          ?? ""
+                        }
+                        onChange={(event) => {
+                          setQuoteNoteDrafts(
+                            (current) => ({
+                              ...current,
+                              [quote.id]:
+                                event.target.value,
+                            }),
+                          );
+                        }}
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      className={
+                        "operations-action secondary "
+                        + (
+                          (
+                            quoteNoteSaveStates[quote.id]
+                            ?? "idle"
+                          ) === "saved"
+                            ? "is-saved"
+                            : ""
+                        )
+                      }
+                      disabled={
                         (
                           quoteNoteSaveStates[quote.id]
                           ?? "idle"
-                        ) === "saved"
-                          ? "is-saved"
-                          : ""
-                      )
-                    }
-                    disabled={
-                      (
+                        ) === "saving"
+                      }
+                      onClick={() => {
+                        void saveQuoteNotes(quote);
+                      }}
+                    >
+                      {(
                         quoteNoteSaveStates[quote.id]
                         ?? "idle"
                       ) === "saving"
-                    }
-                    onClick={() => {
-                      void saveQuoteNotes(quote);
-                    }}
-                  >
-                    {(
-                      quoteNoteSaveStates[quote.id]
-                      ?? "idle"
-                    ) === "saving"
-                      ? "Saving…"
-                      : (
-                          quoteNoteSaveStates[quote.id]
-                          ?? "idle"
-                        ) === "saved"
-                        ? "Saved ✓"
-                        : "Save Internal Notes"}
-                  </button>
-
-                  <small>
-                    {new Date(quote.created_at).toLocaleString()}
-                  </small>
+                        ? "Saving…"
+                        : (
+                            quoteNoteSaveStates[quote.id]
+                            ?? "idle"
+                          ) === "saved"
+                          ? "Saved ✓"
+                          : "Save Internal Notes"}
+                    </button>
+                  </section>
                 </div>
 
-                <label className="operations-field">
-                  <span>Status</span>
-                  <select
-                    value={quote.status}
-                    onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-                      void saveQuoteStatus(quote, event.target.value);
-                    }}
-                  >
-                    {QUOTE_STATUSES.map((quoteStatus) => (
-                      <option key={quoteStatus} value={quoteStatus}>
-                        {quoteStatus}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <aside className="operations-request-status">
+                  <div>
+                    <p className="operations-request-region-label">Status</p>
+                    <strong>
+                      {QUOTE_STATUS_LABELS[quote.status as keyof typeof QUOTE_STATUS_LABELS] ?? quote.status}
+                    </strong>
+                  </div>
+
+                  <label className="operations-field">
+                    <span>Update status</span>
+                    <select
+                      value={quote.status}
+                      onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                        void saveQuoteStatus(quote, event.target.value);
+                      }}
+                    >
+                      {QUOTE_STATUSES.map((quoteStatus) => (
+                        <option key={quoteStatus} value={quoteStatus}>
+                          {QUOTE_STATUS_LABELS[quoteStatus]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </aside>
               </article>
             ))}
           </div>

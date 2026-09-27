@@ -3796,3 +3796,122 @@ textarea:focus-visible {
 .recommendation-card .recommendation-cue + p {
   margin-top: 10px;
 }
+
+
+/* PT14.7 — Operations customer-request workspace */
+.operations-request-workspace {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.operations-request-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.operations-request-created {
+  flex: 0 0 auto;
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.operations-request-region {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-request-region-label {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operations-request-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 7px;
+  font-size: 0.85rem;
+}
+
+.operations-request-contact a {
+  overflow-wrap: anywhere;
+}
+
+.operations-request-region .operations-customer-message {
+  margin-top: 7px;
+  padding: 0;
+  color: var(--ink);
+}
+
+.operations-request-empty {
+  margin-top: 7px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.operations-request-private {
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.operations-request-region-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.operations-request-region-heading span {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+}
+
+.operations-request-private .operations-action {
+  margin-top: 8px;
+}
+
+.operations-request-status {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding-left: 18px;
+  border-left: 1px solid var(--hairline);
+}
+
+.operations-request-status strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .operations-request-status {
+    padding-top: 14px;
+    padding-left: 0;
+    border-top: 1px solid var(--hairline);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .operations-request-header,
+  .operations-request-region-heading {
+    display: grid;
+  }
+
+  .operations-request-created {
+    text-align: left;
+  }
+}
