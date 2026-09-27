@@ -99,6 +99,7 @@ class OperationsCommunicationThreadRead(BaseModel):
     latest_sender_address: str | None
     latest_subject: str | None
     failed_message_count: int
+    mailbox_kind: str
 
 
 class OperationsCommunicationThreadDetailRead(

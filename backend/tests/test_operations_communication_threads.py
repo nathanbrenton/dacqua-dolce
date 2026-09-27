@@ -19,6 +19,7 @@ from app.models.communications import (
     CommunicationThread,
     CommunicationThreadStatus,
 )
+from app.models.email import EmailDelivery, EmailDeliveryStatus
 from app.models.identity import User
 from app.schemas.operations import (
     OperationsCommunicationReplyCreate,
@@ -142,6 +143,73 @@ def test_communication_thread_list_and_detail_expose_archive(
 
         db.rollback()
 
+
+def test_communication_thread_mailbox_kind_uses_delivery_category(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        expected = {
+            "email_verification": "system",
+            "password_reset": "system",
+            "customer_welcome": "system",
+            "quote_reply": "inbox",
+        }
+        thread_ids: dict[str, uuid.UUID] = {}
+
+        for category, mailbox_kind in expected.items():
+            delivery = EmailDelivery(
+                category=category,
+                related_entity_type="user",
+                related_entity_id=str(uuid.uuid4()),
+                provider="disabled",
+                sender="support@example.test",
+                recipient="customer@example.test",
+                subject=f"{category} subject",
+                status=EmailDeliveryStatus.suppressed,
+            )
+            db.add(delivery)
+            db.flush()
+
+            thread = CommunicationThread(
+                subject=f"{category} subject",
+                status=CommunicationThreadStatus.open,
+                last_message_at=now,
+            )
+            db.add(thread)
+            db.flush()
+            thread_ids[mailbox_kind + category] = thread.id
+
+            db.add(
+                CommunicationMessage(
+                    thread_id=thread.id,
+                    email_delivery_id=delivery.id,
+                    direction=CommunicationDirection.outbound,
+                    status=CommunicationMessageStatus.suppressed,
+                    provider="disabled",
+                    sender_address="support@example.test",
+                    subject=f"{category} subject",
+                    body_text="Archived message",
+                    content_redacted=False,
+                    sent_at=now,
+                )
+            )
+
+        db.flush()
+
+        rows = operations.list_communication_threads(
+            db,  # type: ignore[arg-type]
+            _current_user(),  # type: ignore[arg-type]
+        )
+        rows_by_id = {row.id: row for row in rows}
+
+        for category, mailbox_kind in expected.items():
+            thread_id = thread_ids[mailbox_kind + category]
+            assert rows_by_id[str(thread_id)].mailbox_kind == mailbox_kind
+
+        db.rollback()
 
 def test_communication_thread_detail_requires_operations_access(
     monkeypatch: Any,

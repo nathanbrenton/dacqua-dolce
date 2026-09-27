@@ -96,6 +96,37 @@ const WEB_MANAGED_ROLES: WebManagedRole[] = [
   "administrator",
 ];
 
+function CopyEmailButton({ email }: { email: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyEmail(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(email);
+      setCopied(true);
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <span className="operations-email-action">
+      <span>{email}</span>
+      <button
+        type="button"
+        className="operations-copy-email"
+        onClick={() => {
+          void copyEmail();
+        }}
+      >
+        {copied ? "Copied" : "Copy email"}
+      </button>
+    </span>
+  );
+}
+
 const QUOTE_STATUSES = [
   "new",
   "contacted",
@@ -1286,7 +1317,7 @@ export function OperationsPage({
                   <section className="operations-request-region">
                     <p className="operations-request-region-label">Customer</p>
                     <div className="operations-request-contact">
-                      <a href={`mailto:${quote.email}`}>{quote.email}</a>
+                      <CopyEmailButton email={quote.email} />
                       {quote.phone !== null ? (
                         <a href={`tel:${quote.phone}`}>{quote.phone}</a>
                       ) : null}
@@ -1479,11 +1510,7 @@ export function OperationsPage({
 
                       {customerName.length > 0 ? (
                         <p>
-                          <a
-                            href={`mailto:${order.customer.email}`}
-                          >
-                            {order.customer.email}
-                          </a>
+                          <CopyEmailButton email={order.customer.email} />
                         </p>
                       ) : null}
 
@@ -1871,116 +1898,145 @@ export function OperationsPage({
                 )
                 .join(" ");
 
+              const customerOrders = orders.filter(
+                (order) => order.customer.id === customer.id,
+              );
+              const addressCount = customer.addresses.length;
+              const orderCount = customerOrders.length;
+
               return (
                 <article
                   key={customer.id}
-                  className="operations-customer"
+                  className="operations-customer operations-account-workspace"
                 >
-                  <header>
-                    <div>
-                      <p className="product-meta">
-                        Account · {customer.status}
-                      </p>
-
-                      <h3>
-                        {fullName || customer.email}
-                      </h3>
-
-                      {fullName.length > 0 ? (
-                        <p>
-                          <a
-                            href={
-                              `mailto:${customer.email}`
-                            }
-                          >
-                            {customer.email}
-                          </a>
+                  <section className="operations-account-identity">
+                    <div className="operations-account-heading">
+                      <div>
+                        <p className="product-meta">
+                          Customer account
                         </p>
-                      ) : null}
 
-                      {customer.phone !== null ? (
-                        <p>
-                          <a
-                            href={
-                              `tel:${customer.phone}`
-                            }
-                          >
+                        <h3>
+                          {fullName || customer.email}
+                        </h3>
+                      </div>
+
+                      <span className="operations-account-status">
+                        {customer.status}
+                      </span>
+                    </div>
+
+                    <div className="operations-account-contact">
+                      <div>
+                        <span>Email</span>
+                        <CopyEmailButton email={customer.email} />
+                      </div>
+
+                      <div>
+                        <span>Phone</span>
+                        {customer.phone !== null ? (
+                          <a href={`tel:${customer.phone}`}>
                             {formatUsPhoneInput(
                               customer.phone,
                             )}
                           </a>
-                        </p>
-                      ) : null}
-
-                      <small>
-                        Account created{" "}
-                        {new Date(
-                          customer.created_at,
-                        ).toLocaleDateString()}
-                      </small>
+                        ) : (
+                          <strong>Not provided</strong>
+                        )}
+                      </div>
                     </div>
-                  </header>
 
-                  <div className="operations-address-list">
-                    {customer.addresses.length === 0 ? (
-                      <p className="account-muted">
-                        No saved addresses.
-                      </p>
-                    ) : (
-                      customer.addresses.map(
-                        (address) => (
-                          <div
-                            key={address.id}
-                            className="operations-address"
-                          >
-                            <strong>
-                              {address.label}
-                            </strong>
+                    <div className="operations-account-facts">
+                      <div>
+                        <span>Saved addresses</span>
+                        <strong>{addressCount}</strong>
+                      </div>
+                      <div>
+                        <span>Recorded orders</span>
+                        <strong>{orderCount}</strong>
+                      </div>
+                      <div>
+                        <span>Customer since</span>
+                        <strong>
+                          {new Date(
+                            customer.created_at,
+                          ).toLocaleDateString()}
+                        </strong>
+                      </div>
+                    </div>
 
-                            <address>
-                              {address.line1}
+                    <p className="operations-account-boundary">
+                      Orders are linked by the registered customer
+                      account. Customer Requests are kept separate
+                      unless a durable account relationship is stored.
+                    </p>
+                  </section>
 
-                              {address.line2 !== null ? (
-                                <>
-                                  <br />
-                                  {address.line2}
-                                </>
-                              ) : null}
+                  <section className="operations-account-addresses">
+                    <div className="operations-account-section-heading">
+                      <div>
+                        <p className="product-meta">Address book</p>
+                        <h4>Saved customer addresses</h4>
+                      </div>
+                      <small>Read-only</small>
+                    </div>
 
-                              <br />
-                              {address.city},{" "}
-                              {address.region_code}{" "}
-                              {address.postal_code}
-                              <br />
-                              {address.country_code}
-                            </address>
-
-                            {(
-                              address.is_default_shipping
-                              || address.is_default_billing
-                            ) ? (
-                              <small>
-                                {address.is_default_shipping
-                                  ? "Default shipping"
-                                  : ""}
-
+                    <div className="operations-address-list">
+                      {customer.addresses.length === 0 ? (
+                        <div className="operations-address operations-address-empty">
+                          <strong>No saved addresses</strong>
+                          <p className="account-muted">
+                            This customer has not saved a shipping or
+                            billing address yet.
+                          </p>
+                        </div>
+                      ) : (
+                        customer.addresses.map(
+                          (address) => (
+                            <div
+                              key={address.id}
+                              className="operations-address"
+                            >
+                              <div className="operations-address-heading">
+                                <strong>{address.label}</strong>
                                 {(
                                   address.is_default_shipping
-                                  && address.is_default_billing
-                                )
-                                  ? " · "
-                                  : ""}
+                                  || address.is_default_billing
+                                ) ? (
+                                  <div className="operations-address-badges">
+                                    {address.is_default_shipping ? (
+                                      <span>Default shipping</span>
+                                    ) : null}
+                                    {address.is_default_billing ? (
+                                      <span>Default billing</span>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </div>
 
-                                {address.is_default_billing
-                                  ? "Default billing"
-                                  : ""}
-                              </small>
-                            ) : null}
-                          </div>
+                              <address>
+                                {address.line1}
+
+                                {address.line2 !== null ? (
+                                  <>
+                                    <br />
+                                    {address.line2}
+                                  </>
+                                ) : null}
+
+                                <br />
+                                {address.city},{" "}
+                                {address.region_code}{" "}
+                                {address.postal_code}
+                                <br />
+                                {address.country_code}
+                              </address>
+                            </div>
+                          )
                         )
-                      )
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  </section>
                 </article>
               );
             })}

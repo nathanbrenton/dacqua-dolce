@@ -300,7 +300,7 @@ function deliveryNotice(status: string): string {
   return "Reply attempt was archived, but email delivery failed.";
 }
 
-type InboxView = "active" | "archived" | "all";
+type InboxView = "active" | "system" | "archived" | "all";
 
 export function CommunicationsInbox() {
   const [threads, setThreads] =
@@ -422,7 +422,12 @@ export function CommunicationsInbox() {
     return threads.filter((thread) => {
       const matchesView =
         view === "all"
-        || (view === "active" && thread.status === "open")
+        || (
+          view === "active"
+          && thread.status === "open"
+          && thread.mailbox_kind === "inbox"
+        )
+        || (view === "system" && thread.mailbox_kind === "system")
         || (view === "archived" && thread.status === "closed");
 
       if (!matchesView) {
@@ -437,7 +442,10 @@ export function CommunicationsInbox() {
   }, [search, threads, view]);
 
   const inboxCounts = useMemo(() => ({
-    active: threads.filter((thread) => thread.status === "open").length,
+    active: threads.filter(
+      (thread) => thread.status === "open" && thread.mailbox_kind === "inbox",
+    ).length,
+    system: threads.filter((thread) => thread.mailbox_kind === "system").length,
     archived: threads.filter((thread) => thread.status === "closed").length,
     all: threads.length,
   }), [threads]);
@@ -660,7 +668,7 @@ export function CommunicationsInbox() {
         role="group"
         aria-label="Conversation view"
       >
-        {(["active", "archived", "all"] as InboxView[]).map(
+        {(["active", "system", "archived", "all"] as InboxView[]).map(
           (option) => (
             <button
               key={option}
@@ -673,15 +681,27 @@ export function CommunicationsInbox() {
             >
               {option === "active"
                 ? "Inbox"
-                : option === "archived"
-                  ? "Archived"
-                  : "All"}
+                : option === "system"
+                  ? "System"
+                  : option === "archived"
+                    ? "Archived"
+                    : "All"}
               {" "}
               <span>{inboxCounts[option]}</span>
             </button>
           ),
         )}
       </div>
+
+      <p className="operations-inbox-filter-note">
+        {view === "active"
+          ? "Customer correspondence requiring normal attention."
+          : view === "system"
+            ? "Account verification, password reset, welcome, and other application-generated messages."
+            : view === "archived"
+              ? "Conversations deliberately archived by an employee."
+              : "Complete authoritative communications archive."}
+      </p>
 
       <label
         className="operations-field operations-customer-search"

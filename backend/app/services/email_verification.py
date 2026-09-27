@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.email_config import EmailRuntimeSettings
 from app.integrations.email import EmailMessage
+from app.models.email import EmailDelivery
 from app.models.email_verification import (
     EmailVerificationToken,
 )
@@ -183,6 +184,7 @@ def complete_email_verification(
     raw_token: str,
     request_ip_address: str | None,
     request_user_agent: str | None,
+    settings: EmailRuntimeSettings | None = None,
 ) -> bool:
     now = datetime.now(UTC)
 
@@ -254,6 +256,46 @@ def complete_email_verification(
         ip_address=request_ip_address,
         user_agent=request_user_agent,
     )
+
+    if settings is not None:
+        welcome_exists = db.scalar(
+            select(EmailDelivery.id).where(
+                EmailDelivery.category == "customer_welcome",
+                EmailDelivery.related_entity_type == "user",
+                EmailDelivery.related_entity_id == str(user.id),
+            ).limit(1)
+        )
+
+        if welcome_exists is None:
+            deliver_email(
+                db,
+                settings=settings,
+                message=EmailMessage(
+                    sender=settings.email_from,
+                    recipient=user.email,
+                    subject="Welcome to D'Acqua Dolce",
+                    body_text=(
+                        "Thanks for verifying your email. Your "
+                        "D'Acqua Dolce account is ready.\n\n"
+                        "Wondering what to do next? Explore our "
+                        "water filtration solutions, or use Help Me "
+                        "Choose for guidance based on your home and "
+                        "water goals."
+                    ),
+                    body_html=(
+                        "<p>Thanks for verifying your email. Your "
+                        "D&apos;Acqua Dolce account is ready.</p>"
+                        "<p>Wondering what to do next? Explore our "
+                        "water filtration solutions, or use "
+                        "<strong>Help Me Choose</strong> for guidance "
+                        "based on your home and water goals.</p>"
+                    ),
+                ),
+                category="customer_welcome",
+                related_entity_type="user",
+                related_entity_id=str(user.id),
+                customer_user_id=user.id,
+            )
 
     db.flush()
 

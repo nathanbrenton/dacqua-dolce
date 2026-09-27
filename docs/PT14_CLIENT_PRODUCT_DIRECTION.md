@@ -155,3 +155,23 @@ The existing request lifecycle remains authoritative: `new`, `contacted`, `quote
 A request with no associated `product_id` remains a `General consultation`. Do not infer whether it originated from Help Me Choose or another transient frontend entry point because PT14.6 deliberately does not persist that attribution.
 
 PT14.7 intentionally does not add assignment, priority, next-action dates, lead scoring, or other CRM fields. Add durable workflow fields only after real operational use establishes a concrete persistence requirement; when needed, model them explicitly rather than encoding them in customer messages or private notes.
+
+
+## PT14.8 Operations accounts and address-book workspace
+
+Accounts & Address Book should present registered customer identity, contact information, account status, saved addresses, and genuinely persisted customer relationships as an employee reference workspace. Address labels and default shipping/billing designations remain authoritative customer-saved data and should be visually easy to distinguish.
+
+The existing order relationship is durable because orders store the registered customer identity; Operations may therefore summarize recorded order counts by customer ID. Quote/customer-request records do not currently store a customer user ID, so the UI must not manufacture an account relationship by matching names, email addresses, or phone numbers. General and product-specific requests remain in Customer Requests until an explicit durable relationship is modeled.
+
+PT14.8 remains read-only and migration-free. It does not add customer editing, address editing, CRM ownership, inferred lead history, or duplicated account data. Add write workflows and new relationships only when the business requirement and authorization/audit boundaries are defined explicitly.
+
+
+## PT14.9 communications classification and customer welcome
+
+Customer Inbox is the employee working mailbox, not a flat rendering of every archived delivery. Application-generated account mail must remain durably archived while being separated from normal customer correspondence through structured delivery provenance. `email_verification`, `password_reset`, and `customer_welcome` are System mail; do not classify them by matching subject keywords.
+
+The mailbox presents explicit Inbox, System, Archived, and All views with visible counts. Inbox is open human/customer correspondence requiring normal attention. System retains application-generated transactional/lifecycle mail. Archived remains an employee-controlled conversation lifecycle state, while All remains the complete authoritative archive. Search operates within the selected visible view rather than silently changing classification.
+
+After successful email verification, send one welcome/next-step message inviting the customer to explore water-filtration solutions or use Help Me Choose. The welcome is event-driven rather than a recurring promotional drip and is archived as `customer_welcome`. Duplicate welcome delivery for the same user must be prevented through the structured email-delivery record.
+
+Operations should keep employee communication inside the D'Acqua Dolce web application. Do not use `mailto:` links in Operations; existing conversations use the in-app reply workflow, while standalone customer email addresses provide a Copy email action until an intentional in-app new-message composer exists.

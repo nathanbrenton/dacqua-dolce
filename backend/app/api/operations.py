@@ -296,6 +296,13 @@ def _communication_customer_emails(
     }
 
 
+SYSTEM_EMAIL_CATEGORIES = {
+    "email_verification",
+    "password_reset",
+    "customer_welcome",
+}
+
+
 def _communication_thread_list_reads(
     db: DatabaseSession,
     *,
@@ -325,6 +332,23 @@ def _communication_thread_list_reads(
             CommunicationMessage.id,
         )
     ).all()
+
+    delivery_ids = {
+        message.email_delivery_id
+        for message in messages
+        if message.email_delivery_id is not None
+    }
+    delivery_categories: dict[uuid.UUID, str] = {}
+    if delivery_ids:
+        deliveries = db.scalars(
+            select(EmailDelivery).where(
+                EmailDelivery.id.in_(delivery_ids)
+            )
+        ).all()
+        delivery_categories = {
+            delivery.id: delivery.category
+            for delivery in deliveries
+        }
 
     messages_by_thread: dict[
         uuid.UUID,
@@ -395,6 +419,17 @@ def _communication_thread_list_reads(
                     1
                     for message in thread_messages
                     if message.status.value == "failed"
+                ),
+                mailbox_kind=(
+                    "system"
+                    if any(
+                        message.email_delivery_id is not None
+                        and delivery_categories.get(
+                            message.email_delivery_id
+                        ) in SYSTEM_EMAIL_CATEGORIES
+                        for message in thread_messages
+                    )
+                    else "inbox"
                 ),
             )
         )

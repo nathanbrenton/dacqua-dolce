@@ -79,6 +79,7 @@ export type OperationsCommunicationThread = {
   latest_sender_address: string | null;
   latest_subject: string | null;
   failed_message_count: number;
+  mailbox_kind: "inbox" | "system";
 };
 
 export type OperationsCommunicationThreadDetail =

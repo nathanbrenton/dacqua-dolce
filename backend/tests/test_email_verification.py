@@ -176,6 +176,7 @@ def test_verification_is_single_use() -> None:
             raw_token=raw_token,
             request_ip_address=None,
             request_user_agent=None,
+            settings=get_email_runtime_settings(),
         )
 
         db.commit()
@@ -191,13 +192,36 @@ def test_verification_is_single_use() -> None:
             is not None
         )
 
+        welcome_deliveries = db.scalars(
+            select(EmailDelivery).where(
+                EmailDelivery.category == "customer_welcome",
+                EmailDelivery.related_entity_type == "user",
+                EmailDelivery.related_entity_id == str(user_id),
+            )
+        ).all()
+
+        assert len(welcome_deliveries) == 1
+        assert welcome_deliveries[0].recipient == email
+
     with SessionLocal() as db:
         assert not complete_email_verification(
             db,
             raw_token=raw_token,
             request_ip_address=None,
             request_user_agent=None,
+            settings=get_email_runtime_settings(),
         )
+
+        welcome_count = len(
+            db.scalars(
+                select(EmailDelivery).where(
+                    EmailDelivery.category == "customer_welcome",
+                    EmailDelivery.related_entity_type == "user",
+                    EmailDelivery.related_entity_id == str(user_id),
+                )
+            ).all()
+        )
+        assert welcome_count == 1
 
         user = db.get(
             User,
