@@ -40,6 +40,7 @@ import {
 } from "./components/operations/OperationsPage";
 import {
   QuoteDialog,
+  type QuoteInquiryContext,
 } from "./components/quotes/QuoteDialog";
 import {
   SystemRecommendationSection,
@@ -193,9 +194,11 @@ export function App() {
   ] = useState(false);
 
   const [
-    generalQuoteOpen,
-    setGeneralQuoteOpen,
-  ] = useState(false);
+    quoteInquiryContext,
+    setQuoteInquiryContext,
+  ] = useState<
+    Exclude<QuoteInquiryContext, "product"> | null
+  >(null);
 
   const [
     developerControlsOpen,
@@ -518,17 +521,18 @@ export function App() {
       />
 
       <QuoteDialog
-        open={generalQuoteOpen}
+        open={quoteInquiryContext !== null}
         productId={null}
-        productName={
-          "Talk to an Expert"
+        productName={null}
+        inquiryContext={
+          quoteInquiryContext ?? "general"
         }
         initialEmail={
           account?.email ?? null
         }
         onClose={() => {
-          setGeneralQuoteOpen(
-            false,
+          setQuoteInquiryContext(
+            null,
           );
         }}
       />
@@ -757,8 +761,8 @@ export function App() {
                 className="secondary"
                 type="button"
                 onClick={() => {
-                  setGeneralQuoteOpen(
-                    true,
+                  setQuoteInquiryContext(
+                    "general",
                   );
                 }}
               >
@@ -773,7 +777,9 @@ export function App() {
 
           <SystemRecommendationSection
             onRequestConsultation={() => {
-              setGeneralQuoteOpen(true);
+              setQuoteInquiryContext(
+                "recommendation",
+              );
             }}
           />
 

@@ -135,3 +135,12 @@ Public specifications must continue to come from authoritative catalog data. The
 Guided system selection remains a set of conversation starting points rather than a deterministic prescription. Recommendation cards should state the customer constraint or goal first, then describe the supported starting point. Final selection continues to depend on source-water conditions, installation requirements, household demand, and verified product capabilities.
 
 SKU-specific presentation rules are claims boundaries as well as visual rules. CLEAR/CAM education is currently assigned only to `DD15CAT-TTACPTV`; it must not be inferred for `DD15CAT-TTACRV` or another product without authoritative support. Unresolved family naming for carbon and softener products must likewise not be promoted or normalized by the derived presentation layer.
+
+
+## PT14.6 customer-request journey
+
+Product-specific quote requests must continue to persist the selected product through the existing structured `product_id` relationship. The customer-facing dialog may explain that association, but must not duplicate product identity into customer-authored message text.
+
+Guided-selection and general-consultation inquiries remain unassociated with a product until a product is actually selected. Presentation context may distinguish those entry points while the dialog is open, but transient UI context must not be silently encoded into the customer's message. If durable inquiry-source attribution becomes a business requirement, add an explicit structured field and migration rather than overloading free-form customer content.
+
+Request forms should collect only useful response context. Encourage customers to describe water goals or concerns, source water when known, household needs, and installation constraints without requiring technical knowledge they may not have. Form state should reset between inquiries so details from a previous request are not carried into a later one.

@@ -183,6 +183,7 @@ export function ProductDetailPage({
         open={quoteOpen}
         productId={product.id}
         productName={product.name}
+        inquiryContext="product"
         initialEmail={
           account?.email ?? null
         }

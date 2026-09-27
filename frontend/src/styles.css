@@ -979,6 +979,13 @@ textarea:focus-visible {
   letter-spacing: -0.035em;
 }
 
+.quote-dialog-context {
+  max-width: 48ch;
+  margin: 12px 0 0;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+
 .auth-form textarea {
   width: 100%;
   resize: vertical;

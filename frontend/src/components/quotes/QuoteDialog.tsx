@@ -13,10 +13,16 @@ import {
   isCompleteUsPhone,
 } from "../../utils/phone";
 
+export type QuoteInquiryContext =
+  | "general"
+  | "recommendation"
+  | "product";
+
 type QuoteDialogProps = {
   open: boolean;
   productId: string | null;
   productName: string | null;
+  inquiryContext: QuoteInquiryContext;
   initialEmail: string | null;
   onClose: () => void;
 };
@@ -25,6 +31,7 @@ export function QuoteDialog({
   open,
   productId,
   productName,
+  inquiryContext,
   initialEmail,
   onClose,
 }: QuoteDialogProps) {
@@ -64,11 +71,36 @@ export function QuoteDialog({
 
   useEffect(() => {
     if (open) {
+      setName("");
       setEmail(initialEmail ?? "");
+      setPhone("");
+      setMessage("");
       setError(null);
       setSuccessId(null);
     }
-  }, [open, initialEmail]);
+  }, [open, initialEmail, inquiryContext, productId]);
+
+  const isProductInquiry =
+    inquiryContext === "product"
+    && productName !== null;
+
+  const dialogKicker = isProductInquiry
+    ? "Request a Quote"
+    : inquiryContext === "recommendation"
+      ? "System Guidance"
+      : "Talk to an Expert";
+
+  const dialogTitle = isProductInquiry
+    ? productName
+    : inquiryContext === "recommendation"
+      ? "Help me choose a system."
+      : "Tell us what you need.";
+
+  const messageHelper = isProductInquiry
+    ? "Share your water concerns, household needs, source water if known, and any installation constraints that may help us prepare your quote."
+    : inquiryContext === "recommendation"
+      ? "Tell us about your water goals or concerns, source water if known, household needs, and any installation constraints. We’ll use that context to help narrow the options."
+      : "Share your water goals or concerns and anything about the home or installation that would help us understand what you need.";
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -122,13 +154,22 @@ export function QuoteDialog({
       <div className="quote-dialog-header">
         <div>
           <p className="auth-kicker">
-            Request a Quote
+            {dialogKicker}
           </p>
 
           <h2 id="quote-dialog-title">
-            {productName
-              ?? "Tell us what you need."}
+            {dialogTitle}
           </h2>
+
+          {isProductInquiry ? (
+            <p className="quote-dialog-context">
+              Your request will stay associated with this system.
+            </p>
+          ) : inquiryContext === "recommendation" ? (
+            <p className="quote-dialog-context">
+              No system is selected yet. We’ll start with your goals and installation needs.
+            </p>
+          ) : null}
         </div>
 
         <button
@@ -243,12 +284,13 @@ export function QuoteDialog({
 
           <label>
             <span>
-              Message{" "}
+              Tell us about your water and home{" "}
               <small>(optional)</small>
             </span>
 
             <textarea
               rows={5}
+              aria-describedby="quote-message-helper"
               maxLength={4000}
               value={message}
               onChange={(event) => {
@@ -257,6 +299,13 @@ export function QuoteDialog({
                 );
               }}
             />
+
+            <small
+              id="quote-message-helper"
+              className="field-helper"
+            >
+              {messageHelper}
+            </small>
           </label>
 
           {error !== null ? (
