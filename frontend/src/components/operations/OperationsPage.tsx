@@ -1504,6 +1504,82 @@ export function OperationsPage({
               }
   );
 
+  function scrollToOperationsTarget(
+    targetId: string,
+    selector?: string,
+  ) {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const target = selector
+          ? document.querySelector(selector)
+          : document.getElementById(targetId);
+
+        (target ?? document.getElementById(targetId))?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
+  }
+
+  function openOperationsMetric(
+    metric:
+      | "new_quotes"
+      | "open_quotes"
+      | "human_review"
+      | "lab_testing"
+      | "active_products"
+      | "email_failures",
+  ) {
+    if (metric === "active_products") {
+      scrollToOperationsTarget("catalog-governance");
+      return;
+    }
+
+    if (metric === "email_failures") {
+      scrollToOperationsTarget(
+        "email-delivery-issues",
+        "#email-delivery-issues .operations-delivery-issue-list article",
+      );
+      return;
+    }
+
+    setRequestView("active");
+
+    if (metric === "human_review") {
+      setRecommendationTriageView("human_review");
+      scrollToOperationsTarget(
+        "quote-queue",
+        '#quote-queue .operations-quote[data-human-review="true"]',
+      );
+      return;
+    }
+
+    if (metric === "lab_testing") {
+      setRecommendationTriageView("lab_testing");
+      scrollToOperationsTarget(
+        "quote-queue",
+        '#quote-queue .operations-quote[data-lab-testing="true"]',
+      );
+      return;
+    }
+
+    setRecommendationTriageView("all");
+
+    if (metric === "new_quotes") {
+      scrollToOperationsTarget(
+        "quote-queue",
+        '#quote-queue .operations-quote[data-quote-status="new"]',
+      );
+      return;
+    }
+
+    scrollToOperationsTarget(
+      "quote-queue",
+      "#quote-queue .operations-quote",
+    );
+  }
+
   return (
     <main
       className="operations-shell"
@@ -1574,30 +1650,42 @@ export function OperationsPage({
           className="operations-metrics"
           aria-label="Operations summary"
         >
-          <article>
-            <strong>{summary.new_quotes}</strong>
-            <span>New quotes</span>
-          </article>
-          <article>
-            <strong>{summary.open_quotes}</strong>
-            <span>Open quotes</span>
-          </article>
-          <article>
-            <strong>{summary.recommendation_human_review}</strong>
-            <span>Human review</span>
-          </article>
-          <article>
-            <strong>{summary.recommendation_lab_testing}</strong>
-            <span>Lab testing</span>
-          </article>
-          <article>
-            <strong>{summary.active_products}</strong>
-            <span>Active systems</span>
-          </article>
-          <article>
-            <strong>{summary.failed_email_deliveries}</strong>
-            <span>Email failures</span>
-          </article>
+          {[
+            ["new_quotes", summary.new_quotes, "New quotes"],
+            ["open_quotes", summary.open_quotes, "Open quotes"],
+            [
+              "human_review",
+              summary.recommendation_human_review,
+              "Human review",
+            ],
+            [
+              "lab_testing",
+              summary.recommendation_lab_testing,
+              "Lab testing",
+            ],
+            ["active_products", summary.active_products, "Active systems"],
+            [
+              "email_failures",
+              summary.failed_email_deliveries,
+              "Email failures",
+            ],
+          ].map(([metric, value, label]) => (
+            <button
+              key={metric}
+              type="button"
+              className="operations-metric"
+              onClick={() => {
+                openOperationsMetric(
+                  metric as Parameters<typeof openOperationsMetric>[0],
+                );
+              }}
+              aria-label={`${label}: ${value}. Open relevant operations area.`}
+            >
+              <strong>{value}</strong>
+              <span>{label}</span>
+              <small>Open</small>
+            </button>
+          ))}
         </section>
       ) : null}
 
@@ -1736,7 +1824,21 @@ export function OperationsPage({
         ) : (
           <div className="operations-quote-list">
             {visibleQuotes.map((quote) => (
-              <article key={quote.id} className="operations-quote">
+              <article
+                key={quote.id}
+                className="operations-quote"
+                data-quote-status={quote.status}
+                data-human-review={
+                  quote.recommendation_decision?.human_review === true
+                    ? "true"
+                    : "false"
+                }
+                data-lab-testing={
+                  quote.recommendation_decision?.requires_third_party_lab === true
+                    ? "true"
+                    : "false"
+                }
+              >
                 <div className="operations-request-workspace">
                   <header className="operations-request-header">
                     <div>

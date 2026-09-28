@@ -2,32 +2,32 @@ export const TYPOGRAPHY_SCHEMES = [
   {
     id: "editorial-modern",
     label: "Editorial Modern",
-    detail: "Instrument Serif + Manrope",
+    detail: "Instrument Serif display · Manrope body · Source Sans 3 UI",
   },
   {
     id: "editorial-classic",
     label: "Editorial Classic",
-    detail: "Cormorant Garamond + Manrope",
+    detail: "Cormorant display · Newsreader body · Manrope UI",
   },
   {
     id: "literary-wellness",
     label: "Literary Wellness",
-    detail: "Newsreader + Manrope",
+    detail: "Newsreader display · Source Sans 3 body/UI · softer labels",
   },
   {
     id: "precision-sans",
     label: "Precision Sans",
-    detail: "Manrope throughout",
+    detail: "Manrope display/body · Inter UI/data · performance labels",
   },
   {
     id: "technical-neutral",
     label: "Technical Neutral",
-    detail: "Inter throughout",
+    detail: "Inter display/UI · Source Sans 3 body · technical labels",
   },
   {
     id: "humanist-contemporary",
     label: "Humanist Contemporary",
-    detail: "Source Sans 3 throughout",
+    detail: "Source Sans 3 throughout · shared responsive scale",
   },
 ] as const;
 

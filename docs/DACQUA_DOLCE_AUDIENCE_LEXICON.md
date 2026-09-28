@@ -22,6 +22,18 @@ Words may intentionally repeat across categories. Shared vocabulary is useful be
 
 ---
 
+## Typography cadence by audience mode
+
+Typography should reinforce the audience language without changing the factual meaning of the copy. The large display/H1 scale stays consistent across schemes; differentiation belongs primarily in body, UI, label, metadata, and data roles.
+
+- **Luxury/editorial:** pair expressive serif display type with restrained sans UI. Use uppercase sparingly; editorial labels can remain in natural/title case while eyebrows may retain measured uppercase tracking.
+- **Culinary:** allow serif reading texture in narrative copy, with clean sans controls and specification data. Prefer editorial/title-case pacing over constant all-caps.
+- **Wellness:** favor humanist, easy-reading sans text and natural sentence/title case. Tracking should feel calm rather than technical.
+- **Performance:** use crisp sans UI/data roles, tabular numerals where useful, and selective tracked uppercase for metrics, statuses, specifications, and taxonomy.
+- **Technical/operations:** prioritize legibility and information hierarchy. Uppercase can identify categories or statuses, but operational prose and instructions remain natural case.
+
+These are presentation rules, not claim rules. Technical performance, health, contaminant reduction, capacity, certification, and purity statements still require authoritative support regardless of typography or audience tone.
+
 ## Performance lexicon
 
 - performance

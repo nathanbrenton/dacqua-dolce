@@ -11,6 +11,7 @@ html {
 
 body {
   margin: 0;
+  font-size: var(--type-body-base);
   min-width: 320px;
   min-height: 100vh;
   color: var(--ink);
@@ -151,7 +152,7 @@ nav button:hover:not(:disabled),
   max-width: 230px;
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -170,7 +171,7 @@ nav button:hover:not(:disabled),
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -192,7 +193,7 @@ h3 {
 
 h2 {
   margin: 0;
-  font-size: clamp(2.8rem, 7vw, 6.5rem);
+  font-size: var(--type-display-section);
   line-height: 0.94;
   letter-spacing: var(--tracking-heading);
   text-wrap: balance;
@@ -202,7 +203,7 @@ h2 {
   max-width: 580px;
   margin: 38px 0 0;
   color: var(--ink-muted);
-  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-size: var(--type-body-lead);
   line-height: 1.6;
 }
 
@@ -327,7 +328,7 @@ h2 {
 .product-meta {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -335,7 +336,7 @@ h2 {
 
 .product-card h3 {
   margin: 0;
-  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-size: var(--type-heading-card);
   line-height: 0.96;
   letter-spacing: -0.03em;
 }
@@ -357,7 +358,7 @@ h2 {
 
 .product-price,
 .product-policy {
-  font-size: 0.85rem;
+  font-size: 0.97rem;
   font-weight: 700;
 }
 
@@ -385,7 +386,7 @@ h2 {
   max-width: 440px;
   margin: 0;
   color: var(--ink-muted);
-  font-size: 1.08rem;
+  font-size: 1.18rem;
   line-height: 1.7;
 }
 
@@ -410,7 +411,7 @@ h2 {
   align-items: center;
   gap: 8px;
   color: var(--ink-muted);
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
 }
 
 .status-dot {
@@ -451,11 +452,11 @@ h2 {
 
 .developer-controls label {
   margin-top: 4px;
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .developer-mode-label {
-  font-size: 0.62rem;
+  font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -505,7 +506,7 @@ h2 {
 .auth-kicker {
   margin: 0;
   color: var(--accent);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -560,7 +561,7 @@ h2 {
   display: grid;
   gap: 8px;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -583,7 +584,7 @@ h2 {
 .auth-error,
 .auth-privacy-note {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   line-height: 1.5;
 }
 
@@ -666,7 +667,7 @@ h2 {
   }
 
   h1 {
-    font-size: clamp(3.8rem, 20vw, 7rem);
+    font-size: var(--type-display-hero);
   }
 
   .hero-actions {
@@ -864,7 +865,7 @@ textarea:focus-visible {
 
 .product-detail-copy h1 {
   margin: 0;
-  font-size: clamp(3rem, 6vw, 6.2rem);
+  font-size: var(--type-display-detail);
   line-height: 0.91;
   letter-spacing: -0.045em;
 }
@@ -873,7 +874,7 @@ textarea:focus-visible {
   max-width: 620px;
   margin: 30px 0 0;
   color: var(--ink-muted);
-  font-size: 1.08rem;
+  font-size: 1.18rem;
   line-height: 1.7;
 }
 
@@ -893,7 +894,7 @@ textarea:focus-visible {
 
 .product-facts dt {
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1065,7 +1066,7 @@ textarea:focus-visible {
   }
 
   .product-detail-copy h1 {
-    font-size: clamp(3rem, 15vw, 5rem);
+    font-size: var(--type-display-detail);
   }
 
   .product-thumbnails {
@@ -1115,7 +1116,7 @@ textarea:focus-visible {
 .account-heading h1,
 .account-signin h1 {
   margin: 0;
-  font-size: clamp(3.5rem, 8vw, 7.5rem);
+  font-size: var(--type-display-page);
   line-height: 0.9;
   letter-spacing: var(--tracking-display);
 }
@@ -1164,7 +1165,7 @@ textarea:focus-visible {
   display: grid;
   gap: 7px;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
 }
 
@@ -1210,7 +1211,7 @@ textarea:focus-visible {
 .account-security-email {
   margin: 6px 0 0;
   color: var(--ink-muted);
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
   font-weight: 400;
   overflow-wrap: anywhere;
 }
@@ -1236,7 +1237,7 @@ textarea:focus-visible {
 .auth-success {
   margin: 0;
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.5;
 }
 
@@ -1294,7 +1295,7 @@ textarea:focus-visible {
 }
 
 .authenticator-compatibility-meta > span {
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .authenticator-compatibility-badge {
@@ -1312,7 +1313,7 @@ textarea:focus-visible {
 
 .account-security-status span {
   color: var(--ink-muted);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
 }
 
 .account-security-replace {
@@ -1354,7 +1355,7 @@ textarea:focus-visible {
     );
   border: 1px solid var(--focus-ring);
   border-radius: var(--radius-inset);
-  font-size: 0.84rem;
+  font-size: 0.96rem;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -1362,7 +1363,7 @@ textarea:focus-visible {
 .address-form h3 {
   margin: 0 0 2px;
   font-family: var(--body-font);
-  font-size: 0.86rem;
+  font-size: 0.98rem;
   font-weight: 750;
   letter-spacing: 0;
 }
@@ -1418,7 +1419,7 @@ textarea:focus-visible {
   background: var(--surface-1);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-button);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.2;
   white-space: nowrap;
@@ -1454,7 +1455,7 @@ textarea:focus-visible {
 .text-button.compact {
   min-height: 32px;
   margin: 12px 0 0;
-  font-size: 0.78rem;
+  font-size: 0.90rem;
 }
 
 .cart-row,
@@ -1477,7 +1478,7 @@ textarea:focus-visible {
   justify-content: space-between;
   gap: 20px;
   margin: 24px 0 0;
-  font-size: 1.1rem;
+  font-size: 1.20rem;
 }
 
 .account-muted {
@@ -1535,7 +1536,7 @@ textarea:focus-visible {
 .auth-mfa-label {
   margin: 0;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -1589,7 +1590,7 @@ textarea:focus-visible {
   color: var(--surface-1);
   background: var(--ink);
   border-radius: 50% 50% 45% 45%;
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 800;
   line-height: 1;
 }
@@ -1604,7 +1605,7 @@ textarea:focus-visible {
 
 .authenticator-compatibility-meta > span {
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .authenticator-compatibility-badge {
@@ -1634,7 +1635,7 @@ textarea:focus-visible {
   display: inline-block;
   margin-top: 7px;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
   text-underline-offset: 3px;
 }
@@ -1672,7 +1673,7 @@ textarea:focus-visible {
 
 .auth-mfa-manual summary {
   cursor: pointer;
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -1689,7 +1690,7 @@ textarea:focus-visible {
   color: var(--ink);
   background: var(--surface-1);
   border: 1px solid var(--hairline);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.6;
   user-select: all;
 }
@@ -1707,7 +1708,7 @@ textarea:focus-visible {
 .auth-recovery-codes code {
   overflow-wrap: anywhere;
   color: var(--ink);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   line-height: 1.5;
   user-select: all;
 }
@@ -1721,7 +1722,7 @@ textarea:focus-visible {
   display: grid;
   gap: 8px;
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -1823,7 +1824,7 @@ textarea:focus-visible {
   max-width: 440px;
   margin: 0;
   color: var(--ink-muted);
-  font-size: 1.08rem;
+  font-size: 1.18rem;
   line-height: 1.7;
 }
 
@@ -1912,7 +1913,7 @@ textarea:focus-visible {
 
 .operations-metrics span {
   color: var(--ink-muted);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1995,7 +1996,7 @@ textarea:focus-visible {
   gap: 7px;
   min-width: 0;
   color: var(--ink);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -2035,7 +2036,7 @@ textarea:focus-visible {
 
 .operations-product code {
   color: var(--ink-muted);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
 }
 
 .operations-product-grid {
@@ -2148,7 +2149,7 @@ textarea:focus-visible {
 .operations-denied h1 {
   max-width: 900px;
   font-family: var(--font-heading);
-  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-size: var(--type-display-compact-page);
   font-weight: var(--heading-weight);
   line-height: 1.05;
   letter-spacing: var(--tracking-heading);
@@ -2157,7 +2158,7 @@ textarea:focus-visible {
 .operations-heading > p:last-child,
 .operations-denied > p:last-child {
   margin-top: 16px;
-  font-size: 0.92rem;
+  font-size: 1.04rem;
   line-height: 1.55;
 }
 
@@ -2166,23 +2167,85 @@ textarea:focus-visible {
 }
 
 .operations-metrics {
-  margin-bottom: 18px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-bottom: 14px;
 }
 
-.operations-metrics article {
-  gap: 4px;
-  padding: 14px 16px;
+.operations-metric {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--surface-1);
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
 }
 
-.operations-metrics strong {
+.operations-metric strong {
   font-family: var(--body-font);
-  font-size: 1.65rem;
+  font-size: 1.35rem;
   font-weight: 700;
   line-height: 1;
 }
 
-.operations-metrics span {
-  font-size: 0.68rem;
+.operations-metric span {
+  min-width: 0;
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.operations-metric small {
+  opacity: 0;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: opacity 120ms ease;
+}
+
+.operations-metric:hover,
+.operations-metric:focus-visible {
+  background: var(--surface-2);
+  outline: none;
+}
+
+.operations-metric:hover small,
+.operations-metric:focus-visible small {
+  opacity: 1;
+}
+
+.operations-metric:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--control-highlight);
+}
+
+@media (max-width: 1180px) {
+  .operations-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .operations-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .operations-metric {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .operations-metric small {
+    display: none;
+  }
 }
 
 .operations-next-action {
@@ -2199,7 +2262,7 @@ textarea:focus-visible {
 
 .operations-next-action > span {
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2207,13 +2270,13 @@ textarea:focus-visible {
 
 .operations-next-action strong {
   display: block;
-  font-size: 0.95rem;
+  font-size: var(--type-body-base);
 }
 
 .operations-next-action p {
   margin: 3px 0 0;
   color: var(--ink-muted);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.45;
 }
 
@@ -2225,7 +2288,7 @@ textarea:focus-visible {
   color: #ffffff;
   background: var(--control-highlight);
   text-decoration: none;
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
 }
 
@@ -2243,14 +2306,14 @@ textarea:focus-visible {
 
 .operations-section-heading h2 {
   font-family: var(--font-heading);
-  font-size: clamp(1.55rem, 3vw, 2.2rem);
+  font-size: var(--type-heading-panel);
   font-weight: var(--heading-weight);
   line-height: 1.12;
   letter-spacing: var(--tracking-heading);
 }
 
 .operations-section-heading > p:last-child {
-  font-size: 0.85rem;
+  font-size: 0.97rem;
   line-height: 1.5;
 }
 
@@ -2273,7 +2336,7 @@ textarea:focus-visible {
 .operations-product h3 {
   margin: 3px 0 6px;
   font-family: var(--body-font);
-  font-size: 1rem;
+  font-size: 1.10rem;
   font-weight: 700;
   line-height: 1.25;
   letter-spacing: -0.01em;
@@ -2281,25 +2344,25 @@ textarea:focus-visible {
 
 .operations-quote p {
   margin-top: 5px;
-  font-size: 0.85rem;
+  font-size: 0.97rem;
 }
 
 .operations-quote small,
 .operations-note {
   margin-top: 8px;
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .operations-customer-message {
   max-width: none;
   padding: 8px 0;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.5;
 }
 
 .operations-field {
   gap: 5px;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
 }
 
 .operations-field input,
@@ -2324,7 +2387,7 @@ textarea:focus-visible {
 }
 
 .operations-product code {
-  font-size: 0.7rem;
+  font-size: 0.82rem;
 }
 
 .operations-product-grid {
@@ -2339,7 +2402,7 @@ textarea:focus-visible {
 .operations-product legend {
   padding: 0 5px;
   font-family: var(--body-font);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
 }
 
@@ -2350,7 +2413,7 @@ textarea:focus-visible {
 .operations-action {
   min-height: 38px;
   padding: 8px 11px;
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -2404,19 +2467,19 @@ textarea:focus-visible {
 .operations-customer h3 {
   margin: 3px 0 8px;
   font-family: var(--body-font);
-  font-size: 1rem;
+  font-size: 1.10rem;
   font-weight: 700;
   line-height: 1.25;
 }
 
 .operations-customer p {
   margin: 4px 0;
-  font-size: 0.84rem;
+  font-size: 0.96rem;
 }
 
 .operations-customer small {
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .operations-address-list {
@@ -2438,13 +2501,13 @@ textarea:focus-visible {
 .operations-address strong {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
 }
 
 .operations-address address {
   margin: 0 0 8px;
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
   font-style: normal;
   line-height: 1.5;
 }
@@ -2487,7 +2550,7 @@ textarea:focus-visible {
 }
 
 .operations-account-section-heading h4 {
-  font-size: 0.95rem;
+  font-size: var(--type-body-base);
 }
 
 .operations-account-status {
@@ -2497,7 +2560,7 @@ textarea:focus-visible {
   border-radius: 999px;
   background: var(--surface-1);
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 700;
   text-transform: capitalize;
 }
@@ -2517,7 +2580,7 @@ textarea:focus-visible {
 .operations-account-contact span,
 .operations-account-facts span {
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2526,7 +2589,7 @@ textarea:focus-visible {
 .operations-account-contact a,
 .operations-account-contact strong {
   overflow-wrap: anywhere;
-  font-size: 0.84rem;
+  font-size: 0.96rem;
 }
 
 .operations-account-facts {
@@ -2543,13 +2606,13 @@ textarea:focus-visible {
 }
 
 .operations-account-facts strong {
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
 }
 
 .operations-account-boundary {
   margin-top: 14px !important;
   color: var(--ink-muted);
-  font-size: 0.72rem !important;
+  font-size: 0.84rem !important;
   line-height: 1.5;
 }
 
@@ -2573,7 +2636,7 @@ textarea:focus-visible {
   border: 1px solid var(--hairline);
   border-radius: 999px;
   color: var(--ink-muted);
-  font-size: 0.62rem;
+  font-size: 0.74rem;
   font-weight: 700;
 }
 
@@ -2640,7 +2703,7 @@ textarea:focus-visible {
 
 .operations-footer-label {
   color: var(--ink-muted);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2656,7 +2719,7 @@ textarea:focus-visible {
   background: var(--surface-1);
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: 0.86rem;
   font-weight: 700;
 }
 
@@ -2752,12 +2815,12 @@ textarea:focus-visible {
 }
 
 .operations-audit-disclosure > summary strong {
-  font-size: 0.95rem;
+  font-size: var(--type-body-base);
 }
 
 .operations-audit-disclosure > summary small {
   color: var(--ink-muted);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 500;
 }
 
@@ -2794,7 +2857,7 @@ textarea:focus-visible {
   flex: 0 0 1rem;
   width: 1rem;
   color: var(--accent);
-  font-size: 1rem;
+  font-size: 1.10rem;
   line-height: 1;
   transition: transform 140ms ease;
 }
@@ -2810,12 +2873,12 @@ textarea:focus-visible {
 
 .operations-disclosure > summary strong {
   color: var(--ink);
-  font-size: 0.98rem;
+  font-size: 1.09rem;
 }
 
 .operations-disclosure > summary small {
   color: var(--ink-muted);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   font-weight: 500;
 }
 
@@ -2846,7 +2909,7 @@ textarea:focus-visible {
 
 .footer-policy-links a {
   color: var(--ink-muted);
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
   text-decoration: none;
 }
 
@@ -2880,7 +2943,7 @@ textarea:focus-visible {
   padding-top: 22px;
   color: var(--ink-muted);
   border-top: 1px solid var(--hairline);
-  font-size: 0.9rem;
+  font-size: 1.02rem;
 }
 
 @media (max-width: 720px) {
@@ -2990,7 +3053,7 @@ textarea:focus-visible {
 
 .operations-inbox-refresh small {
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   white-space: nowrap;
 }
 
@@ -3056,7 +3119,7 @@ textarea:focus-visible {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-button);
   font: inherit;
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 700;
   cursor: pointer;
 }
@@ -3106,7 +3169,7 @@ textarea:focus-visible {
 }
 
 .operations-inbox-thread strong {
-  font-size: 0.86rem;
+  font-size: 0.98rem;
   line-height: 1.35;
 }
 
@@ -3114,13 +3177,13 @@ textarea:focus-visible {
 .operations-inbox-thread small {
   overflow-wrap: anywhere;
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   line-height: 1.4;
 }
 
 .operations-inbox-thread-meta {
   color: var(--ink-muted);
-  font-size: 0.64rem;
+  font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -3141,7 +3204,7 @@ textarea:focus-visible {
 .operations-inbox-empty p {
   margin: 8px 0 0;
   color: var(--ink-muted);
-  font-size: 0.84rem;
+  font-size: 0.96rem;
   line-height: 1.5;
 }
 
@@ -3153,7 +3216,7 @@ textarea:focus-visible {
 .operations-inbox-conversation-header h3 {
   margin: 4px 0 7px;
   font-family: var(--body-font);
-  font-size: 1.15rem;
+  font-size: 1.24rem;
 }
 
 .operations-inbox-conversation-header p,
@@ -3164,7 +3227,7 @@ textarea:focus-visible {
 
 .operations-inbox-conversation-header small {
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
 }
 
 .operations-inbox-unmatched,
@@ -3177,7 +3240,7 @@ textarea:focus-visible {
   background: var(--surface-1);
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  font-size: 0.66rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -3213,13 +3276,13 @@ textarea:focus-visible {
 
 .operations-inbox-message header strong {
   overflow-wrap: anywhere;
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
 }
 
 .operations-inbox-message header small {
   flex: 0 0 auto;
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
 }
 
 .operations-inbox-direction {
@@ -3230,7 +3293,7 @@ textarea:focus-visible {
   background: var(--surface-2);
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3244,19 +3307,19 @@ textarea:focus-visible {
   margin: 7px 0 0;
   overflow-wrap: anywhere;
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .operations-inbox-message h4 {
   margin: 14px 0 8px;
-  font-size: 0.86rem;
+  font-size: 0.98rem;
 }
 
 .operations-inbox-body {
   padding: 11px 12px;
   background: var(--surface-2);
   border: 1px solid var(--hairline);
-  font-size: 0.8rem;
+  font-size: var(--type-ui-base);
   line-height: 1.55;
 }
 
@@ -3299,7 +3362,7 @@ textarea:focus-visible {
   width: fit-content;
   color: var(--ink-muted);
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 700;
 }
 
@@ -3313,7 +3376,7 @@ textarea:focus-visible {
 }
 
 .operations-inbox-attachments > strong {
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .operations-inbox-attachments ul {
@@ -3332,7 +3395,7 @@ textarea:focus-visible {
   padding: 8px 10px;
   background: var(--surface-2);
   border: 1px solid var(--hairline);
-  font-size: 0.74rem;
+  font-size: 0.86rem;
 }
 
 .operations-inbox-attachments small {
@@ -3389,7 +3452,7 @@ textarea:focus-visible {
 
 .operations-inbox-reply-status {
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .operations-inbox-reply-status.is-error {
@@ -3439,7 +3502,7 @@ textarea:focus-visible {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-button);
   font: inherit;
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 700;
   cursor: pointer;
 }
@@ -3495,7 +3558,7 @@ textarea:focus-visible {
 
 .operations-action.compact {
   padding: 7px 10px;
-  font-size: 0.72rem;
+  font-size: var(--type-small);
 }
 
 .operations-status-badge {
@@ -3504,7 +3567,7 @@ textarea:focus-visible {
   padding: 3px 6px;
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   line-height: 1;
@@ -3548,7 +3611,7 @@ textarea:focus-visible {
 .operations-delivery-issues h2 {
   margin: 5px 0 0;
   font-family: var(--font-ui);
-  font-size: 1.1rem;
+  font-size: 1.20rem;
   font-weight: 700;
   line-height: 1.28;
   letter-spacing: var(--tracking-ui);
@@ -3578,7 +3641,7 @@ textarea:focus-visible {
 
 .operations-delivery-issue-list small {
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
 }
 
 @media (max-width: 900px) {
@@ -3637,7 +3700,7 @@ textarea:focus-visible {
 .operations-header-identity strong {
   max-width: 220px;
   overflow: hidden;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3646,7 +3709,7 @@ textarea:focus-visible {
   max-width: 230px;
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3654,7 +3717,7 @@ textarea:focus-visible {
 .operations-header-button {
   min-height: 44px;
   padding: 12px 20px;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   font-weight: 500;
 }
 
@@ -3925,7 +3988,7 @@ textarea:focus-visible {
 .product-system-type,
 .product-detail-system-type {
   color: var(--ink);
-  font-size: 1rem;
+  font-size: 1.10rem;
   font-weight: 700;
 }
 
@@ -4095,7 +4158,7 @@ textarea:focus-visible {
 .operations-request-created {
   flex: 0 0 auto;
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   line-height: 1.4;
   text-align: right;
 }
@@ -4109,7 +4172,7 @@ textarea:focus-visible {
 .operations-request-region-label {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 0.65rem;
+  font-size: 0.77rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4120,7 +4183,7 @@ textarea:focus-visible {
   flex-wrap: wrap;
   gap: 6px 16px;
   margin-top: 7px;
-  font-size: 0.85rem;
+  font-size: 0.97rem;
 }
 
 .operations-request-contact a {
@@ -4155,7 +4218,7 @@ textarea:focus-visible {
 
 .operations-request-region-heading span {
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
 }
 
 .operations-request-private .operations-action {
@@ -4173,7 +4236,7 @@ textarea:focus-visible {
 .operations-request-status strong {
   display: block;
   margin-top: 5px;
-  font-size: 1rem;
+  font-size: 1.10rem;
 }
 
 @media (max-width: 900px) {
@@ -4200,7 +4263,7 @@ textarea:focus-visible {
 .operations-inbox-filter-note {
   margin: 8px 0 14px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 1.02rem;
 }
 
 .operations-email-action {
@@ -4217,7 +4280,7 @@ textarea:focus-visible {
   color: inherit;
   cursor: pointer;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   padding: 4px 9px;
 }
 
@@ -4239,14 +4302,14 @@ textarea:focus-visible {
   border: 1px solid var(--hairline);
   border-radius: 999px;
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 700;
 }
 
 .operations-governance-context {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
   line-height: 1.5;
 }
 
@@ -4314,7 +4377,7 @@ textarea:focus-visible {
 
 .recommendation-field > span {
   color: var(--ink);
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
 }
@@ -4417,7 +4480,7 @@ textarea:focus-visible {
 
 .operations-recommendation-context dt {
   color: var(--ink-muted);
-  font-size: 0.78rem;
+  font-size: 0.90rem;
   font-weight: 700;
   text-transform: capitalize;
 }
@@ -4464,7 +4527,7 @@ textarea:focus-visible {
 .product-configuration-card h3,
 .product-option-row h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.10rem;
 }
 
 .product-configuration-values {
@@ -4482,7 +4545,7 @@ textarea:focus-visible {
 .product-configuration-values dt,
 .product-option-type {
   color: var(--ink-muted);
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -4496,7 +4559,7 @@ textarea:focus-visible {
 .product-configuration-sku {
   margin: 18px 0 0;
   color: var(--ink-muted);
-  font-size: 0.76rem;
+  font-size: 0.88rem;
 }
 
 .product-options-intro {
@@ -4529,7 +4592,7 @@ textarea:focus-visible {
 .product-option-system-type {
   margin-top: 6px;
   color: var(--ink-muted);
-  font-size: 0.88rem;
+  font-size: 1rem;
 }
 
 @media (max-width: 640px) {
@@ -4553,12 +4616,12 @@ textarea:focus-visible {
   padding-block: 0.55rem;
   border-top: 1px solid var(--hairline);
   color: var(--ink-muted);
-  font-size: 0.86rem;
+  font-size: 0.98rem;
 }
 
 .operations-catalog-architecture strong {
   color: var(--ink);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4639,7 +4702,7 @@ textarea:focus-visible {
 
 .operations-request-filter-group > span {
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4657,7 +4720,7 @@ textarea:focus-visible {
 
 .operations-recommendation-result h4 {
   margin: 12px 0 0;
-  font-size: 1rem;
+  font-size: 1.10rem;
 }
 
 .operations-recommendation-result > p {
@@ -4680,7 +4743,7 @@ textarea:focus-visible {
   background: var(--surface-0);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-button);
-  font-size: 0.68rem;
+  font-size: var(--type-micro);
   font-weight: 700;
 }
 
@@ -4784,7 +4847,7 @@ textarea:focus-visible {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-badge);
   color: var(--ink-muted);
-  font-size: 0.72rem;
+  font-size: var(--type-small);
   font-weight: 700;
 }
 
@@ -4819,7 +4882,7 @@ textarea:focus-visible {
 }
 .account-equipment-facts div { display: grid; gap: 0.15rem; }
 .account-equipment-facts dt,
-.operations-equipment-dates { color: var(--ink-muted); font-size: 0.86rem; }
+.operations-equipment-dates { color: var(--ink-muted); font-size: 0.98rem; }
 .account-equipment-facts dd { margin: 0; }
 .account-equipment-documents { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.9rem; }
 .operations-account-equipment { border-top: 1px solid var(--hairline); padding-top: 1rem; }
@@ -4828,3 +4891,88 @@ textarea:focus-visible {
 .operations-equipment-dates { display: flex; flex-wrap: wrap; gap: 0.8rem; }
 .operations-equipment-form { display: grid; gap: 0.8rem; margin-top: 1rem; }
 .operations-equipment-date-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.7rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .operations-metric small {
+    transition: none;
+  }
+}
+
+
+/* PT17.3 — audience-aware semantic typography recipes
+ *
+ * The large display/H1 scale is intentionally unchanged. Typography schemes
+ * now vary the smaller and middle tiers by role: body, UI, labels, and data.
+ * This lets editorial/luxury, culinary, wellness, and performance language
+ * change cadence without turning the site into unrelated visual brands.
+ */
+body {
+  font-family: var(--font-body);
+}
+
+button,
+select,
+input,
+textarea,
+summary {
+  font-family: var(--font-ui);
+}
+
+.eyebrow {
+  font-family: var(--font-label);
+  font-weight: var(--eyebrow-weight);
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: var(--eyebrow-transform);
+}
+
+.product-meta,
+.product-technology,
+.product-facts dt,
+.developer-mode-label,
+.auth-kicker,
+.operations-metric span,
+.operations-next-action > span,
+.operations-account-contact span,
+.operations-account-facts span,
+.operations-footer-label,
+.operations-status-badge,
+.operations-inbox-direction,
+.operations-request-region-label,
+.operations-request-filter-group > span,
+.product-configuration-values dt,
+.product-option-type,
+.operations-catalog-architecture strong {
+  font-family: var(--font-label);
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+}
+
+.operations-metric strong,
+.product-facts dd,
+.product-configuration-values dd,
+.operations-product code,
+.operations-equipment-dates,
+.account-equipment-facts dd {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+.auth-form label,
+.auth-mfa-label,
+.account-form label,
+.operations-field,
+.recommendation-field > span,
+.operations-action,
+.operations-inbox-tabs button,
+.operations-request-tabs button {
+  font-family: var(--font-ui);
+}
+
+
+/* PT17.4 — responsive typography contract
+ *
+ * Font recipes own personality; semantic size tokens own hierarchy. Do not
+ * add data-typography-specific font-size overrides. If the hierarchy changes,
+ * change the shared token once so all typography choices respond identically.
+ */

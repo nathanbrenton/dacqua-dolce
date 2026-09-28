@@ -49,6 +49,9 @@
     "Manrope Variable",
     sans-serif;
   --font-data:
+    "Inter Variable",
+    sans-serif;
+  --font-label:
     "Manrope Variable",
     sans-serif;
   --display-font: var(--font-display);
@@ -58,13 +61,39 @@
   --tracking-display: -0.05em;
   --tracking-heading: -0.035em;
   --tracking-ui: 0;
+  --label-transform: uppercase;
+  --label-tracking: 0.07em;
+  --label-weight: 700;
+  --eyebrow-transform: uppercase;
+  --eyebrow-tracking: 0.16em;
+  --eyebrow-weight: 700;
 
   /*
-   * Type scale/layout remain visual-system tokens. Individual palette
-   * directions may still tune hero scale or geometry without taking
-   * ownership of the selected font family.
+   * Shared responsive type hierarchy.
+   *
+   * Size belongs to semantic tiers, never to an individual font recipe.
+   * Switching typography may change family, weight, casing, and tracking,
+   * while every recipe receives the same responsive geometry. This keeps
+   * the hierarchy proportional and makes future size changes transparent.
+   *
+   * PT17.4 restores a calmer large-display ceiling while keeping PT17.2's
+   * more legible small/medium floor.
    */
-  --hero-size: clamp(4rem, 10vw, 9rem);
+  --type-display-hero: clamp(3.6rem, 8.6vw, 7.6rem);
+  --type-display-section: clamp(2.45rem, 6vw, 5.5rem);
+  --type-display-detail: clamp(2.7rem, 5.2vw, 5.3rem);
+  --type-display-page: clamp(3rem, 6.8vw, 6.4rem);
+  --type-display-compact-page: clamp(2rem, 4vw, 3.6rem);
+  --type-heading-card: clamp(2rem, 3.5vw, 3rem);
+  --type-heading-panel: clamp(1.55rem, 3vw, 2.2rem);
+  --type-body-lead: clamp(1rem, 2vw, 1.3rem);
+  --type-body-base: 1.06rem;
+  --type-ui-base: 0.92rem;
+  --type-small: 0.84rem;
+  --type-micro: 0.80rem;
+
+  /* Existing selectors can keep the hero alias during the migration. */
+  --hero-size: var(--type-display-hero);
   --hero-leading: 0.84;
   --shell-padding: 6vw;
   --header-height: 108px;
@@ -213,142 +242,125 @@
 
 /* Site-wide typography schemes. */
 
+
 :root[data-typography="editorial-modern"] {
-  --font-display:
-    "Instrument Serif",
-    serif;
-  --font-heading:
-    "Instrument Serif",
-    serif;
-  --font-body:
-    "Manrope Variable",
-    sans-serif;
-  --font-ui:
-    "Manrope Variable",
-    sans-serif;
-  --font-data:
-    "Manrope Variable",
-    sans-serif;
+  --font-display: "Instrument Serif", serif;
+  --font-heading: "Instrument Serif", serif;
+  --font-body: "Manrope Variable", sans-serif;
+  --font-ui: "Source Sans 3 Variable", sans-serif;
+  --font-label: "Manrope Variable", sans-serif;
+  --font-data: "Inter Variable", sans-serif;
   --display-weight: 400;
   --heading-weight: 400;
   --tracking-display: -0.015em;
   --tracking-heading: -0.005em;
   --tracking-ui: 0;
+  --label-transform: uppercase;
+  --label-tracking: 0.07em;
+  --label-weight: 700;
+  --eyebrow-transform: uppercase;
+  --eyebrow-tracking: 0.16em;
+  --eyebrow-weight: 700;
 }
 
 :root[data-typography="editorial-classic"] {
-  --font-display:
-    "Cormorant Garamond",
-    serif;
-  --font-heading:
-    "Cormorant Garamond",
-    serif;
-  --font-body:
-    "Manrope Variable",
-    sans-serif;
-  --font-ui:
-    "Manrope Variable",
-    sans-serif;
-  --font-data:
-    "Manrope Variable",
-    sans-serif;
+  --font-display: "Cormorant Garamond", serif;
+  --font-heading: "Cormorant Garamond", serif;
+  --font-body: "Newsreader Variable", serif;
+  --font-ui: "Manrope Variable", sans-serif;
+  --font-label: "Manrope Variable", sans-serif;
+  --font-data: "Inter Variable", sans-serif;
   --display-weight: 500;
   --heading-weight: 500;
   --tracking-display: -0.025em;
   --tracking-heading: -0.012em;
   --tracking-ui: 0;
+  --label-transform: none;
+  --label-tracking: 0.015em;
+  --label-weight: 700;
+  --eyebrow-transform: uppercase;
+  --eyebrow-tracking: 0.13em;
+  --eyebrow-weight: 700;
 }
 
 :root[data-typography="literary-wellness"] {
-  --font-display:
-    "Newsreader Variable",
-    serif;
-  --font-heading:
-    "Newsreader Variable",
-    serif;
-  --font-body:
-    "Manrope Variable",
-    sans-serif;
-  --font-ui:
-    "Manrope Variable",
-    sans-serif;
-  --font-data:
-    "Manrope Variable",
-    sans-serif;
+  --font-display: "Newsreader Variable", serif;
+  --font-heading: "Newsreader Variable", serif;
+  --font-body: "Source Sans 3 Variable", sans-serif;
+  --font-ui: "Source Sans 3 Variable", sans-serif;
+  --font-label: "Source Sans 3 Variable", sans-serif;
+  --font-data: "Manrope Variable", sans-serif;
   --display-weight: 500;
   --heading-weight: 500;
   --tracking-display: -0.032em;
   --tracking-heading: -0.018em;
   --tracking-ui: 0;
+  --label-transform: none;
+  --label-tracking: 0.01em;
+  --label-weight: 650;
+  --eyebrow-transform: none;
+  --eyebrow-tracking: 0.035em;
+  --eyebrow-weight: 650;
 }
 
 :root[data-typography="precision-sans"] {
-  --font-display:
-    "Manrope Variable",
-    sans-serif;
-  --font-heading:
-    "Manrope Variable",
-    sans-serif;
-  --font-body:
-    "Manrope Variable",
-    sans-serif;
-  --font-ui:
-    "Manrope Variable",
-    sans-serif;
-  --font-data:
-    "Manrope Variable",
-    sans-serif;
+  --font-display: "Manrope Variable", sans-serif;
+  --font-heading: "Manrope Variable", sans-serif;
+  --font-body: "Manrope Variable", sans-serif;
+  --font-ui: "Inter Variable", sans-serif;
+  --font-label: "Inter Variable", sans-serif;
+  --font-data: "Inter Variable", sans-serif;
   --display-weight: 650;
   --heading-weight: 650;
   --tracking-display: -0.035em;
   --tracking-heading: -0.02em;
   --tracking-ui: 0;
+  --label-transform: uppercase;
+  --label-tracking: 0.09em;
+  --label-weight: 750;
+  --eyebrow-transform: uppercase;
+  --eyebrow-tracking: 0.12em;
+  --eyebrow-weight: 750;
 }
 
 :root[data-typography="technical-neutral"] {
-  --font-display:
-    "Inter Variable",
-    sans-serif;
-  --font-heading:
-    "Inter Variable",
-    sans-serif;
-  --font-body:
-    "Inter Variable",
-    sans-serif;
-  --font-ui:
-    "Inter Variable",
-    sans-serif;
-  --font-data:
-    "Inter Variable",
-    sans-serif;
+  --font-display: "Inter Variable", sans-serif;
+  --font-heading: "Inter Variable", sans-serif;
+  --font-body: "Source Sans 3 Variable", sans-serif;
+  --font-ui: "Inter Variable", sans-serif;
+  --font-label: "Inter Variable", sans-serif;
+  --font-data: "Inter Variable", sans-serif;
   --display-weight: 650;
   --heading-weight: 650;
   --tracking-display: -0.032em;
   --tracking-heading: -0.015em;
   --tracking-ui: 0;
+  --label-transform: uppercase;
+  --label-tracking: 0.055em;
+  --label-weight: 700;
+  --eyebrow-transform: uppercase;
+  --eyebrow-tracking: 0.085em;
+  --eyebrow-weight: 700;
 }
 
 :root[data-typography="humanist-contemporary"] {
-  --font-display:
-    "Source Sans 3 Variable",
-    sans-serif;
-  --font-heading:
-    "Source Sans 3 Variable",
-    sans-serif;
-  --font-body:
-    "Source Sans 3 Variable",
-    sans-serif;
-  --font-ui:
-    "Source Sans 3 Variable",
-    sans-serif;
-  --font-data:
-    "Source Sans 3 Variable",
-    sans-serif;
+  --font-display: "Source Sans 3 Variable", sans-serif;
+  --font-heading: "Source Sans 3 Variable", sans-serif;
+  --font-body: "Source Sans 3 Variable", sans-serif;
+  --font-ui: "Source Sans 3 Variable", sans-serif;
+  --font-label: "Source Sans 3 Variable", sans-serif;
+  --font-data: "Source Sans 3 Variable", sans-serif;
   --display-weight: 650;
   --heading-weight: 650;
   --tracking-display: -0.028em;
   --tracking-heading: -0.012em;
   --tracking-ui: 0;
+  --label-transform: none;
+  --label-tracking: 0.005em;
+  --label-weight: 650;
+  --eyebrow-transform: none;
+  --eyebrow-tracking: 0.025em;
+  --eyebrow-weight: 650;
 }
 
 /* Global appearance axis. */
