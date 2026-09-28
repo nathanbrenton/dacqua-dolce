@@ -25,7 +25,10 @@ import {
   getOperationsOrders,
   getOperationsQuotes,
   getOperationsSummary,
+  createProductRelationship,
+  deleteProductRelationship,
   updateProductInventory,
+  updateProductRelationship,
   updateProductPricing,
   updateQuoteNotes,
   updateQuoteStatus,
@@ -169,6 +172,73 @@ const INVENTORY_STATUSES = [
   "not_tracked",
 ] as const;
 
+const PRICING_MODE_LABELS: Record<string, string> = {
+  PUBLIC: "Public price",
+  MAP_LIMITED: "MAP-limited",
+  CART_ONLY: "Cart only",
+  PRIVATE_QUOTE: "Private quote",
+  LOGIN_REQUIRED: "Login required",
+  NO_ONLINE_PRICE: "No online price",
+  NO_ONLINE_SALE: "No online sale",
+};
+
+const INVENTORY_STATUS_LABELS: Record<string, string> = {
+  in_stock: "In stock",
+  low_stock: "Low stock",
+  backordered: "Backordered",
+  unavailable: "Unavailable",
+  not_tracked: "Not tracked",
+};
+
+const AUDIT_ACTION_LABELS: Record<string, string> = {
+  "account.registered": "Account registered",
+  "authentication.failed": "Authentication failed",
+  "authentication.logout": "Signed out",
+  "authentication.session_revoked": "Session revoked",
+  "cart.item_added": "Cart item added",
+  "cart.item_removed": "Cart item removed",
+  "catalog.inventory_changed": "Inventory changed",
+  "catalog.pricing_changed": "Pricing policy changed",
+  "catalog.relationship_created": "Product relationship created",
+  "catalog.relationship_changed": "Product relationship changed",
+  "catalog.relationship_removed": "Product relationship removed",
+  "communications.reply_attempted": "Customer reply attempted",
+  "communications.thread_status_changed": "Inbox thread status changed",
+  "customer.address_created": "Customer address created",
+  "customer.address_deleted": "Customer address deleted",
+  "customer.profile_updated": "Customer profile updated",
+  "identity.operations_roles_changed": "Operations roles changed",
+  "order.status_changed": "Order status changed",
+  "quote.notes_updated": "Request notes updated",
+  "quote.requested": "Customer request submitted",
+  "quote.status_changed": "Request status changed",
+};
+
+const AUDIT_ENTITY_LABELS: Record<string, string> = {
+  cart_item: "Cart item",
+  communication_thread: "Communication thread",
+  customer_address: "Customer address",
+  customer_profile: "Customer profile",
+  order: "Order",
+  product: "Product",
+  product_relationship: "Product relationship",
+  quote_request: "Customer request",
+  user: "User account",
+  user_session: "User session",
+};
+
+function auditActionLabel(action: string): string {
+  return AUDIT_ACTION_LABELS[action] ?? action.replaceAll("_", " ");
+}
+
+function auditEntityLabel(entityType: string): string {
+  return AUDIT_ENTITY_LABELS[entityType] ?? entityType.replaceAll("_", " ");
+}
+
+function roleLabel(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
 type PricingDraft = {
   mode: string;
   amount: string;
@@ -294,6 +364,10 @@ export function OperationsPage({
     useState<OperationsAuditEvent[]>([]);
   const [auditSearch, setAuditSearch] =
     useState("");
+  const [auditActionFilter, setAuditActionFilter] =
+    useState("all");
+  const [auditEntityFilter, setAuditEntityFilter] =
+    useState("all");
   const [auditLoaded, setAuditLoaded] =
     useState(false);
   const [auditLoading, setAuditLoading] =
@@ -324,6 +398,12 @@ export function OperationsPage({
     useState("");
   const [products, setProducts] =
     useState<OperationsProduct[]>([]);
+  const [relationshipProductDrafts, setRelationshipProductDrafts] =
+    useState<Record<string, string>>({});
+  const [relationshipTypeDrafts, setRelationshipTypeDrafts] =
+    useState<Record<string, "option" | "accessory">>({});
+  const [relationshipSaveStates, setRelationshipSaveStates] =
+    useState<Record<string, SaveState>>({});
   const [pricingDrafts, setPricingDrafts] =
     useState<Record<string, PricingDraft>>({});
   const [inventoryDrafts, setInventoryDrafts] =
@@ -608,20 +688,40 @@ export function OperationsPage({
     orderSearch,
   ]);
 
-  const filteredAuditEvents = useMemo(() => {
-    const query =
-      auditSearch.trim().toLowerCase();
+  const auditActionOptions = useMemo(
+    () => Array.from(new Set(auditEvents.map((event) => event.action))).sort(),
+    [auditEvents],
+  );
 
-    if (query.length === 0) {
-      return auditEvents;
-    }
+  const auditEntityOptions = useMemo(
+    () => Array.from(new Set(auditEvents.map((event) => event.entity_type))).sort(),
+    [auditEvents],
+  );
+
+  const filteredAuditEvents = useMemo(() => {
+    const query = auditSearch.trim().toLowerCase();
 
     return auditEvents.filter((event) => {
+      if (auditActionFilter !== "all" && event.action !== auditActionFilter) {
+        return false;
+      }
+
+      if (auditEntityFilter !== "all" && event.entity_type !== auditEntityFilter) {
+        return false;
+      }
+
+      if (query.length === 0) {
+        return true;
+      }
+
       const searchable = [
         event.id,
         event.actor_user_id ?? "",
+        event.actor_email ?? "",
         event.action,
+        auditActionLabel(event.action),
         event.entity_type,
+        auditEntityLabel(event.entity_type),
         event.entity_id ?? "",
         event.environment,
       ]
@@ -633,6 +733,8 @@ export function OperationsPage({
   }, [
     auditEvents,
     auditSearch,
+    auditActionFilter,
+    auditEntityFilter,
   ]);
 
   if (!authorized) {
@@ -836,6 +938,106 @@ export function OperationsPage({
         caught instanceof Error
           ? caught.message
           : "Account role update failed.",
+      );
+    }
+  }
+
+  async function addProductRelationship(product: OperationsProduct) {
+    const relatedProductId = relationshipProductDrafts[product.id] ?? "";
+    const relationshipType = relationshipTypeDrafts[product.id] ?? "option";
+
+    if (relatedProductId.length === 0) {
+      setError("Choose a related catalog product first.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setRelationshipSaveStates((current) => ({
+      ...current,
+      [product.id]: "saving",
+    }));
+
+    try {
+      const updated = await createProductRelationship(product.id, {
+        related_product_id: relatedProductId,
+        relationship_type: relationshipType,
+        public: false,
+        active: true,
+        sort_order: 0,
+      });
+      setProducts((current) => replaceProduct(current, updated));
+      setRelationshipProductDrafts((current) => ({
+        ...current,
+        [product.id]: "",
+      }));
+      setMessage(`Internal ${relationshipType} added for ${product.sku}.`);
+      setRelationshipSaveStates((current) => ({
+        ...current,
+        [product.id]: "saved",
+      }));
+    } catch (caught) {
+      setRelationshipSaveStates((current) => ({
+        ...current,
+        [product.id]: "idle",
+      }));
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Product relationship update failed.",
+      );
+    }
+  }
+
+  async function changeProductRelationship(
+    product: OperationsProduct,
+    relationship: OperationsProduct["relationships"][number],
+    changes: Partial<{ public: boolean; active: boolean }>,
+  ) {
+    setError(null);
+    setMessage(null);
+
+    try {
+      const updated = await updateProductRelationship(
+        product.id,
+        relationship.id,
+        {
+          relationship_type: relationship.relationship_type,
+          public: changes.public ?? relationship.public,
+          active: changes.active ?? relationship.active,
+          sort_order: relationship.sort_order,
+        },
+      );
+      setProducts((current) => replaceProduct(current, updated));
+      setMessage(`Product relationship saved for ${product.sku}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Product relationship update failed.",
+      );
+    }
+  }
+
+  async function removeProductRelationship(
+    product: OperationsProduct,
+    relationshipId: string,
+  ) {
+    setError(null);
+    setMessage(null);
+
+    try {
+      const updated = await deleteProductRelationship(
+        product.id,
+        relationshipId,
+      );
+      setProducts((current) => replaceProduct(current, updated));
+      setMessage(`Product relationship removed from ${product.sku}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Product relationship removal failed.",
       );
     }
   }
@@ -1324,6 +1526,24 @@ export function OperationsPage({
                     </div>
                   </section>
 
+                  {quote.recommendation_context !== null ? (
+                    <section className="operations-request-region">
+                      <p className="operations-request-region-label">
+                        Recommendation context
+                      </p>
+                      <dl className="operations-recommendation-context">
+                        {Object.entries(quote.recommendation_context).map(
+                          ([key, value]) => (
+                            <div key={key}>
+                              <dt>{key.replaceAll("_", " ")}</dt>
+                              <dd>{String(value ?? "—")}</dd>
+                            </div>
+                          ),
+                        )}
+                      </dl>
+                    </section>
+                  ) : null}
+
                   <section className="operations-request-region">
                     <p className="operations-request-region-label">Request</p>
                     {quote.message !== null ? (
@@ -1641,16 +1861,176 @@ export function OperationsPage({
                   <h3>{product.name}</h3>
                   <code>{product.sku}</code>
 
-                  <p className="operations-note">
-                    Online sale:{" "}
-                    {product.online_sale_approved
-                      ? "approved"
-                      : (
-                          "blocked pending manufacturer/"
-                          + "component policy verification"
-                        )}
-                  </p>
+                  <div className="operations-catalog-architecture">
+                    <span>
+                      <strong>Family</strong>
+                      {product.product_family ?? "Not assigned"}
+                    </span>
+                    <span>
+                      <strong>System</strong>
+                      {product.system_type ?? "Not assigned"}
+                    </span>
+                    <span>
+                      <strong>Active configurations</strong>
+                      {product.active_variant_count}
+                    </span>
+                    <span>
+                      <strong>Public options</strong>
+                      {product.public_option_count}
+                    </span>
+                  </div>
+
+                  <div className="operations-governance-badges">
+                    <span>
+                      Pricing: {PRICING_MODE_LABELS[product.pricing.mode] ?? product.pricing.mode}
+                    </span>
+                    <span>
+                      Inventory: {INVENTORY_STATUS_LABELS[product.inventory.status] ?? product.inventory.status}
+                    </span>
+                    <span>Reserved: {product.inventory.quantity_reserved}</span>
+                    <span>
+                      Online sale: {product.online_sale_approved ? "approved" : "blocked"}
+                    </span>
+                  </div>
+
+                  {!product.online_sale_approved ? (
+                    <p className="operations-note">
+                      Online sale remains blocked pending applicable manufacturer/component policy verification.
+                    </p>
+                  ) : null}
                 </header>
+
+                <details className="operations-product-relationships">
+                  <summary>Options &amp; accessories</summary>
+
+                  <div className="operations-product-relationship-list">
+                    {product.relationships.length === 0 ? (
+                      <p className="operations-note">
+                        No product relationships are recorded. Add only options or accessories whose compatibility has been verified.
+                      </p>
+                    ) : (
+                      product.relationships.map((relationship) => (
+                        <div
+                          key={relationship.id}
+                          className="operations-product-relationship"
+                        >
+                          <div>
+                            <strong>{relationship.related_name}</strong>
+                            <code>{relationship.related_sku}</code>
+                            <small>
+                              {relationship.relationship_type === "option"
+                                ? "Option"
+                                : "Accessory"}
+                              {relationship.active ? " · active" : " · inactive"}
+                              {relationship.public ? " · public" : " · internal"}
+                            </small>
+                          </div>
+
+                          {privileged ? (
+                            <div className="operations-product-relationship-actions">
+                              <button
+                                type="button"
+                                className="operations-action secondary"
+                                onClick={() => {
+                                  void changeProductRelationship(
+                                    product,
+                                    relationship,
+                                    { public: !relationship.public },
+                                  );
+                                }}
+                              >
+                                {relationship.public ? "Make internal" : "Make public"}
+                              </button>
+                              <button
+                                type="button"
+                                className="operations-action secondary"
+                                onClick={() => {
+                                  void changeProductRelationship(
+                                    product,
+                                    relationship,
+                                    { active: !relationship.active },
+                                  );
+                                }}
+                              >
+                                {relationship.active ? "Deactivate" : "Activate"}
+                              </button>
+                              <button
+                                type="button"
+                                className="operations-action secondary"
+                                onClick={() => {
+                                  void removeProductRelationship(
+                                    product,
+                                    relationship.id,
+                                  );
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {privileged ? (
+                    <div className="operations-product-relationship-create">
+                      <label className="operations-field">
+                        <span>Related catalog product</span>
+                        <select
+                          value={relationshipProductDrafts[product.id] ?? ""}
+                          onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                            setRelationshipProductDrafts((current) => ({
+                              ...current,
+                              [product.id]: event.target.value,
+                            }));
+                          }}
+                        >
+                          <option value="">Choose a product</option>
+                          {products
+                            .filter((candidate) => candidate.id !== product.id)
+                            .map((candidate) => (
+                              <option key={candidate.id} value={candidate.id}>
+                                {candidate.name} · {candidate.sku}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+
+                      <label className="operations-field">
+                        <span>Relationship</span>
+                        <select
+                          value={relationshipTypeDrafts[product.id] ?? "option"}
+                          onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                            setRelationshipTypeDrafts((current) => ({
+                              ...current,
+                              [product.id]: event.target.value as "option" | "accessory",
+                            }));
+                          }}
+                        >
+                          <option value="option">Option</option>
+                          <option value="accessory">Accessory</option>
+                        </select>
+                      </label>
+
+                      <button
+                        type="button"
+                        className="operations-action"
+                        disabled={relationshipSaveStates[product.id] === "saving"}
+                        onClick={() => {
+                          void addProductRelationship(product);
+                        }}
+                      >
+                        {relationshipSaveStates[product.id] === "saving"
+                          ? "Adding…"
+                          : "Add as internal"}
+                      </button>
+                      <p className="operations-note">
+                        New relationships start internal. Make them public only after compatibility and public presentation are confirmed.
+                      </p>
+                    </div>
+                  ) : null}
+                </details>
 
                 <div className="operations-product-grid">
                   <fieldset>
@@ -1671,7 +2051,7 @@ export function OperationsPage({
                       >
                         {PRICING_MODES.map((mode) => (
                           <option key={mode} value={mode}>
-                            {mode}
+                            {PRICING_MODE_LABELS[mode] ?? mode}
                           </option>
                         ))}
                       </select>
@@ -1711,6 +2091,13 @@ export function OperationsPage({
                         />
                       </label>
                     </div>
+
+                    <p className="operations-governance-context">
+                      Current authoritative policy: {PRICING_MODE_LABELS[product.pricing.mode] ?? product.pricing.mode}
+                      {product.pricing.amount_minor !== null
+                        ? ` · ${formatMoney(product.pricing.amount_minor, product.pricing.currency ?? "USD")}`
+                        : " · amount withheld"}
+                    </p>
 
                     <button
                       type="button"
@@ -1763,7 +2150,7 @@ export function OperationsPage({
                             key={inventoryStatus}
                             value={inventoryStatus}
                           >
-                            {inventoryStatus}
+                            {INVENTORY_STATUS_LABELS[inventoryStatus] ?? inventoryStatus}
                           </option>
                         ))}
                       </select>
@@ -1804,6 +2191,13 @@ export function OperationsPage({
                         </small>
                       </label>
                     </div>
+
+                    <p className="operations-governance-context">
+                      Authoritative stock: {product.inventory.quantity_on_hand}
+                      {product.inventory.status !== "not_tracked"
+                        ? ` · reserved ${product.inventory.quantity_reserved} · available ${Math.max(0, product.inventory.quantity_on_hand - product.inventory.quantity_reserved)}`
+                        : " · quantity is informational while inventory is not tracked"}
+                    </p>
 
                     <button
                       type="button"
@@ -2159,6 +2553,23 @@ export function OperationsPage({
                             </div>
                           </header>
 
+                          <div className="operations-governance-badges">
+                            <span>Status: {roleLabel(account.status)}</span>
+                            <span>Email: {account.email_verified ? "verified" : "unverified"}</span>
+                            <span>
+                              MFA: {account.mfa_required
+                                ? account.mfa_enrolled
+                                  ? "required · enrolled"
+                                  : "required · pending"
+                                : "not required"}
+                            </span>
+                            <span>
+                              Access: {account.roles.length > 0
+                                ? account.roles.map(roleLabel).join(", ")
+                                : "none"}
+                            </span>
+                          </div>
+
                           <div className="operations-address-list">
                             <div className="operations-address">
                               <strong>Identity</strong>
@@ -2209,7 +2620,7 @@ export function OperationsPage({
                                         );
                                       }}
                                     />{" "}
-                                    {role}
+                                    {roleLabel(role)}
                                   </label>
                                 );
                               })}
@@ -2307,26 +2718,51 @@ export function OperationsPage({
                 </p>
               ) : (
                 <>
-                  <label
-                    className={
-                      "operations-field "
-                      + "operations-customer-search"
-                    }
-                  >
-                    <span>Search audit events</span>
-                    <input
-                      type="search"
-                      placeholder={
-                        "Action, entity, actor, environment…"
-                      }
-                      value={auditSearch}
-                      onChange={(event) => {
-                        setAuditSearch(
-                          event.target.value,
-                        );
-                      }}
-                    />
-                  </label>
+                  <div className="operations-audit-controls">
+                    <label className="operations-field operations-customer-search">
+                      <span>Search audit events</span>
+                      <input
+                        type="search"
+                        placeholder="Action, entity, actor, environment…"
+                        value={auditSearch}
+                        onChange={(event) => setAuditSearch(event.target.value)}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Action</span>
+                      <select
+                        value={auditActionFilter}
+                        onChange={(event) => setAuditActionFilter(event.target.value)}
+                      >
+                        <option value="all">All actions</option>
+                        {auditActionOptions.map((action) => (
+                          <option key={action} value={action}>
+                            {auditActionLabel(action)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Entity</span>
+                      <select
+                        value={auditEntityFilter}
+                        onChange={(event) => setAuditEntityFilter(event.target.value)}
+                      >
+                        <option value="all">All entities</option>
+                        {auditEntityOptions.map((entityType) => (
+                          <option key={entityType} value={entityType}>
+                            {auditEntityLabel(entityType)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <p className="operations-governance-context">
+                    Showing {filteredAuditEvents.length} of {auditEvents.length} retained recent events.
+                  </p>
 
                   {auditEvents.length === 0 ? (
                     <p className="account-muted">
@@ -2348,10 +2784,10 @@ export function OperationsPage({
                               <p className="product-meta">
                                 {event.environment}
                                 {" · "}
-                                {event.entity_type}
+                                {auditEntityLabel(event.entity_type)}
                               </p>
 
-                              <h3>{event.action}</h3>
+                              <h3>{auditActionLabel(event.action)}</h3>
 
                               <small>
                                 {new Date(
@@ -2365,7 +2801,7 @@ export function OperationsPage({
                             <div className="operations-address">
                               <strong>Entity</strong>
                               <address>
-                                {event.entity_type}
+                                {auditEntityLabel(event.entity_type)}
                                 <br />
                                 {event.entity_id
                                   ?? "No entity identifier"}
@@ -2375,10 +2811,15 @@ export function OperationsPage({
                             <div className="operations-address">
                               <strong>Actor</strong>
                               <address>
-                                {event.actor_user_id
-                                  ?? "System / unauthenticated"}
+                                {event.actor_email
+                                  ?? (event.actor_user_id
+                                    ? "Employee account"
+                                    : "System / unauthenticated")}
                               </address>
                               <small>
+                                {event.actor_user_id
+                                  ? `User ${event.actor_user_id} · `
+                                  : ""}
                                 Audit event {event.id}
                               </small>
                             </div>

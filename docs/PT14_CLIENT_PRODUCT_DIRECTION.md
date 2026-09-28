@@ -16,21 +16,27 @@ This document records approved or explicitly provisional product-direction decis
 
 The public site may provide a `Recommend a System` workflow, with `Help Me Choose` as supporting action language.
 
+The approved section heading is `Start with your water treatment goals.` This avoids assuming homeownership or that the customer is new to water treatment while keeping the workflow focused on customer goals.
+
 Initial decision paths are intentionally explanatory rather than deterministic:
 
 1. If electrical power or a backwash drain is unavailable, begin with Harmony water conditioning plus cartridge filtration.
 2. If power and drain are available and the customer wants carbon filtration plus deposit mitigation without brine-tank salt, begin with backwashing carbon filtration plus Harmony.
 3. If power and drain are available and the customer specifically wants softened water, begin with carbon filtration plus a water softener.
 
-Final recommendations must account for source-water conditions, installation requirements, household demand, and verified product capabilities.
+Final recommendations must account for source-water conditions, installation requirements, water demand, and verified product capabilities.
 
 ## Cartridge housings and replacement cartridges
 
-- `Big Blue` is retained only as a manufacturer/internal reference.
-- The public replacement-cartridge housing family name is unresolved.
-- Single and Duo housing configurations are planned.
-- Replacement cartridges may include sediment variants by micron rating and carbon-filter variants.
-- Public housing and cartridge names must not be invented or normalized into the canonical catalog until approved.
+- `Big Blue` is retained only as a manufacturer/internal reference and is not public-facing product terminology.
+- The public cartridge-filtration family name remains unresolved.
+- The approved public naming structure is `[Family Name] Single — Cartridge Filtration` and `[Family Name] Duo — Cartridge Filtration`.
+- Replacement-cartridge names should follow `Brand + function + micron/specification`.
+- Sediment micron ratings remain TBD pending manufacturer confirmation.
+- Carbon-block cartridge types remain TBD pending manufacturer confirmation.
+- No validated gallon/service capacities are currently approved for publication; manufacturer confirmation is required.
+- General replacement guidance is at least every six months where applicable. Actual service life varies with source-water quality, micron rating, usage, and system conditions.
+- Do not invent the unresolved family name, cartridge specifications, micron ratings, cartridge types, or service-capacity claims merely to complete the catalog.
 
 ## Softener maintenance working language
 
@@ -132,7 +138,7 @@ Product detail pages should prioritize customer decision information over intern
 
 Public specifications must continue to come from authoritative catalog data. The presentation layer may reorganize those values for readability, but it must not manufacture, infer, or silently broaden technical claims.
 
-Guided system selection remains a set of conversation starting points rather than a deterministic prescription. Recommendation cards should state the customer constraint or goal first, then describe the supported starting point. Final selection continues to depend on source-water conditions, installation requirements, household demand, and verified product capabilities.
+Guided system selection remains a set of conversation starting points rather than a deterministic prescription. Recommendation cards should state the customer constraint or goal first, then describe the supported starting point. Final selection continues to depend on source-water conditions, installation requirements, water demand, and verified product capabilities.
 
 SKU-specific presentation rules are claims boundaries as well as visual rules. CLEAR/CAM education is currently assigned only to `DD15CAT-TTACPTV`; it must not be inferred for `DD15CAT-TTACRV` or another product without authoritative support. Unresolved family naming for carbon and softener products must likewise not be promoted or normalized by the derived presentation layer.
 
@@ -143,7 +149,7 @@ Product-specific quote requests must continue to persist the selected product th
 
 Guided-selection and general-consultation inquiries remain unassociated with a product until a product is actually selected. Presentation context may distinguish those entry points while the dialog is open, but transient UI context must not be silently encoded into the customer's message. If durable inquiry-source attribution becomes a business requirement, add an explicit structured field and migration rather than overloading free-form customer content.
 
-Request forms should collect only useful response context. Encourage customers to describe water goals or concerns, source water when known, household needs, and installation constraints without requiring technical knowledge they may not have. Form state should reset between inquiries so details from a previous request are not carried into a later one.
+Request forms should collect only useful response context. Encourage customers to describe water goals or concerns, source water when known, water-use needs, and installation constraints without requiring technical knowledge they may not have. Form state should reset between inquiries so details from a previous request are not carried into a later one.
 
 
 ## PT14.7 Operations customer-request workspace
@@ -175,3 +181,104 @@ The mailbox presents explicit Inbox, System, Archived, and All views with visibl
 After successful email verification, send one welcome/next-step message inviting the customer to explore water-filtration solutions or use Help Me Choose. The welcome is event-driven rather than a recurring promotional drip and is archived as `customer_welcome`. Duplicate welcome delivery for the same user must be prevented through the structured email-delivery record.
 
 Operations should keep employee communication inside the D'Acqua Dolce web application. Do not use `mailto:` links in Operations; existing conversations use the in-app reply workflow, while standalone customer email addresses provide a Copy email action until an intentional in-app new-message composer exists.
+
+
+## PT15.3 Harmony pass-through ownership presentation
+
+The confirmed Harmony pass-through configuration may present its verified installation and ownership characteristics together on the product-detail page: non-backwashing operation, no electrical power requirement, no backwash-drain requirement, and a replaceable carbon-block prefilter. These facts apply only to the known pass-through SKU and must not be generalized to Harmony Regenerating or other products without authoritative support.
+
+Where a replaceable cartridge is known to apply, public ownership guidance may state replacement at least every six months where applicable, while making clear that actual service life varies with source-water quality, micron rating, usage, and system conditions. Do not publish an unverified micron rating, carbon-block type, or gallon/service capacity.
+
+The product-detail overview should prefer the verified presentation-layer summary when one exists so that the customer sees the same approved claims boundary on the catalog card and detail page.
+
+
+## PT15.4 installation planning and ownership education
+
+The Recommend a System experience may include general planning guidance that helps customers understand ownership implications without treating those points as SKU specifications.
+
+Exterior irrigation and hose-bib lines should generally bypass treated-water equipment where appropriate so large exterior demand is not treated unnecessarily. This is planning guidance rather than a universal plumbing rule; final routing depends on the property and installation.
+
+For conventional water softeners, public ownership guidance may advise customers to inspect brine-tank salt about monthly, replenish it as needed, and verify valve time-of-day after a power loss where applicable. System-specific manufacturer instructions remain authoritative.
+
+These planning notes must not resolve the still-unapproved softener family name or imply that every property, valve, or installation is configured identically.
+
+
+## Recommendation-to-request language continuity
+
+Customer-facing recommendation, consultation, and quote-request copy should remain neutral about property ownership and customer experience level. Ask for water goals, source-water context, water-use needs, and installation constraints rather than assuming a `home`, `household`, or first-time buyer.
+
+This language rule applies across the recommendation-to-request handoff so the conversion step does not reintroduce assumptions removed from the recommendation experience.
+
+## PT15.6 — Audience language and consultation refinement
+
+Confirmed copy direction from the 2026-09-27 refinement pass:
+
+- Use **water treatment** as the broad umbrella term when a surface spans conditioning, softening, filtration, reverse osmosis, or other treatment approaches.
+- Avoid narrowing general brand/consultation copy to homeowners unless the context is specifically residential.
+- Avoid unnecessarily directive consultation prompts such as “Tell us…” or “Share…” when a concise outcome phrase, friendly question, or neutral helper sentence works.
+- Current general consultation heading: **“Further improve your water”**
+- Deliberately vary audience-signaling vocabulary across performance, culinary, and wellness contexts instead of repeating “goals” throughout the experience.
+- `docs/DACQUA_DOLCE_AUDIENCE_LEXICON.md` is the working copy reference for this vocabulary strategy.
+
+
+
+## PT15.8 structured recommendation logic
+
+The client confirmed the three current municipal-water starting paths:
+
+1. If electrical power or a backwash drain is unavailable, start with Harmony conditioning plus cartridge filtration.
+2. If power and drain are available and the customer prefers carbon filtration with scale/deposit mitigation without salt, start with backwashing carbon plus Harmony.
+3. If power and drain are available and the customer prefers conventionally softened water, start with backwashing carbon plus a water softener. Reverse osmosis must also be recommended whenever the softener path is selected.
+
+The guided recommendation may ask about municipal versus well water, signs of hard water, number of bathrooms, whether the customer has read the water-quality report supplied with the water bill, signs of chlorine/chloramine, iron/manganese concerns, existing equipment, drain and electrical availability, irrigation/hose-bib plumbing, pool/autofill plumbing, drinking-water RO interest, available water-test results, and whether neighbors/friends/family use water filtration.
+
+Do not ask for number of occupants. Peak-flow requirements remain unresolved (`Maybe`) and should not be added as a required recommendation question yet.
+
+If the customer identifies the source as well water, third-party laboratory testing is mandatory. The application must not produce an automatic system recommendation for well water; route the inquiry to human review/testing instead. Ambiguous source-water, utility, or treatment-preference answers may likewise fall back to human review rather than fabricating certainty.
+
+Recommendation answers are structured request context, not customer-authored message text. Persist them separately so Operations can inspect the recommendation basis without altering the customer's free-form message.
+
+The detailed guided questionnaire is **secondary assistance**, not the primary homepage presentation. Keep the concise `Recommend a System` starting-point cards visible, and reveal the questionnaire only after the customer explicitly asks for guided assistance.
+
+Treat the question set, structured recommendation context, and decision rules as reusable domain logic. A future AI chatbot may ask the same questions conversationally; it should reuse the same underlying context and recommendation boundaries rather than maintain a separate recommendation policy.
+
+
+## PT15.9 — Product architecture normalization
+
+Client-confirmed long-term hierarchy:
+
+**Family → Product/System → Size/Capacity → Options/Accessories**
+
+Implementation rules:
+
+- `product_family` is the family layer.
+- `system_type` is a separate nullable system/product-type layer and must not be inferred from a marketing name when client terminology is unresolved.
+- `ProductVariant` remains the size/capacity/configuration layer, including variant-specific SKU, pricing, and inventory.
+- Product-to-product option/accessory relationships are explicit and default to non-public until verified. This allows future filtration and UV options to retain their own SKU, pricing, inventory, documentation, and lifecycle rather than being flattened into free-form text.
+- Do not populate unresolved names or option availability merely because the architecture can represent them.
+- Essence, Clarity, Refine, Silken, and Serene remain uncommitted/reserved candidates pending further client discussion.
+- Public performance claims require manufacturer confirmation.
+
+
+## PT15.10 — Product configuration presentation
+
+- Product detail pages now expose the confirmed catalog hierarchy when authoritative data exists: system variants represent size/capacity configurations, while explicitly public product relationships represent approved options/accessories.
+- Variant and option/accessory sections remain absent when the catalog has no authoritative records to show.
+- Creating the presentation layer does not authorize new option assignments, capacity claims, product-family names, or performance claims.
+- Options/accessories must remain explicit catalog relationships and must be marked public before customer-facing presentation.
+
+
+## PT15.11 operations/catalog governance rule
+
+The employee Pricing & Inventory workspace should reflect the same confirmed product architecture used by the public catalog: Family → Product/System → Size/Capacity → Options/Accessories. Employees should be able to see whether family/system metadata is assigned and how many active configurations/public options currently exist, without the UI inferring missing terminology or treating private/unconfirmed relationships as public.
+
+## PT15.12 — Product option/accessory governance
+
+The confirmed Family → Product/System → Size/Capacity → Options/Accessories architecture now has an employee-facing governance path in Operations.
+
+- Product relationships remain explicit catalog records rather than free-form copy.
+- Newly created relationships begin as internal/non-public.
+- A privileged employee must deliberately make a relationship public after compatibility and public presentation have been confirmed.
+- Removing or changing a relationship is audit-backed.
+- This capability does not itself confirm that any particular UV, filtration, or other accessory is compatible with a product.
+- Unresolved family/system terminology remains outside this workflow.

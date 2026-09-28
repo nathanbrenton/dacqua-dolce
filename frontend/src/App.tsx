@@ -12,6 +12,9 @@ import {
   getBackendHealth,
 } from "./api/backend";
 import {
+  type RecommendationContext,
+} from "./api/quotes";
+import {
   AccountPage,
 } from "./components/account/AccountPage";
 import {
@@ -199,6 +202,11 @@ export function App() {
   ] = useState<
     Exclude<QuoteInquiryContext, "product"> | null
   >(null);
+
+  const [
+    recommendationContext,
+    setRecommendationContext,
+  ] = useState<RecommendationContext | null>(null);
 
   const [
     developerControlsOpen,
@@ -530,10 +538,16 @@ export function App() {
         initialEmail={
           account?.email ?? null
         }
+        recommendationContext={
+          quoteInquiryContext === "recommendation"
+            ? recommendationContext
+            : null
+        }
         onClose={() => {
           setQuoteInquiryContext(
             null,
           );
+          setRecommendationContext(null);
         }}
       />
 
@@ -650,10 +664,6 @@ export function App() {
                 Systems
               </a>
 
-              <a href="#recommend-system">
-                Recommend a System
-              </a>
-
               <a href="#service">
                 Service
               </a>
@@ -733,7 +743,7 @@ export function App() {
 
           <section className="hero">
             <p className="eyebrow">
-              Premium Water Filtration
+              Premium Water Treatment
             </p>
 
             <h1>
@@ -743,18 +753,18 @@ export function App() {
             </h1>
 
             <p className="hero-copy">
-              Thoughtfully engineered
-              water filtration for the
-              home, supported throughout
+              Thoughtfully designed
+              water treatment for everyday
+              life, supported throughout
               the life of the system.
             </p>
 
             <div className="hero-actions">
               <a
                 className="primary-button"
-                href="#systems"
+                href="#recommend-system"
               >
-                Explore Systems
+                Recommend a System
               </a>
 
               <button
@@ -776,7 +786,8 @@ export function App() {
           />
 
           <SystemRecommendationSection
-            onRequestConsultation={() => {
+            onRequestConsultation={(context) => {
+              setRecommendationContext(context);
               setQuoteInquiryContext(
                 "recommendation",
               );
@@ -818,8 +829,8 @@ export function App() {
             </h2>
 
             <p>
-              It is part of the home,
-              the kitchen, the ritual,
+              It is part of the kitchen,
+              the ritual, everyday life,
               and the experience.
             </p>
           </section>

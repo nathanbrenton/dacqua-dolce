@@ -15,6 +15,7 @@ from app.db.session import SessionLocal
 from app.models.catalog import (
     PricingPolicyMode,
     Product,
+    ProductRelationship,
     ProductDocument,
     ProductInventory,
     ProductSpecification,
@@ -27,6 +28,7 @@ from app.schemas.catalog import (
     CatalogAvailabilityRead,
     CatalogDocumentRead,
     CatalogImageRead,
+    CatalogOptionRead,
     CatalogPricingRead,
     CatalogProductDetailRead,
     CatalogProductListResponse,
@@ -191,6 +193,7 @@ def list_public_products(
                     sku=product.sku,
                     description=(product.description),
                     product_family=(product.product_family),
+                    system_type=(product.system_type),
                     category=(product.category.name),
                     public_path=(product.public_path),
                     primary_image=(
@@ -231,6 +234,9 @@ def get_public_product(
                 selectinload(Product.variants),
                 selectinload(Product.documents),
                 selectinload(Product.specifications),
+                selectinload(Product.related_options).selectinload(
+                    ProductRelationship.related_product
+                ),
             )
             .where(
                 Product.slug == slug,
@@ -262,6 +268,7 @@ def get_public_product(
             sku=product.sku,
             description=product.description,
             product_family=(product.product_family),
+            system_type=(product.system_type),
             category=product.category.name,
             public_path=product.public_path,
             primary_image=primary_image,
@@ -279,6 +286,21 @@ def get_public_product(
                 )
                 for variant in product.variants
                 if variant.active
+            ],
+            options_accessories=[
+                CatalogOptionRead(
+                    id=str(relationship.related_product.id),
+                    relationship_type=relationship.relationship_type.value,
+                    name=relationship.related_product.name,
+                    slug=relationship.related_product.slug,
+                    product_family=relationship.related_product.product_family,
+                    system_type=relationship.related_product.system_type,
+                    public_path=relationship.related_product.public_path,
+                )
+                for relationship in product.related_options
+                if relationship.active
+                and relationship.public
+                and relationship.related_product.active
             ],
             documents=public_document_reads(
                 product.documents,

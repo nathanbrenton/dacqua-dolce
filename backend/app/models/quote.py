@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    JSON,
     String,
     Text,
     func,
@@ -64,6 +65,10 @@ class QuoteRequest(Base):
 
     message: Mapped[str | None] = mapped_column(
         Text,
+    )
+
+    recommendation_context: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
     )
 
     internal_notes: Mapped[str | None] = mapped_column(

@@ -36,6 +36,16 @@ function formatPrice(
   ).format(amountMinor / 100);
 }
 
+function humanizeOptionKey(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function relationshipLabel(value: string): string {
+  return value === "accessory" ? "Accessory" : "Option";
+}
+
 export function ProductDetailPage({
   slug,
   account,
@@ -187,6 +197,7 @@ export function ProductDetailPage({
         initialEmail={
           account?.email ?? null
         }
+        recommendationContext={null}
         onClose={() => {
           setQuoteOpen(false);
         }}
@@ -291,7 +302,7 @@ export function ProductDetailPage({
                 System overview
               </h2>
               <p className="product-detail-description">
-                {product.description}
+                {presentation.catalogSummary ?? product.description}
               </p>
             </section>
 
@@ -305,6 +316,38 @@ export function ProductDetailPage({
                 </p>
                 <p>{presentation.education}</p>
               </aside>
+            ) : null}
+
+            {presentation.installationFacts.length > 0 ? (
+              <section
+                className="product-installation"
+                aria-labelledby="product-installation-heading"
+              >
+                <p className="eyebrow">
+                  Installation &amp; ownership
+                </p>
+                <h2
+                  id="product-installation-heading"
+                  className="product-detail-section-title"
+                >
+                  Designed for straightforward ownership.
+                </h2>
+
+                <dl className="product-facts">
+                  {presentation.installationFacts.map((fact) => (
+                    <div key={fact.label}>
+                      <dt>{fact.label}</dt>
+                      <dd>{fact.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {presentation.ownershipGuidance !== null ? (
+                  <p className="product-ownership-guidance">
+                    {presentation.ownershipGuidance}
+                  </p>
+                ) : null}
+              </section>
             ) : null}
 
             <div className="detail-commerce">
@@ -347,6 +390,98 @@ export function ProductDetailPage({
                   : pricing.action_label}
               </button>
             </div>
+
+            {product.variants.length > 0 ? (
+              <section
+                className="product-configurations"
+                aria-labelledby="product-configurations-heading"
+              >
+                <p className="eyebrow">Configurations</p>
+                <h2
+                  id="product-configurations-heading"
+                  className="product-detail-section-title"
+                >
+                  Available sizes &amp; capacities
+                </h2>
+
+                <div className="product-configuration-grid">
+                  {product.variants.map((variant) => (
+                    <article
+                      className="product-configuration-card"
+                      key={variant.id}
+                    >
+                      <h3>{variant.display_name}</h3>
+
+                      {Object.keys(variant.option_values).length > 0 ? (
+                        <dl className="product-configuration-values">
+                          {Object.entries(variant.option_values).map(
+                            ([key, value]) => (
+                              <div key={key}>
+                                <dt>{humanizeOptionKey(key)}</dt>
+                                <dd>{value}</dd>
+                              </div>
+                            ),
+                          )}
+                        </dl>
+                      ) : null}
+
+                      <p className="product-configuration-sku">
+                        SKU {variant.sku}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {product.options_accessories.length > 0 ? (
+              <section
+                className="product-options"
+                aria-labelledby="product-options-heading"
+              >
+                <p className="eyebrow">Options &amp; accessories</p>
+                <h2
+                  id="product-options-heading"
+                  className="product-detail-section-title"
+                >
+                  Compatible additions
+                </h2>
+                <p className="product-options-intro">
+                  These additions are shown only when their relationship to this system has been explicitly approved for public presentation.
+                </p>
+
+                <div className="product-option-list">
+                  {product.options_accessories.map((option) => (
+                    <article
+                      className="product-option-row"
+                      key={`${option.relationship_type}-${option.id}`}
+                    >
+                      <div>
+                        <p className="product-option-type">
+                          {relationshipLabel(option.relationship_type)}
+                        </p>
+                        <h3>{option.name}</h3>
+                        {option.system_type !== null ? (
+                          <p className="product-option-system-type">
+                            {option.system_type}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => {
+                          onNavigate(option.public_path);
+                        }}
+                      >
+                        View {relationshipLabel(option.relationship_type).toLowerCase()}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             {product.specifications.length > 0 ? (
               <section

@@ -57,6 +57,7 @@ def test_quote_notes_update_is_private_and_audited(
         email="customer@example.com",
         phone=None,
         message="Customer supplied message.",
+        recommendation_context=None,
         internal_notes=None,
         status=QuoteRequestStatus.new,
         created_at=datetime.now(UTC),
@@ -131,6 +132,9 @@ def test_operations_quote_response_contains_notes() -> None:
         email="customer@example.com",
         phone=None,
         message="Customer message.",
+        recommendation_context={
+            "source_water": "municipal",
+        },
         internal_notes="Internal note.",
         status=QuoteRequestStatus.contacted,
         created_at=datetime.now(UTC),
@@ -149,3 +153,6 @@ def test_operations_quote_response_contains_notes() -> None:
     assert response.internal_notes == (
         "Internal note."
     )
+    assert response.recommendation_context == {
+        "source_water": "municipal",
+    }

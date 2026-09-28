@@ -1,11 +1,30 @@
 import { getCsrfToken } from "./authentication";
 
+export type RecommendationContext = {
+  source_water: "municipal" | "well" | "unsure";
+  hard_water_signs: "yes" | "no" | "unsure";
+  bathrooms: "1" | "2" | "3" | "4" | "5+" | "unsure";
+  water_quality_report_read: "yes" | "no" | "unsure";
+  chlorine_chloramine_signs: "yes" | "no" | "unsure";
+  iron_manganese_concerns: "yes" | "no" | "unsure";
+  existing_equipment: string | null;
+  drain_available: "yes" | "no" | "unsure";
+  electrical_available: "yes" | "no" | "unsure";
+  irrigation_hose_bib: "yes" | "no" | "unsure";
+  pool_autofill: "yes" | "no" | "unsure";
+  drinking_water_ro: "yes" | "no" | "unsure";
+  water_test_results: "yes" | "no" | "unsure";
+  water_filtration_network: "yes" | "no" | "unsure";
+  treatment_preference: "salt_free" | "softened" | "unsure";
+};
+
 export type QuoteRequestPayload = {
   product_id: string | null;
   name: string;
   email: string;
   phone: string | null;
   message: string | null;
+  recommendation_context: RecommendationContext | null;
 };
 
 export type QuoteRequestResponse = {

@@ -12,6 +12,7 @@ export type OperationsSummary = {
 export type OperationsAuditEvent = {
   id: string;
   actor_user_id: string | null;
+  actor_email: string | null;
   action: string;
   entity_type: string;
   entity_id: string | null;
@@ -102,6 +103,7 @@ export type OperationsQuote = {
   email: string;
   phone: string | null;
   message: string | null;
+  recommendation_context: Record<string, unknown> | null;
   internal_notes: string | null;
   status: string;
   created_at: string;
@@ -171,12 +173,28 @@ export type OperationsInventory = {
   quantity_reserved: number;
 };
 
+export type OperationsProductRelationship = {
+  id: string;
+  related_product_id: string;
+  related_sku: string;
+  related_name: string;
+  relationship_type: "option" | "accessory";
+  public: boolean;
+  active: boolean;
+  sort_order: number;
+};
+
 export type OperationsProduct = {
   id: string;
   sku: string;
   name: string;
   category: string;
   manufacturer: string;
+  product_family: string | null;
+  system_type: string | null;
+  active_variant_count: number;
+  public_option_count: number;
+  relationships: OperationsProductRelationship[];
   active: boolean;
   online_sale_approved: boolean;
   pricing: OperationsPricing;
@@ -402,4 +420,62 @@ export function updateProductInventory(
     "PUT",
     payload,
   );
+}
+
+export function createProductRelationship(
+  productId: string,
+  payload: {
+    related_product_id: string;
+    relationship_type: "option" | "accessory";
+    public: boolean;
+    active: boolean;
+    sort_order: number;
+  },
+): Promise<OperationsProduct> {
+  return writeJson(
+    `/api/operations/products/${encodeURIComponent(productId)}/relationships`,
+    "POST",
+    payload,
+  );
+}
+
+export function updateProductRelationship(
+  productId: string,
+  relationshipId: string,
+  payload: {
+    relationship_type: "option" | "accessory";
+    public: boolean;
+    active: boolean;
+    sort_order: number;
+  },
+): Promise<OperationsProduct> {
+  return writeJson(
+    `/api/operations/products/${encodeURIComponent(productId)}/relationships/${encodeURIComponent(relationshipId)}`,
+    "PUT",
+    payload,
+  );
+}
+
+export async function deleteProductRelationship(
+  productId: string,
+  relationshipId: string,
+): Promise<OperationsProduct> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/operations/products/${encodeURIComponent(productId)}/relationships/${encodeURIComponent(relationshipId)}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "X-CSRF-Token": csrfToken,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<OperationsProduct>;
 }

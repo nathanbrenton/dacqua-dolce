@@ -213,6 +213,7 @@ def reconcile_product_metadata(
     name: str,
     description: str,
     product_family: str,
+    system_type: str | None,
     public_path: str,
 ) -> bool:
     """Update seed-owned mutable catalog metadata on an existing product."""
@@ -223,6 +224,7 @@ def reconcile_product_metadata(
         "name": name,
         "description": description,
         "product_family": product_family,
+        "system_type": system_type,
         "public_path": public_path,
     }
 
@@ -401,6 +403,7 @@ def apply_catalog_manifest(
                 sku=row["sku"],
                 description=row["description"],
                 product_family=row["product_family"],
+                system_type=row.get("system_type"),
                 online_sale_approved=row["online_sale_approved"],
                 active=row["active"],
                 public_path=row["public_path"],
@@ -424,6 +427,7 @@ def apply_catalog_manifest(
                 name=row["name"],
                 description=row["description"],
                 product_family=row["product_family"],
+                system_type=row.get("system_type"),
                 public_path=row["public_path"],
             ):
                 result.products_updated += 1

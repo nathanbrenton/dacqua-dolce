@@ -9,6 +9,7 @@ from pydantic import (
 from app.models.catalog import (
     InventoryStatus,
     PricingPolicyMode,
+    ProductRelationshipType,
 )
 from app.models.communications import (
     CommunicationThreadStatus,
@@ -28,6 +29,7 @@ class OperationsSummaryRead(BaseModel):
 class OperationsAuditEventRead(BaseModel):
     id: str
     actor_user_id: str | None
+    actor_email: str | None
     action: str
     entity_type: str
     entity_id: str | None
@@ -149,6 +151,7 @@ class OperationsQuoteRead(BaseModel):
     email: str
     phone: str | None
     message: str | None
+    recommendation_context: dict[str, object] | None
     internal_notes: str | None
     status: str
     created_at: str
@@ -246,16 +249,53 @@ class OperationsInventoryRead(BaseModel):
     quantity_reserved: int
 
 
+class OperationsProductRelationshipRead(BaseModel):
+    id: str
+    related_product_id: str
+    related_sku: str
+    related_name: str
+    relationship_type: ProductRelationshipType
+    public: bool
+    active: bool
+    sort_order: int
+
+
 class OperationsProductRead(BaseModel):
     id: str
     sku: str
     name: str
     category: str
     manufacturer: str
+    product_family: str | None
+    system_type: str | None
+    active_variant_count: int
+    public_option_count: int
+    relationships: list[OperationsProductRelationshipRead] = Field(
+        default_factory=list,
+    )
     active: bool
     online_sale_approved: bool
     pricing: OperationsPricingRead
     inventory: OperationsInventoryRead
+
+
+class ProductRelationshipCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    related_product_id: str
+    relationship_type: ProductRelationshipType
+    public: bool = False
+    active: bool = True
+    sort_order: int = Field(default=0, ge=0, le=10_000)
+
+
+class ProductRelationshipUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    relationship_type: ProductRelationshipType
+    public: bool
+    active: bool
+    sort_order: int = Field(ge=0, le=10_000)
 
 
 class PricingUpdateRequest(BaseModel):

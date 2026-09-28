@@ -9,7 +9,12 @@ from app.api.dependencies.auth import CurrentUser, DatabaseSession
 from app.core.email import normalize_email_address
 from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
-from app.models.catalog import Product, ProductInventory, ProductPrice
+from app.models.catalog import (
+    Product,
+    ProductInventory,
+    ProductPrice,
+    ProductRelationship,
+)
 from app.models.commerce import (
     Order,
     OrderItem,
@@ -51,9 +56,12 @@ from app.schemas.operations import (
     OperationsOrderRead,
     OperationsPricingRead,
     OperationsProductRead,
+    OperationsProductRelationshipRead,
     OperationsQuoteRead,
     OperationsSummaryRead,
     PricingUpdateRequest,
+    ProductRelationshipCreateRequest,
+    ProductRelationshipUpdateRequest,
     QuoteNotesUpdate,
     QuoteStatusUpdate,
 )
@@ -106,6 +114,11 @@ def operations_quote_read(
         email=quote.email,
         phone=quote.phone,
         message=quote.message,
+        recommendation_context=getattr(
+            quote,
+            "recommendation_context",
+            None,
+        ),
         internal_notes=quote.internal_notes,
         status=quote.status.value,
         created_at=quote.created_at.isoformat(),
@@ -169,6 +182,7 @@ def operations_summary(
 def operations_audit_event_read(
     *,
     event: AuditEvent,
+    actor_email: str | None = None,
 ) -> OperationsAuditEventRead:
     return OperationsAuditEventRead(
         id=str(event.id),
@@ -177,6 +191,7 @@ def operations_audit_event_read(
             if event.actor_user_id is not None
             else None
         ),
+        actor_email=actor_email,
         action=event.action,
         entity_type=event.entity_type,
         entity_id=event.entity_id,
@@ -198,8 +213,12 @@ def list_audit_events(
         user=current_user,
     )
 
-    events = db.scalars(
-        select(AuditEvent)
+    rows = db.execute(
+        select(AuditEvent, User.email)
+        .outerjoin(
+            User,
+            User.id == AuditEvent.actor_user_id,
+        )
         .order_by(
             AuditEvent.created_at.desc(),
             AuditEvent.id,
@@ -210,8 +229,9 @@ def list_audit_events(
     return [
         operations_audit_event_read(
             event=event,
+            actor_email=actor_email,
         )
-        for event in events
+        for event, actor_email in rows
     ]
 
 
@@ -1136,6 +1156,29 @@ def operations_product_read(
         name=product.name,
         category=product.category.name,
         manufacturer=product.manufacturer.name,
+        product_family=product.product_family,
+        system_type=product.system_type,
+        active_variant_count=sum(
+            1 for variant in product.variants if variant.active
+        ),
+        public_option_count=sum(
+            1
+            for relationship in product.related_options
+            if relationship.active and relationship.public
+        ),
+        relationships=[
+            OperationsProductRelationshipRead(
+                id=str(relationship.id),
+                related_product_id=str(relationship.related_product_id),
+                related_sku=relationship.related_product.sku,
+                related_name=relationship.related_product.name,
+                relationship_type=relationship.relationship_type,
+                public=relationship.public,
+                active=relationship.active,
+                sort_order=relationship.sort_order,
+            )
+            for relationship in product.related_options
+        ],
         active=product.active,
         online_sale_approved=(
             product.online_sale_approved
@@ -1170,6 +1213,10 @@ def load_product_for_operations(
             selectinload(Product.category),
             selectinload(Product.manufacturer),
             selectinload(Product.prices),
+            selectinload(Product.variants),
+            selectinload(Product.related_options).selectinload(
+                ProductRelationship.related_product
+            ),
         )
         .execution_options(
             populate_existing=True
@@ -1191,11 +1238,242 @@ def operations_catalog(
             selectinload(Product.category),
             selectinload(Product.manufacturer),
             selectinload(Product.prices),
+            selectinload(Product.variants),
+            selectinload(Product.related_options).selectinload(
+                ProductRelationship.related_product
+            ),
         )
         .order_by(Product.name)
     ).all()
 
     return [operations_product_read(db, product=product) for product in products]
+
+
+def parse_relationship_product_id(value: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Related product ID must be a valid UUID.",
+        ) from exc
+
+
+@router.post(
+    "/products/{product_id}/relationships",
+    response_model=OperationsProductRead,
+)
+def create_product_relationship(
+    product_id: uuid.UUID,
+    payload: ProductRelationshipCreateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_privileged_operations(db, user=current_user)
+
+    product = load_product_for_operations(db, product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found.",
+        )
+
+    related_product_id = parse_relationship_product_id(
+        payload.related_product_id
+    )
+    if related_product_id == product.id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="A product cannot be related to itself.",
+        )
+
+    related_product = db.get(Product, related_product_id)
+    if related_product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Related product not found.",
+        )
+
+    existing = db.scalar(
+        select(ProductRelationship).where(
+            ProductRelationship.product_id == product.id,
+            ProductRelationship.related_product_id == related_product_id,
+            ProductRelationship.relationship_type
+            == payload.relationship_type,
+        )
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That product relationship already exists.",
+        )
+
+    relationship = ProductRelationship(
+        product_id=product.id,
+        related_product_id=related_product_id,
+        relationship_type=payload.relationship_type,
+        public=payload.public,
+        active=payload.active,
+        sort_order=payload.sort_order,
+    )
+    db.add(relationship)
+    db.flush()
+
+    record_audit_event(
+        db,
+        action="catalog.relationship_created",
+        entity_type="product_relationship",
+        entity_id=str(relationship.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "product_sku": product.sku,
+            "related_sku": related_product.sku,
+            "relationship_type": payload.relationship_type.value,
+            "public": payload.public,
+            "active": payload.active,
+            "sort_order": payload.sort_order,
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
+    return operations_product_read(db, product=refreshed)
+
+
+@router.put(
+    "/products/{product_id}/relationships/{relationship_id}",
+    response_model=OperationsProductRead,
+)
+def update_product_relationship(
+    product_id: uuid.UUID,
+    relationship_id: uuid.UUID,
+    payload: ProductRelationshipUpdateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_privileged_operations(db, user=current_user)
+
+    relationship = db.scalar(
+        select(ProductRelationship)
+        .options(selectinload(ProductRelationship.related_product))
+        .where(
+            ProductRelationship.id == relationship_id,
+            ProductRelationship.product_id == product_id,
+        )
+    )
+    if relationship is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product relationship not found.",
+        )
+
+    duplicate = db.scalar(
+        select(ProductRelationship).where(
+            ProductRelationship.product_id == product_id,
+            ProductRelationship.related_product_id
+            == relationship.related_product_id,
+            ProductRelationship.relationship_type
+            == payload.relationship_type,
+            ProductRelationship.id != relationship.id,
+        )
+    )
+    if duplicate is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That product relationship already exists.",
+        )
+
+    relationship.relationship_type = payload.relationship_type
+    relationship.public = payload.public
+    relationship.active = payload.active
+    relationship.sort_order = payload.sort_order
+    db.flush()
+
+    product = db.get(Product, product_id)
+    record_audit_event(
+        db,
+        action="catalog.relationship_changed",
+        entity_type="product_relationship",
+        entity_id=str(relationship.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "product_sku": product.sku if product is not None else None,
+            "related_sku": relationship.related_product.sku,
+            "relationship_type": payload.relationship_type.value,
+            "public": payload.public,
+            "active": payload.active,
+            "sort_order": payload.sort_order,
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
+    return operations_product_read(db, product=refreshed)
+
+
+@router.delete(
+    "/products/{product_id}/relationships/{relationship_id}",
+    response_model=OperationsProductRead,
+)
+def delete_product_relationship(
+    product_id: uuid.UUID,
+    relationship_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_privileged_operations(db, user=current_user)
+
+    relationship = db.scalar(
+        select(ProductRelationship)
+        .options(selectinload(ProductRelationship.related_product))
+        .where(
+            ProductRelationship.id == relationship_id,
+            ProductRelationship.product_id == product_id,
+        )
+    )
+    if relationship is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product relationship not found.",
+        )
+
+    related_sku = relationship.related_product.sku
+    relationship_type = relationship.relationship_type.value
+    product = db.get(Product, product_id)
+    db.delete(relationship)
+    db.flush()
+
+    record_audit_event(
+        db,
+        action="catalog.relationship_removed",
+        entity_type="product_relationship",
+        entity_id=str(relationship_id),
+        actor_user_id=current_user.id,
+        metadata={
+            "product_sku": product.sku if product is not None else None,
+            "related_sku": related_sku,
+            "relationship_type": relationship_type,
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
+    return operations_product_read(db, product=refreshed)
 
 
 @router.put(

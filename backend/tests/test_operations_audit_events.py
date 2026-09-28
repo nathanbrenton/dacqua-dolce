@@ -9,35 +9,36 @@ from fastapi import HTTPException
 from app.api import operations
 
 
-class ScalarResult:
+class RowResult:
     def __init__(
         self,
-        values: list[object],
+        rows: list[tuple[object, str | None]],
     ) -> None:
-        self.values = values
+        self.rows = rows
 
-    def all(self) -> list[object]:
-        return self.values
+    def all(self) -> list[tuple[object, str | None]]:
+        return self.rows
 
 
 class AuditDatabase:
     def __init__(
         self,
-        events: list[object],
+        rows: list[tuple[object, str | None]],
     ) -> None:
-        self.events = events
+        self.rows = rows
         self.queried = False
 
-    def scalars(
+    def execute(
         self,
         statement: object,
-    ) -> ScalarResult:
+    ) -> RowResult:
         self.queried = True
 
         query = str(statement)
         assert "audit_events" in query
+        assert "users" in query
 
-        return ScalarResult(self.events)
+        return RowResult(self.rows)
 
 
 def test_audit_events_require_privileged_access(
@@ -95,7 +96,7 @@ def test_audit_event_response_excludes_sensitive_context(
         created_at=created_at,
     )
 
-    database = AuditDatabase([event])
+    database = AuditDatabase([(event, "operator@example.com")])
 
     monkeypatch.setattr(
         operations,
@@ -117,6 +118,7 @@ def test_audit_event_response_excludes_sensitive_context(
     assert payload == {
         "id": str(event_id),
         "actor_user_id": str(actor_id),
+        "actor_email": "operator@example.com",
         "action": "quote.notes_updated",
         "entity_type": "quote_request",
         "entity_id": event.entity_id,

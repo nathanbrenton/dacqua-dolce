@@ -21,6 +21,16 @@ export type CatalogSpecification = {
   unit: string | null;
 };
 
+export type CatalogOption = {
+  id: string;
+  relationship_type: "option" | "accessory" | string;
+  name: string;
+  slug: string;
+  product_family: string | null;
+  system_type: string | null;
+  public_path: string;
+};
+
 export type CatalogVariant = {
   id: string;
   display_name: string;
@@ -43,6 +53,7 @@ export type CatalogProduct = {
   sku: string;
   description: string;
   product_family: string | null;
+  system_type: string | null;
   category: string;
   public_path: string;
   primary_image: CatalogImage | null;
@@ -53,6 +64,7 @@ export type CatalogProductDetail =
   CatalogProduct & {
     images: CatalogImage[];
     variants: CatalogVariant[];
+    options_accessories: CatalogOption[];
     documents: CatalogDocument[];
     specifications: CatalogSpecification[];
   };

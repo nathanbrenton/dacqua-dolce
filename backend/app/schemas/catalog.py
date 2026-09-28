@@ -31,6 +31,16 @@ class CatalogSpecificationRead(BaseModel):
     unit: str | None = None
 
 
+class CatalogOptionRead(BaseModel):
+    id: str
+    relationship_type: str
+    name: str
+    slug: str
+    product_family: str | None
+    system_type: str | None
+    public_path: str
+
+
 class CatalogVariantRead(BaseModel):
     id: str
     display_name: str
@@ -53,6 +63,7 @@ class CatalogProductRead(BaseModel):
     sku: str
     description: str
     product_family: str | None
+    system_type: str | None
     category: str
     public_path: str
     primary_image: CatalogImageRead | None
@@ -62,6 +73,7 @@ class CatalogProductRead(BaseModel):
 class CatalogProductDetailRead(CatalogProductRead):
     images: list[CatalogImageRead] = Field(default_factory=list)
     variants: list[CatalogVariantRead] = Field(default_factory=list)
+    options_accessories: list[CatalogOptionRead] = Field(default_factory=list)
     documents: list[CatalogDocumentRead] = Field(default_factory=list)
     specifications: list[CatalogSpecificationRead] = Field(
         default_factory=list,

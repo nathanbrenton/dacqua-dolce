@@ -12,6 +12,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    Index,
     String,
     Text,
     UniqueConstraint,
@@ -39,6 +40,11 @@ class InventoryStatus(StrEnum):
     backordered = "backordered"
     unavailable = "unavailable"
     not_tracked = "not_tracked"
+
+
+class ProductRelationshipType(StrEnum):
+    option = "option"
+    accessory = "accessory"
 
 
 class ProductDocumentType(StrEnum):
@@ -185,6 +191,7 @@ class Product(Base):
         nullable=False,
     )
     product_family: Mapped[str | None] = mapped_column(String(120))
+    system_type: Mapped[str | None] = mapped_column(String(160))
     online_sale_approved: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
@@ -247,6 +254,70 @@ class Product(Base):
     jurisdiction_rules: Mapped[list[JurisdictionEligibility]] = relationship(
         back_populates="product",
         cascade="all, delete-orphan",
+    )
+    related_options: Mapped[list[ProductRelationship]] = relationship(
+        foreign_keys="ProductRelationship.product_id",
+        back_populates="product",
+        cascade="all, delete-orphan",
+        order_by="ProductRelationship.sort_order",
+    )
+    option_for_products: Mapped[list[ProductRelationship]] = relationship(
+        foreign_keys="ProductRelationship.related_product_id",
+        back_populates="related_product",
+    )
+
+
+class ProductRelationship(Base):
+    __tablename__ = "product_relationships"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "related_product_id",
+            "relationship_type",
+            name="uq_product_relationships_pair_type",
+        ),
+        CheckConstraint(
+            "product_id <> related_product_id",
+            name="product_relationships_not_self",
+        ),
+        Index("ix_product_relationships_product_id", "product_id"),
+        Index("ix_product_relationships_related_product_id", "related_product_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    related_product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("products.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    relationship_type: Mapped[ProductRelationshipType] = mapped_column(
+        Enum(ProductRelationshipType),
+        nullable=False,
+    )
+    public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    product: Mapped[Product] = relationship(
+        foreign_keys=[product_id], back_populates="related_options"
+    )
+    related_product: Mapped[Product] = relationship(
+        foreign_keys=[related_product_id], back_populates="option_for_products"
     )
 
 

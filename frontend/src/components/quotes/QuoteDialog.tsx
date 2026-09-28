@@ -7,6 +7,7 @@ import {
 
 import {
   submitQuoteRequest,
+  type RecommendationContext,
 } from "../../api/quotes";
 import {
   formatUsPhoneInput,
@@ -24,6 +25,7 @@ type QuoteDialogProps = {
   productName: string | null;
   inquiryContext: QuoteInquiryContext;
   initialEmail: string | null;
+  recommendationContext: RecommendationContext | null;
   onClose: () => void;
 };
 
@@ -33,6 +35,7 @@ export function QuoteDialog({
   productName,
   inquiryContext,
   initialEmail,
+  recommendationContext,
   onClose,
 }: QuoteDialogProps) {
   const dialogRef =
@@ -94,13 +97,13 @@ export function QuoteDialog({
     ? productName
     : inquiryContext === "recommendation"
       ? "Help me choose a system."
-      : "Tell us what you need.";
+      : "Further improve your water";
 
   const messageHelper = isProductInquiry
-    ? "Share your water concerns, household needs, source water if known, and any installation constraints that may help us prepare your quote."
+    ? "Water concerns, water-use patterns, source water if known, and installation constraints can help us prepare a more useful quote."
     : inquiryContext === "recommendation"
-      ? "Tell us about your water goals or concerns, source water if known, household needs, and any installation constraints. We’ll use that context to help narrow the options."
-      : "Share your water goals or concerns and anything about the home or installation that would help us understand what you need.";
+      ? "Water priorities, source water if known, water-use patterns, and installation context can help us narrow the options."
+      : "Water priorities, water-use patterns, source water if known, and installation context can help us find a useful starting point.";
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -129,6 +132,7 @@ export function QuoteDialog({
           email,
           phone: phone || null,
           message: message || null,
+          recommendation_context: recommendationContext,
         });
 
       setSuccessId(response.id);
@@ -167,7 +171,7 @@ export function QuoteDialog({
             </p>
           ) : inquiryContext === "recommendation" ? (
             <p className="quote-dialog-context">
-              No system is selected yet. We’ll start with your goals and installation needs.
+              No system is selected yet. We’ll start with your water priorities and installation context.
             </p>
           ) : null}
         </div>
@@ -284,7 +288,7 @@ export function QuoteDialog({
 
           <label>
             <span>
-              Tell us about your water and home{" "}
+              Your water and installation{" "}
               <small>(optional)</small>
             </span>
 

@@ -71,6 +71,7 @@ def test_reconcile_existing_product_updates_catalog_metadata() -> None:
         sku="DD5RO",
         description="Old description.",
         product_family="Old Family",
+        system_type="Old System Type",
         active=False,
         online_sale_approved=True,
         public_path="/systems/dd5ro",
@@ -86,6 +87,7 @@ def test_reconcile_existing_product_updates_catalog_metadata() -> None:
         name="Origin",
         description="Updated description.",
         product_family="Reverse Osmosis",
+        system_type="Reverse Osmosis System",
         public_path="/systems/dd5ro",
     )
 
@@ -96,6 +98,7 @@ def test_reconcile_existing_product_updates_catalog_metadata() -> None:
     assert product.name == "Origin"
     assert product.description == "Updated description."
     assert product.product_family == "Reverse Osmosis"
+    assert product.system_type == "Reverse Osmosis System"
     assert product.public_path == "/systems/dd5ro"
 
     # Stable identifiers are not rewritten by metadata reconciliation.

@@ -3816,6 +3816,42 @@ textarea:focus-visible {
   line-height: 1.65;
 }
 
+.recommendation-guidance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.recommendation-guidance-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.recommendation-guidance-card .eyebrow,
+.recommendation-guidance-card h3,
+.recommendation-guidance-card p {
+  margin: 0;
+}
+
+.recommendation-guidance-card h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  font-weight: var(--display-weight);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.recommendation-guidance-card > p:last-child {
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+
 .recommendation-action {
   display: flex;
   align-items: center;
@@ -3831,7 +3867,8 @@ textarea:focus-visible {
 }
 
 @media (max-width: 900px) {
-  .recommendation-grid {
+  .recommendation-grid,
+  .recommendation-guidance-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -3923,11 +3960,27 @@ textarea:focus-visible {
   margin-top: 18px;
 }
 
+.product-installation,
 .product-specifications,
 .product-reference {
   margin-top: 48px;
   padding-top: 26px;
   border-top: 1px solid var(--hairline);
+}
+
+.product-installation .eyebrow {
+  margin: 0 0 10px;
+}
+
+.product-installation .product-facts {
+  margin-top: 20px;
+}
+
+.product-ownership-guidance {
+  max-width: 620px;
+  margin: 20px 0 0;
+  color: var(--ink-muted);
+  line-height: 1.65;
 }
 
 .product-specifications .product-facts,
@@ -4096,4 +4149,395 @@ textarea:focus-visible {
 .operations-copy-email:hover,
 .operations-copy-email:focus-visible {
   border-color: currentColor;
+}
+
+/* PT15.1 — operations governance and traceability */
+.operations-governance-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.operations-governance-badges span {
+  padding: 5px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.operations-governance-context {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.operations-audit-controls {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.5fr) repeat(2, minmax(180px, 0.75fr));
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 900px) {
+  .operations-audit-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* PT15.8 — structured guided recommendation */
+.recommendation-builder {
+  display: grid;
+  gap: 28px;
+  margin-top: 36px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.recommendation-builder-intro {
+  max-width: 760px;
+}
+
+.recommendation-builder-intro .eyebrow,
+.recommendation-builder-intro h3,
+.recommendation-builder-intro p {
+  margin: 0;
+}
+
+.recommendation-builder-intro h3 {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4vw, 3.2rem);
+  font-weight: var(--display-weight);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.recommendation-builder-intro > p:last-child {
+  margin-top: 14px;
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+
+.recommendation-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 22px;
+}
+
+.recommendation-field {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.recommendation-field > span {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.recommendation-field select,
+.recommendation-field textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+}
+
+.recommendation-field select {
+  min-height: 48px;
+  padding: 0 42px 0 14px;
+}
+
+.recommendation-field textarea {
+  resize: vertical;
+  padding: 13px 14px;
+  line-height: 1.5;
+}
+
+.recommendation-field-wide {
+  grid-column: 1 / -1;
+}
+
+.recommendation-result {
+  display: grid;
+  gap: 12px;
+  padding: 26px;
+  border-top: 2px solid var(--action);
+  background: var(--surface-2);
+}
+
+.recommendation-result.is-review {
+  border-top-width: 1px;
+}
+
+.recommendation-result .eyebrow,
+.recommendation-result h3,
+.recommendation-result p {
+  margin: 0;
+}
+
+.recommendation-result h3 {
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  font-weight: var(--display-weight);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.recommendation-result > p:not(.eyebrow) {
+  max-width: 780px;
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+
+.recommendation-result-note {
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink) !important;
+  font-weight: 700;
+}
+
+.recommendation-result .primary-button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.operations-recommendation-context {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+
+.operations-recommendation-context > div {
+  min-width: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.operations-recommendation-context dt {
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.operations-recommendation-context dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .recommendation-form-grid,
+  .operations-recommendation-context {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* PT15.10 — product configuration hierarchy */
+.product-configurations,
+.product-options {
+  margin-top: 48px;
+  padding-top: 26px;
+  border-top: 1px solid var(--hairline);
+}
+
+.product-configurations .eyebrow,
+.product-options .eyebrow {
+  margin: 0 0 10px;
+}
+
+.product-configuration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.product-configuration-card {
+  padding: 20px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.product-configuration-card h3,
+.product-option-row h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.product-configuration-values {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+.product-configuration-values > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.product-configuration-values dt,
+.product-option-type {
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.product-configuration-values dd {
+  margin: 0;
+  text-align: right;
+}
+
+.product-configuration-sku {
+  margin: 18px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+}
+
+.product-options-intro {
+  max-width: 620px;
+  margin: 18px 0 0;
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+
+.product-option-list {
+  display: grid;
+  margin-top: 22px;
+  border-top: 1px solid var(--hairline);
+}
+
+.product-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.product-option-type,
+.product-option-system-type {
+  margin: 0 0 6px;
+}
+
+.product-option-system-type {
+  margin-top: 6px;
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 640px) {
+  .product-option-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* PT15.11 — catalog architecture context in Operations. */
+.operations-catalog-architecture {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.operations-catalog-architecture > span {
+  display: grid;
+  gap: 0.2rem;
+  padding-block: 0.55rem;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+}
+
+.operations-catalog-architecture strong {
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* PT15.12 — governed product option/accessory relationships in Operations. */
+.operations-product-relationships {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-product-relationships > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.operations-product-relationship-list,
+.operations-product-relationship-create {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.operations-product-relationship {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.7rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-product-relationship > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.operations-product-relationship small {
+  color: var(--ink-muted);
+}
+
+.operations-product-relationship-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.operations-product-relationship-create {
+  grid-template-columns: minmax(12rem, 2fr) minmax(9rem, 1fr) auto;
+  align-items: end;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-product-relationship-create .operations-note {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .operations-product-relationship,
+  .operations-product-relationship-create {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .operations-product-relationship-create .operations-note {
+    grid-column: auto;
+  }
 }

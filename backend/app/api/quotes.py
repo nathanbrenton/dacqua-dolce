@@ -146,6 +146,18 @@ def send_quote_emails(
     if quote.phone:
         message_lines.append(f"Phone: {quote.phone}")
 
+    if quote.recommendation_context:
+        message_lines.extend(
+            [
+                "",
+                "Recommendation context:",
+            ]
+        )
+
+        for key, value in quote.recommendation_context.items():
+            label = key.replace("_", " ").title()
+            message_lines.append(f"{label}: {value}")
+
     if quote.message:
         message_lines.extend(
             [
@@ -227,6 +239,11 @@ def create_quote_request(
             email=payload.email,
             phone=payload.phone,
             message=payload.message,
+            recommendation_context=(
+                payload.recommendation_context.model_dump(mode="json")
+                if payload.recommendation_context is not None
+                else None
+            ),
         )
 
         db.add(quote)
