@@ -1,6 +1,5 @@
 from app.core.config import Settings
 
-
 RUNTIME_URL = (
     "postgresql+psycopg://runtime:unused@127.0.0.1/runtime"
 )

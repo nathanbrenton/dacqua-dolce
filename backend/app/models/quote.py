@@ -3,10 +3,10 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    JSON,
     DateTime,
     Enum,
     ForeignKey,
-    JSON,
     String,
     Text,
     func,

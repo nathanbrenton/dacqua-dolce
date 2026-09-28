@@ -13,7 +13,6 @@ from app.core.phone import (
     normalize_us_phone,
 )
 
-
 TriState = Literal["yes", "no", "unsure"]
 
 

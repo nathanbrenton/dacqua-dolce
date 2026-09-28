@@ -8,6 +8,7 @@ Create Date: 2026-09-27
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "e6b4c9a71f20"
@@ -25,15 +26,55 @@ def upgrade() -> None:
             sa.ForeignKey("users.id", ondelete="CASCADE"),
             primary_key=True,
         ),
-        sa.Column("filter_replacement_reminders", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("softener_check_reminders", sa.Boolean(), nullable=False, server_default=sa.false()),
+        sa.Column(
+            "filter_replacement_reminders",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+        sa.Column(
+            "softener_check_reminders",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
         sa.Column("uv_service_reminders", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("annual_system_check_reminders", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("product_specific_reminders", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("post_purchase_followup", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("post_installation_followup", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "annual_system_check_reminders",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+        sa.Column(
+            "product_specific_reminders",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+        sa.Column(
+            "post_purchase_followup",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+        sa.Column(
+            "post_installation_followup",
+            sa.Boolean(),
+            nullable=False,
+            server_default=sa.false(),
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
     )
 
 

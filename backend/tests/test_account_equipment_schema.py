@@ -1,4 +1,5 @@
 import uuid
+
 from app.schemas.account import CustomerEquipmentRead
 from app.schemas.operations import CustomerEquipmentCreateRequest, CustomerEquipmentUpdateRequest
 

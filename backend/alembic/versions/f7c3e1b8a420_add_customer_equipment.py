@@ -8,6 +8,7 @@ Create Date: 2026-09-27
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "f7c3e1b8a420"
@@ -20,9 +21,18 @@ def upgrade() -> None:
     op.create_table(
         "customer_equipment",
         sa.Column("id", sa.UUID(), primary_key=True),
-        sa.Column("user_id", sa.UUID(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id",
+            sa.UUID(),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("product_id", sa.UUID(), sa.ForeignKey("products.id", ondelete="SET NULL")),
-        sa.Column("variant_id", sa.UUID(), sa.ForeignKey("product_variants.id", ondelete="SET NULL")),
+        sa.Column(
+            "variant_id",
+            sa.UUID(),
+            sa.ForeignKey("product_variants.id", ondelete="SET NULL"),
+        ),
         sa.Column("sku_snapshot", sa.String(length=100), nullable=False),
         sa.Column("name_snapshot", sa.String(length=200), nullable=False),
         sa.Column("variant_snapshot", sa.String(length=160)),
@@ -32,8 +42,18 @@ def upgrade() -> None:
         sa.Column("last_service_on", sa.Date()),
         sa.Column("next_service_due_on", sa.Date()),
         sa.Column("active", sa.Boolean(), nullable=False, server_default=sa.true()),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.func.now(),
+        ),
     )
     op.create_index("ix_customer_equipment_user_id", "customer_equipment", ["user_id"])
     op.create_index("ix_customer_equipment_product_id", "customer_equipment", ["product_id"])

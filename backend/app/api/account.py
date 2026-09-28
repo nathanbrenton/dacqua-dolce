@@ -11,24 +11,24 @@ from app.api.dependencies.auth import (
     CurrentUser,
     DatabaseSession,
 )
+from app.models.catalog import Product, ProductDocument
 from app.models.customer import (
     CustomerAddress,
     CustomerCommunicationPreferences,
     CustomerEquipment,
     CustomerProfile,
 )
-from app.models.catalog import Product, ProductDocument
 from app.models.quote import QuoteRequest
 from app.schemas.account import (
     AddressCreate,
     AddressRead,
-    CustomerProfileRead,
-    CustomerProfileUpdate,
     CommunicationPreferencesRead,
     CommunicationPreferencesUpdate,
-    CustomerRequestRead,
     CustomerEquipmentDocumentRead,
     CustomerEquipmentRead,
+    CustomerProfileRead,
+    CustomerProfileUpdate,
+    CustomerRequestRead,
 )
 from app.services.audit import (
     record_audit_event,
@@ -288,12 +288,19 @@ def get_customer_equipment(
             CustomerEquipment.user_id == current_user.id,
             CustomerEquipment.active.is_(True),
         )
-        .order_by(CustomerEquipment.installed_on.desc().nullslast(), CustomerEquipment.created_at.desc())
+        .order_by(
+            CustomerEquipment.installed_on.desc().nullslast(),
+            CustomerEquipment.created_at.desc(),
+        )
     ).all()
 
     results: list[CustomerEquipmentRead] = []
     for equipment in rows:
-        product = db.get(Product, equipment.product_id) if equipment.product_id is not None else None
+        product = (
+            db.get(Product, equipment.product_id)
+            if equipment.product_id is not None
+            else None
+        )
         documents = []
         if product is not None:
             documents = db.scalars(
@@ -317,8 +324,16 @@ def get_customer_equipment(
                 serial_number=equipment.serial_number,
                 location_label=equipment.location_label,
                 installed_on=equipment.installed_on.isoformat() if equipment.installed_on else None,
-                last_service_on=equipment.last_service_on.isoformat() if equipment.last_service_on else None,
-                next_service_due_on=equipment.next_service_due_on.isoformat() if equipment.next_service_due_on else None,
+                last_service_on=(
+                    equipment.last_service_on.isoformat()
+                    if equipment.last_service_on
+                    else None
+                ),
+                next_service_due_on=(
+                    equipment.next_service_due_on.isoformat()
+                    if equipment.next_service_due_on
+                    else None
+                ),
                 documents=[
                     CustomerEquipmentDocumentRead(
                         title=document.title,

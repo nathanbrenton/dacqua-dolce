@@ -4,7 +4,6 @@ from app.schemas.quote import (
     RecommendationSizingAssessment,
 )
 
-
 RECOMMENDATION_POLICY_VERSION = "2"
 
 

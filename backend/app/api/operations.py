@@ -12,9 +12,9 @@ from app.models.audit import AuditEvent
 from app.models.catalog import (
     Product,
     ProductInventory,
-    ProductVariant,
     ProductPrice,
     ProductRelationship,
+    ProductVariant,
 )
 from app.models.commerce import (
     Order,
@@ -39,6 +39,8 @@ from app.models.identity import (
 )
 from app.models.quote import QuoteRequest, QuoteRequestStatus
 from app.schemas.operations import (
+    CustomerEquipmentCreateRequest,
+    CustomerEquipmentUpdateRequest,
     InventoryUpdateRequest,
     OperationsAuditEventRead,
     OperationsCommunicationAttachmentRead,
@@ -50,8 +52,6 @@ from app.schemas.operations import (
     OperationsCommunicationThreadDetailRead,
     OperationsCommunicationThreadRead,
     OperationsCommunicationThreadStatusUpdate,
-    CustomerEquipmentCreateRequest,
-    CustomerEquipmentUpdateRequest,
     OperationsCustomerAddressRead,
     OperationsCustomerEquipmentRead,
     OperationsCustomerRead,
@@ -61,8 +61,8 @@ from app.schemas.operations import (
     OperationsOrderRead,
     OperationsPricingRead,
     OperationsProductRead,
-    OperationsProductVariantRead,
     OperationsProductRelationshipRead,
+    OperationsProductVariantRead,
     OperationsQuoteRead,
     OperationsSummaryRead,
     PricingUpdateRequest,
@@ -969,7 +969,11 @@ def operations_customer_read(
     equipment = db.scalars(
         select(CustomerEquipment)
         .where(CustomerEquipment.user_id == user.id)
-        .order_by(CustomerEquipment.active.desc(), CustomerEquipment.installed_on.desc().nullslast(), CustomerEquipment.created_at.desc())
+        .order_by(
+            CustomerEquipment.active.desc(),
+            CustomerEquipment.installed_on.desc().nullslast(),
+            CustomerEquipment.created_at.desc(),
+        )
     ).all()
 
     return OperationsCustomerRead(
@@ -1022,7 +1026,11 @@ def operations_customer_read(
                 location_label=item.location_label,
                 installed_on=item.installed_on.isoformat() if item.installed_on else None,
                 last_service_on=item.last_service_on.isoformat() if item.last_service_on else None,
-                next_service_due_on=item.next_service_due_on.isoformat() if item.next_service_due_on else None,
+                next_service_due_on=(
+                    item.next_service_due_on.isoformat()
+                    if item.next_service_due_on
+                    else None
+                ),
                 active=item.active,
             )
             for item in equipment
@@ -1082,7 +1090,10 @@ def create_customer_equipment(
     require_privileged_operations(db, user=current_user)
     customer = db.get(User, customer_id)
     if customer is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer account not found.",
+        )
     customer_role = db.scalar(
         select(UserRole.id).where(
             UserRole.user_id == customer.id,
@@ -1090,7 +1101,10 @@ def create_customer_equipment(
         )
     )
     if customer_role is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer account not found.",
+        )
     product = db.get(Product, payload.product_id)
     if product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
@@ -1099,7 +1113,10 @@ def create_customer_equipment(
     if payload.variant_id is not None:
         variant = db.get(ProductVariant, payload.variant_id)
         if variant is None or variant.product_id != product.id:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Variant does not belong to the selected product.")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Variant does not belong to the selected product.",
+            )
 
     equipment = CustomerEquipment(
         user_id=customer.id,
@@ -1143,7 +1160,10 @@ def update_customer_equipment(
     require_privileged_operations(db, user=current_user)
     customer = db.get(User, customer_id)
     if customer is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer account not found.",
+        )
     customer_role = db.scalar(
         select(UserRole.id).where(
             UserRole.user_id == customer.id,
@@ -1151,7 +1171,10 @@ def update_customer_equipment(
         )
     )
     if customer_role is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer account not found.",
+        )
     equipment = db.scalar(
         select(CustomerEquipment).where(
             CustomerEquipment.id == equipment_id,
@@ -1159,7 +1182,10 @@ def update_customer_equipment(
         )
     )
     if equipment is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Equipment record not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Equipment record not found.",
+        )
 
     for field, value in payload.model_dump().items():
         setattr(equipment, field, value)

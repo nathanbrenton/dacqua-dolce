@@ -15,9 +15,9 @@ from app.db.session import SessionLocal
 from app.models.catalog import (
     PricingPolicyMode,
     Product,
-    ProductRelationship,
     ProductDocument,
     ProductInventory,
+    ProductRelationship,
     ProductSpecification,
     StockNotificationSubscription,
 )
@@ -40,11 +40,11 @@ from app.schemas.catalog import (
     StockNotificationRequest,
 )
 from app.services.commerce import active_reserved_quantity
-from app.services.public_availability import resolve_public_availability
 from app.services.pricing import (
     resolve_pricing,
     select_effective_price,
 )
+from app.services.public_availability import resolve_public_availability
 from app.services.sessions import hash_session_token
 
 router = APIRouter(
