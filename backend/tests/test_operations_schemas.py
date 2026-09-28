@@ -10,6 +10,7 @@ from app.schemas.operations import (
     InventoryUpdateRequest,
     OperationsInventoryRead,
     OperationsPricingRead,
+    OperationsSummaryRead,
     OperationsProductRead,
     OperationsProductRelationshipRead,
     PricingUpdateRequest,
@@ -167,3 +168,36 @@ def test_operations_product_relationship_is_structured() -> None:
 
     assert relationship.relationship_type == ProductRelationshipType.option
     assert relationship.public is False
+
+
+def test_operations_summary_exposes_recommendation_triage_counts() -> None:
+    summary = OperationsSummaryRead(
+        new_quotes=3,
+        open_quotes=5,
+        recommendation_human_review=2,
+        recommendation_lab_testing=1,
+        active_products=4,
+        failed_email_deliveries=0,
+    )
+
+    assert summary.recommendation_human_review == 2
+    assert summary.recommendation_lab_testing == 1
+
+def test_inventory_lead_time_is_trimmed() -> None:
+    payload = InventoryUpdateRequest(
+        status=InventoryStatus.backordered,
+        quantity_on_hand=0,
+        estimated_lead_time="  2–3 weeks  ",
+    )
+
+    assert payload.estimated_lead_time == "2–3 weeks"
+
+
+def test_blank_inventory_lead_time_becomes_none() -> None:
+    payload = InventoryUpdateRequest(
+        status=InventoryStatus.unavailable,
+        quantity_on_hand=0,
+        estimated_lead_time="   ",
+    )
+
+    assert payload.estimated_lead_time is None

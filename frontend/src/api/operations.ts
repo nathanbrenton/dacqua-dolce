@@ -2,9 +2,15 @@ import {
   getCsrfToken,
 } from "./authentication";
 
+import type {
+  RecommendationDecision,
+} from "./quotes";
+
 export type OperationsSummary = {
   new_quotes: number;
   open_quotes: number;
+  recommendation_human_review: number;
+  recommendation_lab_testing: number;
   active_products: number;
   failed_email_deliveries: number;
 };
@@ -104,6 +110,8 @@ export type OperationsQuote = {
   phone: string | null;
   message: string | null;
   recommendation_context: Record<string, unknown> | null;
+  recommendation_decision: RecommendationDecision | null;
+  recommendation_policy_version: string | null;
   internal_notes: string | null;
   status: string;
   created_at: string;
@@ -122,6 +130,22 @@ export type OperationsCustomerAddress = {
   is_default_billing: boolean;
 };
 
+export type OperationsCustomerEquipment = {
+  id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  sku: string;
+  product_name: string;
+  variant_name: string | null;
+  serial_number: string | null;
+  location_label: string | null;
+  installed_on: string | null;
+  last_service_on: string | null;
+  next_service_due_on: string | null;
+  active: boolean;
+};
+
+
 export type OperationsCustomer = {
   id: string;
   email: string;
@@ -130,6 +154,7 @@ export type OperationsCustomer = {
   last_name: string | null;
   phone: string | null;
   addresses: OperationsCustomerAddress[];
+  equipment: OperationsCustomerEquipment[];
   created_at: string;
 };
 
@@ -171,7 +196,16 @@ export type OperationsInventory = {
   status: string;
   quantity_on_hand: number;
   quantity_reserved: number;
+  estimated_lead_time: string | null;
 };
+
+export type OperationsProductVariant = {
+  id: string;
+  sku: string;
+  display_name: string;
+  option_values: Record<string, string>;
+};
+
 
 export type OperationsProductRelationship = {
   id: string;
@@ -193,6 +227,7 @@ export type OperationsProduct = {
   product_family: string | null;
   system_type: string | null;
   active_variant_count: number;
+  variants: OperationsProductVariant[];
   public_option_count: number;
   relationships: OperationsProductRelationship[];
   active: boolean;
@@ -413,6 +448,7 @@ export function updateProductInventory(
   payload: {
     status: string;
     quantity_on_hand: number;
+    estimated_lead_time: string | null;
   },
 ): Promise<OperationsProduct> {
   return writeJson(
@@ -478,4 +514,43 @@ export async function deleteProductRelationship(
   }
 
   return response.json() as Promise<OperationsProduct>;
+}
+
+
+export function createCustomerEquipment(
+  customerId: string,
+  payload: {
+    product_id: string;
+    variant_id: string | null;
+    serial_number: string | null;
+    location_label: string | null;
+    installed_on: string | null;
+    last_service_on: string | null;
+    next_service_due_on: string | null;
+  },
+): Promise<OperationsCustomer> {
+  return writeJson(
+    `/api/operations/customers/${encodeURIComponent(customerId)}/equipment`,
+    "POST",
+    payload,
+  );
+}
+
+export function updateCustomerEquipment(
+  customerId: string,
+  equipmentId: string,
+  payload: {
+    serial_number: string | null;
+    location_label: string | null;
+    installed_on: string | null;
+    last_service_on: string | null;
+    next_service_due_on: string | null;
+    active: boolean;
+  },
+): Promise<OperationsCustomer> {
+  return writeJson(
+    `/api/operations/customers/${encodeURIComponent(customerId)}/equipment/${encodeURIComponent(equipmentId)}`,
+    "PATCH",
+    payload,
+  );
 }

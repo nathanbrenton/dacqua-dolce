@@ -1,14 +1,18 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+EnvironmentName = Literal["development", "test", "production"]
 
 
 class Settings(BaseSettings):
     """D'Acqua Dolce application configuration."""
 
     app_name: str = "D'Acqua Dolce"
-    environment: str = "development"
+    environment: EnvironmentName = "development"
     api_prefix: str = "/api"
     database_url: str
     migration_database_url: str | None = None
@@ -51,12 +55,31 @@ class Settings(BaseSettings):
         """Use the deploy-only database identity when one is supplied."""
         return self.migration_database_url or self.database_url
 
+    @field_validator("environment", mode="before")
+    @classmethod
+    def normalize_environment(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+
+        normalized = value.strip().lower()
+        aliases = {
+            "dev": "development",
+            "testing": "test",
+            "prod": "production",
+        }
+        return aliases.get(normalized, normalized)
+
+    @property
+    def is_development(self) -> bool:
+        return self.environment == "development"
+
+    @property
+    def is_test(self) -> bool:
+        return self.environment == "test"
+
     @property
     def is_production(self) -> bool:
-        return (
-            self.environment.strip().lower()
-            in {"production", "prod"}
-        )
+        return self.environment == "production"
 
     model_config = SettingsConfigDict(
         env_file=".env",

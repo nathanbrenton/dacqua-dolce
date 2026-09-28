@@ -3,6 +3,7 @@ import {
   useState,
 } from "react";
 
+import { DEVELOPER_MODE } from "../../config/environment";
 import {
   getCatalogProducts,
   type CatalogProduct,
@@ -55,9 +56,7 @@ export function CatalogSection({
       });
   }, []);
 
-  const developerMode =
-    import.meta.env.VITE_DEVELOPER_MODE
-    === "true";
+  const developerMode = DEVELOPER_MODE;
 
   if (
     !loading
@@ -187,7 +186,14 @@ export function CatalogSection({
                 </p>
 
                 <div className="product-commerce">
-                  {product.pricing
+                  {product.availability.status === "out_of_stock" ? (
+                    <span className="product-policy product-stock-status">
+                      Out of stock
+                      {product.availability.estimated_lead_time !== null
+                        ? ` · ${product.availability.estimated_lead_time}`
+                        : ""}
+                    </span>
+                  ) : product.pricing
                     .display_price
                   && product.pricing
                     .amount_minor !== null

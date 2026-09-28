@@ -8,7 +8,7 @@ from fastapi import (
     status,
 )
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
 from app.db.session import SessionLocal
@@ -19,6 +19,7 @@ from app.models.catalog import (
     ProductDocument,
     ProductInventory,
     ProductSpecification,
+    StockNotificationSubscription,
 )
 from app.models.identity import (
     UserSession,
@@ -35,6 +36,8 @@ from app.schemas.catalog import (
     CatalogProductRead,
     CatalogSpecificationRead,
     CatalogVariantRead,
+    StockNotificationRead,
+    StockNotificationRequest,
 )
 from app.services.commerce import active_reserved_quantity
 from app.services.public_availability import resolve_public_availability
@@ -118,6 +121,46 @@ def public_document_reads(
         if document.active
         and document.public
     ]
+
+
+def availability_read(
+    db: Session,
+    *,
+    product: Product,
+) -> CatalogAvailabilityRead:
+    inventory = db.scalar(
+        select(ProductInventory)
+        .where(
+            ProductInventory.product_id == product.id,
+            ProductInventory.variant_id.is_(None),
+        )
+        .order_by(ProductInventory.updated_at.desc())
+    )
+
+    reserved_quantity = (
+        active_reserved_quantity(
+            db,
+            product_id=product.id,
+            variant_id=None,
+        )
+        if inventory is not None
+        else 0
+    )
+
+    decision = resolve_public_availability(
+        inventory,
+        reserved_quantity=reserved_quantity,
+        online_sale_approved=product.online_sale_approved,
+    )
+
+    return CatalogAvailabilityRead(
+        status=decision.status,
+        available=decision.available,
+        action=decision.action,
+        action_label=decision.action_label,
+        estimated_lead_time=decision.estimated_lead_time,
+        can_notify_when_in_stock=decision.can_notify_when_in_stock,
+    )
 
 
 def pricing_read(
@@ -208,6 +251,10 @@ def list_public_products(
                         product,
                         authenticated=(authenticated),
                     ),
+                    availability=availability_read(
+                        db,
+                        product=product,
+                    ),
                 )
             )
 
@@ -276,6 +323,10 @@ def get_public_product(
                 product,
                 authenticated=authenticated,
             ),
+            availability=availability_read(
+                db,
+                product=product,
+            ),
             images=active_images,
             variants=[
                 CatalogVariantRead(
@@ -337,16 +388,47 @@ def get_public_product_availability(
                 detail="System not found.",
             )
 
+        return availability_read(
+            db,
+            product=product,
+        )
+
+@router.post(
+    "/products/{slug}/stock-notifications",
+    response_model=StockNotificationRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def subscribe_stock_notification(
+    slug: str,
+    payload: StockNotificationRequest,
+) -> StockNotificationRead:
+    """Register a customer request to be notified when stock returns.
+
+    This records consent only. It does not send an email immediately and does
+    not imply that automated stock notifications are commissioned yet.
+    """
+
+    with SessionLocal() as db:
+        product = db.scalar(
+            select(Product).where(
+                Product.slug == slug,
+                Product.active.is_(True),
+            )
+        )
+
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="System not found.",
+            )
+
         inventory = db.scalar(
             select(ProductInventory)
             .where(
-                ProductInventory.product_id
-                == product.id,
+                ProductInventory.product_id == product.id,
                 ProductInventory.variant_id.is_(None),
             )
-            .order_by(
-                ProductInventory.updated_at.desc()
-            )
+            .order_by(ProductInventory.updated_at.desc())
         )
 
         reserved_quantity = (
@@ -362,14 +444,42 @@ def get_public_product_availability(
         decision = resolve_public_availability(
             inventory,
             reserved_quantity=reserved_quantity,
-            online_sale_approved=(
-                product.online_sale_approved
-            ),
+            online_sale_approved=product.online_sale_approved,
         )
 
-        return CatalogAvailabilityRead(
-            status=decision.status,
-            available=decision.available,
-            action=decision.action,
-            action_label=decision.action_label,
+        if not decision.can_notify_when_in_stock:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Notify When in Stock is available only when "
+                    "this system is currently out of stock."
+                ),
+            )
+
+        subscription = db.scalar(
+            select(StockNotificationSubscription).where(
+                StockNotificationSubscription.product_id == product.id,
+                StockNotificationSubscription.email == payload.email,
+            )
+        )
+
+        if subscription is None:
+            subscription = StockNotificationSubscription(
+                product_id=product.id,
+                email=payload.email,
+                active=True,
+            )
+            db.add(subscription)
+        else:
+            subscription.active = True
+            subscription.notified_at = None
+
+        db.commit()
+
+        return StockNotificationRead(
+            status="subscribed",
+            message=(
+                "We’ll keep this address on the availability list for "
+                f"{product.name}."
+            ),
         )

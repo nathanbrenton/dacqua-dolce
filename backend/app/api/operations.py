@@ -12,6 +12,7 @@ from app.models.audit import AuditEvent
 from app.models.catalog import (
     Product,
     ProductInventory,
+    ProductVariant,
     ProductPrice,
     ProductRelationship,
 )
@@ -27,6 +28,7 @@ from app.models.communications import (
 )
 from app.models.customer import (
     CustomerAddress,
+    CustomerEquipment,
     CustomerProfile,
 )
 from app.models.email import EmailDelivery, EmailDeliveryStatus
@@ -48,7 +50,10 @@ from app.schemas.operations import (
     OperationsCommunicationThreadDetailRead,
     OperationsCommunicationThreadRead,
     OperationsCommunicationThreadStatusUpdate,
+    CustomerEquipmentCreateRequest,
+    CustomerEquipmentUpdateRequest,
     OperationsCustomerAddressRead,
+    OperationsCustomerEquipmentRead,
     OperationsCustomerRead,
     OperationsInventoryRead,
     OperationsOrderCustomerRead,
@@ -56,6 +61,7 @@ from app.schemas.operations import (
     OperationsOrderRead,
     OperationsPricingRead,
     OperationsProductRead,
+    OperationsProductVariantRead,
     OperationsProductRelationshipRead,
     OperationsQuoteRead,
     OperationsSummaryRead,
@@ -119,6 +125,16 @@ def operations_quote_read(
             "recommendation_context",
             None,
         ),
+        recommendation_decision=getattr(
+            quote,
+            "recommendation_decision",
+            None,
+        ),
+        recommendation_policy_version=getattr(
+            quote,
+            "recommendation_policy_version",
+            None,
+        ),
         internal_notes=quote.internal_notes,
         status=quote.status.value,
         created_at=quote.created_at.isoformat(),
@@ -158,6 +174,33 @@ def operations_summary(
         or 0
     )
 
+    open_recommendation_decisions = db.scalars(
+        select(QuoteRequest.recommendation_decision).where(
+            QuoteRequest.status.in_(
+                (
+                    QuoteRequestStatus.new,
+                    QuoteRequestStatus.contacted,
+                    QuoteRequestStatus.quoted,
+                )
+            ),
+            QuoteRequest.recommendation_decision.is_not(None),
+        )
+    ).all()
+
+    recommendation_human_review = sum(
+        1
+        for decision in open_recommendation_decisions
+        if isinstance(decision, dict) and decision.get("human_review") is True
+    )
+    recommendation_lab_testing = sum(
+        1
+        for decision in open_recommendation_decisions
+        if (
+            isinstance(decision, dict)
+            and decision.get("requires_third_party_lab") is True
+        )
+    )
+
     active_products = (
         db.scalar(select(func.count()).select_from(Product).where(Product.active.is_(True))) or 0
     )
@@ -174,6 +217,8 @@ def operations_summary(
     return OperationsSummaryRead(
         new_quotes=int(new_quotes),
         open_quotes=int(open_quotes),
+        recommendation_human_review=recommendation_human_review,
+        recommendation_lab_testing=recommendation_lab_testing,
         active_products=int(active_products),
         failed_email_deliveries=int(failed_email_deliveries),
     )
@@ -921,6 +966,12 @@ def operations_customer_read(
         )
     ).all()
 
+    equipment = db.scalars(
+        select(CustomerEquipment)
+        .where(CustomerEquipment.user_id == user.id)
+        .order_by(CustomerEquipment.active.desc(), CustomerEquipment.installed_on.desc().nullslast(), CustomerEquipment.created_at.desc())
+    ).all()
+
     return OperationsCustomerRead(
         id=str(user.id),
         email=user.email,
@@ -958,6 +1009,23 @@ def operations_customer_read(
                 ),
             )
             for address in addresses
+        ],
+        equipment=[
+            OperationsCustomerEquipmentRead(
+                id=str(item.id),
+                product_id=str(item.product_id) if item.product_id is not None else None,
+                variant_id=str(item.variant_id) if item.variant_id is not None else None,
+                sku=item.sku_snapshot,
+                product_name=item.name_snapshot,
+                variant_name=item.variant_snapshot,
+                serial_number=item.serial_number,
+                location_label=item.location_label,
+                installed_on=item.installed_on.isoformat() if item.installed_on else None,
+                last_service_on=item.last_service_on.isoformat() if item.last_service_on else None,
+                next_service_due_on=item.next_service_due_on.isoformat() if item.next_service_due_on else None,
+                active=item.active,
+            )
+            for item in equipment
         ],
         created_at=user.created_at.isoformat(),
     )
@@ -999,6 +1067,112 @@ def list_customers(
         )
         for user in users
     ]
+
+
+@router.post(
+    "/customers/{customer_id}/equipment",
+    response_model=OperationsCustomerRead,
+)
+def create_customer_equipment(
+    customer_id: uuid.UUID,
+    payload: CustomerEquipmentCreateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsCustomerRead:
+    require_privileged_operations(db, user=current_user)
+    customer = db.get(User, customer_id)
+    if customer is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+    customer_role = db.scalar(
+        select(UserRole.id).where(
+            UserRole.user_id == customer.id,
+            UserRole.role == RoleName.customer,
+        )
+    )
+    if customer_role is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+    product = db.get(Product, payload.product_id)
+    if product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+
+    variant = None
+    if payload.variant_id is not None:
+        variant = db.get(ProductVariant, payload.variant_id)
+        if variant is None or variant.product_id != product.id:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Variant does not belong to the selected product.")
+
+    equipment = CustomerEquipment(
+        user_id=customer.id,
+        product_id=product.id,
+        variant_id=variant.id if variant is not None else None,
+        sku_snapshot=variant.sku if variant is not None else product.sku,
+        name_snapshot=product.name,
+        variant_snapshot=variant.display_name if variant is not None else None,
+        serial_number=payload.serial_number,
+        location_label=payload.location_label,
+        installed_on=payload.installed_on,
+        last_service_on=payload.last_service_on,
+        next_service_due_on=payload.next_service_due_on,
+        active=True,
+    )
+    db.add(equipment)
+    db.flush()
+    record_audit_event(
+        db,
+        action="customer.equipment_recorded",
+        entity_type="customer_equipment",
+        entity_id=str(equipment.id),
+        actor_user_id=current_user.id,
+        metadata={"customer_id": str(customer.id), "product_id": str(product.id)},
+    )
+    db.commit()
+    return operations_customer_read(db, user=customer)
+
+
+@router.patch(
+    "/customers/{customer_id}/equipment/{equipment_id}",
+    response_model=OperationsCustomerRead,
+)
+def update_customer_equipment(
+    customer_id: uuid.UUID,
+    equipment_id: uuid.UUID,
+    payload: CustomerEquipmentUpdateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsCustomerRead:
+    require_privileged_operations(db, user=current_user)
+    customer = db.get(User, customer_id)
+    if customer is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+    customer_role = db.scalar(
+        select(UserRole.id).where(
+            UserRole.user_id == customer.id,
+            UserRole.role == RoleName.customer,
+        )
+    )
+    if customer_role is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer account not found.")
+    equipment = db.scalar(
+        select(CustomerEquipment).where(
+            CustomerEquipment.id == equipment_id,
+            CustomerEquipment.user_id == customer.id,
+        )
+    )
+    if equipment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Equipment record not found.")
+
+    for field, value in payload.model_dump().items():
+        setattr(equipment, field, value)
+    record_audit_event(
+        db,
+        action="customer.equipment_updated",
+        entity_type="customer_equipment",
+        entity_id=str(equipment.id),
+        actor_user_id=current_user.id,
+        metadata={"customer_id": str(customer.id), "active": equipment.active},
+    )
+    db.commit()
+    return operations_customer_read(db, user=customer)
 
 
 def operations_order_read(
@@ -1161,6 +1335,16 @@ def operations_product_read(
         active_variant_count=sum(
             1 for variant in product.variants if variant.active
         ),
+        variants=[
+            OperationsProductVariantRead(
+                id=str(variant.id),
+                sku=variant.sku,
+                display_name=variant.display_name,
+                option_values=variant.option_values,
+            )
+            for variant in product.variants
+            if variant.active
+        ],
         public_option_count=sum(
             1
             for relationship in product.related_options
@@ -1199,6 +1383,11 @@ def operations_product_read(
             status=(inventory.inventory_status.value if inventory is not None else "not_tracked"),
             quantity_on_hand=(inventory.quantity_on_hand if inventory is not None else 0),
             quantity_reserved=reserved_quantity,
+            estimated_lead_time=(
+                inventory.estimated_lead_time
+                if inventory is not None
+                else None
+            ),
         ),
     )
 
@@ -1609,6 +1798,9 @@ def update_product_inventory(
             quantity_on_hand=(
                 payload.quantity_on_hand
             ),
+            estimated_lead_time=(
+                payload.estimated_lead_time
+            ),
         )
         db.add(inventory)
     else:
@@ -1617,6 +1809,9 @@ def update_product_inventory(
         )
         inventory.quantity_on_hand = (
             payload.quantity_on_hand
+        )
+        inventory.estimated_lead_time = (
+            payload.estimated_lead_time
         )
 
     db.flush()
@@ -1635,6 +1830,9 @@ def update_product_inventory(
             ),
             "quantity_reserved": (
                 reserved_quantity
+            ),
+            "estimated_lead_time": (
+                payload.estimated_lead_time
             ),
         },
     )

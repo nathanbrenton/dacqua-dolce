@@ -1,10 +1,13 @@
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
 
 import {
+  evaluateRecommendation,
   type RecommendationContext,
+  type RecommendationDecision,
 } from "../../api/quotes";
 
 type SystemRecommendationSectionProps = {
@@ -21,11 +24,6 @@ type TreatmentPreference =
   | "unsure";
 type BathroomCount = RecommendationContext["bathrooms"];
 
-type RecommendationResult = {
-  title: string;
-  description: string;
-  humanReview: boolean;
-};
 
 const recommendationPaths = [
   {
@@ -101,6 +99,10 @@ export function SystemRecommendationSection({
     useState<TriState>("unsure");
   const [bathrooms, setBathrooms] =
     useState<BathroomCount>("unsure");
+  const [occupants, setOccupants] =
+    useState("");
+  const [waterServicePipeSize, setWaterServicePipeSize] =
+    useState("");
   const [qualityReportRead, setQualityReportRead] =
     useState<TriState>("unsure");
   const [chlorineSigns, setChlorineSigns] =
@@ -131,6 +133,8 @@ export function SystemRecommendationSection({
       source_water: sourceWater,
       hard_water_signs: hardWaterSigns,
       bathrooms,
+      occupants: occupants === "" ? null : Number.parseInt(occupants, 10),
+      water_service_pipe_size: waterServicePipeSize.trim() || null,
       water_quality_report_read: qualityReportRead,
       chlorine_chloramine_signs: chlorineSigns,
       iron_manganese_concerns: ironManganeseConcern,
@@ -148,6 +152,8 @@ export function SystemRecommendationSection({
       sourceWater,
       hardWaterSigns,
       bathrooms,
+      occupants,
+      waterServicePipeSize,
       qualityReportRead,
       chlorineSigns,
       ironManganeseConcern,
@@ -163,75 +169,49 @@ export function SystemRecommendationSection({
     ],
   );
 
-  const recommendationResult = useMemo<RecommendationResult>(() => {
-    if (sourceWater === "well") {
-      return {
-        title: "Third-party water testing comes first.",
-        description:
-          "Well-water systems require third-party laboratory testing and human review before D'Acqua Dolce makes a system recommendation.",
-        humanReview: true,
-      };
+  const [recommendationResult, setRecommendationResult] =
+    useState<RecommendationDecision | null>(null);
+  const [recommendationError, setRecommendationError] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showGuidedRecommendation) {
+      return;
     }
 
-    if (sourceWater !== "municipal") {
-      return {
-        title: "Source water comes first.",
-        description:
-          "Confirm whether the property uses municipal or well water before relying on an automatic starting recommendation.",
-        humanReview: true,
-      };
-    }
+    const controller = new AbortController();
+    setRecommendationResult(null);
+    setRecommendationError(null);
 
-    if (electricalAvailable === "no" || drainAvailable === "no") {
-      return {
-        title: "Harmony + cartridge filtration",
-        description:
-          "With power or a backwash drain unavailable, Harmony conditioning with cartridge filtration is the confirmed starting path.",
-        humanReview: false,
-      };
-    }
+    const timer = window.setTimeout(() => {
+      void evaluateRecommendation(
+        recommendationContext,
+        controller.signal,
+      )
+        .then((result) => {
+          setRecommendationResult(result);
+        })
+        .catch((error: unknown) => {
+          if (controller.signal.aborted) {
+            return;
+          }
 
-    if (
-      electricalAvailable !== "yes"
-      || drainAvailable !== "yes"
-    ) {
-      return {
-        title: "Installation review recommended.",
-        description:
-          "Power and drain availability are needed before choosing between the confirmed backwashing treatment paths.",
-        humanReview: true,
-      };
-    }
+          setRecommendationResult(null);
+          setRecommendationError(
+            error instanceof Error
+              ? error.message
+              : "Recommendation review is temporarily unavailable.",
+          );
+        });
+    }, 250);
 
-    if (treatmentPreference === "salt_free") {
-      return {
-        title: "Backwashing carbon + Harmony",
-        description:
-          "For municipal water with power and drain access, this is the confirmed starting path when carbon filtration and scale/deposit mitigation without salt are preferred.",
-        humanReview: false,
-      };
-    }
-
-    if (treatmentPreference === "softened") {
-      return {
-        title: "Backwashing carbon + water softener + reverse osmosis",
-        description:
-          "For municipal water with power and drain access, this is the confirmed starting path when conventionally softened water is preferred. Reverse osmosis is always included with the softener recommendation.",
-        humanReview: false,
-      };
-    }
-
-    return {
-      title: "Expert review recommended.",
-      description:
-        "The confirmed starting paths depend on whether salt-free conditioning or conventionally softened water is preferred.",
-      humanReview: true,
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
     };
   }, [
-    sourceWater,
-    electricalAvailable,
-    drainAvailable,
-    treatmentPreference,
+    showGuidedRecommendation,
+    recommendationContext,
   ]);
 
   return (
@@ -268,7 +248,7 @@ export function SystemRecommendationSection({
           <p className="eyebrow">Installation planning</p>
           <h3 id="exterior-water-heading">Treat water where treatment adds value.</h3>
           <p>
-            Exterior irrigation and hose-bib lines should generally bypass treated-water equipment where appropriate, helping avoid unnecessary treatment of large exterior water demand. Final routing depends on the property and installation.
+            Exterior irrigation, hose-bib, and pool-fill lines should generally bypass treated-water equipment when practical. Large pool-fill volumes can prematurely shorten filtration-media service life. Final routing still depends on the property and installation.
           </p>
         </aside>
 
@@ -276,7 +256,7 @@ export function SystemRecommendationSection({
           <p className="eyebrow">Softener ownership</p>
           <h3 id="softener-ownership-heading">Plan for simple routine checks.</h3>
           <p>
-            For conventional softeners, inspect brine-tank salt about monthly and replenish it as needed. After a power loss, verify the valve time-of-day where applicable, and follow the instructions for the specific system.
+            For conventional softeners, inspect brine-tank salt about monthly and replenish it as needed. After a power interruption, verify valve time-of-day on conventional softeners and backwashing carbon filters where applicable. Follow the instructions for the specific equipment.
           </p>
         </aside>
 
@@ -298,7 +278,7 @@ export function SystemRecommendationSection({
         </div>
         <button
           type="button"
-          className="secondary-button"
+          className="primary-button"
           aria-expanded={showGuidedRecommendation}
           aria-controls="guided-recommendation"
           onClick={() => {
@@ -306,8 +286,8 @@ export function SystemRecommendationSection({
           }}
         >
           {showGuidedRecommendation
-            ? "Hide guided recommendation"
-            : "Start guided recommendation"}
+            ? "Hide guided questions"
+            : "Help Me Choose"}
         </button>
       </div>
 
@@ -361,6 +341,33 @@ export function SystemRecommendationSection({
               { value: "5+", label: "5 or more" },
             ]}
           />
+
+          <label className="recommendation-field">
+            <span>Number of occupants</span>
+            <input
+              type="number"
+              min="1"
+              inputMode="numeric"
+              value={occupants}
+              placeholder="If known"
+              onChange={(event) => {
+                setOccupants(event.target.value);
+              }}
+            />
+          </label>
+
+          <label className="recommendation-field">
+            <span>Water service pipe size</span>
+            <input
+              type="text"
+              maxLength={120}
+              value={waterServicePipeSize}
+              placeholder="If known"
+              onChange={(event) => {
+                setWaterServicePipeSize(event.target.value);
+              }}
+            />
+          </label>
 
           <SelectField
             label="Read the water-quality report provided with your water bill"
@@ -460,20 +467,41 @@ export function SystemRecommendationSection({
         <aside
           className={
             "recommendation-result"
-            + (recommendationResult.humanReview ? " is-review" : "")
+            + (recommendationResult?.human_review ? " is-review" : "")
           }
           aria-live="polite"
         >
           <p className="eyebrow">
-            {recommendationResult.humanReview
+            {recommendationResult?.human_review
               ? "Review path"
               : "Starting recommendation"}
           </p>
-          <h3>{recommendationResult.title}</h3>
-          <p>{recommendationResult.description}</p>
-          {sourceWater === "well" ? (
+          {recommendationResult ? (
+            <>
+              <h3>{recommendationResult.title}</h3>
+              <p>{recommendationResult.description}</p>
+            </>
+          ) : recommendationError ? (
+            <>
+              <h3>Expert review recommended.</h3>
+              <p>{recommendationError}</p>
+            </>
+          ) : (
+            <>
+              <h3>Reviewing your starting point…</h3>
+              <p>Applying the current D'Acqua Dolce recommendation rules.</p>
+            </>
+          )}
+          {recommendationResult?.requires_third_party_lab ? (
             <p className="recommendation-result-note">
               A third-party laboratory test is mandatory before an automatic system recommendation is made for well water.
+            </p>
+          ) : null}
+          {recommendationResult?.sizing ? (
+            <p className="recommendation-result-note">
+              {recommendationResult.sizing.status === "inputs_complete"
+                ? "Sizing inputs are complete. Capacity selection will remain pending until verified sizing rules are available."
+                : "Capacity sizing will also consider bathrooms, occupants, and water-service pipe size. Add any known sizing details to strengthen the consultation."}
             </p>
           ) : null}
           <button

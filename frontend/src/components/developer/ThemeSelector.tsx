@@ -1,3 +1,4 @@
+import { DEVELOPER_MODE } from "../../config/environment";
 import {
   DEFAULT_THEME,
   isThemeId,
@@ -14,7 +15,7 @@ export function ThemeSelector({
   theme,
   onThemeChange,
 }: ThemeSelectorProps) {
-  if (import.meta.env.VITE_DEVELOPER_MODE !== "true") {
+  if (!DEVELOPER_MODE) {
     return null;
   }
 

@@ -15,6 +15,7 @@ def inventory(
     return SimpleNamespace(
         inventory_status=status,
         quantity_on_hand=quantity,
+        estimated_lead_time=None,
     )
 
 
@@ -65,8 +66,9 @@ def test_reservations_can_exhaust_public_availability() -> None:
         reserved_quantity=3,
     )
 
-    assert result.status == "unavailable"
+    assert result.status == "out_of_stock"
     assert result.available is False
+    assert result.can_notify_when_in_stock is True
 
 
 def test_low_stock_remains_customer_safe() -> None:
@@ -90,5 +92,20 @@ def test_backordered_inventory_is_not_available() -> None:
         )
     )
 
-    assert result.status == "backordered"
+    assert result.status == "out_of_stock"
     assert result.available is False
+    assert result.can_notify_when_in_stock is True
+
+def test_out_of_stock_remains_visible_for_quote_only_product() -> None:
+    item = inventory(InventoryStatus.unavailable, 0)
+    item.estimated_lead_time = "2–3 weeks"
+
+    result = resolve_public_availability(
+        item,
+        online_sale_approved=False,
+    )
+
+    assert result.status == "out_of_stock"
+    assert result.available is False
+    assert result.estimated_lead_time == "2–3 weeks"
+    assert result.action == "NOTIFY_WHEN_IN_STOCK"

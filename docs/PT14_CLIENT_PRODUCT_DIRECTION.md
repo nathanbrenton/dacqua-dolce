@@ -9,8 +9,9 @@ This document records approved or explicitly provisional product-direction decis
 - `Origin` is the Reverse Osmosis family.
 - Different capacities/configurations within one product family are variants rather than separate branded families.
 - Public product presentation should lead with the family name.
-- Carbon and softener family names remain unresolved. Do not assign `Essence`, `Clarity`, `Refine`, `Silken`, or `Serene` as final catalog names until the client selects them.
-- Two-name family compositions remain an option, but are not approved as the current catalog convention.
+- `Essence` is the confirmed public family name for whole-house carbon filtration.
+- `Refine` is the confirmed family name for the conventional water-softener line. No Refine catalog SKU should be invented before authoritative product data exists.
+- Two-name family compositions may still be considered for future products; do not consume `Clarity`, `Silken`, or `Serene` without further client discussion.
 
 ## Guided selection workflow
 
@@ -77,11 +78,9 @@ Where available, product copy should identify the applicable manufacturer specif
 
 - CLEAR is the branded terminology for the conditioning process.
 - Do not use `TAC` or `Template Assisted Crystallization` in new public-facing D'Acqua Dolce copy. Existing internal identifiers, SKUs, slugs, filenames, and historical source references that contain `TAC`/`TTAC` are not renamed by this terminology decision.
-- The final expansion of the `CLEAR` acronym remains unresolved.
-- `Crystal Lattice` is the preferred direction for `C` and `L`.
-- `Anti-Scale` is the preferred direction for `A`.
-- The words represented by `E` and `R` remain unresolved.
-- Do not invent or publish a final CLEAR expansion until it is approved.
+- The client has approved a public-facing CLEAR acronym expansion: `Crystal Lattice Enabling Anti-Scale Reduction`.
+- Use the expansion exactly as approved when spelling out CLEAR.
+- `Reduction` refers to the anti-scale objective in the approved name; it does not change the claims boundary. Do not imply conventional hardness removal or a measured reduction in calcium, magnesium, or hardness concentration.
 
 Preferred customer-facing explanation:
 
@@ -109,7 +108,9 @@ The proposed description of CAM as a temporary bond between calcium and magnesiu
 
 ## CLEAR component naming
 
-The physical distributor/component associated with CLEAR requires a separate proprietary name. That name remains unresolved and may depend on future component redesign and licensing considerations. Do not assign a public component name yet.
+The physical internal conditioning component/distributor associated with CLEAR has the approved public name `CAM Induction`.
+
+`CAM Induction` may be used publicly as the component name. Do not infer a physical mechanism merely from the word `Induction`; the proposed temporary calcium/magnesium interaction remains pending technical documentation and verification.
 
 
 ## PT14.4 public presentation architecture
@@ -127,9 +128,9 @@ Capacity and hardware configuration belong below this identity hierarchy as prod
 
 The presentation layer may derive this hierarchy from a stable catalog product identifier while leaving canonical SKUs, slugs, public paths, filenames, and historical provenance unchanged.
 
-Until the second Harmony configuration is technically verified, do not infer that `Harmony - Regenerating` uses the same CLEAR process, rename it to `Backwashing`, or publish power/drain/backwash-cycle claims for it.
+`Harmony - Regenerating` has been removed from the offered product lineup. Retain its historical catalog identity only for traceability; do not present or sell it as an active system. A future combined conditioner + carbon configuration using a regenerating valve remains a separate TBD concept.
 
-Customer education may explain the approved CLEAR/CAM relationship, but must preserve the claims boundary in this document. In particular, do not publish the unresolved CLEAR acronym expansion or the proposed temporary calcium/magnesium bond mechanism as established fact.
+Customer education may explain the approved CLEAR/CAM/CAM Induction terminology, but must preserve the claims boundary in this document. The approved CLEAR expansion may now be published. The proposed temporary calcium/magnesium interaction still must not be published as an established mechanism until the promised supporting documentation is reviewed and accepted.
 
 
 ## PT14.5 product-detail and guided-selection architecture
@@ -185,9 +186,9 @@ Operations should keep employee communication inside the D'Acqua Dolce web appli
 
 ## PT15.3 Harmony pass-through ownership presentation
 
-The confirmed Harmony pass-through configuration may present its verified installation and ownership characteristics together on the product-detail page: non-backwashing operation, no electrical power requirement, no backwash-drain requirement, and a replaceable carbon-block prefilter. These facts apply only to the known pass-through SKU and must not be generalized to Harmony Regenerating or other products without authoritative support.
+The confirmed Harmony pass-through conditioner remains non-backwashing and requires no electrical power or backwash drain. The earlier assumption that Harmony itself always includes a carbon-block prefilter is superseded. Harmony may be purchased individually, while the preferred filtration configuration pairs it with a Duo cartridge filtration system containing replaceable sediment and carbon filters.
 
-Where a replaceable cartridge is known to apply, public ownership guidance may state replacement at least every six months where applicable, while making clear that actual service life varies with source-water quality, micron rating, usage, and system conditions. Do not publish an unverified micron rating, carbon-block type, or gallon/service capacity.
+For the paired cartridge system, public ownership guidance may state replacement every six months where applicable, while making clear that actual service life varies with source-water quality, use, and system conditions. Where a pressure/clog gauge is equipped, customers should also follow that indicator. Do not publish an unverified micron rating, cartridge type, or gallon/service capacity.
 
 The product-detail overview should prefer the verified presentation-layer summary when one exists so that the customer sees the same approved claims boundary on the catalog card and detail page.
 
@@ -232,7 +233,7 @@ The client confirmed the three current municipal-water starting paths:
 
 The guided recommendation may ask about municipal versus well water, signs of hard water, number of bathrooms, whether the customer has read the water-quality report supplied with the water bill, signs of chlorine/chloramine, iron/manganese concerns, existing equipment, drain and electrical availability, irrigation/hose-bib plumbing, pool/autofill plumbing, drinking-water RO interest, available water-test results, and whether neighbors/friends/family use water filtration.
 
-Do not ask for number of occupants. Peak-flow requirements remain unresolved (`Maybe`) and should not be added as a required recommendation question yet.
+Newer client direction supersedes the earlier exclusion of occupant count. Capacity sizing should eventually consider **number of bathrooms, number of occupants, and water-service pipe size**. Capture those inputs now, but do not publish or calculate a capacity until verified sizing thresholds/rules are supplied. Peak-flow requirements remain unresolved (`Maybe`) and should not be added as a required recommendation question yet.
 
 If the customer identifies the source as well water, third-party laboratory testing is mandatory. The application must not produce an automatic system recommendation for well water; route the inquiry to human review/testing instead. Ambiguous source-water, utility, or treatment-preference answers may likewise fall back to human review rather than fabricating certainty.
 
@@ -282,3 +283,77 @@ The confirmed Family → Product/System → Size/Capacity → Options/Accessorie
 - Removing or changing a relationship is audit-backed.
 - This capability does not itself confirm that any particular UV, filtration, or other accessory is compatible with a product.
 - Unresolved family/system terminology remains outside this workflow.
+
+
+## PT16.1 recommendation-service architecture
+
+The confirmed recommendation rules are business logic, not a React-only presentation concern. Keep them centralized in the backend recommendation service and expose them through the recommendation API so the website and a future AI/chat experience can use the same decision boundary. Stable decision codes/components are preferred over parsing customer-facing prose. Do not add new automatic branching from contextual questionnaire fields without explicit client direction.
+
+## PT16.2 recommendation decision provenance and triage
+
+A guided recommendation is not only a transient frontend result. When a customer submits a guided Customer Request, the backend must re-evaluate the structured context using the authoritative recommendation service and persist the exact decision plus the recommendation-policy version used at that time.
+
+Do not trust a recommendation result supplied by the browser, and do not silently reinterpret historical requests with newer recommendation rules. Existing requests that have structured context but predate decision snapshots may remain as legacy guided requests requiring manual interpretation.
+
+Operations should distinguish and triage guided requests that require human review and, especially, well-water requests requiring third-party laboratory testing. The mandatory well-water testing boundary takes precedence over ordinary automatic recommendation handling.
+
+The recommendation snapshot must remain distinct from the customer's own message, the structured answers that produced the decision, and private employee notes.
+
+`docs/RECOMMENDATION_ARCHITECTURE.md` documents the shared web/future-chat recommendation boundary. A future AI/chat experience should collect or infer only the same structured fields and call the same backend evaluator rather than carrying an independent policy in prompts.
+
+
+## PT16.3 — Catalog and product-line reconciliation
+
+Newer explicit client answers supersede earlier provisional naming and lineup assumptions:
+
+- `Essence` is the confirmed whole-house carbon filtration family.
+- `Refine` is the confirmed conventional water-softener family; no product record is created until authoritative SKU/product data is available.
+- `Harmony - Regenerating` is retired from the offered lineup and retained only for historical traceability.
+- Product architecture remains Family → Product/System → Size/Capacity → Options/Accessories.
+- Harmony may be sold individually, but its preferred filtration configuration pairs it with a Duo cartridge system containing replaceable sediment and carbon filters.
+- `Big Blue` remains manufacturer/internal terminology and is not used as the public family name.
+- UV is a confirmed future Harmony option direction, but no catalog relationship should be published until an authoritative UV product record exists.
+- Exterior irrigation/hose-bib bypass is a standard recommended installation practice where appropriate, with installer/customer judgment based on property layout.
+
+The catalog must not invent a Refine SKU, Duo cartridge SKU/family name, UV SKU, capacity threshold, or manufacturer performance claim merely because the architecture can represent those concepts.
+
+
+## PT16.5 recommendation sizing readiness
+
+Recommendation policy v2 captures the three client-confirmed capacity-sizing inputs: bathrooms, occupants, and water-service pipe size. The backend reports whether those inputs are complete, but `capacity_recommendation_available` remains false until authoritative sizing thresholds are documented. Input completeness must never be presented as an actual 1.5 / 2.0 cu. ft. recommendation.
+
+## PT16.6 — Ownership, communication preferences, and customer-account continuity
+
+New client direction:
+
+- Exterior irrigation, hose-bib, and pool-fill lines should generally bypass whole-property treatment when practical. Pool-fill bypass is specifically intended to avoid prematurely consuming filtration-media service life; final routing still depends on the property/install.
+- Conventional softener salt should be inspected about monthly and replenished as needed. The previously discussed roughly 25–50% minimum remains subordinate to manufacturer confirmation and should not be published as a universal numeric rule yet.
+- After a power interruption, verify valve time-of-day where applicable for both conventional softeners and backwashing carbon filtration systems.
+- `Help Me Choose` guided questions should be the primary path for customers who do not know which system they need. `Talk to an Expert` remains available when the customer prefers direct assistance.
+- Long-term commerce priority is direct online purchase of complete systems. Initial launch should be equipment-only, with installation arranged separately. Certified-installer recommendations and location/product-dependent installation offerings are later-stage capabilities.
+- Maintenance guidance should ultimately be available through the customer account, optional email reminders, manuals/downloadable documentation, a dedicated support/maintenance experience, and QR access near installed equipment.
+- Optional reminder types include filter replacement, softener salt/check, UV lamp/service, annual system check, product-specific maintenance, post-purchase follow-up, and post-installation follow-up.
+- Customers should explicitly choose which optional reminders/follow-ups they receive. Optional communication preferences default off until selected. Required security/account/order/transactional messages are not governed by these optional preferences.
+- Keep the existing single post-verification welcome email for now as restrained account-lifecycle onboarding rather than a recurring marketing campaign.
+- Keep employee-generated System mail separated from normal Inbox while preserving it in the authoritative archive.
+- Do not prioritize persistent employee mail filters or a new-message composer yet; the client remains unsure and current use cases do not justify the added complexity.
+- Signed-in Customer Requests should remain structurally attached to the authenticated customer account. This relationship already exists at request creation and should be exposed back to the customer rather than reconstructed heuristically.
+
+Implementation boundary:
+
+Communication preferences are a persistence and consent foundation only. Do not schedule or send maintenance reminders until the application has authoritative installed-product/service-date data from which a due date can be determined.
+
+
+### PT16.7 installed-equipment ownership foundation
+
+Customer maintenance communication should be grounded in authoritative ownership data rather than inferred from purchases alone. The application now supports customer equipment records with product snapshots, optional serial/location details, installation date, last-service date, and next-service date. Public product documents can be surfaced from the equipment record in the customer account. A completed purchase does not automatically imply installation; Operations records installation when known. Optional reminder preferences remain separate consent signals and do not themselves create a maintenance schedule.
+
+## PT16.9 latest product/publication direction
+
+- Product/catalogue and visual/branding refinement are the near-term priorities.
+- `Harmony - Regenerating` remains retired.
+- `Refine` remains the conventional softener family. Do not publish a Refine pass-through product, and do not publish a Refine regenerating description until authoritative softener product data/copy is supplied.
+- Existing carbon SKUs remain under the confirmed `Essence` family; legacy seed language that called those records `Refine` is superseded.
+- If fulfillment is unavailable, customer-facing presentation should support `Out of stock`, an estimated lead time when Operations has a reliable value, and an explicit `Notify When in Stock` opt-in.
+- Product-document architecture should accommodate specification sheets, owner’s manuals, installation guides, maintenance guides, warranties, filter/service schedules, and water-test/report information. Public visibility still requires an authoritative document record.
+- Positive/results-oriented language is a general copy principle, not an absolute grammar rule. Clarity and technical accuracy come first.

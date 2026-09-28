@@ -64,3 +64,14 @@ When adding local services, assign and document a deliberate loopback-only host
 port rather than borrowing a production port. Keep container-native ports and
 production loopback ports unchanged unless the corresponding architecture is
 being intentionally redesigned.
+
+
+## Application environment identity
+
+Local backend development defaults to `DACQUA_ENVIRONMENT=development`.
+Automated tests explicitly identify as `test`; production deployment requires
+`production`. See `docs/ENVIRONMENT_IDENTITY.md`.
+
+Frontend developer-only controls remain governed by
+`VITE_DEVELOPER_MODE=true`, which is a capability flag rather than an
+environment identity. `VITE_APP_ENVIRONMENT` defaults to `development` locally.

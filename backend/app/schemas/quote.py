@@ -21,6 +21,11 @@ class RecommendationContext(BaseModel):
     source_water: Literal["municipal", "well", "unsure"]
     hard_water_signs: TriState
     bathrooms: Literal["1", "2", "3", "4", "5+", "unsure"]
+    occupants: int | None = Field(default=None, ge=1)
+    water_service_pipe_size: str | None = Field(
+        default=None,
+        max_length=120,
+    )
     water_quality_report_read: TriState
     chlorine_chloramine_signs: TriState
     iron_manganese_concerns: TriState
@@ -41,9 +46,12 @@ class RecommendationContext(BaseModel):
         "unsure",
     ]
 
-    @field_validator("existing_equipment")
+    @field_validator(
+        "existing_equipment",
+        "water_service_pipe_size",
+    )
     @classmethod
-    def clean_existing_equipment(
+    def clean_optional_text(
         cls,
         value: str | None,
     ) -> str | None:
@@ -52,6 +60,50 @@ class RecommendationContext(BaseModel):
 
         cleaned = value.strip()
         return cleaned or None
+
+
+
+
+RecommendationDecisionCode = Literal[
+    "well_testing_required",
+    "source_water_review",
+    "limited_utilities",
+    "installation_review",
+    "salt_free",
+    "softened_with_ro",
+    "treatment_preference_review",
+]
+
+RecommendationComponent = Literal[
+    "harmony",
+    "cartridge_filtration",
+    "backwashing_carbon",
+    "water_softener",
+    "reverse_osmosis",
+]
+
+
+SizingInput = Literal[
+    "bathrooms",
+    "occupants",
+    "water_service_pipe_size",
+]
+
+
+class RecommendationSizingAssessment(BaseModel):
+    status: Literal["inputs_complete", "needs_more_information"]
+    missing_inputs: list[SizingInput] = Field(default_factory=list)
+    capacity_recommendation_available: bool = False
+
+
+class RecommendationDecision(BaseModel):
+    code: RecommendationDecisionCode
+    title: str
+    description: str
+    human_review: bool
+    requires_third_party_lab: bool = False
+    components: list[RecommendationComponent] = Field(default_factory=list)
+    sizing: RecommendationSizingAssessment
 
 
 class QuoteRequestCreate(BaseModel):

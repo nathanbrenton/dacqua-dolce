@@ -13,13 +13,22 @@ from app.api.dependencies.auth import (
 )
 from app.models.customer import (
     CustomerAddress,
+    CustomerCommunicationPreferences,
+    CustomerEquipment,
     CustomerProfile,
 )
+from app.models.catalog import Product, ProductDocument
+from app.models.quote import QuoteRequest
 from app.schemas.account import (
     AddressCreate,
     AddressRead,
     CustomerProfileRead,
     CustomerProfileUpdate,
+    CommunicationPreferencesRead,
+    CommunicationPreferencesUpdate,
+    CustomerRequestRead,
+    CustomerEquipmentDocumentRead,
+    CustomerEquipmentRead,
 )
 from app.services.audit import (
     record_audit_event,
@@ -195,3 +204,171 @@ def delete_address(
 
     db.delete(address)
     db.commit()
+
+
+def communication_preferences_read(
+    preferences: CustomerCommunicationPreferences | None,
+) -> CommunicationPreferencesRead:
+    if preferences is None:
+        return CommunicationPreferencesRead()
+
+    return CommunicationPreferencesRead(
+        filter_replacement_reminders=preferences.filter_replacement_reminders,
+        softener_check_reminders=preferences.softener_check_reminders,
+        uv_service_reminders=preferences.uv_service_reminders,
+        annual_system_check_reminders=preferences.annual_system_check_reminders,
+        product_specific_reminders=preferences.product_specific_reminders,
+        post_purchase_followup=preferences.post_purchase_followup,
+        post_installation_followup=preferences.post_installation_followup,
+    )
+
+
+@router.get(
+    "/communication-preferences",
+    response_model=CommunicationPreferencesRead,
+)
+def get_communication_preferences(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> CommunicationPreferencesRead:
+    return communication_preferences_read(
+        db.get(CustomerCommunicationPreferences, current_user.id)
+    )
+
+
+@router.put(
+    "/communication-preferences",
+    response_model=CommunicationPreferencesRead,
+)
+def update_communication_preferences(
+    payload: CommunicationPreferencesUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> CommunicationPreferencesRead:
+    preferences = db.get(
+        CustomerCommunicationPreferences,
+        current_user.id,
+    )
+
+    if preferences is None:
+        preferences = CustomerCommunicationPreferences(user_id=current_user.id)
+        db.add(preferences)
+
+    for field, value in payload.model_dump().items():
+        setattr(preferences, field, value)
+
+    record_audit_event(
+        db,
+        action="customer.communication_preferences_updated",
+        entity_type="customer_communication_preferences",
+        entity_id=str(current_user.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "enabled_count": sum(payload.model_dump().values()),
+        },
+    )
+
+    db.commit()
+    db.refresh(preferences)
+
+    return communication_preferences_read(preferences)
+
+
+@router.get(
+    "/equipment",
+    response_model=list[CustomerEquipmentRead],
+)
+def get_customer_equipment(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[CustomerEquipmentRead]:
+    rows = db.scalars(
+        select(CustomerEquipment)
+        .where(
+            CustomerEquipment.user_id == current_user.id,
+            CustomerEquipment.active.is_(True),
+        )
+        .order_by(CustomerEquipment.installed_on.desc().nullslast(), CustomerEquipment.created_at.desc())
+    ).all()
+
+    results: list[CustomerEquipmentRead] = []
+    for equipment in rows:
+        product = db.get(Product, equipment.product_id) if equipment.product_id is not None else None
+        documents = []
+        if product is not None:
+            documents = db.scalars(
+                select(ProductDocument)
+                .where(
+                    ProductDocument.product_id == product.id,
+                    ProductDocument.active.is_(True),
+                    ProductDocument.public.is_(True),
+                )
+                .order_by(ProductDocument.document_type, ProductDocument.title)
+            ).all()
+        results.append(
+            CustomerEquipmentRead(
+                id=str(equipment.id),
+                product_id=str(equipment.product_id) if equipment.product_id is not None else None,
+                product_name=equipment.name_snapshot,
+                product_family=product.product_family if product is not None else None,
+                system_type=product.system_type if product is not None else None,
+                sku=equipment.sku_snapshot,
+                variant_name=equipment.variant_snapshot,
+                serial_number=equipment.serial_number,
+                location_label=equipment.location_label,
+                installed_on=equipment.installed_on.isoformat() if equipment.installed_on else None,
+                last_service_on=equipment.last_service_on.isoformat() if equipment.last_service_on else None,
+                next_service_due_on=equipment.next_service_due_on.isoformat() if equipment.next_service_due_on else None,
+                documents=[
+                    CustomerEquipmentDocumentRead(
+                        title=document.title,
+                        document_type=document.document_type.value,
+                        path=document.storage_path,
+                        content_type=document.content_type,
+                        version=document.version,
+                    )
+                    for document in documents
+                ],
+            )
+        )
+    return results
+
+
+@router.get(
+    "/requests",
+    response_model=list[CustomerRequestRead],
+)
+def get_customer_requests(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[CustomerRequestRead]:
+    rows = db.execute(
+        select(QuoteRequest, Product.name)
+        .outerjoin(Product, Product.id == QuoteRequest.product_id)
+        .where(QuoteRequest.user_id == current_user.id)
+        .order_by(QuoteRequest.created_at.desc())
+    ).all()
+
+    results: list[CustomerRequestRead] = []
+
+    for quote, product_name in rows:
+        decision = quote.recommendation_decision or {}
+        results.append(
+            CustomerRequestRead(
+                id=str(quote.id),
+                status=quote.status.value,
+                product_name=product_name,
+                created_at=quote.created_at.isoformat(),
+                recommendation_title=(
+                    str(decision.get("title"))
+                    if decision.get("title")
+                    else None
+                ),
+                human_review=bool(decision.get("human_review", False)),
+                requires_third_party_lab=bool(
+                    decision.get("requires_third_party_lab", False)
+                ),
+            )
+        )
+
+    return results

@@ -127,3 +127,51 @@ class CustomerProfileRead(BaseModel):
     addresses: list[AddressRead] = Field(
         default_factory=list
     )
+
+
+class CommunicationPreferencesUpdate(BaseModel):
+    filter_replacement_reminders: bool = False
+    softener_check_reminders: bool = False
+    uv_service_reminders: bool = False
+    annual_system_check_reminders: bool = False
+    product_specific_reminders: bool = False
+    post_purchase_followup: bool = False
+    post_installation_followup: bool = False
+
+
+class CommunicationPreferencesRead(CommunicationPreferencesUpdate):
+    pass
+
+
+class CustomerRequestRead(BaseModel):
+    id: str
+    status: str
+    product_name: str | None
+    created_at: str
+    recommendation_title: str | None = None
+    human_review: bool = False
+    requires_third_party_lab: bool = False
+
+
+class CustomerEquipmentDocumentRead(BaseModel):
+    title: str
+    document_type: str
+    path: str
+    content_type: str
+    version: str
+
+
+class CustomerEquipmentRead(BaseModel):
+    id: str
+    product_id: str | None
+    product_name: str
+    product_family: str | None = None
+    system_type: str | None = None
+    sku: str
+    variant_name: str | None = None
+    serial_number: str | None = None
+    location_label: str | None = None
+    installed_on: str | None = None
+    last_service_on: str | None = None
+    next_service_due_on: str | None = None
+    documents: list[CustomerEquipmentDocumentRead] = Field(default_factory=list)

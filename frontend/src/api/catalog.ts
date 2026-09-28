@@ -1,3 +1,5 @@
+import { getCsrfToken } from "./authentication";
+
 export type CatalogPricing = {
   mode: string;
   amount_minor: number | null;
@@ -7,6 +9,16 @@ export type CatalogPricing = {
   can_checkout_online: boolean;
   action: string;
   action_label: string;
+};
+
+
+export type CatalogAvailability = {
+  status: string;
+  available: boolean | null;
+  action: string;
+  action_label: string;
+  estimated_lead_time: string | null;
+  can_notify_when_in_stock: boolean;
 };
 
 export type CatalogImage = {
@@ -58,6 +70,7 @@ export type CatalogProduct = {
   public_path: string;
   primary_image: CatalogImage | null;
   pricing: CatalogPricing;
+  availability: CatalogAvailability;
 };
 
 export type CatalogProductDetail =
@@ -138,4 +151,48 @@ export async function getCatalogProduct(
   return response.json() as Promise<
     CatalogProductDetail
   >;
+}
+
+export async function getCatalogProductAvailability(
+  slug: string,
+): Promise<CatalogAvailability> {
+  const response = await fetch(
+    `/api/catalog/products/${encodeURIComponent(slug)}/availability`,
+    {
+      cache: "no-store",
+      credentials: "include",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<CatalogAvailability>;
+}
+
+export async function subscribeStockNotification(
+  slug: string,
+  email: string,
+): Promise<{ status: string; message: string }> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/catalog/products/${encodeURIComponent(slug)}/stock-notifications`,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ email }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<{ status: string; message: string }>;
 }

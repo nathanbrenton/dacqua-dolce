@@ -34,6 +34,17 @@ def test_production_catalog_manifest_is_valid() -> None:
         for product in catalog["products"]
     )
 
+    products = {product["sku"]: product for product in catalog["products"]}
+
+    assert products["DD15CAT-TTACPTV"]["product_family"] == "Harmony"
+    assert products["DD15CAT-TTACPTV"]["system_type"] == "Water Conditioner"
+    assert products["DD15CAT-TTACRV"]["active"] is False
+    assert products["DD15CATPTV"]["product_family"] == "Essence"
+    assert products["DD15CATRV"]["product_family"] == "Essence"
+    assert products["DD15CATRV"]["name"] == "Essence - Backwashing"
+    assert products["DD5RO"]["product_family"] == "Origin"
+    assert products["DD5ROAE"]["product_family"] == "Origin"
+
 
 def test_manifest_rejects_unknown_product_reference() -> None:
     catalog = load_catalog_manifest(DEFAULT_CATALOG_PATH)

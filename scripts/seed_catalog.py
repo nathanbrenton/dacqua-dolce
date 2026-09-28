@@ -57,13 +57,13 @@ class SeedProduct:
 PRODUCTS = (
     SeedProduct(
         sku="DD15CATPTV",
-        name="Refine - Pass-Through",
+        name="Essence - Pass-Through",
         slug="dd15catptv",
         description=(
             "Whole-home catalytic carbon filtration system with "
             "1.5 cubic feet of media and a pass-through valve."
         ),
-        product_family="Catalytic Carbon Filter",
+        product_family="Essence",
         category_slug="whole-home-filtration",
         specifications=(
             SeedSpecification(
@@ -159,13 +159,14 @@ PRODUCTS = (
     ),
     SeedProduct(
         sku="DD15CATRV",
-        name="Refine - Regenerating",
+        name="Essence - Backwashing",
         slug="dd15catrv",
         description=(
-            "Whole-home catalytic carbon filtration system with "
-            "1.5 cubic feet of media and a regenerating valve."
+            "Whole-home carbon filtration with automatic backwashing. "
+            "Public performance language remains limited to verified "
+            "manufacturer-supported specifications."
         ),
-        product_family="Catalytic Carbon Filter",
+        product_family="Essence",
         category_slug="whole-home-filtration",
         specifications=(
             SeedSpecification(

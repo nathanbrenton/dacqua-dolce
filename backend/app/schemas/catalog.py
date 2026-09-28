@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.core.email import normalize_email_address
 
 
 class CatalogPricingRead(BaseModel):
@@ -17,6 +19,22 @@ class CatalogAvailabilityRead(BaseModel):
     available: bool | None
     action: str
     action_label: str
+    estimated_lead_time: str | None = None
+    can_notify_when_in_stock: bool = False
+
+
+class StockNotificationRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=320)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return normalize_email_address(value)
+
+
+class StockNotificationRead(BaseModel):
+    status: str
+    message: str
 
 
 class CatalogImageRead(BaseModel):
@@ -68,6 +86,7 @@ class CatalogProductRead(BaseModel):
     public_path: str
     primary_image: CatalogImageRead | None
     pricing: CatalogPricingRead
+    availability: CatalogAvailabilityRead
 
 
 class CatalogProductDetailRead(CatalogProductRead):

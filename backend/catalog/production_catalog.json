@@ -46,28 +46,28 @@
     },
     {
       "active": true,
-      "alt_text": "D'Acqua Dolce 1.5 cubic foot filtration tank with pass-through valve and dimensions",
+      "alt_text": "D'Acqua Dolce Essence 1.5 cubic foot carbon filtration tank with pass-through valve and dimensions",
       "product_sku": "DD15CATPTV",
       "sort_order": 0,
       "storage_path": "/products/media/1-5cf-pass-through-valve-dimensions.webp"
     },
     {
       "active": true,
-      "alt_text": "DD15CATPTV 1.5cf Catalytic Carbon Filter with Pass-through Valve specification dimensions",
+      "alt_text": "DD15CATPTV Essence 1.5cf Catalytic Carbon Filter with Pass-through Valve specification dimensions",
       "product_sku": "DD15CATPTV",
       "sort_order": 10,
       "storage_path": "/products/media/dd15catptv-spec-dimensions.webp"
     },
     {
       "active": true,
-      "alt_text": "D'Acqua Dolce 1.5 cubic foot filtration tank with regenerating valve and dimensions",
+      "alt_text": "D'Acqua Dolce Essence 1.5 cubic foot carbon filtration tank with regenerating valve and dimensions",
       "product_sku": "DD15CATRV",
       "sort_order": 0,
       "storage_path": "/products/media/1-5cf-regenerating-valve-dimensions.webp"
     },
     {
       "active": true,
-      "alt_text": "DD15CATRV 1.5cf Catalytic Carbon Filter with Regenerating Valve specification dimensions",
+      "alt_text": "DD15CATRV Essence 1.5cf Catalytic Carbon Filter with Regenerating Valve specification dimensions",
       "product_sku": "DD15CATRV",
       "sort_order": 10,
       "storage_path": "/products/media/dd15catrv-spec-dimensions.webp"
@@ -114,50 +114,54 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Non-backwashing whole-home water conditioner featuring CLEAR Technology. CLEAR conditions hardness minerals into microscopic crystalline forms described by D'Acqua Dolce as Crystal Aggregate Matrix (CAM) particles, helping make them less likely to adhere as scale. Calcium and magnesium remain in the treated water rather than being removed as hardness. The system requires no electrical power or backwash drain, making it a practical option where those utilities are unavailable or where high-demand irrigation or pool-fill lines cannot easily bypass the treated-water plumbing.",
+      "description": "Non-backwashing whole-home water conditioner featuring CLEAR Technology. CLEAR conditions hardness minerals into microscopic crystalline forms described by D'Acqua Dolce as Crystal Aggregate Matrix (CAM), helping make them less likely to adhere as scale. Calcium and magnesium remain in the treated water rather than being removed as hardness. The conditioner requires no electrical power or backwash drain. Harmony may be purchased individually; the preferred filtration configuration pairs it with a Duo cartridge filtration system containing replaceable sediment and carbon filtration.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Harmony - Water Conditioner featuring CLEAR Technology",
       "online_sale_approved": false,
-      "product_family": "Water Conditioner",
+      "product_family": "Harmony",
       "public_path": "/systems/dd15cat-ttacptv",
       "sku": "DD15CAT-TTACPTV",
-      "slug": "dd15cat-ttacptv"
+      "slug": "dd15cat-ttacptv",
+      "system_type": "Water Conditioner"
     },
     {
-      "active": true,
+      "active": false,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home catalytic water conditioning system with 1.5 cubic feet of media, a regenerating valve, and prefilter.",
+      "description": "Retired catalog record retained for historical traceability. This regenerating Harmony configuration is not offered for sale.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Harmony - Regenerating",
+      "name": "Harmony - Regenerating (Retired)",
       "online_sale_approved": false,
-      "product_family": "Catalytic Water Conditioner",
+      "product_family": "Harmony",
       "public_path": "/systems/dd15cat-ttacrv",
       "sku": "DD15CAT-TTACRV",
-      "slug": "dd15cat-ttacrv"
+      "slug": "dd15cat-ttacrv",
+      "system_type": "Water Conditioner"
     },
     {
       "active": true,
       "category_slug": "whole-home-filtration",
       "description": "Whole-home catalytic carbon filtration system with 1.5 cubic feet of media and a pass-through valve.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Refine - Pass-Through",
+      "name": "Essence - Pass-Through",
       "online_sale_approved": false,
-      "product_family": "Catalytic Carbon Filter",
+      "product_family": "Essence",
       "public_path": "/systems/dd15catptv",
       "sku": "DD15CATPTV",
-      "slug": "dd15catptv"
+      "slug": "dd15catptv",
+      "system_type": "Whole-House Carbon Filtration"
     },
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home catalytic carbon filtration system with 1.5 cubic feet of media and a regenerating valve.",
+      "description": "Whole-home carbon filtration with automatic backwashing. Public performance language remains limited to verified manufacturer-supported specifications.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Refine - Regenerating",
+      "name": "Essence - Backwashing",
       "online_sale_approved": false,
-      "product_family": "Catalytic Carbon Filter",
+      "product_family": "Essence",
       "public_path": "/systems/dd15catrv",
       "sku": "DD15CATRV",
-      "slug": "dd15catrv"
+      "slug": "dd15catrv",
+      "system_type": "Whole-House Carbon Filtration"
     },
     {
       "active": true,
@@ -166,10 +170,11 @@
       "manufacturer_slug": "dacqua-dolce",
       "name": "Origin",
       "online_sale_approved": false,
-      "product_family": "Reverse Osmosis",
+      "product_family": "Origin",
       "public_path": "/systems/dd5ro",
       "sku": "DD5RO",
-      "slug": "dd5ro"
+      "slug": "dd5ro",
+      "system_type": "Reverse Osmosis"
     },
     {
       "active": true,
@@ -178,10 +183,11 @@
       "manufacturer_slug": "dacqua-dolce",
       "name": "Origin - Alkaline Remineralization",
       "online_sale_approved": false,
-      "product_family": "Reverse Osmosis",
+      "product_family": "Origin",
       "public_path": "/systems/dd5roae",
       "sku": "DD5ROAE",
-      "slug": "dd5roae"
+      "slug": "dd5roae",
+      "system_type": "Reverse Osmosis"
     }
   ],
   "schema_version": 1,

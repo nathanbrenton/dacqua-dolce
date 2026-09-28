@@ -56,3 +56,9 @@ card-data field names.
 
 This test is defense-in-depth, not a substitute for architecture review,
 provider documentation, logging review, and PCI governance.
+
+## PT16.9 provider direction — Affinity 24
+
+The client has selected **Affinity 24** as the intended payment-provider direction. This selection does not itself commission production payments.
+
+Before implementation, obtain and review authoritative Affinity 24 integration documentation covering the hosted/tokenized payment surface, sandbox/test environment, server-side authentication, webhook/event verification, idempotency, refund/status semantics, and the exact provider references that may be retained. The P0 card-data boundary above remains unchanged: D'Acqua Dolce must not receive or store raw card data.

@@ -23,6 +23,8 @@ The FastAPI service receives only `backend.env`. The root-only `migration.env` i
 A successfully activated release must satisfy all of the following:
 
 - release source represents a known Git revision;
+- `DACQUA_ENVIRONMENT` is explicitly `production`;
+- the frontend is built with production identity and developer mode disabled;
 - release directory name is a UTC timestamp in `YYYYMMDDTHHMMSSZ` form;
 - release tree is owned by `root:root`;
 - group/other write permission is removed from the release tree;
@@ -93,7 +95,7 @@ From a complete release-source tree on the production host:
 
 The deployment helper performs the following ordered workflow:
 
-1. validate root execution, source structure, both production environment files, required production values, and retention policy;
+1. validate root execution, source structure, both production environment files, exact production environment identity, required production values, and retention policy;
 2. load the runtime configuration and separate root-only migration configuration;
 3. capture the currently active release for possible rollback;
 4. create a new timestamped release directory;
@@ -230,3 +232,16 @@ This revision is a historical checkpoint only. Future operators must deploy the 
 Use ordinary application rollback when the currently active application release is faulty but the current database schema remains compatible with the chosen older release.
 
 Do not use ordinary application rollback when recovery requires reversing a destructive database migration. That is a separate database-recovery event and must follow the backup/restore/disaster-recovery procedure.
+
+
+## Environment identity guardrail
+
+Production deployment fails closed unless `/etc/dacqua-dolce/backend.env`
+contains exactly:
+
+    DACQUA_ENVIRONMENT=production
+
+The deployment helper also compiles the frontend with
+`VITE_APP_ENVIRONMENT=production` and `VITE_DEVELOPER_MODE=false`. The host
+baseline verifier checks the backend environment identity independently. See
+`docs/ENVIRONMENT_IDENTITY.md` for the application-wide model.

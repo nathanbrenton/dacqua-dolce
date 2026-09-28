@@ -42,6 +42,27 @@ do
   fi
 done
 
+
+echo
+echo "===== APPLICATION ENVIRONMENT ====="
+BACKEND_ENV_FILE="/etc/dacqua-dolce/backend.env"
+if [ ! -r "${BACKEND_ENV_FILE}" ]; then
+  echo "FAIL: ${BACKEND_ENV_FILE} is unreadable"
+  FAILED=1
+else
+  DACQUA_ENVIRONMENT_VALUE="$(
+    sed -n 's/^DACQUA_ENVIRONMENT=//p' "${BACKEND_ENV_FILE}" \
+      | tail -n 1 \
+      | tr -d '\r'
+  )"
+
+  if [ "${DACQUA_ENVIRONMENT_VALUE}" = "production" ]; then
+    echo "PASS: DACQUA_ENVIRONMENT=production"
+  else
+    echo "FAIL: DACQUA_ENVIRONMENT must be exactly production"
+    FAILED=1
+  fi
+fi
 echo
 echo "===== LISTENERS ====="
 ss -lntup

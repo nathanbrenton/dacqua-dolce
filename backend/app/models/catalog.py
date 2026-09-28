@@ -49,9 +49,13 @@ class ProductRelationshipType(StrEnum):
 
 class ProductDocumentType(StrEnum):
     specification = "specification"
+    owners_manual = "owners_manual"
     installation = "installation"
+    maintenance_guide = "maintenance_guide"
     care_guide = "care_guide"
     warranty = "warranty"
+    service_schedule = "service_schedule"
+    water_test_report = "water_test_report"
     certification = "certification"
     other = "other"
 
@@ -502,6 +506,7 @@ class ProductInventory(Base):
         nullable=False,
         default=0,
     )
+    estimated_lead_time: Mapped[str | None] = mapped_column(String(120))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -511,6 +516,48 @@ class ProductInventory(Base):
 
     product: Mapped[Product] = relationship(back_populates="inventory")
     variant: Mapped[ProductVariant | None] = relationship(back_populates="inventory")
+
+
+class StockNotificationSubscription(Base):
+    __tablename__ = "stock_notification_subscriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "product_id",
+            "email",
+            name="uq_stock_notification_product_email",
+        ),
+        Index(
+            "ix_stock_notification_subscriptions_product_id",
+            "product_id",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("products.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    product: Mapped[Product] = relationship()
 
 
 class ProductImage(Base):

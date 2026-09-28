@@ -71,6 +71,14 @@ class QuoteRequest(Base):
         JSON,
     )
 
+    recommendation_decision: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+    )
+
+    recommendation_policy_version: Mapped[str | None] = mapped_column(
+        String(40),
+    )
+
     internal_notes: Mapped[str | None] = mapped_column(
         Text,
     )

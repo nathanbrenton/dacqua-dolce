@@ -26,8 +26,10 @@ import {
   getOperationsQuotes,
   getOperationsSummary,
   createProductRelationship,
+  createCustomerEquipment,
   deleteProductRelationship,
   updateProductInventory,
+  updateCustomerEquipment,
   updateProductRelationship,
   updateProductPricing,
   updateQuoteNotes,
@@ -147,6 +149,40 @@ const QUOTE_STATUS_LABELS: Record<
   closed: "Closed",
 };
 
+const RECOMMENDATION_COMPONENT_LABELS: Record<string, string> = {
+  harmony: "Harmony",
+  cartridge_filtration: "Cartridge filtration",
+  backwashing_carbon: "Backwashing carbon",
+  water_softener: "Water softener",
+  reverse_osmosis: "Reverse osmosis",
+};
+
+function recommendationContextLabel(key: string): string {
+  return key
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function recommendationContextValue(value: unknown): string {
+  if (value === "yes") {
+    return "Yes";
+  }
+
+  if (value === "no") {
+    return "No";
+  }
+
+  if (value === "unsure") {
+    return "Not sure";
+  }
+
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  return String(value).replaceAll("_", " ");
+}
+
 const PRICING_MODES = [
   "PUBLIC",
   "MAP_LIMITED",
@@ -191,6 +227,8 @@ const INVENTORY_STATUS_LABELS: Record<string, string> = {
 };
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {
+  "customer.equipment_recorded": "Installed equipment recorded",
+  "customer.equipment_updated": "Installed equipment updated",
   "account.registered": "Account registered",
   "authentication.failed": "Authentication failed",
   "authentication.logout": "Signed out",
@@ -218,6 +256,7 @@ const AUDIT_ENTITY_LABELS: Record<string, string> = {
   cart_item: "Cart item",
   communication_thread: "Communication thread",
   customer_address: "Customer address",
+  customer_equipment: "Customer equipment",
   customer_profile: "Customer profile",
   order: "Order",
   product: "Product",
@@ -248,6 +287,28 @@ type PricingDraft = {
 type InventoryDraft = {
   status: string;
   quantityOnHand: string;
+  estimatedLeadTime: string;
+};
+
+
+type EquipmentDraft = {
+  productId: string;
+  variantId: string;
+  serialNumber: string;
+  locationLabel: string;
+  installedOn: string;
+  lastServiceOn: string;
+  nextServiceDueOn: string;
+};
+
+const EMPTY_EQUIPMENT_DRAFT: EquipmentDraft = {
+  productId: "",
+  variantId: "",
+  serialNumber: "",
+  locationLabel: "",
+  installedOn: "",
+  lastServiceOn: "",
+  nextServiceDueOn: "",
 };
 
 type SaveState =
@@ -256,6 +317,11 @@ type SaveState =
   | "saved";
 
 type RequestView = "active" | "closed" | "all";
+type RecommendationTriageView =
+  | "all"
+  | "guided"
+  | "human_review"
+  | "lab_testing";
 
 function dollarsToMinor(value: string): number | null {
   const normalized = value.trim();
@@ -356,6 +422,8 @@ export function OperationsPage({
     useState<OperationsQuote[]>([]);
   const [requestView, setRequestView] =
     useState<RequestView>("active");
+  const [recommendationTriageView, setRecommendationTriageView] =
+    useState<RecommendationTriageView>("all");
   const [communications, setCommunications] =
     useState<OperationsCommunication[]>([]);
   const [operatorProfile, setOperatorProfile] =
@@ -392,6 +460,12 @@ export function OperationsPage({
     useState<OperationsCustomer[]>([]);
   const [customerSearch, setCustomerSearch] =
     useState("");
+  const [equipmentDraftCustomerId, setEquipmentDraftCustomerId] =
+    useState<string | null>(null);
+  const [equipmentDraft, setEquipmentDraft] =
+    useState<EquipmentDraft>(EMPTY_EQUIPMENT_DRAFT);
+  const [equipmentSaving, setEquipmentSaving] =
+    useState(false);
   const [orders, setOrders] =
     useState<OperationsOrder[]>([]);
   const [orderSearch, setOrderSearch] =
@@ -481,6 +555,9 @@ export function OperationsPage({
             status: product.inventory.status,
             quantityOnHand: String(
               product.inventory.quantity_on_hand,
+            ),
+            estimatedLeadTime: (
+              product.inventory.estimated_lead_time ?? ""
             ),
           };
         }
@@ -736,6 +813,57 @@ export function OperationsPage({
     auditActionFilter,
     auditEntityFilter,
   ]);
+
+
+  async function saveCustomerEquipment(customerId: string): Promise<void> {
+    if (!equipmentDraft.productId) {
+      setError("Choose a catalog product before recording equipment.");
+      return;
+    }
+    setEquipmentSaving(true);
+    setError(null);
+    try {
+      const updated = await createCustomerEquipment(customerId, {
+        product_id: equipmentDraft.productId,
+        variant_id: equipmentDraft.variantId || null,
+        serial_number: equipmentDraft.serialNumber.trim() || null,
+        location_label: equipmentDraft.locationLabel.trim() || null,
+        installed_on: equipmentDraft.installedOn || null,
+        last_service_on: equipmentDraft.lastServiceOn || null,
+        next_service_due_on: equipmentDraft.nextServiceDueOn || null,
+      });
+      setCustomers((current) => current.map((customer) => customer.id === updated.id ? updated : customer));
+      setEquipmentDraftCustomerId(null);
+      setEquipmentDraft(EMPTY_EQUIPMENT_DRAFT);
+      setMessage("Installed equipment recorded.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to record equipment.");
+    } finally {
+      setEquipmentSaving(false);
+    }
+  }
+
+  async function retireCustomerEquipment(customer: OperationsCustomer, equipmentId: string): Promise<void> {
+    const equipment = customer.equipment.find((item) => item.id === equipmentId);
+    if (!equipment) {
+      return;
+    }
+    setError(null);
+    try {
+      const updated = await updateCustomerEquipment(customer.id, equipment.id, {
+        serial_number: equipment.serial_number,
+        location_label: equipment.location_label,
+        installed_on: equipment.installed_on,
+        last_service_on: equipment.last_service_on,
+        next_service_due_on: equipment.next_service_due_on,
+        active: false,
+      });
+      setCustomers((current) => current.map((item) => item.id === updated.id ? updated : item));
+      setMessage("Equipment record marked inactive.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to update equipment.");
+    }
+  }
 
   if (!authorized) {
     return (
@@ -1144,6 +1272,9 @@ export function OperationsPage({
         {
           status: draft.status,
           quantity_on_hand: quantityOnHand,
+          estimated_lead_time: (
+            draft.estimatedLeadTime.trim() || null
+          ),
         },
       );
 
@@ -1154,6 +1285,9 @@ export function OperationsPage({
           status: updated.inventory.status,
           quantityOnHand: String(
             updated.inventory.quantity_on_hand,
+          ),
+          estimatedLeadTime: (
+            updated.inventory.estimated_lead_time ?? ""
           ),
         },
       }));
@@ -1226,7 +1360,7 @@ export function OperationsPage({
     });
   }
 
-  const visibleQuotes = useMemo(() => {
+  const lifecycleQuotes = useMemo(() => {
     if (requestView === "all") {
       return quotes;
     }
@@ -1238,11 +1372,46 @@ export function OperationsPage({
     );
   }, [quotes, requestView]);
 
+  const visibleQuotes = useMemo(() => {
+    if (recommendationTriageView === "all") {
+      return lifecycleQuotes;
+    }
+
+    return lifecycleQuotes.filter((quote) => {
+      if (recommendationTriageView === "guided") {
+        return quote.recommendation_context !== null;
+      }
+
+      if (recommendationTriageView === "human_review") {
+        return quote.recommendation_decision?.human_review === true;
+      }
+
+      return (
+        quote.recommendation_decision?.requires_third_party_lab === true
+      );
+    });
+  }, [lifecycleQuotes, recommendationTriageView]);
+
   const requestCounts = useMemo(() => ({
     active: quotes.filter((quote) => quote.status !== "closed").length,
     closed: quotes.filter((quote) => quote.status === "closed").length,
     all: quotes.length,
   }), [quotes]);
+
+  const recommendationTriageCounts = useMemo(() => ({
+    all: lifecycleQuotes.length,
+    guided: lifecycleQuotes.filter(
+      (quote) => quote.recommendation_context !== null,
+    ).length,
+    human_review: lifecycleQuotes.filter(
+      (quote) => quote.recommendation_decision?.human_review === true,
+    ).length,
+    lab_testing: lifecycleQuotes.filter(
+      (quote) => (
+        quote.recommendation_decision?.requires_third_party_lab === true
+      ),
+    ).length,
+  }), [lifecycleQuotes]);
 
   const failedDeliveries = useMemo(
     () => communications.filter((item) => item.status === "failed"),
@@ -1261,8 +1430,34 @@ export function OperationsPage({
   const nextAction = (
     summary === null
       ? null
-      : summary.new_quotes > 0
+      : summary.recommendation_lab_testing > 0
         ? {
+            title: "Review required lab testing",
+            detail:
+              `${summary.recommendation_lab_testing} open guided `
+              + (
+                summary.recommendation_lab_testing === 1
+                  ? "request requires"
+                  : "requests require"
+              )
+              + " third-party laboratory testing.",
+            href: "#quote-queue",
+          }
+        : summary.recommendation_human_review > 0
+          ? {
+              title: "Review guided recommendations",
+              detail:
+                `${summary.recommendation_human_review} open guided `
+                + (
+                  summary.recommendation_human_review === 1
+                    ? "request needs"
+                    : "requests need"
+                )
+                + " human review.",
+              href: "#quote-queue",
+            }
+          : summary.new_quotes > 0
+            ? {
             title: "Review new quote requests",
             detail:
               `${summary.new_quotes} new customer `
@@ -1388,6 +1583,14 @@ export function OperationsPage({
             <span>Open quotes</span>
           </article>
           <article>
+            <strong>{summary.recommendation_human_review}</strong>
+            <span>Human review</span>
+          </article>
+          <article>
+            <strong>{summary.recommendation_lab_testing}</strong>
+            <span>Lab testing</span>
+          </article>
+          <article>
             <strong>{summary.active_products}</strong>
             <span>Active systems</span>
           </article>
@@ -1493,6 +1696,37 @@ export function OperationsPage({
           )}
         </div>
 
+        <div className="operations-request-filter-group">
+          <span>Recommendation triage</span>
+          <div
+            className="operations-request-tabs"
+            role="group"
+            aria-label="Recommendation triage view"
+          >
+            {([
+              ["all", "All"],
+              ["guided", "Guided"],
+              ["human_review", "Human review"],
+              ["lab_testing", "Lab testing"],
+            ] as const).map(([option, label]) => (
+              <button
+                key={option}
+                type="button"
+                className={
+                  recommendationTriageView === option ? "is-active" : ""
+                }
+                aria-pressed={recommendationTriageView === option}
+                onClick={() => {
+                  setRecommendationTriageView(option);
+                }}
+              >
+                {label}{" "}
+                <span>{recommendationTriageCounts[option]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {quotes.length === 0 ? (
           <p className="account-muted">No quote requests.</p>
         ) : visibleQuotes.length === 0 ? (
@@ -1526,6 +1760,81 @@ export function OperationsPage({
                     </div>
                   </section>
 
+                  {quote.recommendation_decision !== null ? (
+                    <section
+                      className={
+                        "operations-request-region "
+                        + "operations-recommendation-result"
+                      }
+                    >
+                      <div className="operations-request-region-heading">
+                        <p className="operations-request-region-label">
+                          Recommendation result
+                        </p>
+                        <span>
+                          Policy v{quote.recommendation_policy_version ?? "legacy"}
+                        </span>
+                      </div>
+
+                      <div className="operations-recommendation-flags">
+                        <span>Guided recommendation</span>
+                        {quote.recommendation_decision.human_review ? (
+                          <span>Human review</span>
+                        ) : (
+                          <span>Automatic starting path</span>
+                        )}
+                        {quote.recommendation_decision.requires_third_party_lab ? (
+                          <span className="is-important">
+                            Third-party lab required
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <h4>{quote.recommendation_decision.title}</h4>
+                      <p>{quote.recommendation_decision.description}</p>
+
+                      {quote.recommendation_decision.sizing ? (
+                        <div className="operations-recommendation-sizing">
+                          <strong>Capacity sizing</strong>
+                          <span>
+                            {quote.recommendation_decision.sizing.status === "inputs_complete"
+                              ? "Inputs complete; verified capacity rules are still pending."
+                              : `Needs more information: ${quote.recommendation_decision.sizing.missing_inputs
+                                .map((input) => recommendationContextLabel(input))
+                                .join(", ")}.`}
+                          </span>
+                        </div>
+                      ) : null}
+
+                      {quote.recommendation_decision.components.length > 0 ? (
+                        <div className="operations-recommendation-components">
+                          {quote.recommendation_decision.components.map(
+                            (component) => (
+                              <span key={component}>
+                                {RECOMMENDATION_COMPONENT_LABELS[component] ?? component}
+                              </span>
+                            ),
+                          )}
+                        </div>
+                      ) : null}
+                    </section>
+                  ) : quote.recommendation_context !== null ? (
+                    <section
+                      className={
+                        "operations-request-region "
+                        + "operations-recommendation-legacy"
+                      }
+                    >
+                      <p className="operations-request-region-label">
+                        Guided recommendation
+                      </p>
+                      <p>
+                        This request predates decision snapshots. Review the
+                        submitted context manually.
+                      </p>
+                    </section>
+                  ) : null}
+
                   {quote.recommendation_context !== null ? (
                     <section className="operations-request-region">
                       <p className="operations-request-region-label">
@@ -1535,8 +1844,8 @@ export function OperationsPage({
                         {Object.entries(quote.recommendation_context).map(
                           ([key, value]) => (
                             <div key={key}>
-                              <dt>{key.replaceAll("_", " ")}</dt>
-                              <dd>{String(value ?? "—")}</dd>
+                              <dt>{recommendationContextLabel(key)}</dt>
+                              <dd>{recommendationContextValue(value)}</dd>
                             </div>
                           ),
                         )}
@@ -2192,6 +2501,26 @@ export function OperationsPage({
                       </label>
                     </div>
 
+                    <label className="operations-field">
+                      <span>Estimated lead time · customer-facing when out of stock</span>
+                      <input
+                        type="text"
+                        maxLength={120}
+                        placeholder="Example: 2–3 weeks"
+                        value={inventory.estimatedLeadTime}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          updateInventoryDraft(
+                            product.id,
+                            "estimatedLeadTime",
+                            event.target.value,
+                          );
+                        }}
+                      />
+                      <small>
+                        Leave blank until fulfillment timing is reliable.
+                      </small>
+                    </label>
+
                     <p className="operations-governance-context">
                       Authoritative stock: {product.inventory.quantity_on_hand}
                       {product.inventory.status !== "not_tracked"
@@ -2247,8 +2576,8 @@ export function OperationsPage({
           <p className="eyebrow">Customer Roster</p>
           <h2>Accounts &amp; address book</h2>
           <p>
-            Registered customer accounts and saved addresses.
-            This P0 view is read-only.
+            Registered customer accounts, saved addresses, and installed equipment.
+            Profile and address information remains read-only here.
           </p>
         </div>
 
@@ -2350,6 +2679,10 @@ export function OperationsPage({
                         <strong>{orderCount}</strong>
                       </div>
                       <div>
+                        <span>Installed equipment</span>
+                        <strong>{customer.equipment.filter((item) => item.active).length}</strong>
+                      </div>
+                      <div>
                         <span>Customer since</span>
                         <strong>
                           {new Date(
@@ -2430,6 +2763,83 @@ export function OperationsPage({
                         )
                       )}
                     </div>
+                  </section>
+
+                  <section className="operations-account-equipment">
+                    <div className="operations-account-section-heading">
+                      <div>
+                        <p className="product-meta">Installed equipment</p>
+                        <h4>Ownership &amp; service record</h4>
+                      </div>
+                      <small>{privileged ? "Managed" : "Read-only"}</small>
+                    </div>
+
+                    <div className="operations-equipment-list">
+                      {customer.equipment.filter((item) => item.active).length === 0 ? (
+                        <p className="account-muted">No active installed equipment is recorded.</p>
+                      ) : customer.equipment.filter((item) => item.active).map((equipment) => (
+                        <article key={equipment.id} className="operations-equipment-row">
+                          <div>
+                            <strong>{equipment.product_name}</strong>
+                            <p>{equipment.variant_name ?? equipment.sku}{equipment.location_label ? ` · ${equipment.location_label}` : ""}</p>
+                          </div>
+                          <div className="operations-equipment-dates">
+                            <span>Installed: {equipment.installed_on ?? "Not recorded"}</span>
+                            <span>Last service: {equipment.last_service_on ?? "Not recorded"}</span>
+                            <span>Next service: {equipment.next_service_due_on ?? "Not scheduled"}</span>
+                          </div>
+                          {privileged ? (
+                            <button type="button" className="text-button compact" onClick={() => void retireCustomerEquipment(customer, equipment.id)}>Mark inactive</button>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+
+                    {privileged ? (
+                      equipmentDraftCustomerId === customer.id ? (
+                        <div className="operations-equipment-form">
+                          <label className="operations-field">
+                            <span>Catalog product</span>
+                            <select value={equipmentDraft.productId} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, productId: event.target.value, variantId: "" })}>
+                              <option value="">Choose product…</option>
+                              {products.filter((product) => product.active).map((product) => (
+                                <option key={product.id} value={product.id}>{product.product_family ? `${product.product_family} — ` : ""}{product.name}</option>
+                              ))}
+                            </select>
+                          </label>
+                          {(() => {
+                            const selectedProduct = products.find((product) => product.id === equipmentDraft.productId);
+                            if (!selectedProduct || selectedProduct.variants.length === 0) {
+                              return null;
+                            }
+                            return (
+                              <label className="operations-field">
+                                <span>Size / configuration</span>
+                                <select value={equipmentDraft.variantId} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, variantId: event.target.value })}>
+                                  <option value="">Not specified</option>
+                                  {selectedProduct.variants.map((variant) => (
+                                    <option key={variant.id} value={variant.id}>{variant.display_name} · {variant.sku}</option>
+                                  ))}
+                                </select>
+                              </label>
+                            );
+                          })()}
+                          <label className="operations-field"><span>Location</span><input value={equipmentDraft.locationLabel} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, locationLabel: event.target.value })} placeholder="Kitchen, garage, utility room…" /></label>
+                          <label className="operations-field"><span>Serial number</span><input value={equipmentDraft.serialNumber} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, serialNumber: event.target.value })} /></label>
+                          <div className="operations-equipment-date-grid">
+                            <label className="operations-field"><span>Installed</span><input type="date" value={equipmentDraft.installedOn} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, installedOn: event.target.value })} /></label>
+                            <label className="operations-field"><span>Last service</span><input type="date" value={equipmentDraft.lastServiceOn} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, lastServiceOn: event.target.value })} /></label>
+                            <label className="operations-field"><span>Next service</span><input type="date" value={equipmentDraft.nextServiceDueOn} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, nextServiceDueOn: event.target.value })} /></label>
+                          </div>
+                          <div className="operations-inline-actions">
+                            <button type="button" className="operations-action" disabled={equipmentSaving} onClick={() => void saveCustomerEquipment(customer.id)}>{equipmentSaving ? "Saving…" : "Record equipment"}</button>
+                            <button type="button" className="text-button compact" disabled={equipmentSaving} onClick={() => { setEquipmentDraftCustomerId(null); setEquipmentDraft(EMPTY_EQUIPMENT_DRAFT); }}>Cancel</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" className="operations-action secondary" onClick={() => { setEquipmentDraftCustomerId(customer.id); setEquipmentDraft(EMPTY_EQUIPMENT_DRAFT); }}>Record installed equipment</button>
+                      )
+                    ) : null}
                   </section>
                 </article>
               );

@@ -51,9 +51,14 @@ class RosterDatabase:
                 [self.customer]
             )
 
-        return ScalarResult(
-            [self.address]
-        )
+        if self.scalar_calls == 2:
+            return ScalarResult(
+                [self.address]
+            )
+
+        # PT16.7 adds a second collection query for installed equipment.
+        # These legacy roster fixtures intentionally have none.
+        return ScalarResult([])
 
     def get(
         self,
@@ -143,6 +148,7 @@ def test_operations_customer_roster_uses_customer_role(
         "+19495551234"
     )
     assert len(roster_customer.addresses) == 1
+    assert roster_customer.equipment == []
 
     roster_address = (
         roster_customer.addresses[0]
@@ -203,3 +209,4 @@ def test_operations_customer_without_profile_is_supported() -> None:
     assert result.first_name is None
     assert result.last_name is None
     assert result.phone is None
+    assert result.equipment == []

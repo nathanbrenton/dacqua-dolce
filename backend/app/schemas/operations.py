@@ -1,3 +1,5 @@
+from datetime import date
+import uuid
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -22,6 +24,8 @@ from app.models.quote import (
 class OperationsSummaryRead(BaseModel):
     new_quotes: int
     open_quotes: int
+    recommendation_human_review: int
+    recommendation_lab_testing: int
     active_products: int
     failed_email_deliveries: int
 
@@ -152,9 +156,65 @@ class OperationsQuoteRead(BaseModel):
     phone: str | None
     message: str | None
     recommendation_context: dict[str, object] | None
+    recommendation_decision: dict[str, object] | None
+    recommendation_policy_version: str | None
     internal_notes: str | None
     status: str
     created_at: str
+
+
+class OperationsCustomerEquipmentRead(BaseModel):
+    id: str
+    product_id: str | None
+    variant_id: str | None
+    sku: str
+    product_name: str
+    variant_name: str | None
+    serial_number: str | None
+    location_label: str | None
+    installed_on: str | None
+    last_service_on: str | None
+    next_service_due_on: str | None
+    active: bool
+
+
+class CustomerEquipmentCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    product_id: uuid.UUID
+    variant_id: uuid.UUID | None = None
+    serial_number: str | None = Field(default=None, max_length=160)
+    location_label: str | None = Field(default=None, max_length=160)
+    installed_on: date | None = None
+    last_service_on: date | None = None
+    next_service_due_on: date | None = None
+
+    @field_validator("serial_number", "location_label")
+    @classmethod
+    def clean_equipment_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class CustomerEquipmentUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    serial_number: str | None = Field(default=None, max_length=160)
+    location_label: str | None = Field(default=None, max_length=160)
+    installed_on: date | None = None
+    last_service_on: date | None = None
+    next_service_due_on: date | None = None
+    active: bool = True
+
+    @field_validator("serial_number", "location_label")
+    @classmethod
+    def clean_equipment_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
 
 class OperationsCustomerAddressRead(BaseModel):
@@ -180,6 +240,7 @@ class OperationsCustomerRead(BaseModel):
     addresses: list[OperationsCustomerAddressRead] = Field(
         default_factory=list,
     )
+    equipment: list[OperationsCustomerEquipmentRead] = Field(default_factory=list)
     created_at: str
 
 
@@ -247,6 +308,14 @@ class OperationsInventoryRead(BaseModel):
     status: str
     quantity_on_hand: int
     quantity_reserved: int
+    estimated_lead_time: str | None = None
+
+
+class OperationsProductVariantRead(BaseModel):
+    id: str
+    sku: str
+    display_name: str
+    option_values: dict[str, str] = Field(default_factory=dict)
 
 
 class OperationsProductRelationshipRead(BaseModel):
@@ -269,6 +338,7 @@ class OperationsProductRead(BaseModel):
     product_family: str | None
     system_type: str | None
     active_variant_count: int
+    variants: list[OperationsProductVariantRead] = Field(default_factory=list)
     public_option_count: int
     relationships: list[OperationsProductRelationshipRead] = Field(
         default_factory=list,
@@ -354,3 +424,18 @@ class InventoryUpdateRequest(BaseModel):
         ge=0,
         le=1_000_000,
     )
+    estimated_lead_time: str | None = Field(
+        default=None,
+        max_length=120,
+    )
+
+    @field_validator("estimated_lead_time")
+    @classmethod
+    def normalize_estimated_lead_time(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None

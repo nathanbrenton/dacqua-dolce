@@ -58,6 +58,8 @@ def test_quote_notes_update_is_private_and_audited(
         phone=None,
         message="Customer supplied message.",
         recommendation_context=None,
+        recommendation_decision=None,
+        recommendation_policy_version=None,
         internal_notes=None,
         status=QuoteRequestStatus.new,
         created_at=datetime.now(UTC),
@@ -135,6 +137,15 @@ def test_operations_quote_response_contains_notes() -> None:
         recommendation_context={
             "source_water": "municipal",
         },
+        recommendation_decision={
+            "code": "salt_free",
+            "title": "Backwashing carbon + Harmony",
+            "description": "Confirmed starting path.",
+            "human_review": False,
+            "requires_third_party_lab": False,
+            "components": ["backwashing_carbon", "harmony"],
+        },
+        recommendation_policy_version="1",
         internal_notes="Internal note.",
         status=QuoteRequestStatus.contacted,
         created_at=datetime.now(UTC),
@@ -156,3 +167,39 @@ def test_operations_quote_response_contains_notes() -> None:
     assert response.recommendation_context == {
         "source_water": "municipal",
     }
+
+
+def test_operations_quote_response_contains_recommendation_snapshot() -> None:
+    quote = SimpleNamespace(
+        id=uuid.uuid4(),
+        product_id=None,
+        name="Guided Customer",
+        email="guided@example.com",
+        phone=None,
+        message=None,
+        recommendation_context={
+            "source_water": "well",
+        },
+        recommendation_decision={
+            "code": "well_testing_required",
+            "title": "Third-party water testing comes first.",
+            "description": "Testing and human review are required.",
+            "human_review": True,
+            "requires_third_party_lab": True,
+            "components": [],
+        },
+        recommendation_policy_version="1",
+        internal_notes=None,
+        status=QuoteRequestStatus.new,
+        created_at=datetime.now(UTC),
+    )
+
+    response = operations.operations_quote_read(
+        FakeDatabase(quote),  # type: ignore[arg-type]
+        quote=quote,  # type: ignore[arg-type]
+    )
+
+    assert response.recommendation_policy_version == "1"
+    assert response.recommendation_decision is not None
+    assert response.recommendation_decision["human_review"] is True
+    assert response.recommendation_decision["requires_third_party_lab"] is True

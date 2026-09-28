@@ -10,10 +10,17 @@ import "./AccountAppearance.css";
 import {
   createAddress,
   deleteAddress,
+  getCommunicationPreferences,
+  getCustomerEquipment,
+  getCustomerRequests,
   getProfile,
+  updateCommunicationPreferences,
   updateProfile,
   type AddressCreate,
+  type CommunicationPreferences,
+  type CustomerEquipment,
   type CustomerProfile,
+  type CustomerRequestSummary,
 } from "../../api/account";
 import {
   reconfigureMfa,
@@ -500,6 +507,12 @@ export function AccountPage({
     useState<Cart | null>(null);
   const [orders, setOrders] =
     useState<Order[]>([]);
+  const [communicationPreferences, setCommunicationPreferences] =
+    useState<CommunicationPreferences | null>(null);
+  const [customerRequests, setCustomerRequests] =
+    useState<CustomerRequestSummary[]>([]);
+  const [customerEquipment, setCustomerEquipment] =
+    useState<CustomerEquipment[]>([]);
   const [error, setError] =
     useState<string | null>(null);
   const [saving, setSaving] =
@@ -546,16 +559,22 @@ export function AccountPage({
       getProfile(),
       getCart(),
       getOrders(),
+      getCommunicationPreferences(),
+      getCustomerRequests(),
     ])
       .then(
         ([
           profileResult,
           cartResult,
           orderResult,
+          preferenceResult,
+          requestResult,
         ]) => {
           setProfile(profileResult);
           setCart(cartResult);
           setOrders(orderResult);
+          setCommunicationPreferences(preferenceResult);
+          setCustomerRequests(requestResult);
           setError(null);
         },
       )
@@ -760,6 +779,33 @@ export function AccountPage({
         caught instanceof Error
           ? caught.message
           : "Address update failed.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
+  async function saveCommunicationPreferences() {
+    if (communicationPreferences === null) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setSaveNotice(null);
+
+    try {
+      const updated = await updateCommunicationPreferences(
+        communicationPreferences,
+      );
+      setCommunicationPreferences(updated);
+      setSaveNotice("Communication preferences updated.");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Communication preference update failed.",
       );
     } finally {
       setSaving(false);
@@ -1286,6 +1332,138 @@ export function AccountPage({
               </button>
             </div>
           </form>
+          )}
+        </section>
+
+        <section className="account-panel account-preferences-panel">
+          <p className="eyebrow">Communication</p>
+          <h2>Choose your reminders.</h2>
+          <p className="account-muted">
+            Optional maintenance and follow-up messages stay off until you choose them. Security, account, order, and other required transactional messages are separate from these preferences.
+          </p>
+
+          {communicationPreferences !== null ? (
+            <div className="account-preference-list">
+              {[
+                ["filter_replacement_reminders", "Filter replacement reminders", "Helpful when a replaceable cartridge is part of your system."],
+                ["softener_check_reminders", "Softener salt / check reminders", "Periodic reminders to inspect salt and routine softener settings."],
+                ["uv_service_reminders", "UV lamp / service reminders", "Service reminders when UV treatment is part of your installed configuration."],
+                ["annual_system_check_reminders", "Annual system check reminders", "A yearly prompt to review the condition and operation of your system."],
+                ["product_specific_reminders", "Product-specific maintenance reminders", "Maintenance guidance tied to the equipment recorded for your account."],
+                ["post_purchase_followup", "Post-purchase follow-up", "One useful follow-up after an equipment purchase."],
+                ["post_installation_followup", "Post-installation follow-up", "One useful follow-up after installation information is recorded."],
+              ].map(([key, label, description]) => (
+                <label key={key} className="account-preference-option">
+                  <input
+                    type="checkbox"
+                    checked={communicationPreferences[key as keyof CommunicationPreferences]}
+                    onChange={(event) => {
+                      setCommunicationPreferences({
+                        ...communicationPreferences,
+                        [key]: event.target.checked,
+                      });
+                    }}
+                  />
+                  <span>
+                    <strong>{label}</strong>
+                    <small>{description}</small>
+                  </span>
+                </label>
+              ))}
+
+              <button
+                type="button"
+                className="account-action"
+                disabled={saving}
+                onClick={() => {
+                  void saveCommunicationPreferences();
+                }}
+              >
+                Save Communication Preferences
+              </button>
+            </div>
+          ) : (
+            <p className="account-muted">Loading communication preferences…</p>
+          )}
+        </section>
+
+
+        <section className="account-panel account-equipment-panel">
+          <p className="eyebrow">Your equipment</p>
+          <h2>Installed systems.</h2>
+          {customerEquipment.length === 0 ? (
+            <p className="account-muted">No installed equipment has been recorded for this account yet. Equipment appears here when installation information is confirmed.</p>
+          ) : (
+            <div className="account-equipment-list">
+              {customerEquipment.map((equipment) => (
+                <article key={equipment.id} className="account-equipment-row">
+                  <div>
+                    <p className="product-meta">{[equipment.product_family, equipment.system_type].filter(Boolean).join(" · ") || "Water treatment equipment"}</p>
+                    <h3>{equipment.product_name}</h3>
+                    <p className="account-muted">{equipment.variant_name ?? equipment.sku}{equipment.location_label ? ` · ${equipment.location_label}` : ""}</p>
+                  </div>
+                  <dl className="account-equipment-facts">
+                    <div><dt>Installed</dt><dd>{equipment.installed_on ? new Date(`${equipment.installed_on}T00:00:00`).toLocaleDateString() : "Not recorded"}</dd></div>
+                    <div><dt>Last service</dt><dd>{equipment.last_service_on ? new Date(`${equipment.last_service_on}T00:00:00`).toLocaleDateString() : "Not recorded"}</dd></div>
+                    <div><dt>Next service</dt><dd>{equipment.next_service_due_on ? new Date(`${equipment.next_service_due_on}T00:00:00`).toLocaleDateString() : "Not scheduled"}</dd></div>
+                  </dl>
+                  {equipment.documents.length > 0 ? (
+                    <div className="account-equipment-documents">
+                      <strong>Documents</strong>
+                      {equipment.documents.map((document) => (
+                        <a key={`${document.path}-${document.version}`} href={document.path}>{document.title}</a>
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="account-panel account-maintenance-panel">
+          <p className="eyebrow">Maintenance &amp; support</p>
+          <h2>Useful ownership checks.</h2>
+          <div className="account-maintenance-list">
+            <article>
+              <strong>Exterior water routing</strong>
+              <p>Exterior irrigation, hose-bib, and pool-fill lines should generally bypass whole-property treatment when practical. Large pool-fill volumes can shorten filtration-media service life. Final routing still depends on the property and installation.</p>
+            </article>
+            <article>
+              <strong>Softener salt</strong>
+              <p>Inspect brine-tank salt about monthly and replenish it as needed. Follow the applicable manufacturer instructions; numeric minimum-fill guidance remains subject to manufacturer confirmation.</p>
+            </article>
+            <article>
+              <strong>After a power interruption</strong>
+              <p>Where applicable, verify the valve time-of-day on conventional softeners and backwashing carbon filters.</p>
+            </article>
+            <article>
+              <strong>Replaceable cartridges</strong>
+              <p>Plan on replacement about every six months where applicable, with actual life affected by water quality, use, micron rating, and system conditions. Follow a pressure or clog gauge when equipped.</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="account-panel account-requests-panel">
+          <p className="eyebrow">Requests</p>
+          <h2>Your consultation history.</h2>
+          {customerRequests.length === 0 ? (
+            <p className="account-muted">No signed-in requests are attached to this account yet.</p>
+          ) : (
+            <div className="account-request-list">
+              {customerRequests.map((request) => (
+                <article key={request.id} className="account-request-row">
+                  <div>
+                    <strong>{request.product_name ?? request.recommendation_title ?? "Water treatment consultation"}</strong>
+                    <p>{new Date(request.created_at).toLocaleDateString()} · {request.status.replaceAll("_", " ")}</p>
+                  </div>
+                  <div className="account-request-badges">
+                    {request.requires_third_party_lab ? <span>Lab testing</span> : null}
+                    {request.human_review ? <span>Human review</span> : null}
+                  </div>
+                </article>
+              ))}
+            </div>
           )}
         </section>
 

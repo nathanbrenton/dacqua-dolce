@@ -32,6 +32,51 @@ export type AddressCreate = Omit<
   "id"
 >;
 
+export type CommunicationPreferences = {
+  filter_replacement_reminders: boolean;
+  softener_check_reminders: boolean;
+  uv_service_reminders: boolean;
+  annual_system_check_reminders: boolean;
+  product_specific_reminders: boolean;
+  post_purchase_followup: boolean;
+  post_installation_followup: boolean;
+};
+
+export type CustomerEquipmentDocument = {
+  title: string;
+  document_type: string;
+  path: string;
+  content_type: string;
+  version: string;
+};
+
+export type CustomerEquipment = {
+  id: string;
+  product_id: string | null;
+  product_name: string;
+  product_family: string | null;
+  system_type: string | null;
+  sku: string;
+  variant_name: string | null;
+  serial_number: string | null;
+  location_label: string | null;
+  installed_on: string | null;
+  last_service_on: string | null;
+  next_service_due_on: string | null;
+  documents: CustomerEquipmentDocument[];
+};
+
+
+export type CustomerRequestSummary = {
+  id: string;
+  status: string;
+  product_name: string | null;
+  created_at: string;
+  recommendation_title: string | null;
+  human_review: boolean;
+  requires_third_party_lab: boolean;
+};
+
 async function readError(
   response: Response,
 ): Promise<string> {
@@ -148,4 +193,68 @@ export async function deleteAddress(
       await readError(response),
     );
   }
+}
+
+
+export async function getCommunicationPreferences(): Promise<CommunicationPreferences> {
+  const response = await fetch(
+    "/api/account/communication-preferences",
+    { credentials: "include", cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<CommunicationPreferences>;
+}
+
+export async function updateCommunicationPreferences(
+  payload: CommunicationPreferences,
+): Promise<CommunicationPreferences> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    "/api/account/communication-preferences",
+    {
+      method: "PUT",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<CommunicationPreferences>;
+}
+
+export async function getCustomerRequests(): Promise<CustomerRequestSummary[]> {
+  const response = await fetch(
+    "/api/account/requests",
+    { credentials: "include", cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<CustomerRequestSummary[]>;
+}
+
+
+export async function getCustomerEquipment(): Promise<CustomerEquipment[]> {
+  const response = await fetch(
+    "/api/account/equipment",
+    { credentials: "include", cache: "no-store" },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json() as Promise<CustomerEquipment[]>;
 }

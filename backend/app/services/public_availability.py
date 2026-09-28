@@ -16,6 +16,8 @@ class PublicAvailabilityDecision:
     available: bool | None
     action: str
     action_label: str
+    estimated_lead_time: str | None = None
+    can_notify_when_in_stock: bool = False
 
 
 def resolve_public_availability(
@@ -24,15 +26,12 @@ def resolve_public_availability(
     reserved_quantity: int = 0,
     online_sale_approved: bool = True,
 ) -> PublicAvailabilityDecision:
-    """Resolve internal inventory into a customer-safe availability state."""
+    """Resolve internal inventory into a customer-safe availability state.
 
-    if not online_sale_approved:
-        return PublicAvailabilityDecision(
-            status="contact",
-            available=None,
-            action="REQUEST_QUOTE",
-            action_label="Contact for Availability",
-        )
+    Fulfillment state is intentionally evaluated before online-sale approval.
+    A quote-only product can still truthfully be out of stock, and customers
+    may ask to be notified when it becomes available again.
+    """
 
     if (
         inventory is None
@@ -46,20 +45,19 @@ def resolve_public_availability(
             action_label="Contact for Availability",
         )
 
-    if inventory.inventory_status == InventoryStatus.unavailable:
-        return PublicAvailabilityDecision(
-            status="unavailable",
-            available=False,
-            action="CONTACT",
-            action_label="Contact for Availability",
-        )
+    lead_time = inventory.estimated_lead_time
 
-    if inventory.inventory_status == InventoryStatus.backordered:
+    if inventory.inventory_status in {
+        InventoryStatus.unavailable,
+        InventoryStatus.backordered,
+    }:
         return PublicAvailabilityDecision(
-            status="backordered",
+            status="out_of_stock",
             available=False,
-            action="CONTACT",
-            action_label="Contact for Availability",
+            action="NOTIFY_WHEN_IN_STOCK",
+            action_label="Notify When in Stock",
+            estimated_lead_time=lead_time,
+            can_notify_when_in_stock=True,
         )
 
     available_quantity = (
@@ -69,9 +67,19 @@ def resolve_public_availability(
 
     if available_quantity <= 0:
         return PublicAvailabilityDecision(
-            status="unavailable",
+            status="out_of_stock",
             available=False,
-            action="CONTACT",
+            action="NOTIFY_WHEN_IN_STOCK",
+            action_label="Notify When in Stock",
+            estimated_lead_time=lead_time,
+            can_notify_when_in_stock=True,
+        )
+
+    if not online_sale_approved:
+        return PublicAvailabilityDecision(
+            status="contact",
+            available=None,
+            action="REQUEST_QUOTE",
             action_label="Contact for Availability",
         )
 

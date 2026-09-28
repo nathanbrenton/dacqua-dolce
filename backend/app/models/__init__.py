@@ -13,6 +13,7 @@ from app.models.catalog import (
     ProductInventory,
     ProductPrice,
     ProductVariant,
+    StockNotificationSubscription,
 )
 from app.models.commerce import (
     Cart,
@@ -37,6 +38,8 @@ from app.models.communications import (
 )
 from app.models.customer import (
     CustomerAddress,
+    CustomerCommunicationPreferences,
+    CustomerEquipment,
     CustomerProfile,
 )
 from app.models.email import (
@@ -75,6 +78,8 @@ __all__ = [
     "CommunicationThread",
     "CommunicationThreadStatus",
     "CustomerAddress",
+    "CustomerCommunicationPreferences",
+    "CustomerEquipment",
     "CustomerProfile",
     "EmailDelivery",
     "EmailDeliveryStatus",
@@ -96,6 +101,7 @@ __all__ = [
     "ProductInventory",
     "ProductPrice",
     "ProductVariant",
+    "StockNotificationSubscription",
     "QuoteRequest",
     "QuoteRequestStatus",
     "RoleName",

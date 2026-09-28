@@ -197,10 +197,17 @@ set -a
 . "${MIGRATION_ENV_FILE}"
 set +a
 
+: "${DACQUA_ENVIRONMENT:?DACQUA_ENVIRONMENT is required}"
 : "${DACQUA_DATABASE_URL:?DACQUA_DATABASE_URL is required}"
 : "${DACQUA_MIGRATION_DATABASE_URL:?DACQUA_MIGRATION_DATABASE_URL is required}"
 : "${DACQUA_MFA_ENCRYPTION_KEY:?DACQUA_MFA_ENCRYPTION_KEY is required}"
 : "${DACQUA_PUBLIC_ORIGIN:?DACQUA_PUBLIC_ORIGIN is required}"
+
+if [ "${DACQUA_ENVIRONMENT}" != "production" ]; then
+  fail "DACQUA_ENVIRONMENT must be exactly 'production' for production deployment"
+fi
+
+echo "PASS: production environment identity = production"
 
 for required_value in \
   "${DACQUA_DATABASE_URL}" \
@@ -291,7 +298,9 @@ fi
 
 cd "${RELEASE}/frontend"
 npm ci
-npm run build
+VITE_APP_ENVIRONMENT=production \
+VITE_DEVELOPER_MODE=false \
+  npm run build
 
 if [ -x /usr/local/sbin/dacqua-postgres-backup ]; then
   echo "Creating pre-migration PostgreSQL backup"

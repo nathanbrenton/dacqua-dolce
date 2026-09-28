@@ -49,6 +49,8 @@ def test_recommendation_context_is_structured_and_cleaned() -> None:
             "source_water": "municipal",
             "hard_water_signs": "yes",
             "bathrooms": "2",
+            "occupants": 4,
+            "water_service_pipe_size": "1 inch",
             "water_quality_report_read": "no",
             "chlorine_chloramine_signs": "unsure",
             "iron_manganese_concerns": "no",
@@ -67,6 +69,8 @@ def test_recommendation_context_is_structured_and_cleaned() -> None:
     assert payload.recommendation_context is not None
     assert payload.recommendation_context.source_water == "municipal"
     assert payload.recommendation_context.existing_equipment == "Existing softener"
+    assert payload.recommendation_context.occupants == 4
+    assert payload.recommendation_context.water_service_pipe_size == "1 inch"
 
 
 def test_recommendation_context_rejects_unknown_source_water() -> None:
@@ -78,6 +82,8 @@ def test_recommendation_context_rejects_unknown_source_water() -> None:
                 "source_water": "spring",
                 "hard_water_signs": "unsure",
                 "bathrooms": "unsure",
+            "occupants": None,
+            "water_service_pipe_size": None,
                 "water_quality_report_read": "unsure",
                 "chlorine_chloramine_signs": "unsure",
                 "iron_manganese_concerns": "unsure",
@@ -92,3 +98,32 @@ def test_recommendation_context_rejects_unknown_source_water() -> None:
                 "treatment_preference": "unsure",
             },
         )
+
+
+def test_recommendation_decision_has_stable_machine_fields() -> None:
+    from app.schemas.quote import RecommendationDecision
+
+    payload = RecommendationDecision(
+        code="limited_utilities",
+        title="Harmony + cartridge filtration",
+        description="Starting path.",
+        human_review=False,
+        components=["harmony", "cartridge_filtration"],
+        sizing={
+            "status": "needs_more_information",
+            "missing_inputs": [
+                "bathrooms",
+                "occupants",
+                "water_service_pipe_size",
+            ],
+            "capacity_recommendation_available": False,
+        },
+    ).model_dump()
+
+    assert payload["code"] == "limited_utilities"
+    assert payload["human_review"] is False
+    assert payload["requires_third_party_lab"] is False
+    assert payload["components"] == [
+        "harmony",
+        "cartridge_filtration",
+    ]

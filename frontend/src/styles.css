@@ -903,6 +903,34 @@ textarea:focus-visible {
   margin: 0;
 }
 
+
+.product-availability {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  border: 1px solid var(--field-border);
+  border-radius: 1rem;
+  background: var(--field-surface);
+}
+
+.product-availability-out {
+  border-color: var(--field-border);
+}
+
+.stock-notification-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.stock-notification-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.stock-notification-form input {
+  width: 100%;
+}
+
 .detail-commerce {
   display: grid;
   gap: 16px;
@@ -3929,10 +3957,57 @@ textarea:focus-visible {
   margin: 0 0 10px;
 }
 
-.product-technology-note > p:last-child {
+.product-technology-explanation {
   margin: 0;
   color: var(--ink-muted);
   line-height: 1.65;
+}
+
+.product-technology-terms {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+.product-technology-terms-title {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.product-technology-terms dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.product-technology-terms dl > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.35fr) 1fr;
+  gap: 14px;
+}
+
+.product-technology-terms dt {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.product-technology-terms dd {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.product-technology-guidance {
+  margin: 18px 0 0;
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+
+@media (max-width: 560px) {
+  .product-technology-terms dl > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
 }
 
 
@@ -4244,15 +4319,28 @@ textarea:focus-visible {
   line-height: 1.35;
 }
 
+.recommendation-field input,
 .recommendation-field select,
 .recommendation-field textarea {
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--field-border);
   border-radius: 12px;
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--field-surface);
+  color: var(--field-text);
   font: inherit;
+  color-scheme: inherit;
+}
+
+.recommendation-field input {
+  min-height: 48px;
+  padding: 0 14px;
+}
+
+.recommendation-field input::placeholder,
+.recommendation-field textarea::placeholder {
+  color: var(--ink-muted);
+  opacity: 1;
 }
 
 .recommendation-field select {
@@ -4541,3 +4629,202 @@ textarea:focus-visible {
     grid-column: auto;
   }
 }
+
+/* PT16.2 — recommendation case intelligence and Operations triage */
+.operations-request-filter-group {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.operations-request-filter-group > span {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operations-request-filter-group .operations-request-tabs {
+  margin-bottom: 0;
+}
+
+.operations-recommendation-result {
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.operations-recommendation-result h4 {
+  margin: 12px 0 0;
+  font-size: 1rem;
+}
+
+.operations-recommendation-result > p {
+  margin: 7px 0 0;
+  color: var(--ink-muted);
+}
+
+.operations-recommendation-flags,
+.operations-recommendation-components {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.operations-recommendation-flags span,
+.operations-recommendation-components span {
+  padding: 5px 8px;
+  color: var(--ink-muted);
+  background: var(--surface-0);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-button);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.operations-recommendation-flags span.is-important {
+  color: var(--ink);
+  border-color: var(--control-highlight);
+}
+
+.operations-recommendation-legacy {
+  padding: 12px 14px;
+  border: 1px dashed var(--hairline);
+}
+
+.operations-recommendation-legacy p:last-child {
+  margin: 7px 0 0;
+  color: var(--ink-muted);
+}
+
+
+.operations-recommendation-sizing {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.85rem;
+}
+
+.operations-recommendation-sizing span {
+  color: var(--ink-muted);
+}
+
+
+/* PT16.6 — customer ownership and communication preferences */
+.account-preference-list,
+.account-maintenance-list,
+.account-request-list {
+  display: grid;
+  gap: 14px;
+}
+
+.account-preference-option {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.account-preference-option input {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--control-highlight);
+}
+
+.account-preference-option span {
+  display: grid;
+  gap: 4px;
+}
+
+.account-preference-option small,
+.account-maintenance-list p,
+.account-request-row p {
+  margin: 0;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+
+.account-maintenance-list article,
+.account-request-row {
+  padding: 16px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.account-maintenance-list article {
+  display: grid;
+  gap: 6px;
+}
+
+.account-request-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.account-request-row > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.account-request-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.account-request-badges span {
+  padding: 4px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-badge);
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .account-request-row {
+    display: grid;
+  }
+
+  .account-request-badges {
+    justify-content: flex-start;
+  }
+}
+
+
+/* PT16.7 installed-equipment ownership */
+.account-equipment-list,
+.operations-equipment-list {
+  display: grid;
+  gap: 0.85rem;
+}
+.account-equipment-row,
+.operations-equipment-row {
+  border-top: 1px solid var(--hairline);
+  padding-top: 0.9rem;
+}
+.account-equipment-row h3 { margin: 0.2rem 0; }
+.account-equipment-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.65rem;
+  margin: 0.9rem 0 0;
+}
+.account-equipment-facts div { display: grid; gap: 0.15rem; }
+.account-equipment-facts dt,
+.operations-equipment-dates { color: var(--ink-muted); font-size: 0.86rem; }
+.account-equipment-facts dd { margin: 0; }
+.account-equipment-documents { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 0.9rem; }
+.operations-account-equipment { border-top: 1px solid var(--hairline); padding-top: 1rem; }
+.operations-equipment-row { display: grid; gap: 0.55rem; }
+.operations-equipment-row p { margin: 0.2rem 0 0; color: var(--ink-muted); }
+.operations-equipment-dates { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+.operations-equipment-form { display: grid; gap: 0.8rem; margin-top: 1rem; }
+.operations-equipment-date-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.7rem; }

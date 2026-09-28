@@ -6,6 +6,7 @@ import {
 
 import {
   getCatalogProduct,
+  subscribeStockNotification,
   type CatalogProductDetail,
 } from "../../api/catalog";
 import type { AuthenticationStatus } from "../../api/authentication";
@@ -68,11 +69,20 @@ export function ProductDetailPage({
     useState<string | null>(null);
   const [addingToCart, setAddingToCart] =
     useState(false);
+  const [notificationEmail, setNotificationEmail] =
+    useState(account?.email ?? "");
+  const [notificationState, setNotificationState] =
+    useState<"idle" | "saving" | "saved">("idle");
+  const [notificationMessage, setNotificationMessage] =
+    useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
     setSelectedImageIndex(0);
+    setNotificationEmail(account?.email ?? "");
+    setNotificationState("idle");
+    setNotificationMessage(null);
 
     void getCatalogProduct(slug)
       .then((result) => {
@@ -138,8 +148,35 @@ export function ProductDetailPage({
   }
 
   const pricing = product.pricing;
+  const availability = product.availability;
   const productId = product.id;
   const presentation = getProductPresentation(product);
+
+  async function handleStockNotification() {
+    if (notificationEmail.trim() === "") {
+      setNotificationMessage("Enter an email address for the availability notice.");
+      return;
+    }
+
+    setNotificationState("saving");
+    setNotificationMessage(null);
+
+    try {
+      const result = await subscribeStockNotification(
+        slug,
+        notificationEmail,
+      );
+      setNotificationState("saved");
+      setNotificationMessage(result.message);
+    } catch (caught) {
+      setNotificationState("idle");
+      setNotificationMessage(
+        caught instanceof Error
+          ? caught.message
+          : "The availability request could not be saved.",
+      );
+    }
+  }
 
   async function handlePrimaryAction() {
     setCommerceError(null);
@@ -314,7 +351,31 @@ export function ProductDetailPage({
                 <p className="eyebrow">
                   CLEAR Technology
                 </p>
-                <p>{presentation.education}</p>
+                <p className="product-technology-explanation">
+                  {presentation.education}
+                </p>
+
+                {presentation.technologyFacts.length > 0 ? (
+                  <div className="product-technology-terms">
+                    <p className="product-technology-terms-title">
+                      CLEAR terminology
+                    </p>
+                    <dl>
+                      {presentation.technologyFacts.map((fact) => (
+                        <div key={fact.label}>
+                          <dt>{fact.label}</dt>
+                          <dd>{fact.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ) : null}
+
+                {presentation.technologyGuidance !== null ? (
+                  <p className="product-technology-guidance">
+                    {presentation.technologyGuidance}
+                  </p>
+                ) : null}
               </aside>
             ) : null}
 
@@ -348,6 +409,65 @@ export function ProductDetailPage({
                   </p>
                 ) : null}
               </section>
+            ) : null}
+
+
+            {availability?.status === "out_of_stock" ? (
+              <aside
+                className="product-availability product-availability-out"
+                aria-labelledby="product-availability-heading"
+              >
+                <p className="eyebrow">Availability</p>
+                <h2
+                  id="product-availability-heading"
+                  className="product-detail-section-title"
+                >
+                  Out of stock
+                </h2>
+
+                {availability.estimated_lead_time !== null ? (
+                  <p>
+                    Estimated lead time: {availability.estimated_lead_time}
+                  </p>
+                ) : (
+                  <p>
+                    Timing will be updated when a reliable fulfillment estimate is available.
+                  </p>
+                )}
+
+                {availability.can_notify_when_in_stock ? (
+                  <div className="stock-notification-form">
+                    <label>
+                      <span>Email for availability notice</span>
+                      <input
+                        type="email"
+                        autoComplete="email"
+                        value={notificationEmail}
+                        onChange={(event) => {
+                          setNotificationEmail(event.target.value);
+                          setNotificationState("idle");
+                          setNotificationMessage(null);
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      disabled={notificationState === "saving"}
+                      onClick={() => void handleStockNotification()}
+                    >
+                      {notificationState === "saving"
+                        ? "Saving…"
+                        : notificationState === "saved"
+                          ? "Notification requested ✓"
+                          : "Notify When in Stock"}
+                    </button>
+                    {notificationMessage !== null ? (
+                      <p role="status">{notificationMessage}</p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </aside>
             ) : null}
 
             <div className="detail-commerce">
