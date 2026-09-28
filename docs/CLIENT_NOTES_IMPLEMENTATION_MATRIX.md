@@ -253,3 +253,21 @@ Public Harmony education may spell out `CLEAR` as `Crystal Lattice Enabling Anti
 | Sales follow-up features | Deferred pending discussion | Do not invent CRM workflow because the client does not yet understand the choices. |
 | Pricing & Inventory future scope | Deferred pending discussion | Retain existing authoritative pricing/inventory controls; do not broaden scope from an unanswered questionnaire item. |
 | Customer order statuses | Deferred pending explanation | Existing order model remains unchanged until the client understands the operational status choices and actual fulfillment workflow. |
+
+## PT17 — Catalog, Operations, and responsive typography refinement
+
+| Client direction | Classification | Implementation |
+| --- | --- | --- |
+| Product/catalogue + visual/branding are next priorities | Implemented milestone | PT17 focused on public catalog clarity, product presentation, Operations attention workflow, and typography/visual consistency rather than speculative CRM/payment expansion. |
+| Preserve confirmed Harmony / Essence / Origin architecture | Implemented / revalidated | Product presentation and supporting seed/catalog wording were refined without inventing missing Refine softener data. |
+| Do not publish unverified Harmony mechanism claims | Implemented guardrail | Superseded temporary mechanism wording remains withheld pending authoritative manufacturer/technical documentation. |
+| Make Operations attention area more compact and immediately actionable | Implemented | PT17.1 converted the metric area into a compact clickable dashboard that navigates to the relevant section and, where possible, the first matching item requiring attention. |
+| Smallest typography should be larger across all font choices | Implemented | PT17.2 raised the small/medium readability floor while preserving the established large-display hierarchy. |
+| Greater font variety for small/medium roles using luxury/performance/culinary/wellness direction | Implemented | PT17.3 introduced semantic typography recipes with distinct body/UI/label/data font roles and controlled casing/tracking behavior. |
+| Responsive typography changes should remain uniform/proportional/transparent across fonts | Implemented | PT17.4 centralized shared responsive size tiers; typography recipes control style but no longer independently control responsive font-size hierarchy. |
+| Large H1/hero tier should remain consistent across fonts | Implemented guardrail | PT17.4 re-established a shared large-display ceiling after visual review showed perceptual inflation in sans-heavy selections. |
+| Theme/font review by client | Client review requested | Client follow-up list includes a friendly request to try Light/Dark appearance, themes, and typography choices and identify preferred or unsuitable combinations. |
+
+**PT17 status: CLOSED.**
+
+Production validation completed at runtime revision `ce8f92ff2e60e06fc8e6de809f29828695723ce9`, release `/srv/dacqua-dolce/releases/20260928T072624Z`. The next milestone should continue only from confirmed product/business data and client feedback rather than extending PT17 opportunistically.

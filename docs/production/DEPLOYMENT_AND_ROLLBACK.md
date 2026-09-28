@@ -204,28 +204,39 @@ For a release that changes customer/account UI, perform the corresponding live b
 
 The exact-revision rsync staging workflow and immutable deployment process are production validated.
 
-The communications/Postmark production candidate:
+The latest application checkpoint before the documentation-only PT17 closeout is:
 
-    f5b7622126c57c0fae2fe06c343b225fec7e02af
+    ce8f92ff2e60e06fc8e6de809f29828695723ce9
 
-was staged by the repo-managed rsync exact-revision helper and deployed through the normal immutable release workflow on 2026-09-22.
+It was deployed on 2026-09-28 as:
 
-The release passed:
+    /srv/dacqua-dolce/releases/20260928T072624Z
 
-- staged-source revision verification;
+with immediate rollback release:
+
+    /srv/dacqua-dolce/releases/20260928T053754Z
+
+and pre-migration PostgreSQL backup:
+
+    /var/backups/dacqua-dolce/postgresql/dacqua_dolce_20260928T072647Z.dump
+
+The PT17 release passed:
+
+- staged-source exact-revision verification;
 - immutable-release source verification;
-- backend/frontend build;
+- backend dependency installation and frontend production build;
 - pre-migration PostgreSQL backup;
-- Alembic/current-schema validation;
-- canonical catalog reconciliation;
+- Alembic/current-schema validation with no new migration work;
+- canonical catalog reconciliation with `total_changes 0`;
 - local readiness;
-- public route checks;
-- private documentation/readiness boundary checks;
-- HTTPS security-header validation.
+- public `/`, `/account`, and `/health` checks;
+- non-public `/readiness`, `/api/docs`, and `/openapi.json` boundary checks;
+- HSTS, CSP, Permissions-Policy, X-Content-Type-Options, X-Frame-Options, and Referrer-Policy validation;
+- post-switch production validation.
 
-Post-deployment, the Postmark inbound webhook authentication path and public Nginx edge were validated separately, followed by synthetic and real inbound-email acceptance.
+This checkpoint includes the closed PT17 catalog/visual refinement, compact actionable Operations attention dashboard, raised small/medium typography floor, semantic typography recipes, and shared responsive typography hierarchy.
 
-This revision is a historical checkpoint only. Future operators must deploy the intended current Git revision rather than reusing it blindly.
+The historical communications/Postmark checkpoint `f5b7622126c57c0fae2fe06c343b225fec7e02af` remains useful as a communications acceptance reference, but operators must always deploy the exact intended current Git revision rather than reusing any historical revision blindly.
 
 ## Rollback decision boundary
 
