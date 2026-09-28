@@ -43,6 +43,37 @@ select {
   accent-color: var(--control-highlight);
 }
 
+/*
+ * Browser autofill is a neutral convenience state, not a warning. Chromium /
+ * WebKit can otherwise inject a yellow or mustard field fill that conflicts
+ * with the site's semantic color language, especially in dark themes.
+ *
+ * Keep autofilled controls on the same semantic field surface/text roles used
+ * by normal form controls. Focus remains visible through --focus-ring.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--field-text);
+  caret-color: var(--field-text);
+  box-shadow: 0 0 0 1000px var(--field-surface) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+input:autofill,
+textarea:autofill,
+select:autofill {
+  color: var(--field-text);
+  background: var(--field-surface);
+  border-color: var(--field-border);
+}
+
 a {
   color: inherit;
 }
@@ -3422,6 +3453,31 @@ textarea:focus-visible {
 .operations-inbox-reply small {
   color: var(--ink-muted);
   overflow-wrap: anywhere;
+}
+
+.operations-inbox-reply-recipient-field {
+  display: grid;
+  gap: 6px;
+}
+
+.operations-inbox-reply-recipient-field > span {
+  font-size: var(--type-small);
+  font-weight: 700;
+}
+
+.operations-inbox-reply-recipient-field input {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--field-text);
+  background: var(--field-surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-button);
+  font: inherit;
+}
+
+.operations-inbox-reply-recipient-field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .operations-inbox-reply textarea {

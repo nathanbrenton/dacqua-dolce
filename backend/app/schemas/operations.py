@@ -9,6 +9,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.core.email import normalize_email_address
 from app.models.catalog import (
     InventoryStatus,
     PricingPolicyMode,
@@ -113,6 +114,7 @@ class OperationsCommunicationThreadDetailRead(
     OperationsCommunicationThreadRead
 ):
     reply_target: str | None = None
+    reply_target_source: str | None = None
     messages: list[OperationsCommunicationMessageRead] = Field(
         default_factory=list,
     )
@@ -127,6 +129,10 @@ class OperationsCommunicationReplyCreate(BaseModel):
         min_length=1,
         max_length=20000,
     )
+    recipient: str | None = Field(
+        default=None,
+        max_length=320,
+    )
 
     @field_validator("body_text")
     @classmethod
@@ -140,6 +146,20 @@ class OperationsCommunicationReplyCreate(BaseModel):
             raise ValueError("Reply message cannot be empty.")
 
         return cleaned
+
+    @field_validator("recipient")
+    @classmethod
+    def clean_recipient(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        try:
+            return normalize_email_address(value)
+        except ValueError as exc:
+            raise ValueError("Enter a valid recipient email address.") from exc
 
 
 class OperationsCommunicationReplyRead(BaseModel):

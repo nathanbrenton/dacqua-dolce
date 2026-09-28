@@ -78,7 +78,7 @@ from app.services.commerce import (
 from app.services.communications_reply import (
     CommunicationReplyConfigurationError,
     CommunicationReplyRecipientUnavailable,
-    resolve_communication_reply_target,
+    resolve_communication_reply_target_details,
     send_communication_reply,
 )
 from app.services.operations_access import (
@@ -746,12 +746,15 @@ def get_communication_thread(
         ).all()
     )
 
+    reply_target = resolve_communication_reply_target_details(
+        db,
+        thread=thread,
+    )
+
     return OperationsCommunicationThreadDetailRead(
         **summary.model_dump(),
-        reply_target=resolve_communication_reply_target(
-            db,
-            thread=thread,
-        ),
+        reply_target=reply_target.address,
+        reply_target_source=reply_target.source,
         messages=_communication_message_reads(
             db,
             messages=messages,
@@ -793,6 +796,7 @@ def reply_to_communication_thread(
             thread=thread,
             author_user_id=current_user.id,
             body_text=payload.body_text,
+            recipient_override=payload.recipient,
         )
     except CommunicationReplyRecipientUnavailable as exc:
         raise HTTPException(
@@ -814,6 +818,7 @@ def reply_to_communication_thread(
         metadata={
             "delivery_status": result.delivery.status.value,
             "provider": result.delivery.provider,
+            "recipient": result.recipient,
         },
     )
 

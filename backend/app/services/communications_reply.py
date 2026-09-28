@@ -16,6 +16,7 @@ from app.models.communications import (
 )
 from app.models.email import EmailDelivery
 from app.models.identity import User
+from app.models.quote import QuoteRequest
 from app.services.email_delivery import deliver_email
 
 
@@ -25,6 +26,12 @@ class CommunicationReplyRecipientUnavailable(RuntimeError):
 
 class CommunicationReplyConfigurationError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True)
+class CommunicationReplyTarget:
+    address: str | None
+    source: str | None
 
 
 @dataclass(frozen=True)
@@ -43,11 +50,11 @@ def _normalized_address(value: str | None) -> str | None:
         return None
 
 
-def resolve_communication_reply_target(
+def resolve_communication_reply_target_details(
     db: Session,
     *,
     thread: CommunicationThread,
-) -> str | None:
+) -> CommunicationReplyTarget:
     latest_inbound_sender = db.scalar(
         select(CommunicationMessage.sender_address)
         .where(
@@ -64,7 +71,32 @@ def resolve_communication_reply_target(
 
     target = _normalized_address(latest_inbound_sender)
     if target is not None:
-        return target
+        return CommunicationReplyTarget(
+            address=target,
+            source="latest_inbound_sender",
+        )
+
+    if (
+        thread.related_entity_type == "quote_request"
+        and thread.related_entity_id is not None
+    ):
+        try:
+            quote_id = uuid.UUID(thread.related_entity_id)
+        except ValueError:
+            quote_id = None
+
+        if quote_id is not None:
+            quote_email = db.scalar(
+                select(QuoteRequest.email).where(
+                    QuoteRequest.id == quote_id
+                )
+            )
+            target = _normalized_address(quote_email)
+            if target is not None:
+                return CommunicationReplyTarget(
+                    address=target,
+                    source="quote_request",
+                )
 
     if thread.customer_user_id is not None:
         customer_email = db.scalar(
@@ -74,7 +106,10 @@ def resolve_communication_reply_target(
         )
         target = _normalized_address(customer_email)
         if target is not None:
-            return target
+            return CommunicationReplyTarget(
+                address=target,
+                source="account_email",
+            )
 
     latest_outbound_recipient = db.scalar(
         select(CommunicationRecipient.address)
@@ -98,7 +133,28 @@ def resolve_communication_reply_target(
         .limit(1)
     )
 
-    return _normalized_address(latest_outbound_recipient)
+    target = _normalized_address(latest_outbound_recipient)
+    if target is not None:
+        return CommunicationReplyTarget(
+            address=target,
+            source="latest_outbound_recipient",
+        )
+
+    return CommunicationReplyTarget(
+        address=None,
+        source=None,
+    )
+
+
+def resolve_communication_reply_target(
+    db: Session,
+    *,
+    thread: CommunicationThread,
+) -> str | None:
+    return resolve_communication_reply_target_details(
+        db,
+        thread=thread,
+    ).address
 
 
 def _reply_subject(
@@ -135,10 +191,15 @@ def send_communication_reply(
     thread: CommunicationThread,
     author_user_id: uuid.UUID,
     body_text: str,
+    recipient_override: str | None = None,
 ) -> CommunicationReplyResult:
-    recipient = resolve_communication_reply_target(
-        db,
-        thread=thread,
+    recipient = (
+        normalize_email_address(recipient_override)
+        if recipient_override is not None
+        else resolve_communication_reply_target(
+            db,
+            thread=thread,
+        )
     )
 
     if recipient is None:

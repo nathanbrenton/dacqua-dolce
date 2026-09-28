@@ -92,6 +92,7 @@ export type OperationsCommunicationThread = {
 export type OperationsCommunicationThreadDetail =
   OperationsCommunicationThread & {
     reply_target: string | null;
+    reply_target_source: string | null;
     messages: OperationsCommunicationMessage[];
   };
 
@@ -372,11 +373,12 @@ export function updateOperationsCommunicationThreadStatus(
 export function replyToOperationsCommunicationThread(
   threadId: string,
   bodyText: string,
+  recipient: string,
 ): Promise<OperationsCommunicationReply> {
   return writeJson(
     `/api/operations/communication-threads/${encodeURIComponent(threadId)}/reply`,
     "POST",
-    { body_text: bodyText },
+    { body_text: bodyText, recipient },
   );
 }
 

@@ -66,6 +66,22 @@ function threadSearchText(
     .toLowerCase();
 }
 
+
+function replyTargetSourceLabel(value: string | null): string | null {
+  switch (value) {
+    case "latest_inbound_sender":
+      return "Latest customer message";
+    case "quote_request":
+      return "Quote request";
+    case "account_email":
+      return "Account email";
+    case "latest_outbound_recipient":
+      return "Previous outbound message";
+    default:
+      return null;
+  }
+}
+
 function recipientLabel(
   message: OperationsCommunicationMessage,
 ): string {
@@ -312,6 +328,7 @@ export function CommunicationsInbox() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<InboxView>("active");
   const [replyBody, setReplyBody] = useState("");
+  const [replyRecipient, setReplyRecipient] = useState("");
   const [replyNotice, setReplyNotice] = useState<string | null>(null);
   const [replyFailed, setReplyFailed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -454,6 +471,7 @@ export function CommunicationsInbox() {
     setSelectedThreadId(threadId);
     setDetailLoading(true);
     setReplyBody("");
+    setReplyRecipient("");
     setReplyNotice(null);
     setReplyFailed(false);
     setError(null);
@@ -461,6 +479,7 @@ export function CommunicationsInbox() {
     try {
       const result = await getOperationsCommunicationThread(threadId);
       setThreadDetail(result);
+      setReplyRecipient(result.reply_target ?? "");
     } catch (caught) {
       setThreadDetail(null);
       setError(
@@ -580,7 +599,11 @@ export function CommunicationsInbox() {
   ): Promise<void> {
     event.preventDefault();
 
-    if (threadDetail === null || replyBody.trim().length === 0) {
+    if (
+      threadDetail === null
+      || replyBody.trim().length === 0
+      || replyRecipient.trim().length === 0
+    ) {
       return;
     }
 
@@ -593,6 +616,7 @@ export function CommunicationsInbox() {
       const result = await replyToOperationsCommunicationThread(
         threadDetail.id,
         replyBody,
+        replyRecipient,
       );
 
       setThreadDetail(result.thread);
@@ -983,11 +1007,39 @@ export function CommunicationsInbox() {
                   <small>
                     {threadDetail.status === "closed"
                       ? "Restore this conversation to the inbox before replying."
-                      : threadDetail.reply_target !== null
-                        ? `To ${threadDetail.reply_target}`
-                        : "No reply address is available for this conversation."}
+                      : "Confirm the recipient before sending."}
                   </small>
                 </div>
+
+                <label className="operations-inbox-reply-recipient-field">
+                  <span>To</span>
+                  <input
+                    type="email"
+                    aria-label="Reply recipient"
+                    placeholder="customer@example.com"
+                    value={replyRecipient}
+                    maxLength={320}
+                    required
+                    disabled={
+                      replySending
+                      || threadDetail.status === "closed"
+                    }
+                    onChange={(event) => {
+                      setReplyRecipient(event.target.value);
+                      setReplyNotice(null);
+                      setReplyFailed(false);
+                    }}
+                  />
+                  <small>
+                    {threadDetail.reply_target !== null
+                      ? `Suggested from: ${replyTargetSourceLabel(threadDetail.reply_target_source) ?? "conversation"}`
+                      : "No suggested address is available. Enter a recipient."}
+                    {threadDetail.customer_email !== null
+                      && threadDetail.customer_email !== threadDetail.reply_target
+                      ? ` · Account email: ${threadDetail.customer_email}`
+                      : ""}
+                  </small>
+                </label>
 
                 <textarea
                   aria-label="Reply message"
@@ -997,7 +1049,6 @@ export function CommunicationsInbox() {
                   disabled={
                     replySending
                     || threadDetail.status === "closed"
-                    || threadDetail.reply_target === null
                   }
                   onChange={(event) => {
                     setReplyBody(event.target.value);
@@ -1029,7 +1080,7 @@ export function CommunicationsInbox() {
                     disabled={
                       replySending
                       || threadDetail.status === "closed"
-                      || threadDetail.reply_target === null
+                      || replyRecipient.trim().length === 0
                       || replyBody.trim().length === 0
                     }
                   >

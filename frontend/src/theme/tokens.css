@@ -16,6 +16,17 @@
   --accent: #17201d;
   --danger: #9b2f2f;
   --success: #1d6b45;
+
+  /*
+   * Yellow-family colors are reserved for non-error warning/advisory states.
+   * Ordinary focus, selection, autofill, and active controls must use their
+   * theme-native action/focus roles instead.
+   */
+  --warning: #8a6400;
+  --warning-surface: #fff4cc;
+  --warning-border: #d7aa2f;
+  --warning-text: #5f4300;
+
   --status-neutral: #6f7471;
   --focus-ring: #087c82;
   --control-highlight: #087c82;
@@ -371,6 +382,15 @@
 
 :root[data-appearance="dark"] {
   color-scheme: dark;
+
+  /*
+   * Keep warning semantics consistent across every dark theme while preserving
+   * adequate contrast against dark surfaces.
+   */
+  --warning: #e7bd4f;
+  --warning-surface: #3a2f12;
+  --warning-border: #8b6d1f;
+  --warning-text: #ffe49a;
 }
 
 :root[data-theme="baseline"][data-appearance="dark"] {

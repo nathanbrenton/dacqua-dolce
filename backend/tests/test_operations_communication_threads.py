@@ -21,6 +21,7 @@ from app.models.communications import (
 )
 from app.models.email import EmailDelivery, EmailDeliveryStatus
 from app.models.identity import User
+from app.models.quote import QuoteRequest
 from app.schemas.operations import (
     OperationsCommunicationReplyCreate,
     OperationsCommunicationThreadStatusUpdate,
@@ -420,3 +421,184 @@ def test_thread_failure_count_and_archive_restore(
         assert restored.status == "open"
 
         db.rollback()
+
+
+
+def test_quote_request_email_is_preferred_over_account_and_previous_outbound(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        customer = User(
+            email=f"account-{uuid.uuid4()}@example.test",
+        )
+        db.add(customer)
+        db.flush()
+
+        quote = QuoteRequest(
+            user_id=customer.id,
+            name="Customer Example",
+            email="quote-contact@example.test",
+            message="Question about filters",
+        )
+        db.add(quote)
+        db.flush()
+
+        thread = CommunicationThread(
+            customer_user_id=customer.id,
+            subject="New D'Acqua Dolce quote request",
+            related_entity_type="quote_request",
+            related_entity_id=str(quote.id),
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+
+        outbound = CommunicationMessage(
+            thread_id=thread.id,
+            direction=CommunicationDirection.outbound,
+            status=CommunicationMessageStatus.sent,
+            provider="postmark",
+            provider_message_id=f"test-{uuid.uuid4()}",
+            sender_address="support@dacquadolce.com",
+            subject="New D'Acqua Dolce quote request",
+            body_text="Archived quote request",
+            content_redacted=False,
+            sent_at=now,
+        )
+        db.add(outbound)
+        db.flush()
+        db.add(
+            CommunicationRecipient(
+                message_id=outbound.id,
+                recipient_type=CommunicationRecipientType.to,
+                address="previous@example.test",
+                position=0,
+            )
+        )
+        db.flush()
+
+        detail = operations.get_communication_thread(
+            thread.id,
+            db,  # type: ignore[arg-type]
+            _current_user(),  # type: ignore[arg-type]
+        )
+
+        assert detail.reply_target == "quote-contact@example.test"
+        assert detail.reply_target_source == "quote_request"
+        assert detail.customer_email == customer.email
+        db.rollback()
+
+
+def test_latest_inbound_sender_still_precedes_quote_request_email(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        quote = QuoteRequest(
+            name="Customer Example",
+            email="quote-contact@example.test",
+        )
+        db.add(quote)
+        db.flush()
+
+        thread = CommunicationThread(
+            subject="Water question",
+            related_entity_type="quote_request",
+            related_entity_id=str(quote.id),
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+        db.add(
+            CommunicationMessage(
+                thread_id=thread.id,
+                direction=CommunicationDirection.inbound,
+                status=CommunicationMessageStatus.received,
+                provider="postmark",
+                provider_message_id=f"test-{uuid.uuid4()}",
+                sender_address="latest-sender@example.test",
+                subject="Water question",
+                body_text="Replying from another address",
+                content_redacted=False,
+                received_at=now,
+            )
+        )
+        db.flush()
+
+        detail = operations.get_communication_thread(
+            thread.id,
+            db,  # type: ignore[arg-type]
+            _current_user(),  # type: ignore[arg-type]
+        )
+
+        assert detail.reply_target == "latest-sender@example.test"
+        assert detail.reply_target_source == "latest_inbound_sender"
+        db.rollback()
+
+
+def test_manual_reply_recipient_override_is_archived(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        employee = User(
+            email=f"employee-{uuid.uuid4()}@example.test",
+        )
+        db.add(employee)
+        db.flush()
+
+        thread = CommunicationThread(
+            subject="Manual recipient test",
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+
+        monkeypatch.setattr(
+            operations,
+            "get_email_runtime_settings",
+            lambda: EmailRuntimeSettings(
+                email_provider="disabled",
+                email_from="no-reply@dacquadolce.com",
+                email_support_from="support@dacquadolce.com",
+                postmark_inbound_address="abc123@inbound.postmarkapp.com",
+            ),
+        )
+        monkeypatch.setattr(
+            db,
+            "commit",
+            lambda: db.flush(),
+        )
+
+        result = operations.reply_to_communication_thread(
+            thread.id,
+            OperationsCommunicationReplyCreate(
+                body_text="Sending to the selected contact address.",
+                recipient="chosen@example.test",
+            ),
+            db,  # type: ignore[arg-type]
+            employee,  # type: ignore[arg-type]
+        )
+
+        assert result.recipient == "chosen@example.test"
+        reply = result.thread.messages[-1]
+        assert reply.recipients[0].address == "chosen@example.test"
+        db.rollback()
+
+
+def test_reply_recipient_override_must_be_valid_email() -> None:
+    with pytest.raises(ValueError):
+        OperationsCommunicationReplyCreate(
+            body_text="Hello",
+            recipient="not-an-email",
+        )
