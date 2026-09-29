@@ -468,13 +468,25 @@ Populate only the protected runtime environment:
     DACQUA_PUBLIC_ORIGIN=https://dacquadolce.com
     DACQUA_EMAIL_PROVIDER=postmark
     DACQUA_POSTMARK_SERVER_TOKEN=<secret>
+    DACQUA_POSTMARK_INBOUND_ADDRESS=<private-provider-address>
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME=<secret>
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD=<secret>
     DACQUA_EMAIL_FROM=no-reply@dacquadolce.com
     DACQUA_EMAIL_SUPPORT_FROM=support@dacquadolce.com
     DACQUA_EMAIL_REPLY_FROM_ADDRESSES=sales@dacquadolce.com,contact@dacquadolce.com,info@dacquadolce.com,support@dacquadolce.com
     DACQUA_EMAIL_SENDER_NAME="D'Acqua Dolce"
     DACQUA_EMAIL_OPERATOR_TO=<business-operator-address>
+    DACQUA_PASSWORD_RESET_TTL_MINUTES=30
+    DACQUA_EMAIL_VERIFICATION_TTL_MINUTES=1440
 
-Never place populated tokens or credentials in Git, documentation, screenshots, tickets, or shell history. Direct TCP/25 is not required.
+Never place populated tokens, private inbound addresses, or credentials in Git,
+documentation, screenshots, tickets, or shell history. Direct TCP/25 is not
+required.
+
+The approved `sales@`, `contact@`, `info@`, `support@`, and `no-reply@`
+addresses are mail identities. They do not require corresponding application
+users, and they do not imply hosted human IMAP mailboxes. Production staff
+authenticate with real individual application identities.
 
 ### 20.3 Confirm communications schema
 
@@ -566,7 +578,7 @@ Send one controlled external message to:
 
     support@dacquadolce.com
 
-Verify the message appears as a new inbound conversation in Operations -> Customer Inbox. This validates:
+Verify the message appears as a new inbound conversation in Operations -> Customer Inbox. Also verify the Customer Inbox presents Inbox/System/Archived/All views and that structured verification/reset/welcome mail is classified under System. This validates:
 
     public address -> Cloudflare -> Postmark -> webhook -> PostgreSQL -> Operations UI
 

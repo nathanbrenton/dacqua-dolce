@@ -20,7 +20,7 @@ Current production host:
 
     dacqua-platform-prod-01
 
-Current validated documentation checkpoint: 2026-09-22 / PT12.
+Current validated documentation checkpoint: 2026-09-29 / PT18.
 
 Important present-day boundaries include:
 
@@ -29,7 +29,7 @@ Important present-day boundaries include:
 - Nginx public edge;
 - FastAPI/PostgreSQL/observability listeners private/loopback-only;
 - PostgreSQL `dacqua_dolce_migrator` vs `dacqua_dolce_app` privilege separation;
-- Postmark HTTPS API for application transactional email;
+- Postmark HTTPS API plus Cloudflare Email Routing for commissioned application/customer mail;
 - local PostgreSQL backup/restore commissioned;
 - AWS S3/restic off-host repository not yet commissioned.
 

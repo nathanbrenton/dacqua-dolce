@@ -411,7 +411,8 @@ Useful boundaries:
 - inbound attachments are stored in PostgreSQL with size/hash/content metadata;
 - provider MessageID is used for inbound idempotency;
 - raw Postmark payload duplication is not required;
-- Customer Inbox supports Inbox/Archived/All views, archive/restore, and employee replies;
+- Customer Inbox supports Inbox/System/Archived/All views, archive/restore, and employee replies;
+- System contains structured application-generated verification/reset/welcome mail and remains separate from the routine customer Inbox;
 - explicit `http://` and `https://` URLs in archived plain-text bodies are rendered as safe external links; inbound HTML remains untrusted and is not rendered as executable markup;
 - `support@dacquadolce.com` is the public inbound customer address; the private Postmark destination remains hidden;
 - Cloudflare catch-all routing remains disabled;
@@ -421,12 +422,25 @@ Protected application configuration:
 
     /etc/dacqua-dolce/backend.env
 
-Relevant inbound variables:
+Relevant application-mail variables:
 
+    DACQUA_EMAIL_PROVIDER
+    DACQUA_POSTMARK_SERVER_TOKEN
+    DACQUA_POSTMARK_INBOUND_ADDRESS
     DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
     DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
+    DACQUA_EMAIL_FROM
+    DACQUA_EMAIL_SUPPORT_FROM
+    DACQUA_EMAIL_REPLY_FROM_ADDRESSES
+    DACQUA_EMAIL_SENDER_NAME
+    DACQUA_EMAIL_OPERATOR_TO
+    DACQUA_PASSWORD_RESET_TTL_MINUTES
+    DACQUA_EMAIL_VERIFICATION_TTL_MINUTES
 
-Do not print their values.
+Do not print secret/private values. When shell syntax is shown, keep the sender
+display name quoted exactly as:
+
+    DACQUA_EMAIL_SENDER_NAME="D'Acqua Dolce"
 
 Public webhook:
 

@@ -27,6 +27,9 @@ secret placeholders:
     DACQUA_PUBLIC_ORIGIN=https://dacquadolce.com
     DACQUA_EMAIL_PROVIDER=postmark
     DACQUA_POSTMARK_SERVER_TOKEN=<secret>
+    DACQUA_POSTMARK_INBOUND_ADDRESS=<private-provider-address>
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME=<secret>
+    DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD=<secret>
     DACQUA_EMAIL_FROM=no-reply@dacquadolce.com
     DACQUA_EMAIL_SUPPORT_FROM=support@dacquadolce.com
     DACQUA_EMAIL_REPLY_FROM_ADDRESSES=sales@dacquadolce.com,contact@dacquadolce.com,info@dacquadolce.com,support@dacquadolce.com
@@ -46,6 +49,18 @@ configuration from `/etc/dacqua-dolce/backend.env`.
 The visible display name is added at the Postmark delivery boundary. The
 PostgreSQL communications archive retains the canonical bare sender address,
 such as `sales@dacquadolce.com`.
+
+### Mail identities are not staff login identities
+
+The approved role addresses (`sales@`, `contact@`, `info@`, `support@`, and
+`no-reply@`) are application mail identities. The authenticated human staff
+account remains the author/audit actor for an Operations reply.
+
+Do not create generic production application accounts such as
+`developer@dacquadolce.com` or `admin@dacquadolce.com` merely to match
+development fixtures or mail roles. Production staff access belongs to real
+individual identities; hosted human mailboxes are a separate business-email
+decision.
 
 ## Canonical public URLs
 

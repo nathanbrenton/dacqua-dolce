@@ -59,21 +59,32 @@ Environment identity is not a substitute for feature-level authorization,
 provider sandboxing, idempotency, or explicit customer consent.
 
 
-## Application identity domains
+## Application identities and email identities
 
-Development/test and production application identities are intentionally
-visually distinct:
+Canonical development/test fixtures deliberately use `@dacquadolce.test` so
+they cannot be confused with real production identities.
 
-- development/test company identities use `@dacquadolce.test`;
-- production company identities use `@dacquadolce.com`.
+Do **not** mirror those fixtures into production by creating generic accounts
+such as `developer@dacquadolce.com`, `admin@dacquadolce.com`,
+`employee@dacquadolce.com`, or `payment-test-customer@dacquadolce.com` merely
+because equivalent `.test` fixtures exist.
+
+Production application users are real individual identities whose application
+authority comes from assigned roles such as `customer`, `employee`,
+`administrator`, or `developer`. A staff member may later move to a named
+company-domain address through an intentional account migration, but the role
+model does not require a generic role-named mailbox.
+
+Company addresses such as `sales@dacquadolce.com`,
+`contact@dacquadolce.com`, `info@dacquadolce.com`,
+`support@dacquadolce.com`, and `no-reply@dacquadolce.com` are **mail
+identities** used for routing/sending. They do not automatically create
+application-user accounts or human IMAP mailboxes.
 
 The canonical development fixture set belongs only to development/test.
-Production must never receive the dev fixture bootstrap merely because the
-application schemas are compatible.
-
-Production UAM changes preserve existing legitimate users and migrate roles in
-place. Development/test may be destructively rebuilt through the guarded local
-rebuild workflow.
+Production UAM changes preserve legitimate users and migrate roles in place.
+Development/test may be destructively rebuilt through the guarded local rebuild
+workflow.
 
 ## Database identity is separate from application identity
 

@@ -61,7 +61,7 @@ Future milestone must:
 Commissioned:
 
 - durable PostgreSQL communication threads/messages/recipients/attachments/events;
-- authenticated Customer Inbox with Inbox/Archived/All views;
+- authenticated Customer Inbox with Inbox/System/Archived/All views;
 - archive/restore workflow with no data destruction;
 - employee replies and thread-specific return routing;
 - public `support@dacquadolce.com` inbound route through Cloudflare Email Routing -> Postmark -> production webhook;
@@ -121,6 +121,6 @@ The following are no longer pending and belong in the commissioned production do
 - authenticated Postmark inbound webhook;
 - real inbound-email archival/idempotency validation;
 - authenticated Operations Customer Inbox and threaded employee replies;
-- active/archive/all communication-history workflow;
+- Inbox/System/Archived/All communication-history workflow;
 - public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
 - safe plain-text URL linkification in Customer Inbox.

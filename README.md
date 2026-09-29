@@ -26,7 +26,9 @@ D'Acqua Dolce is a mobile-first water-filtration commerce and customer-lifecycle
 - Better Stack external monitoring
 - validated local PostgreSQL backup + full restore validation
 - restic encryption layer prepared; AWS S3 off-host repository pending
-- Postmark transactional email commissioned for application mail
+- Postmark HTTPS API commissioned for application transactional/customer mail
+- Cloudflare Email Routing commissioned for public `support@dacquadolce.com` inbound mail
+- PostgreSQL communications archive + Operations Customer Inbox commissioned
 - observability report email delivery/timers still pending
 
 Authoritative production documentation:
@@ -45,10 +47,11 @@ The public production application includes:
 - customer account Appearance controls with visual-theme and light/dark preferences;
 - quote, cart, order, pricing-policy, and inventory foundations;
 - Operations console for staff workflows;
-- web administration of `employee`, `manager`, and `administrator` roles;
-- CLI-only management of the `developer` role;
-- audit events and email-delivery metadata;
-- Postmark-backed transactional email.
+- web administration of `employee` and `administrator`; `manager` is legacy/deprecated and cannot be newly assigned;
+- CLI-only provisioning/replacement of the `developer` role;
+- audit events, email-delivery metadata, and a durable PostgreSQL communications archive;
+- Operations Customer Inbox with Inbox/System/Archived/All views and threaded employee replies;
+- Postmark-backed outbound mail plus Cloudflare Email Routing for the public support address.
 
 The authoritative production catalog baseline is under:
 

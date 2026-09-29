@@ -31,6 +31,12 @@ The payment-test account remains an ordinary customer so sandbox payment work
 exercises realistic customer authorization. There is no persisted guest role or
 canonical guest account.
 
+These addresses are fixture labels, not a production naming scheme. Do not
+create `developer@dacquadolce.com`, `admin@dacquadolce.com`,
+`employee@dacquadolce.com`, or `payment-test-customer@dacquadolce.com` merely
+to mirror the development/test accounts. Production uses real individual
+identities and assigns application roles to those identities.
+
 Bootstrap passwords are supplied outside Git through
 `~/.dacqua-dolce/dev-bootstrap.env`. Do not commit or print reusable plaintext
 passwords.

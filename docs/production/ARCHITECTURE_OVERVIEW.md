@@ -384,7 +384,8 @@ Thread resolution prefers a Postmark `MailboxHash` thread UUID, then RFC `In-Rep
 
 Authenticated Operations users can:
 
-- search active/archived/all customer conversations;
+- search Inbox/System/Archived/All conversations;
+- keep structured application-generated verification/reset/welcome mail under System rather than the normal customer Inbox;
 - archive/restore threads without deleting durable records;
 - inspect a selected conversation with independent vertical scrolling;
 - reply in the same durable thread;
@@ -412,7 +413,7 @@ Current commissioned application sender roles:
 - `support@dacquadolce.com`;
 - `no-reply@dacquadolce.com`.
 
-`support@dacquadolce.com` remains the public inbound Customer Inbox address. These role addresses are application identities, not automatically provisioned human IMAP mailboxes. Individual human custom-domain mailboxes/forwarding require separate explicit provisioning.
+`support@dacquadolce.com` remains the public inbound Customer Inbox address. These role addresses are **mail identities**, not application UAM accounts and not automatically provisioned human IMAP mailboxes. Individual staff authenticate with their own application identities; named human custom-domain mailboxes/forwarding require separate explicit provisioning.
 
 The visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive retains the canonical bare sender address. The private thread-aware Postmark inbound alias is used only as `Reply-To`.
 

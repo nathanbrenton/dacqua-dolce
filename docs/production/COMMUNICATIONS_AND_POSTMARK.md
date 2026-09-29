@@ -60,10 +60,15 @@ Other conversation replies prefer:
     support -> contact -> info -> sales -> no-reply
 
 The authenticated staff account remains the internal author/audit actor. The
-visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive retains
-the canonical bare sender address. A thread-specific private Postmark inbound
-alias is used only as `Reply-To` so a customer's normal Reply action returns to
-the same archived conversation.
+approved `sales@`, `contact@`, `info@`, `support@`, and `no-reply@` addresses
+are mail identities, not human application-login accounts. Do not create
+generic production users such as `developer@dacquadolce.com` or
+`admin@dacquadolce.com` merely to mirror role names or development fixtures.
+
+The visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive
+retains the canonical bare sender address. A thread-specific private Postmark
+inbound alias is used only as `Reply-To` so a customer's normal Reply action
+returns to the same archived conversation.
 
 Cloudflare is authoritative for DNS, but the production web `A`/`CNAME` records are intentionally **DNS only**. Cloudflare is therefore providing authoritative DNS and inbound Email Routing without acting as the HTTP reverse proxy for the site at this checkpoint.
 
@@ -280,11 +285,12 @@ Expected ownership/mode from the production hardening baseline:
     root:dacqua-app
     0640
 
-Relevant non-secret variable names:
+Relevant variable names (the names are non-secret; several values are protected):
 
     DACQUA_PUBLIC_ORIGIN
     DACQUA_EMAIL_PROVIDER
     DACQUA_POSTMARK_SERVER_TOKEN
+    DACQUA_POSTMARK_INBOUND_ADDRESS
     DACQUA_EMAIL_FROM
     DACQUA_EMAIL_SUPPORT_FROM
     DACQUA_EMAIL_REPLY_FROM_ADDRESSES
@@ -292,8 +298,12 @@ Relevant non-secret variable names:
     DACQUA_EMAIL_OPERATOR_TO
     DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
     DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
+    DACQUA_PASSWORD_RESET_TTL_MINUTES
+    DACQUA_EMAIL_VERIFICATION_TTL_MINUTES
 
-Never put populated secret values into the repository.
+Never put populated secret values into the repository. The private Postmark
+inbound address, server token, and webhook credentials are secret/protected
+values even though their variable names are documented.
 
 `DACQUA_EMAIL_FROM` is the transactional no-reply identity used for account
 mail. `DACQUA_EMAIL_SUPPORT_FROM` is the support-role sender, while
@@ -506,7 +516,8 @@ Operational requirements:
 
 Commissioned:
 
-- authenticated employee Customer Inbox list/detail UI with active/archive/all views;
+- authenticated employee Customer Inbox list/detail UI with Inbox/System/Archived/All views;
+- System classification for structured application-generated `email_verification`, `password_reset`, and `customer_welcome` mail so it does not pollute the routine customer Inbox;
 - independent scrolling for the thread list and selected conversation;
 - employee replies archived into the existing communication thread;
 - original website request content remains visible separately from later correspondence;
@@ -526,7 +537,7 @@ Not yet commissioned:
 - any privileged permanent-delete workflow;
 - final customer-thread assignment workflow if the business needs assignment/ownership;
 - additional Postmark delivery/bounce event ingestion if required;
-- general employee custom-domain mailboxes such as `nathan@`, `jamie@`, `info@`, or `admin@`;
+- named human custom-domain mailboxes such as `nathan@` or `jamie@` if the business chooses to commission them; approved application sender roles such as `info@` are not evidence that a hosted human mailbox exists;
 - observability-report delivery/timers;
 - payment-provider checkout.
 
