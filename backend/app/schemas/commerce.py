@@ -38,13 +38,24 @@ class OrderItemRead(BaseModel):
     unit_amount_minor: int
     line_total_minor: int
     currency: str
+    estimated_lead_time: str | None = None
+
+
+class OrderShipmentRead(BaseModel):
+    carrier: str
+    tracking_number: str
+    tracking_url: str | None
+    shipped_at: str | None
+    delivered_at: str | None
 
 
 class OrderRead(BaseModel):
     id: str
     formal_quote_id: str | None
     status: str
+    fulfillment_status: str
     total_amount_minor: int
     currency: str
     created_at: str
     items: list[OrderItemRead]
+    shipment: OrderShipmentRead | None = None

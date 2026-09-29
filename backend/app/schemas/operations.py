@@ -15,6 +15,7 @@ from app.models.catalog import (
     PricingPolicyMode,
     ProductRelationshipType,
 )
+from app.models.commerce import FulfillmentStatus
 from app.models.communications import (
     CommunicationThreadStatus,
 )
@@ -396,11 +397,26 @@ class OperationsOrderItemRead(BaseModel):
     unit_amount_minor: int
     line_total_minor: int
     currency: str
+    estimated_lead_time: str | None = None
+
+
+class OperationsOrderShipmentRead(BaseModel):
+    carrier: str
+    tracking_number: str
+    tracking_url: str | None
+    shipped_at: str | None
+    delivered_at: str | None
 
 
 class OperationsOrderRead(BaseModel):
     id: str
     status: str
+    fulfillment_status: str
+    supplier_order_reference: str | None
+    supplier_ordered_at: str | None
+    received_ready_at: str | None
+    shipped_at: str | None
+    delivered_at: str | None
     total_amount_minor: int
     currency: str
     created_at: str
@@ -408,6 +424,42 @@ class OperationsOrderRead(BaseModel):
     items: list[OperationsOrderItemRead] = Field(
         default_factory=list,
     )
+    shipment: OperationsOrderShipmentRead | None = None
+
+
+class OrderFulfillmentUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: FulfillmentStatus
+    supplier_order_reference: str | None = Field(
+        default=None,
+        max_length=160,
+    )
+    carrier: str | None = Field(
+        default=None,
+        max_length=100,
+    )
+    tracking_number: str | None = Field(
+        default=None,
+        max_length=200,
+    )
+    tracking_url: str | None = Field(
+        default=None,
+        max_length=2048,
+    )
+
+    @field_validator(
+        "supplier_order_reference",
+        "carrier",
+        "tracking_number",
+        "tracking_url",
+    )
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
 
 class QuoteStatusUpdate(BaseModel):

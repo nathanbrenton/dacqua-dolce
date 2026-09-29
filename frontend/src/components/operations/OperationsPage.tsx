@@ -59,6 +59,9 @@ import {
 import {
   FormalQuoteComposer,
 } from "./FormalQuoteComposer";
+import {
+  OrderFulfillmentControls,
+} from "./OrderFulfillmentControls";
 
 import {
   type AppearanceMode,
@@ -254,6 +257,8 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "customer.profile_updated": "Customer profile updated",
   "identity.operations_roles_changed": "Operations roles changed",
   "order.status_changed": "Order status changed",
+  "order.fulfillment_status_changed": "Fulfillment status changed",
+  "order.shipment_recorded": "Shipment recorded",
   "quote.notes_updated": "Request notes updated",
   "quote.requested": "Customer request submitted",
   "quote.status_changed": "Request status changed",
@@ -762,6 +767,10 @@ export function OperationsPage({
       const searchable = [
         order.id,
         order.status,
+        order.fulfillment_status,
+        order.supplier_order_reference ?? "",
+        order.shipment?.carrier ?? "",
+        order.shipment?.tracking_number ?? "",
         order.customer.email,
         order.customer.first_name ?? "",
         order.customer.last_name ?? "",
@@ -2132,8 +2141,8 @@ export function OperationsPage({
           <p className="eyebrow">Order History</p>
           <h2>Customer orders</h2>
           <p>
-            Read-only order history tied to registered customer
-            accounts. Payment-provider details are not exposed.
+            Customer-linked order history and manual fulfillment controls.
+            Payment-provider details are not exposed.
           </p>
         </div>
 
@@ -2185,7 +2194,12 @@ export function OperationsPage({
                   <header>
                     <div>
                       <p className="product-meta">
-                        Order · {order.status}
+                        Order · payment {order.status}
+                        {" · "}
+                        fulfillment {order.fulfillment_status.replaceAll(
+                          "_",
+                          " ",
+                        )}
                       </p>
 
                       <h3>
@@ -2246,6 +2260,13 @@ export function OperationsPage({
                             item.line_total_minor,
                             item.currency,
                           )}
+                          {item.estimated_lead_time !== null ? (
+                            <>
+                              <br />
+                              Estimated lead time:{" "}
+                              {item.estimated_lead_time}
+                            </>
+                          ) : null}
                         </small>
                       </div>
                     ))}
@@ -2263,10 +2284,23 @@ export function OperationsPage({
                       </address>
 
                       <small>
-                        Read-only
+                        Payment state remains separate from fulfillment.
                       </small>
                     </div>
                   </div>
+
+                  <OrderFulfillmentControls
+                    order={order}
+                    onUpdated={(updated) => {
+                      setOrders((current) =>
+                        current.map((candidate) =>
+                          candidate.id === updated.id
+                            ? updated
+                            : candidate,
+                        ),
+                      );
+                    }}
+                  />
                 </article>
               );
             })}

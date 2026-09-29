@@ -57,6 +57,7 @@ def make_quote(
             line_total_minor=250000,
             currency="USD",
             pricing_policy_mode_snapshot="PRIVATE_QUOTE",
+            estimated_lead_time_snapshot="2–3 weeks",
             sort_order=0,
         )
     ]
@@ -83,6 +84,7 @@ def test_approved_quote_becomes_awaiting_payment_order() -> None:
     assert len(order_items) == 1
     assert order_items[0].sku_snapshot == "DD-ORIGIN"
     assert order_items[0].line_total_minor == 250000
+    assert order_items[0].estimated_lead_time_snapshot == "2–3 weeks"
 
 
 def test_quote_order_creation_is_idempotent() -> None:

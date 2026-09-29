@@ -99,6 +99,19 @@ function money(
 }
 
 
+const FULFILLMENT_LABELS: Record<string, string> = {
+  not_started: "Preparing fulfillment",
+  supplier_ordered: "Equipment ordered from supplier",
+  received_ready: "Equipment received / ready",
+  shipped: "Shipped",
+  delivered: "Delivered",
+};
+
+function fulfillmentLabel(value: string): string {
+  return FULFILLMENT_LABELS[value] ?? value.replaceAll("_", " ");
+}
+
+
 const PRIVILEGED_MFA_ROLES = new Set([
   "manager",
   "administrator",
@@ -1669,6 +1682,53 @@ export function AccountPage({
                         order.created_at,
                       ).toLocaleDateString()}
                     </p>
+
+                    {order.status === "paid" ? (
+                      <p className="account-muted">
+                        {fulfillmentLabel(
+                          order.fulfillment_status,
+                        )}
+                      </p>
+                    ) : null}
+
+                    {order.items.some(
+                      (item) =>
+                        item.estimated_lead_time !== null,
+                    ) ? (
+                      <p className="account-muted">
+                        Estimated lead time:{" "}
+                        {order.items
+                          .map(
+                            (item) =>
+                              item.estimated_lead_time,
+                          )
+                          .filter(
+                            (value): value is string =>
+                              value !== null,
+                          )
+                          .join(" · ")}
+                      </p>
+                    ) : null}
+
+                    {order.shipment !== null ? (
+                      <p className="account-muted">
+                        Tracking:{" "}
+                        {order.shipment.carrier}{" "}
+                        {order.shipment.tracking_number}
+                        {order.shipment.tracking_url !== null ? (
+                          <>
+                            {" · "}
+                            <a
+                              href={order.shipment.tracking_url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Track shipment
+                            </a>
+                          </>
+                        ) : null}
+                      </p>
+                    ) : null}
                   </div>
 
                   <strong>

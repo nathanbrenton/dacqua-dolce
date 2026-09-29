@@ -6,7 +6,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.api import operations
-from app.models.commerce import OrderStatus
+from app.models.commerce import FulfillmentStatus, OrderStatus
 from app.models.customer import CustomerProfile
 from app.models.identity import RoleName, User
 
@@ -58,6 +58,9 @@ class OrderHistoryDatabase:
             return ScalarResult(
                 [] if self.item is None else [self.item]
             )
+
+        if "FROM order_shipments" in query:
+            return ScalarResult([])
 
         raise AssertionError(
             f"Unexpected query: {query}"
@@ -116,6 +119,12 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         id=order_id,
         user_id=customer_id,
         status=OrderStatus.paid,
+        fulfillment_status=FulfillmentStatus.supplier_ordered,
+        supplier_order_reference="PO-12345",
+        supplier_ordered_at=datetime.now(UTC),
+        received_ready_at=None,
+        shipped_at=None,
+        delivered_at=None,
         total_amount_minor=249900,
         currency="USD",
         created_at=datetime.now(UTC),
@@ -128,6 +137,7 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         unit_amount_minor=249900,
         line_total_minor=249900,
         currency="USD",
+        estimated_lead_time_snapshot="2–3 weeks",
         created_at=datetime.now(UTC),
     )
 
@@ -153,6 +163,12 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
     assert payload == {
         "id": str(order_id),
         "status": "paid",
+        "fulfillment_status": "supplier_ordered",
+        "supplier_order_reference": "PO-12345",
+        "supplier_ordered_at": order.supplier_ordered_at.isoformat(),
+        "received_ready_at": None,
+        "shipped_at": None,
+        "delivered_at": None,
         "total_amount_minor": 249900,
         "currency": "USD",
         "created_at": order.created_at.isoformat(),
@@ -171,8 +187,10 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
                 "unit_amount_minor": 249900,
                 "line_total_minor": 249900,
                 "currency": "USD",
+                "estimated_lead_time": "2–3 weeks",
             }
         ],
+        "shipment": None,
     }
 
     combined_queries = "\n".join(

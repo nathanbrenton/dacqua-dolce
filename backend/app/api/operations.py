@@ -19,6 +19,7 @@ from app.models.catalog import (
 from app.models.commerce import (
     Order,
     OrderItem,
+    OrderShipment,
 )
 from app.models.communications import (
     CommunicationAttachment,
@@ -67,12 +68,14 @@ from app.schemas.operations import (
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
     OperationsOrderRead,
+    OperationsOrderShipmentRead,
     OperationsPricingRead,
     OperationsProductRead,
     OperationsProductRelationshipRead,
     OperationsProductVariantRead,
     OperationsQuoteRead,
     OperationsSummaryRead,
+    OrderFulfillmentUpdate,
     PricingUpdateRequest,
     ProductRelationshipCreateRequest,
     ProductRelationshipUpdateRequest,
@@ -95,6 +98,10 @@ from app.services.formal_quotes import (
     FormalQuoteLineInput,
     create_formal_quote_revision,
     present_formal_quote,
+)
+from app.services.fulfillment import (
+    FulfillmentError,
+    transition_order_fulfillment,
 )
 from app.services.operations_access import (
     require_audit_log_read,
@@ -1369,10 +1376,38 @@ def operations_order_read(
             OrderItem.id,
         )
     ).all()
+    shipments = db.scalars(
+        select(OrderShipment)
+        .where(OrderShipment.order_id == order.id)
+        .order_by(OrderShipment.created_at.desc())
+    ).all()
+    shipment = shipments[0] if shipments else None
 
     return OperationsOrderRead(
         id=str(order.id),
         status=order.status.value,
+        fulfillment_status=order.fulfillment_status.value,
+        supplier_order_reference=order.supplier_order_reference,
+        supplier_ordered_at=(
+            order.supplier_ordered_at.isoformat()
+            if order.supplier_ordered_at is not None
+            else None
+        ),
+        received_ready_at=(
+            order.received_ready_at.isoformat()
+            if order.received_ready_at is not None
+            else None
+        ),
+        shipped_at=(
+            order.shipped_at.isoformat()
+            if order.shipped_at is not None
+            else None
+        ),
+        delivered_at=(
+            order.delivered_at.isoformat()
+            if order.delivered_at is not None
+            else None
+        ),
         total_amount_minor=order.total_amount_minor,
         currency=order.currency,
         created_at=order.created_at.isoformat(),
@@ -1403,9 +1438,29 @@ def operations_order_read(
                 unit_amount_minor=item.unit_amount_minor,
                 line_total_minor=item.line_total_minor,
                 currency=item.currency,
+                estimated_lead_time=item.estimated_lead_time_snapshot,
             )
             for item in items
         ],
+        shipment=(
+            OperationsOrderShipmentRead(
+                carrier=shipment.carrier,
+                tracking_number=shipment.tracking_number,
+                tracking_url=shipment.tracking_url,
+                shipped_at=(
+                    order.shipped_at.isoformat()
+                    if order.shipped_at is not None
+                    else None
+                ),
+                delivered_at=(
+                    order.delivered_at.isoformat()
+                    if order.delivered_at is not None
+                    else None
+                ),
+            )
+            if shipment is not None
+            else None
+        ),
     )
 
 
@@ -1467,6 +1522,60 @@ def list_orders(
         )
 
     return result
+
+
+@router.post(
+    "/orders/{order_id}/fulfillment",
+    response_model=OperationsOrderRead,
+)
+def update_order_fulfillment(
+    order_id: uuid.UUID,
+    payload: OrderFulfillmentUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    try:
+        transition_order_fulfillment(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            new_status=payload.status,
+            supplier_order_reference=payload.supplier_order_reference,
+            carrier=payload.carrier,
+            tracking_number=payload.tracking_number,
+            tracking_url=payload.tracking_url,
+        )
+    except FulfillmentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(
+        db,
+        order=order,
+        customer=customer,
+    )
 
 
 def operations_product_read(

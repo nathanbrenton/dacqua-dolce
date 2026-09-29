@@ -8,10 +8,12 @@ from app.api.dependencies.auth import (
 from app.models.commerce import (
     Order,
     OrderItem,
+    OrderShipment,
 )
 from app.schemas.commerce import (
     OrderItemRead,
     OrderRead,
+    OrderShipmentRead,
 )
 
 router = APIRouter(
@@ -36,8 +38,16 @@ def list_orders(
 
     for order in orders:
         items = db.scalars(
-            select(OrderItem).where(OrderItem.order_id == order.id).order_by(OrderItem.created_at)
+            select(OrderItem)
+            .where(OrderItem.order_id == order.id)
+            .order_by(OrderItem.created_at)
         ).all()
+        shipments = db.scalars(
+            select(OrderShipment)
+            .where(OrderShipment.order_id == order.id)
+            .order_by(OrderShipment.created_at.desc())
+        ).all()
+        shipment = shipments[0] if shipments else None
 
         result.append(
             OrderRead(
@@ -48,6 +58,7 @@ def list_orders(
                     else None
                 ),
                 status=order.status.value,
+                fulfillment_status=order.fulfillment_status.value,
                 total_amount_minor=(order.total_amount_minor),
                 currency=order.currency,
                 created_at=(order.created_at.isoformat()),
@@ -59,9 +70,31 @@ def list_orders(
                         unit_amount_minor=(item.unit_amount_minor),
                         line_total_minor=(item.line_total_minor),
                         currency=(item.currency),
+                        estimated_lead_time=(
+                            item.estimated_lead_time_snapshot
+                        ),
                     )
                     for item in items
                 ],
+                shipment=(
+                    OrderShipmentRead(
+                        carrier=shipment.carrier,
+                        tracking_number=shipment.tracking_number,
+                        tracking_url=shipment.tracking_url,
+                        shipped_at=(
+                            order.shipped_at.isoformat()
+                            if order.shipped_at is not None
+                            else None
+                        ),
+                        delivered_at=(
+                            order.delivered_at.isoformat()
+                            if order.delivered_at is not None
+                            else None
+                        ),
+                    )
+                    if shipment is not None
+                    else None
+                ),
             )
         )
 

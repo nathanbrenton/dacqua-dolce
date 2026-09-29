@@ -39,6 +39,14 @@ class OrderStatus(StrEnum):
     refunded = "refunded"
 
 
+class FulfillmentStatus(StrEnum):
+    not_started = "not_started"
+    supplier_ordered = "supplier_ordered"
+    received_ready = "received_ready"
+    shipped = "shipped"
+    delivered = "delivered"
+
+
 class PaymentReferenceStatus(StrEnum):
     created = "created"
     pending = "pending"
@@ -232,6 +240,39 @@ class Order(Base):
         default=OrderStatus.draft,
     )
 
+    fulfillment_status: Mapped[FulfillmentStatus] = mapped_column(
+        Enum(
+            FulfillmentStatus,
+            name="fulfillment_status",
+        ),
+        nullable=False,
+        default=FulfillmentStatus.not_started,
+    )
+
+    supplier_order_reference: Mapped[str | None] = mapped_column(
+        String(160),
+    )
+
+    supplier_ordered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    received_ready_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    shipped_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    delivered_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    fulfillment_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
     total_amount_minor: Mapped[int] = mapped_column(
         BigInteger,
         nullable=False,
@@ -336,10 +377,75 @@ class OrderItem(Base):
         nullable=False,
     )
 
+    estimated_lead_time_snapshot: Mapped[str | None] = mapped_column(
+        String(120),
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+
+class OrderShipment(Base):
+    __tablename__ = "order_shipments"
+    __table_args__ = (
+        UniqueConstraint(
+            "order_id",
+            name="uq_order_shipments_order_id",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "orders.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    carrier: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+    )
+
+    tracking_number: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False,
+    )
+
+    tracking_url: Mapped[str | None] = mapped_column(
+        String(2048),
+    )
+
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
     )
 
 

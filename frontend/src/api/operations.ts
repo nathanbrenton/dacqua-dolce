@@ -219,16 +219,32 @@ export type OperationsOrderItem = {
   unit_amount_minor: number;
   line_total_minor: number;
   currency: string;
+  estimated_lead_time: string | null;
+};
+
+export type OperationsOrderShipment = {
+  carrier: string;
+  tracking_number: string;
+  tracking_url: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
 };
 
 export type OperationsOrder = {
   id: string;
   status: string;
+  fulfillment_status: string;
+  supplier_order_reference: string | null;
+  supplier_ordered_at: string | null;
+  received_ready_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
   total_amount_minor: number;
   currency: string;
   created_at: string;
   customer: OperationsOrderCustomer;
   items: OperationsOrderItem[];
+  shipment: OperationsOrderShipment | null;
 };
 
 export type OperationsPricing = {
@@ -501,6 +517,23 @@ export function getOperationsCustomers(): Promise<OperationsCustomer[]> {
 export function getOperationsOrders(): Promise<OperationsOrder[]> {
   return getJson(
     "/api/operations/orders",
+  );
+}
+
+export function updateOrderFulfillment(
+  orderId: string,
+  payload: {
+    status: string;
+    supplier_order_reference?: string | null;
+    carrier?: string | null;
+    tracking_number?: string | null;
+    tracking_url?: string | null;
+  },
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/fulfillment`,
+    "POST",
+    payload,
   );
 }
 

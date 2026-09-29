@@ -324,3 +324,18 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Payment data must remain minimal | Strengthened | The event table stores normalized status, provider identifiers, amount/currency, and permitted display metadata only. No raw webhook payload or prohibited card data is modeled. |
 | Refund handling | Deliberately deferred | Refund events are retained without changing order/payment state until the exact gateway semantics and D'Acqua Dolce full/partial-refund policy are commissioned. |
 | Affinity24 production integration | Still externally blocked | The exact provisioned gateway, sandbox/API contract, webhook verification method, and credentials remain required before the provider adapter and public webhook endpoint can be implemented. |
+
+## PT21 — supplier fulfillment and shipment tracking
+
+| Client direction | Implementation status | Current behavior |
+| --- | --- | --- |
+| Keep payment and fulfillment state separate | Implemented | `Order.status` remains the payment/business state while `fulfillment_status` tracks physical supplier/shipping progress. |
+| Equipment ordered from supplier | Implemented | Operations can advance a paid order to `supplier_ordered` and optionally record an internal supplier order reference. |
+| Equipment received / ready | Implemented | Operations can advance sequentially to `received_ready`. |
+| Shipped | Implemented | Shipping requires carrier and tracking number; optional tracking URL must be HTTPS. |
+| Delivered | Implemented | A shipped order with a shipment record can advance to `delivered`. |
+| Estimated lead time | Implemented | Quote-time lead-time text is copied into the immutable order-item snapshot and displayed to the customer when present. |
+| Customer shipment tracking | Implemented | Carrier/tracking details appear in the customer account only after shipment is recorded. |
+| Manufacturer inventory/API/EDI integration | Deferred / needs manufacturer details | PT21 remains manual-first and does not invent an external supplier integration. |
+| Partial or multiple shipments | Deferred / needs business confirmation | PT21 intentionally supports one shipment record per order. |
+| Cancellation/refund effects on fulfillment | Needs client/provider policy | PT21 does not invent reverse fulfillment transitions or refund-driven shipment behavior. |

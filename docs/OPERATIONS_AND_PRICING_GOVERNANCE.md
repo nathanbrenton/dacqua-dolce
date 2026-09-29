@@ -185,3 +185,38 @@ it with a different amount. Administrator/developer authorization is required
 for a true catalog-price override. When a product intentionally has no catalog
 amount because it is private-quote/no-online-price, employee-entered quote
 pricing is allowed and becomes part of the immutable commercial snapshot.
+
+## PT21 fulfillment governance
+
+Payment state and physical fulfillment state are separate concerns. New
+quote-origin orders remain in the authoritative payment state `paid` after a
+verified successful payment while a separate fulfillment state advances through:
+
+1. `not_started`
+2. `supplier_ordered`
+3. `received_ready`
+4. `shipped`
+5. `delivered`
+
+The existing `OrderStatus` values such as `processing`, `shipped`, and
+`delivered` remain for backward compatibility with historical order machinery;
+PT21 does not use those values as the new fulfillment workflow.
+
+Fulfillment is manual-first. Operations staff record the supplier order step,
+may retain an internal supplier order reference, mark equipment received/ready,
+and then record carrier + tracking number when the order ships. An optional
+tracking URL must use HTTPS. Customer-facing order views never expose the
+supplier order reference.
+
+Estimated lead time is copied from the immutable formal-quote line into the
+order-item snapshot. This prevents later catalog inventory edits from silently
+rewriting what the customer was told at quote time.
+
+Shipment tracking becomes customer-visible only after a shipment record exists.
+PT21 supports one shipment record per order. Partial/multi-shipment behavior and
+manufacturer API/EDI automation remain deliberately unimplemented until actual
+business/provider requirements justify them.
+
+Fulfillment transitions are forward-only and require the order to remain in the
+`paid` payment state. Each transition is audited. Cancellation/refund policy
+remains separate from fulfillment and must not be inferred from this workflow.

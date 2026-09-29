@@ -5383,3 +5383,30 @@ summary {
     grid-template-columns: 1fr;
   }
 }
+
+
+.order-fulfillment-controls {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.order-fulfillment-summary,
+.order-tracking-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: center;
+}
+
+.order-fulfillment-shipping-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+}
+
+.order-tracking-summary a {
+  overflow-wrap: anywhere;
+}

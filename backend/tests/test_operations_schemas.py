@@ -6,6 +6,7 @@ from app.models.catalog import (
     PricingPolicyMode,
     ProductRelationshipType,
 )
+from app.models.commerce import FulfillmentStatus
 from app.schemas.operations import (
     InventoryUpdateRequest,
     OperationsInventoryRead,
@@ -13,6 +14,7 @@ from app.schemas.operations import (
     OperationsProductRead,
     OperationsProductRelationshipRead,
     OperationsSummaryRead,
+    OrderFulfillmentUpdate,
     PricingUpdateRequest,
     ProductRelationshipCreateRequest,
     ProductRelationshipUpdateRequest,
@@ -201,3 +203,20 @@ def test_blank_inventory_lead_time_becomes_none() -> None:
     )
 
     assert payload.estimated_lead_time is None
+
+
+def test_fulfillment_update_strips_optional_text() -> None:
+    payload = OrderFulfillmentUpdate(
+        status=FulfillmentStatus.supplier_ordered,
+        supplier_order_reference="  PO-12345  ",
+    )
+
+    assert payload.supplier_order_reference == "PO-12345"
+
+
+def test_fulfillment_update_forbids_unknown_fields() -> None:
+    with pytest.raises(ValidationError):
+        OrderFulfillmentUpdate(
+            status=FulfillmentStatus.received_ready,
+            internal_note="not part of fulfillment contract",
+        )

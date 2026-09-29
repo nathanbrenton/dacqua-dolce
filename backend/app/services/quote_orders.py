@@ -4,7 +4,12 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models.commerce import Order, OrderItem, OrderStatus
+from app.models.commerce import (
+    FulfillmentStatus,
+    Order,
+    OrderItem,
+    OrderStatus,
+)
 from app.models.identity import User
 from app.models.quote import FormalQuote, FormalQuoteStatus
 from app.services.audit import record_audit_event
@@ -101,6 +106,9 @@ def create_order_from_approved_quote(
                 unit_amount_minor=item.unit_amount_minor,
                 line_total_minor=item.line_total_minor,
                 currency=item.currency.upper(),
+                estimated_lead_time_snapshot=(
+                    item.estimated_lead_time_snapshot
+                ),
             )
         )
 
@@ -114,6 +122,7 @@ def create_order_from_approved_quote(
         user_id=customer_user.id,
         formal_quote_id=formal_quote.id,
         status=OrderStatus.awaiting_payment,
+        fulfillment_status=FulfillmentStatus.not_started,
         total_amount_minor=formal_quote.subtotal_amount_minor,
         currency=formal_quote.currency.upper(),
     )
