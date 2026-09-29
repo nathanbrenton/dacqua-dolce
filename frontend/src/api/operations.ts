@@ -117,6 +117,35 @@ export type OperationsCommunicationReply = {
   thread: OperationsCommunicationThreadDetail;
 };
 
+export type OperationsFormalQuoteItem = {
+  id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  sku: string;
+  name: string;
+  quantity: number;
+  unit_amount_minor: number;
+  line_total_minor: number;
+  currency: string;
+  pricing_policy_mode: string;
+  estimated_lead_time: string | null;
+};
+
+export type OperationsFormalQuote = {
+  id: string;
+  revision_number: number;
+  status: "draft" | "presented" | "approved" | "superseded";
+  customer_user_id: string | null;
+  authored_by_user_id: string | null;
+  currency: string;
+  subtotal_amount_minor: number;
+  customer_note: string | null;
+  presented_at: string | null;
+  approved_at: string | null;
+  created_at: string;
+  items: OperationsFormalQuoteItem[];
+};
+
 export type OperationsQuote = {
   id: string;
   product_id: string | null;
@@ -131,6 +160,7 @@ export type OperationsQuote = {
   internal_notes: string | null;
   status: string;
   created_at: string;
+  formal_quotes: OperationsFormalQuote[];
 };
 
 export type OperationsCustomerAddress = {
@@ -429,6 +459,36 @@ export function updateQuoteNotes(
     {
       internal_notes: internalNotes,
     },
+  );
+}
+
+
+export function createFormalQuote(
+  quoteId: string,
+  payload: {
+    items: Array<{
+      product_id: string;
+      variant_id: string | null;
+      quantity: number;
+      unit_amount_minor: number | null;
+    }>;
+    customer_note: string | null;
+  },
+): Promise<OperationsFormalQuote> {
+  return writeJson(
+    `/api/operations/quotes/${encodeURIComponent(quoteId)}/formal-quotes`,
+    "POST",
+    payload,
+  );
+}
+
+export function presentFormalQuote(
+  formalQuoteId: string,
+): Promise<OperationsFormalQuote> {
+  return writeJson(
+    `/api/operations/formal-quotes/${encodeURIComponent(formalQuoteId)}/present`,
+    "POST",
+    {},
   );
 }
 

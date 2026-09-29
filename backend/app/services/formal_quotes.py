@@ -1,0 +1,407 @@
+from dataclasses import dataclass
+from datetime import UTC, datetime
+
+from fastapi import HTTPException, status
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
+from app.models.catalog import (
+    PricingPolicyMode,
+    Product,
+    ProductInventory,
+    ProductPrice,
+    ProductVariant,
+)
+from app.models.identity import RoleName, User, UserRole, UserStatus
+from app.models.quote import (
+    FormalQuote,
+    FormalQuoteItem,
+    FormalQuoteStatus,
+    QuoteRequest,
+    QuoteRequestStatus,
+)
+from app.services.audit import record_audit_event
+from app.services.pricing import select_effective_price
+
+
+@dataclass(frozen=True)
+class FormalQuoteLineInput:
+    product_id: object
+    variant_id: object | None
+    quantity: int
+    unit_amount_minor: int | None
+
+
+def _customer_account_for_request(
+    db: Session,
+    request: QuoteRequest,
+) -> User | None:
+    if request.user_id is not None:
+        user = db.get(User, request.user_id)
+        if user is not None and user.status == UserStatus.active:
+            return user
+
+    return db.scalar(
+        select(User)
+        .join(UserRole, UserRole.user_id == User.id)
+        .where(
+            User.email == request.email,
+            User.status == UserStatus.active,
+            UserRole.role == RoleName.customer,
+        )
+    )
+
+
+def _inventory_for_line(
+    db: Session,
+    *,
+    product_id: object,
+    variant_id: object | None,
+) -> ProductInventory | None:
+    if variant_id is not None:
+        row = db.scalar(
+            select(ProductInventory).where(
+                ProductInventory.product_id == product_id,
+                ProductInventory.variant_id == variant_id,
+            )
+        )
+        if row is not None:
+            return row
+
+    return db.scalar(
+        select(ProductInventory).where(
+            ProductInventory.product_id == product_id,
+            ProductInventory.variant_id.is_(None),
+        )
+    )
+
+
+def _line_snapshot(
+    db: Session,
+    *,
+    line: FormalQuoteLineInput,
+    allow_catalog_price_override: bool,
+) -> tuple[FormalQuoteItem, str]:
+    product = db.get(Product, line.product_id)
+    if product is None or not product.active:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Quote line product is unavailable.",
+        )
+
+    variant: ProductVariant | None = None
+    if line.variant_id is not None:
+        variant = db.get(ProductVariant, line.variant_id)
+        if (
+            variant is None
+            or not variant.active
+            or variant.product_id != product.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Quote line variant is unavailable for that product.",
+            )
+
+    prices = list(
+        db.scalars(
+            select(ProductPrice).where(
+                ProductPrice.product_id == product.id,
+            )
+        ).all()
+    )
+    effective_price = select_effective_price(
+        prices,
+        variant_id=(variant.id if variant is not None else None),
+    )
+    if effective_price is None and variant is not None:
+        effective_price = select_effective_price(
+            prices,
+            variant_id=None,
+        )
+
+    catalog_amount = (
+        effective_price.amount_minor
+        if effective_price is not None
+        else None
+    )
+    requested_amount = line.unit_amount_minor
+
+    if catalog_amount is not None:
+        if requested_amount is None:
+            unit_amount = catalog_amount
+        elif requested_amount != catalog_amount:
+            if not allow_catalog_price_override:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=(
+                        "Administrator authorization is required to override "
+                        "the current catalog price."
+                    ),
+                )
+            unit_amount = requested_amount
+        else:
+            unit_amount = requested_amount
+    else:
+        if requested_amount is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=(
+                    "Enter a quoted unit price for products without an "
+                    "authoritative catalog amount."
+                ),
+            )
+        unit_amount = requested_amount
+
+    currency = (
+        effective_price.currency
+        if effective_price is not None
+        else "USD"
+    ).upper()
+    pricing_mode = (
+        effective_price.pricing_policy_mode.value
+        if effective_price is not None
+        else PricingPolicyMode.NO_ONLINE_PRICE.value
+    )
+    inventory = _inventory_for_line(
+        db,
+        product_id=product.id,
+        variant_id=(variant.id if variant is not None else None),
+    )
+
+    name_snapshot = product.name
+    sku_snapshot = product.sku
+    if variant is not None:
+        name_snapshot = f"{product.name} — {variant.display_name}"
+        sku_snapshot = variant.sku
+
+    item = FormalQuoteItem(
+        product_id=product.id,
+        variant_id=(variant.id if variant is not None else None),
+        sku_snapshot=sku_snapshot,
+        name_snapshot=name_snapshot,
+        quantity=line.quantity,
+        unit_amount_minor=unit_amount,
+        line_total_minor=unit_amount * line.quantity,
+        currency=currency,
+        pricing_policy_mode_snapshot=pricing_mode,
+        estimated_lead_time_snapshot=(
+            inventory.estimated_lead_time
+            if inventory is not None
+            else None
+        ),
+    )
+    return item, currency
+
+
+def create_formal_quote_revision(
+    db: Session,
+    *,
+    quote_request: QuoteRequest,
+    lines: list[FormalQuoteLineInput],
+    customer_note: str | None,
+    actor_user: User,
+    actor_roles: set[RoleName],
+) -> FormalQuote:
+    approved = db.scalar(
+        select(FormalQuote.id).where(
+            FormalQuote.quote_request_id == quote_request.id,
+            FormalQuote.status == FormalQuoteStatus.approved,
+        )
+    )
+    if approved is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "This request already has an approved quote. "
+                "Create the next commercial workflow before revising it."
+            ),
+        )
+
+    for draft in db.scalars(
+        select(FormalQuote).where(
+            FormalQuote.quote_request_id == quote_request.id,
+            FormalQuote.status == FormalQuoteStatus.draft,
+        )
+    ):
+        draft.status = FormalQuoteStatus.superseded
+
+    revision_number = (
+        db.scalar(
+            select(func.max(FormalQuote.revision_number)).where(
+                FormalQuote.quote_request_id == quote_request.id,
+            )
+        )
+        or 0
+    ) + 1
+
+    allow_override = not actor_roles.isdisjoint(
+        {RoleName.administrator, RoleName.developer}
+    )
+    items: list[FormalQuoteItem] = []
+    currencies: set[str] = set()
+
+    for sort_order, line in enumerate(lines):
+        item, currency = _line_snapshot(
+            db,
+            line=line,
+            allow_catalog_price_override=allow_override,
+        )
+        item.sort_order = sort_order
+        items.append(item)
+        currencies.add(currency)
+
+    if len(currencies) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="All formal quote lines must use the same currency.",
+        )
+
+    subtotal = sum(item.line_total_minor for item in items)
+    formal_quote = FormalQuote(
+        quote_request_id=quote_request.id,
+        revision_number=revision_number,
+        status=FormalQuoteStatus.draft,
+        customer_user_id=quote_request.user_id,
+        authored_by_user_id=actor_user.id,
+        currency=currencies.pop(),
+        subtotal_amount_minor=subtotal,
+        customer_note=customer_note,
+        items=items,
+    )
+    db.add(formal_quote)
+    db.flush()
+
+    record_audit_event(
+        db,
+        action="formal_quote.created",
+        entity_type="formal_quote",
+        entity_id=str(formal_quote.id),
+        actor_user_id=actor_user.id,
+        metadata={
+            "quote_request_id": str(quote_request.id),
+            "revision_number": revision_number,
+            "line_count": len(items),
+            "subtotal_amount_minor": subtotal,
+            "currency": formal_quote.currency,
+        },
+    )
+
+    return formal_quote
+
+
+def present_formal_quote(
+    db: Session,
+    *,
+    formal_quote: FormalQuote,
+    actor_user: User,
+) -> FormalQuote:
+    if formal_quote.status != FormalQuoteStatus.draft:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only a draft quote can be presented to a customer.",
+        )
+
+    request = db.get(QuoteRequest, formal_quote.quote_request_id)
+    if request is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer request not found.",
+        )
+
+    approved = db.scalar(
+        select(FormalQuote.id).where(
+            FormalQuote.quote_request_id == request.id,
+            FormalQuote.status == FormalQuoteStatus.approved,
+        )
+    )
+    if approved is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An approved quote already locks this request's commercial terms.",
+        )
+
+    customer = _customer_account_for_request(db, request)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "A customer account using the request email is required "
+                "before this quote can be presented for approval."
+            ),
+        )
+
+    for previous in db.scalars(
+        select(FormalQuote).where(
+            FormalQuote.quote_request_id == request.id,
+            FormalQuote.status == FormalQuoteStatus.presented,
+            FormalQuote.id != formal_quote.id,
+        )
+    ):
+        previous.status = FormalQuoteStatus.superseded
+
+    now = datetime.now(UTC)
+    formal_quote.customer_user_id = customer.id
+    formal_quote.status = FormalQuoteStatus.presented
+    formal_quote.presented_at = now
+    request.user_id = customer.id
+    request.status = QuoteRequestStatus.quoted
+
+    record_audit_event(
+        db,
+        action="formal_quote.presented",
+        entity_type="formal_quote",
+        entity_id=str(formal_quote.id),
+        actor_user_id=actor_user.id,
+        metadata={
+            "quote_request_id": str(request.id),
+            "revision_number": formal_quote.revision_number,
+        },
+    )
+    return formal_quote
+
+
+def approve_formal_quote(
+    db: Session,
+    *,
+    formal_quote: FormalQuote,
+    customer_user: User,
+) -> FormalQuote:
+    if formal_quote.customer_user_id != customer_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote not found.",
+        )
+    if formal_quote.status != FormalQuoteStatus.presented:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Only a currently presented quote can be approved.",
+        )
+
+    for draft in db.scalars(
+        select(FormalQuote).where(
+            FormalQuote.quote_request_id == formal_quote.quote_request_id,
+            FormalQuote.status == FormalQuoteStatus.draft,
+            FormalQuote.id != formal_quote.id,
+        )
+    ):
+        draft.status = FormalQuoteStatus.superseded
+
+    now = datetime.now(UTC)
+    formal_quote.status = FormalQuoteStatus.approved
+    formal_quote.approved_at = now
+    formal_quote.approved_by_user_id = customer_user.id
+
+    record_audit_event(
+        db,
+        action="formal_quote.approved",
+        entity_type="formal_quote",
+        entity_id=str(formal_quote.id),
+        actor_user_id=customer_user.id,
+        metadata={
+            "quote_request_id": str(formal_quote.quote_request_id),
+            "revision_number": formal_quote.revision_number,
+            "subtotal_amount_minor": formal_quote.subtotal_amount_minor,
+            "currency": formal_quote.currency,
+        },
+    )
+    return formal_quote

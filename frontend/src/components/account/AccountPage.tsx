@@ -11,7 +11,9 @@ import {
   createAddress,
   deleteAddress,
   getCommunicationPreferences,
+  approveCustomerFormalQuote,
   getCustomerEquipment,
+  getCustomerFormalQuotes,
   getCustomerRequests,
   getProfile,
   updateCommunicationPreferences,
@@ -19,6 +21,7 @@ import {
   type AddressCreate,
   type CommunicationPreferences,
   type CustomerEquipment,
+  type CustomerFormalQuote,
   type CustomerProfile,
   type CustomerRequestSummary,
 } from "../../api/account";
@@ -513,6 +516,8 @@ export function AccountPage({
     useState<CommunicationPreferences | null>(null);
   const [customerRequests, setCustomerRequests] =
     useState<CustomerRequestSummary[]>([]);
+  const [formalQuotes, setFormalQuotes] =
+    useState<CustomerFormalQuote[]>([]);
   const [customerEquipment, setCustomerEquipment] =
     useState<CustomerEquipment[]>([]);
   const [error, setError] =
@@ -563,6 +568,7 @@ export function AccountPage({
       getOrders(),
       getCommunicationPreferences(),
       getCustomerRequests(),
+      getCustomerFormalQuotes(),
     ])
       .then(
         ([
@@ -571,12 +577,14 @@ export function AccountPage({
           orderResult,
           preferenceResult,
           requestResult,
+          formalQuoteResult,
         ]) => {
           setProfile(profileResult);
           setCart(cartResult);
           setOrders(orderResult);
           setCommunicationPreferences(preferenceResult);
           setCustomerRequests(requestResult);
+          setFormalQuotes(formalQuoteResult);
           setError(null);
         },
       )
@@ -591,6 +599,34 @@ export function AccountPage({
     authenticated,
     isCustomer,
   ]);
+
+  async function approveFormalQuote(quote: CustomerFormalQuote): Promise<void> {
+    const confirmed = window.confirm(
+      `Approve quote revision ${quote.revision_number} for ${money(
+        quote.subtotal_amount_minor,
+        quote.currency,
+      )}?`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setError(null);
+    setSaveNotice(null);
+    try {
+      const updated = await approveCustomerFormalQuote(quote.id);
+      setFormalQuotes((current) => current.map((candidate) => (
+        candidate.id === updated.id ? updated : candidate
+      )));
+      setSaveNotice(`Quote revision ${updated.revision_number} approved.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Quote approval failed.",
+      );
+    }
+  }
 
   if (
     account === null
@@ -1455,6 +1491,64 @@ export function AccountPage({
                     {request.requires_third_party_lab ? <span>Lab testing</span> : null}
                     {request.human_review ? <span>Human review</span> : null}
                   </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="account-panel account-formal-quotes-panel">
+          <p className="eyebrow">Quotes</p>
+          <h2>Review and approve formal quotes.</h2>
+          {formalQuotes.length === 0 ? (
+            <p className="account-muted">No formal quotes are ready for this account yet.</p>
+          ) : (
+            <div className="account-formal-quote-list">
+              {formalQuotes.map((quote) => (
+                <article key={quote.id} className="account-formal-quote">
+                  <header>
+                    <div>
+                      <strong>Quote revision {quote.revision_number}</strong>
+                      <p>{quote.status.replaceAll("_", " ")}</p>
+                    </div>
+                    <strong>{money(quote.subtotal_amount_minor, quote.currency)}</strong>
+                  </header>
+
+                  <div className="account-formal-quote-lines">
+                    {quote.items.map((item) => (
+                      <div key={`${quote.id}-${item.sku}-${item.name}`}>
+                        <span>{item.quantity} × {item.name}</span>
+                        <strong>{money(item.line_total_minor, item.currency)}</strong>
+                        {item.estimated_lead_time !== null ? (
+                          <small>Estimated lead time: {item.estimated_lead_time}</small>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  {quote.customer_note !== null ? (
+                    <p className="account-formal-quote-note">{quote.customer_note}</p>
+                  ) : null}
+
+                  {quote.status === "presented" ? (
+                    <button
+                      type="button"
+                      className="account-action"
+                      onClick={() => {
+                        void approveFormalQuote(quote);
+                      }}
+                    >
+                      Approve This Quote
+                    </button>
+                  ) : quote.status === "approved" ? (
+                    <p className="account-formal-quote-approved">
+                      Approved {quote.approved_at !== null
+                        ? new Date(quote.approved_at).toLocaleString()
+                        : ""}
+                    </p>
+                  ) : (
+                    <p className="account-muted">This revision has been superseded.</p>
+                  )}
                 </article>
               ))}
             </div>

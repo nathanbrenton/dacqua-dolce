@@ -156,3 +156,32 @@ Operations actions emit audit events for sensitive or material state changes,
 including quote status, pricing/inventory, and identity-role changes.
 
 Audit Log visibility is developer-only.
+
+## Formal quote governance
+
+Formal quotes are a distinct commercial layer between a customer request and a
+future paid order. A `QuoteRequest` records the inquiry/qualification context;
+a formal quote records exactly what D'Acqua Dolce offered commercially.
+
+PT19.2 uses immutable quote revisions rather than editing an already presented
+quote in place. Each revision snapshots:
+
+- catalog product/variant identity and SKU/name;
+- quantity;
+- quoted unit amount and line total;
+- currency;
+- pricing-policy mode at quote creation time;
+- applicable estimated lead time when recorded in inventory; and
+- an optional customer-facing note.
+
+A draft is private to Operations. Presentation requires a customer account tied
+to the request email; only then does the revision become visible in the customer
+account. Customer approval records the approving user and timestamp against that
+exact revision. Payment and order creation remain separate downstream actions.
+
+Pricing authorization remains server-side. If a current authoritative catalog
+amount exists, ordinary Operations staff may use that amount but may not replace
+it with a different amount. Administrator/developer authorization is required
+for a true catalog-price override. When a product intentionally has no catalog
+amount because it is private-quote/no-online-price, employee-entered quote
+pricing is allowed and becomes part of the immutable commercial snapshot.

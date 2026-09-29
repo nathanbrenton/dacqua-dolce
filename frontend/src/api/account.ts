@@ -67,6 +67,30 @@ export type CustomerEquipment = {
 };
 
 
+export type CustomerFormalQuoteItem = {
+  sku: string;
+  name: string;
+  quantity: number;
+  unit_amount_minor: number;
+  line_total_minor: number;
+  currency: string;
+  estimated_lead_time: string | null;
+};
+
+export type CustomerFormalQuote = {
+  id: string;
+  request_id: string;
+  revision_number: number;
+  status: "presented" | "approved" | "superseded";
+  currency: string;
+  subtotal_amount_minor: number;
+  customer_note: string | null;
+  presented_at: string | null;
+  approved_at: string | null;
+  created_at: string;
+  items: CustomerFormalQuoteItem[];
+};
+
 export type CustomerRequestSummary = {
   id: string;
   status: string;
@@ -257,4 +281,38 @@ export async function getCustomerEquipment(): Promise<CustomerEquipment[]> {
     throw new Error(await readError(response));
   }
   return response.json() as Promise<CustomerEquipment[]>;
+}
+
+export async function getCustomerFormalQuotes(): Promise<CustomerFormalQuote[]> {
+  const response = await fetch(
+    "/api/account/quotes",
+    { credentials: "include", cache: "no-store" },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json() as Promise<CustomerFormalQuote[]>;
+}
+
+export async function approveCustomerFormalQuote(
+  quoteId: string,
+): Promise<CustomerFormalQuote> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/account/quotes/${encodeURIComponent(quoteId)}/approve`,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: "{}",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json() as Promise<CustomerFormalQuote>;
 }

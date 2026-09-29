@@ -37,10 +37,15 @@ from app.models.identity import (
     User,
     UserRole,
 )
-from app.models.quote import QuoteRequest, QuoteRequestStatus
+from app.models.quote import (
+    FormalQuote,
+    QuoteRequest,
+    QuoteRequestStatus,
+)
 from app.schemas.operations import (
     CustomerEquipmentCreateRequest,
     CustomerEquipmentUpdateRequest,
+    FormalQuoteCreate,
     InventoryUpdateRequest,
     OperationsAuditEventRead,
     OperationsCommunicationAttachmentRead,
@@ -56,6 +61,8 @@ from app.schemas.operations import (
     OperationsCustomerAddressRead,
     OperationsCustomerEquipmentRead,
     OperationsCustomerRead,
+    OperationsFormalQuoteItemRead,
+    OperationsFormalQuoteRead,
     OperationsInventoryRead,
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
@@ -84,6 +91,11 @@ from app.services.communications_reply import (
     resolve_communication_reply_target_details,
     send_communication_reply,
 )
+from app.services.formal_quotes import (
+    FormalQuoteLineInput,
+    create_formal_quote_revision,
+    present_formal_quote,
+)
 from app.services.operations_access import (
     require_audit_log_read,
     require_customer_equipment_write,
@@ -103,6 +115,64 @@ def product_name_for_quote(
         return None
 
     return db.scalar(select(Product.name).where(Product.id == product_id))
+
+
+def operations_formal_quote_read(
+    formal_quote: FormalQuote,
+) -> OperationsFormalQuoteRead:
+    return OperationsFormalQuoteRead(
+        id=str(formal_quote.id),
+        revision_number=formal_quote.revision_number,
+        status=formal_quote.status.value,
+        customer_user_id=(
+            str(formal_quote.customer_user_id)
+            if formal_quote.customer_user_id is not None
+            else None
+        ),
+        authored_by_user_id=(
+            str(formal_quote.authored_by_user_id)
+            if formal_quote.authored_by_user_id is not None
+            else None
+        ),
+        currency=formal_quote.currency,
+        subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+        customer_note=formal_quote.customer_note,
+        presented_at=(
+            formal_quote.presented_at.isoformat()
+            if formal_quote.presented_at is not None
+            else None
+        ),
+        approved_at=(
+            formal_quote.approved_at.isoformat()
+            if formal_quote.approved_at is not None
+            else None
+        ),
+        created_at=formal_quote.created_at.isoformat(),
+        items=[
+            OperationsFormalQuoteItemRead(
+                id=str(item.id),
+                product_id=(
+                    str(item.product_id)
+                    if item.product_id is not None
+                    else None
+                ),
+                variant_id=(
+                    str(item.variant_id)
+                    if item.variant_id is not None
+                    else None
+                ),
+                sku=item.sku_snapshot,
+                name=item.name_snapshot,
+                quantity=item.quantity,
+                unit_amount_minor=item.unit_amount_minor,
+                line_total_minor=item.line_total_minor,
+                currency=item.currency,
+                pricing_policy_mode=item.pricing_policy_mode_snapshot,
+                estimated_lead_time=item.estimated_lead_time_snapshot,
+            )
+            for item in formal_quote.items
+        ],
+    )
 
 
 def operations_quote_read(
@@ -143,6 +213,10 @@ def operations_quote_read(
         internal_notes=quote.internal_notes,
         status=quote.status.value,
         created_at=quote.created_at.isoformat(),
+        formal_quotes=[
+            operations_formal_quote_read(formal_quote)
+            for formal_quote in getattr(quote, "formal_quotes", [])
+        ],
     )
 
 
@@ -907,7 +981,14 @@ def list_quotes(
     require_operations(db, user=current_user)
 
     quotes = db.scalars(
-        select(QuoteRequest).order_by(QuoteRequest.created_at.desc()).limit(200)
+        select(QuoteRequest)
+        .options(
+            selectinload(QuoteRequest.formal_quotes).selectinload(
+                FormalQuote.items
+            )
+        )
+        .order_by(QuoteRequest.created_at.desc())
+        .limit(200)
     ).all()
 
     return [
@@ -1941,3 +2022,74 @@ def update_product_inventory(
         )
 
     return operations_product_read(db, product=refreshed)
+
+
+@router.post(
+    "/quotes/{quote_id}/formal-quotes",
+    response_model=OperationsFormalQuoteRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_formal_quote(
+    quote_id: uuid.UUID,
+    payload: FormalQuoteCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsFormalQuoteRead:
+    actor_roles = require_operations(db, user=current_user)
+    quote = db.get(QuoteRequest, quote_id)
+    if quote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote request not found.",
+        )
+
+    formal_quote = create_formal_quote_revision(
+        db,
+        quote_request=quote,
+        lines=[
+            FormalQuoteLineInput(
+                product_id=item.product_id,
+                variant_id=item.variant_id,
+                quantity=item.quantity,
+                unit_amount_minor=item.unit_amount_minor,
+            )
+            for item in payload.items
+        ],
+        customer_note=payload.customer_note,
+        actor_user=current_user,
+        actor_roles=actor_roles,
+    )
+    db.commit()
+    db.refresh(formal_quote)
+    return operations_formal_quote_read(formal_quote)
+
+
+@router.post(
+    "/formal-quotes/{formal_quote_id}/present",
+    response_model=OperationsFormalQuoteRead,
+)
+def present_quote_to_customer(
+    formal_quote_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsFormalQuoteRead:
+    require_operations(db, user=current_user)
+    formal_quote = db.scalar(
+        select(FormalQuote)
+        .options(selectinload(FormalQuote.items))
+        .where(FormalQuote.id == formal_quote_id)
+    )
+    if formal_quote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Formal quote not found.",
+        )
+
+    present_formal_quote(
+        db,
+        formal_quote=formal_quote,
+        actor_user=current_user,
+    )
+    db.commit()
+    db.refresh(formal_quote)
+    return operations_formal_quote_read(formal_quote)

@@ -38,6 +38,7 @@ import {
   type OperationsCommunication,
   type OperationsCustomer,
   type OperationsOrder,
+  type OperationsFormalQuote,
   type OperationsProduct,
   type OperationsQuote,
   type OperationsSummary,
@@ -55,6 +56,9 @@ import {
 import {
   CommunicationsInbox,
 } from "./CommunicationsInbox";
+import {
+  FormalQuoteComposer,
+} from "./FormalQuoteComposer";
 
 import {
   type AppearanceMode,
@@ -253,6 +257,9 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "quote.notes_updated": "Request notes updated",
   "quote.requested": "Customer request submitted",
   "quote.status_changed": "Request status changed",
+  "formal_quote.created": "Formal quote created",
+  "formal_quote.presented": "Formal quote presented",
+  "formal_quote.approved": "Formal quote approved",
 };
 
 const AUDIT_ENTITY_LABELS: Record<string, string> = {
@@ -265,6 +272,7 @@ const AUDIT_ENTITY_LABELS: Record<string, string> = {
   product: "Product",
   product_relationship: "Product relationship",
   quote_request: "Customer request",
+  formal_quote: "Formal quote",
   user: "User account",
   user_session: "User session",
 };
@@ -955,6 +963,32 @@ export function OperationsPage({
         </section>
       </main>
     );
+  }
+
+  function mergeFormalQuote(
+    requestId: string,
+    formalQuote: OperationsFormalQuote,
+  ): void {
+    setQuotes((current) => current.map((quote) => {
+      if (quote.id !== requestId) {
+        return quote;
+      }
+
+      const withoutRevision = quote.formal_quotes
+        .filter((candidate) => candidate.id !== formalQuote.id)
+        .map((candidate) => (
+          formalQuote.status === "presented"
+          && candidate.status === "presented"
+            ? { ...candidate, status: "superseded" as const }
+            : candidate
+        ));
+
+      return {
+        ...quote,
+        status: formalQuote.status === "presented" ? "quoted" : quote.status,
+        formal_quotes: [...withoutRevision, formalQuote],
+      };
+    }));
   }
 
   async function saveQuoteStatus(
@@ -1980,6 +2014,12 @@ export function OperationsPage({
                       </p>
                     )}
                   </section>
+
+                  <FormalQuoteComposer
+                    quote={quote}
+                    products={products}
+                    onChanged={mergeFormalQuote}
+                  />
 
                   <section
                     className={

@@ -153,6 +153,30 @@ class CustomerRequestRead(BaseModel):
     requires_third_party_lab: bool = False
 
 
+class CustomerFormalQuoteItemRead(BaseModel):
+    sku: str
+    name: str
+    quantity: int
+    unit_amount_minor: int
+    line_total_minor: int
+    currency: str
+    estimated_lead_time: str | None = None
+
+
+class CustomerFormalQuoteRead(BaseModel):
+    id: str
+    request_id: str
+    revision_number: int
+    status: str
+    currency: str
+    subtotal_amount_minor: int
+    customer_note: str | None
+    presented_at: str | None
+    approved_at: str | None
+    created_at: str
+    items: list[CustomerFormalQuoteItemRead] = Field(default_factory=list)
+
+
 class CustomerEquipmentDocumentRead(BaseModel):
     title: str
     document_type: str

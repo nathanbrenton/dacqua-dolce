@@ -285,3 +285,18 @@ Production validation completed at runtime revision `ce8f92ff2e60e06fc8e6de809f2
 | Ask whether neighbors/friends/family use filtration and why | Implemented as optional research context | Existing tri-state network-use input is supplemented by optional free-text context. It is stored with the inquiry but does not alter the technical recommendation algorithm. |
 | Use early assisted sales to improve education/recommendation logic | Architecture preserved | Recommendation inputs and server-authored decision snapshots remain versioned so observed gaps can drive later policy revisions without rewriting historical requests. |
 | Direct whole-house checkout | Explicitly deferred | PT19.1 does not enable self-service whole-house checkout. Formal quote creation/approval is the next assisted-sales dependency; payment remains downstream of an approved quote. |
+
+## PT19.2 — Formal quote revisions and customer approval
+
+| Client direction | Classification | Implementation |
+| --- | --- | --- |
+| Employee should efficiently turn an inquiry into a written quote | Implemented foundation | Operations can create a formal quote directly from an existing customer request using catalog products/variants, quantity, customer-facing note, and price snapshots. |
+| Customer should explicitly approve a quote before payment | Implemented | Presented quotes appear in the signed-in customer account and require an explicit approval action. Approval records the exact immutable revision, customer identity, and timestamp. Payment remains a downstream milestone. |
+| Early whole-house sales remain assisted | Preserved | A formal quote must originate from the employee-facing request workflow. PT19.2 does not enable anonymous/self-service whole-house checkout. |
+| Preserve commercial history when a quote changes | Implemented | Formal quotes are revisioned. New drafts supersede older drafts; presenting a new revision supersedes the prior presented revision without rewriting its historical line-item snapshot. |
+| Fixed/catalog pricing remains authoritative | Implemented guardrail | When an authoritative catalog amount exists, employee-authored quotes use it by default. A different amount requires administrator/developer authorization. |
+| Employee-entered custom quotes | Implemented for private/no-price products | Where no authoritative catalog amount exists, Operations staff may enter the quoted amount needed for the assisted-sale workflow. |
+| Administrator-only price overrides | Implemented | Changing a current authoritative catalog amount inside a formal quote is rejected for ordinary employee access and allowed only to administrator/developer roles. |
+| Estimated lead time should be visible before sale | Implemented quote snapshot | Each quote line records the current applicable estimated lead time from inventory when available, so later inventory changes do not rewrite what the customer was shown. |
+| Quote should be tied to the customer account | Implemented presentation gate | Drafts may be prepared before account linkage, but presentation/approval requires a customer account associated with the request email. The presentation step safely links an existing customer account where available. |
+| Payment | Explicitly deferred | An approved formal quote is the authoritative handoff to the next payment/order milestone; PT19.2 does not create payment-provider references or orders. |

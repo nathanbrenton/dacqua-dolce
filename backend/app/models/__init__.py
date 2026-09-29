@@ -55,6 +55,9 @@ from app.models.identity import (
     UserStatus,
 )
 from app.models.quote import (
+    FormalQuote,
+    FormalQuoteItem,
+    FormalQuoteStatus,
     QuoteRequest,
     QuoteRequestStatus,
 )
@@ -83,6 +86,9 @@ __all__ = [
     "CustomerProfile",
     "EmailDelivery",
     "EmailDeliveryStatus",
+    "FormalQuote",
+    "FormalQuoteItem",
+    "FormalQuoteStatus",
     "InventoryStatus",
     "JurisdictionEligibility",
     "Manufacturer",

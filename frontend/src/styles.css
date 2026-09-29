@@ -5272,3 +5272,114 @@ summary {
   border: 1px solid var(--hairline);
   border-radius: var(--radius-field);
 }
+
+/* PT19.2 — revisioned formal quotes and customer approval */
+.operations-formal-quote {
+  display: grid;
+  gap: 14px;
+  padding: 18px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-formal-quote-history,
+.operations-formal-quote-builder,
+.account-formal-quote-list,
+.account-formal-quote-lines {
+  display: grid;
+  gap: 12px;
+}
+
+.operations-formal-quote-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-formal-quote-summary > div {
+  display: grid;
+  gap: 3px;
+}
+
+.operations-formal-quote-summary span,
+.operations-formal-quote-approved,
+.operations-save-notice {
+  color: var(--ink-muted);
+}
+
+.operations-formal-quote-line {
+  display: grid;
+  grid-template-columns: minmax(14rem, 2fr) minmax(11rem, 1.2fr) 6rem minmax(12rem, 1fr);
+  gap: 10px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-field);
+}
+
+.operations-formal-quote-line > .text-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.account-formal-quote-list {
+  margin-top: 12px;
+}
+
+.account-formal-quote {
+  display: grid;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.account-formal-quote header,
+.account-formal-quote-lines > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-formal-quote header > div,
+.account-formal-quote-lines > div {
+  min-width: 0;
+}
+
+.account-formal-quote header p,
+.account-formal-quote-note,
+.account-formal-quote-approved,
+.account-formal-quote-lines small {
+  margin: 0;
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.account-formal-quote-lines > div {
+  padding: 10px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.account-formal-quote-lines small {
+  flex-basis: 100%;
+}
+
+.account-formal-quote .account-action {
+  justify-self: start;
+}
+
+@media (max-width: 980px) {
+  .operations-formal-quote-line {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .operations-formal-quote-line {
+    grid-template-columns: 1fr;
+  }
+}

@@ -234,6 +234,55 @@ class OperationsCommunicationReplyRead(BaseModel):
     thread: OperationsCommunicationThreadDetailRead
 
 
+class FormalQuoteItemCreate(BaseModel):
+    product_id: uuid.UUID
+    variant_id: uuid.UUID | None = None
+    quantity: int = Field(default=1, ge=1, le=100)
+    unit_amount_minor: int | None = Field(default=None, ge=0)
+
+
+class FormalQuoteCreate(BaseModel):
+    items: list[FormalQuoteItemCreate] = Field(min_length=1, max_length=50)
+    customer_note: str | None = Field(default=None, max_length=4000)
+
+    @field_validator("customer_note")
+    @classmethod
+    def clean_customer_note(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class OperationsFormalQuoteItemRead(BaseModel):
+    id: str
+    product_id: str | None
+    variant_id: str | None
+    sku: str
+    name: str
+    quantity: int
+    unit_amount_minor: int
+    line_total_minor: int
+    currency: str
+    pricing_policy_mode: str
+    estimated_lead_time: str | None
+
+
+class OperationsFormalQuoteRead(BaseModel):
+    id: str
+    revision_number: int
+    status: str
+    customer_user_id: str | None
+    authored_by_user_id: str | None
+    currency: str
+    subtotal_amount_minor: int
+    customer_note: str | None
+    presented_at: str | None
+    approved_at: str | None
+    created_at: str
+    items: list[OperationsFormalQuoteItemRead] = Field(default_factory=list)
+
+
 class OperationsQuoteRead(BaseModel):
     id: str
     product_id: str | None
@@ -248,6 +297,7 @@ class OperationsQuoteRead(BaseModel):
     internal_notes: str | None
     status: str
     created_at: str
+    formal_quotes: list[OperationsFormalQuoteRead] = Field(default_factory=list)
 
 
 class OperationsCustomerEquipmentRead(BaseModel):

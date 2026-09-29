@@ -6,6 +6,7 @@ from fastapi import (
     status,
 )
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import (
     CurrentUser,
@@ -18,7 +19,11 @@ from app.models.customer import (
     CustomerEquipment,
     CustomerProfile,
 )
-from app.models.quote import QuoteRequest
+from app.models.quote import (
+    FormalQuote,
+    FormalQuoteStatus,
+    QuoteRequest,
+)
 from app.schemas.account import (
     AddressCreate,
     AddressRead,
@@ -26,6 +31,8 @@ from app.schemas.account import (
     CommunicationPreferencesUpdate,
     CustomerEquipmentDocumentRead,
     CustomerEquipmentRead,
+    CustomerFormalQuoteItemRead,
+    CustomerFormalQuoteRead,
     CustomerProfileRead,
     CustomerProfileUpdate,
     CustomerRequestRead,
@@ -33,6 +40,7 @@ from app.schemas.account import (
 from app.services.audit import (
     record_audit_event,
 )
+from app.services.formal_quotes import approve_formal_quote
 
 router = APIRouter(
     prefix="/account",
@@ -387,3 +395,97 @@ def get_customer_requests(
         )
 
     return results
+
+
+def customer_formal_quote_read(
+    formal_quote: FormalQuote,
+) -> CustomerFormalQuoteRead:
+    return CustomerFormalQuoteRead(
+        id=str(formal_quote.id),
+        request_id=str(formal_quote.quote_request_id),
+        revision_number=formal_quote.revision_number,
+        status=formal_quote.status.value,
+        currency=formal_quote.currency,
+        subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+        customer_note=formal_quote.customer_note,
+        presented_at=(
+            formal_quote.presented_at.isoformat()
+            if formal_quote.presented_at is not None
+            else None
+        ),
+        approved_at=(
+            formal_quote.approved_at.isoformat()
+            if formal_quote.approved_at is not None
+            else None
+        ),
+        created_at=formal_quote.created_at.isoformat(),
+        items=[
+            CustomerFormalQuoteItemRead(
+                sku=item.sku_snapshot,
+                name=item.name_snapshot,
+                quantity=item.quantity,
+                unit_amount_minor=item.unit_amount_minor,
+                line_total_minor=item.line_total_minor,
+                currency=item.currency,
+                estimated_lead_time=item.estimated_lead_time_snapshot,
+            )
+            for item in formal_quote.items
+        ],
+    )
+
+
+@router.get(
+    "/quotes",
+    response_model=list[CustomerFormalQuoteRead],
+)
+def get_customer_formal_quotes(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[CustomerFormalQuoteRead]:
+    rows = db.scalars(
+        select(FormalQuote)
+        .options(selectinload(FormalQuote.items))
+        .where(
+            FormalQuote.customer_user_id == current_user.id,
+            FormalQuote.status.in_(
+                (
+                    FormalQuoteStatus.presented,
+                    FormalQuoteStatus.approved,
+                    FormalQuoteStatus.superseded,
+                )
+            ),
+        )
+        .order_by(
+            FormalQuote.created_at.desc(),
+            FormalQuote.revision_number.desc(),
+        )
+    ).unique().all()
+
+    # The relationship is loaded while the request-scoped session is open.
+    return [customer_formal_quote_read(row) for row in rows]
+
+
+@router.post(
+    "/quotes/{formal_quote_id}/approve",
+    response_model=CustomerFormalQuoteRead,
+)
+def approve_customer_formal_quote(
+    formal_quote_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> CustomerFormalQuoteRead:
+    formal_quote = db.get(FormalQuote, formal_quote_id)
+    if formal_quote is None or formal_quote.customer_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote not found.",
+        )
+
+    approve_formal_quote(
+        db,
+        formal_quote=formal_quote,
+        customer_user=current_user,
+    )
+    db.commit()
+    db.refresh(formal_quote)
+    return customer_formal_quote_read(formal_quote)
