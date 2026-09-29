@@ -207,6 +207,118 @@ def remove_role(
     return 0
 
 
+def set_staff_role(
+    *,
+    email: str,
+    role: RoleName,
+    confirm_replace_all_roles: bool,
+) -> int:
+    normalized = normalized_email(email)
+
+    if not confirm_replace_all_roles:
+        print(
+            "ERROR: set-staff-role requires --confirm-replace-all-roles.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if role == RoleName.manager:
+        print(
+            "ERROR: manager is a legacy role and cannot be newly assigned.",
+            file=sys.stderr,
+        )
+        return 2
+
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == normalized))
+
+        if user is None:
+            print(
+                f"ERROR: no user found for {normalized}",
+                file=sys.stderr,
+            )
+            return 1
+
+        assignments = db.scalars(
+            select(UserRole).where(
+                UserRole.user_id == user.id,
+            )
+        ).all()
+
+        current_roles = {
+            assignment.role
+            for assignment in assignments
+        }
+
+        if current_roles == {role}:
+            print(
+                f"{normalized} already has exactly one role: {role.value}."
+            )
+            return 0
+
+        if (
+            RoleName.developer in current_roles
+            and role != RoleName.developer
+        ):
+            other_active_developers = (
+                db.scalar(
+                    select(func.count())
+                    .select_from(UserRole)
+                    .join(User, User.id == UserRole.user_id)
+                    .where(
+                        UserRole.role == RoleName.developer,
+                        UserRole.user_id != user.id,
+                        User.status == UserStatus.active,
+                    )
+                )
+                or 0
+            )
+
+            if other_active_developers == 0:
+                print(
+                    "ERROR: refusing to replace the final active developer role.",
+                    file=sys.stderr,
+                )
+                return 2
+
+        for assignment in assignments:
+            db.delete(assignment)
+
+        db.add(
+            UserRole(
+                user_id=user.id,
+                role=role,
+                assigned_by_user_id=None,
+            )
+        )
+
+        record_audit_event(
+            db,
+            action="identity.roles_replaced",
+            entity_type="user",
+            entity_id=str(user.id),
+            actor_user_id=None,
+            metadata={
+                "previous_roles": sorted(
+                    item.value
+                    for item in current_roles
+                ),
+                "new_roles": [role.value],
+                "source": "local_role_cli",
+                "mode": "replace_all_roles",
+            },
+        )
+
+        db.commit()
+
+        print(
+            f"Replaced all roles for {normalized}; "
+            f"effective role is now {role.value}."
+        )
+
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=("Manage D'Acqua Dolce operations roles for existing users.")
@@ -254,6 +366,34 @@ def build_parser() -> argparse.ArgumentParser:
         type=role_from_argument,
     )
 
+    set_parser = subparsers.add_parser(
+        "set-staff-role",
+        help=(
+            "Replace all roles on one existing account "
+            "with exactly one staff role."
+        ),
+    )
+
+    set_parser.add_argument(
+        "--email",
+        required=True,
+    )
+
+    set_parser.add_argument(
+        "--role",
+        required=True,
+        type=role_from_argument,
+    )
+
+    set_parser.add_argument(
+        "--confirm-replace-all-roles",
+        action="store_true",
+        help=(
+            "Required confirmation that all existing roles, "
+            "including customer, will be replaced."
+        ),
+    )
+
     return parser
 
 
@@ -274,6 +414,15 @@ def main() -> int:
         return remove_role(
             email=args.email,
             role=args.role,
+        )
+
+    if args.command == "set-staff-role":
+        return set_staff_role(
+            email=args.email,
+            role=args.role,
+            confirm_replace_all_roles=(
+                args.confirm_replace_all_roles
+            ),
         )
 
     parser.error("Unknown command.")
