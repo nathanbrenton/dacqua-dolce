@@ -18,7 +18,15 @@ TriState = Literal["yes", "no", "unsure"]
 
 class RecommendationContext(BaseModel):
     source_water: Literal["municipal", "well", "unsure"]
+    service_postal_code: str | None = Field(
+        default=None,
+        max_length=20,
+    )
     hard_water_signs: TriState
+    water_hardness: str | None = Field(
+        default=None,
+        max_length=120,
+    )
     bathrooms: Literal["1", "2", "3", "4", "5+", "unsure"]
     occupants: int | None = Field(default=None, ge=1)
     water_service_pipe_size: str | None = Field(
@@ -27,7 +35,20 @@ class RecommendationContext(BaseModel):
     )
     water_quality_report_read: TriState
     chlorine_chloramine_signs: TriState
+    chlorine_chloramine_details: str | None = Field(
+        default=None,
+        max_length=240,
+    )
     iron_manganese_concerns: TriState
+    iron_manganese_details: str | None = Field(
+        default=None,
+        max_length=240,
+    )
+    ph: float | None = Field(
+        default=None,
+        ge=0,
+        le=14,
+    )
     existing_equipment: str | None = Field(
         default=None,
         max_length=1000,
@@ -39,6 +60,10 @@ class RecommendationContext(BaseModel):
     drinking_water_ro: TriState
     water_test_results: TriState
     water_filtration_network: TriState
+    water_filtration_network_details: str | None = Field(
+        default=None,
+        max_length=1000,
+    )
     treatment_preference: Literal[
         "salt_free",
         "softened",
@@ -46,8 +71,13 @@ class RecommendationContext(BaseModel):
     ]
 
     @field_validator(
+        "service_postal_code",
+        "water_hardness",
+        "chlorine_chloramine_details",
+        "iron_manganese_details",
         "existing_equipment",
         "water_service_pipe_size",
+        "water_filtration_network_details",
     )
     @classmethod
     def clean_optional_text(

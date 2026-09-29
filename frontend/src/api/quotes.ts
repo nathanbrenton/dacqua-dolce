@@ -2,13 +2,18 @@ import { getCsrfToken } from "./authentication";
 
 export type RecommendationContext = {
   source_water: "municipal" | "well" | "unsure";
+  service_postal_code: string | null;
   hard_water_signs: "yes" | "no" | "unsure";
+  water_hardness: string | null;
   bathrooms: "1" | "2" | "3" | "4" | "5+" | "unsure";
   occupants: number | null;
   water_service_pipe_size: string | null;
   water_quality_report_read: "yes" | "no" | "unsure";
   chlorine_chloramine_signs: "yes" | "no" | "unsure";
+  chlorine_chloramine_details: string | null;
   iron_manganese_concerns: "yes" | "no" | "unsure";
+  iron_manganese_details: string | null;
+  ph: number | null;
   existing_equipment: string | null;
   drain_available: "yes" | "no" | "unsure";
   electrical_available: "yes" | "no" | "unsure";
@@ -17,6 +22,7 @@ export type RecommendationContext = {
   drinking_water_ro: "yes" | "no" | "unsure";
   water_test_results: "yes" | "no" | "unsure";
   water_filtration_network: "yes" | "no" | "unsure";
+  water_filtration_network_details: string | null;
   treatment_preference: "salt_free" | "softened" | "unsure";
 };
 

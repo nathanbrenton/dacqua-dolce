@@ -48,11 +48,12 @@ def test_recommendation_endpoint_returns_structured_softener_decision() -> None:
         "title": "Backwashing carbon + water softener + reverse osmosis",
         "description": (
             "For municipal water with power and drain access, this is the "
-            "confirmed starting path when conventionally softened water is "
-            "preferred. Reverse osmosis is always included with the softener "
-            "recommendation."
+            "current starting path when conventionally softened water is "
+            "preferred. Reverse osmosis is included with the softener path. "
+            "During the assisted-sales phase, a D'Acqua Dolce employee confirms "
+            "the final system fit before purchase."
         ),
-        "human_review": False,
+        "human_review": True,
         "requires_third_party_lab": False,
         "components": [
             "backwashing_carbon",

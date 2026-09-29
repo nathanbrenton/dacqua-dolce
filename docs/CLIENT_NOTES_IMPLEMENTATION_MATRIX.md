@@ -271,3 +271,17 @@ Public Harmony education may spell out `CLEAR` as `Crystal Lattice Enabling Anti
 **PT17 status: CLOSED.**
 
 Production validation completed at runtime revision `ce8f92ff2e60e06fc8e6de809f29828695723ce9`, release `/srv/dacqua-dolce/releases/20260928T072624Z`. The next milestone should continue only from confirmed product/business data and client feedback rather than extending PT17 opportunistically.
+
+## PT19.1 — Assisted-sales intake gate
+
+| Client direction | Classification | Implementation |
+| --- | --- | --- |
+| First 20+ whole-house system sales require employee/customer interaction | Implemented policy boundary | Recommendation policy v3 keeps guided system selection as a starting path and marks every current recommendation for staff review before purchase. Historical decision snapshots retain their original policy version. |
+| Collect ZIP/service-area context before recommendation | Implemented intake | Guided recommendations capture an optional service ZIP; the final inquiry dialog requires service ZIP so product-specific and general system inquiries also preserve it in structured recommendation context. |
+| Collect hardness, chlorine/chloramine, iron/manganese, and pH when known | Implemented optional structured context | The recommendation context now accepts known hardness text (with customer-supplied units), optional chlorine/chloramine and iron/manganese details, and pH constrained to 0–14. Unknown measurements remain valid and do not block inquiry submission. |
+| Household size and bathrooms matter | Revalidated / strengthened | Existing structured inputs remain part of sizing readiness; the final inquiry dialog also captures them so a customer can submit useful basics without first completing the full guided questionnaire. |
+| Well water requires employee interaction and third-party laboratory results | Revalidated hard boundary | Well-water requests continue to produce `well_testing_required`, require staff review, and require third-party lab results before D'Acqua Dolce makes a final system recommendation. |
+| Irrigation/pool/exterior routing and existing equipment matter | Revalidated | Existing guided fields remain authoritative recommendation context and flow into the immutable request snapshot reviewed by Operations. |
+| Ask whether neighbors/friends/family use filtration and why | Implemented as optional research context | Existing tri-state network-use input is supplemented by optional free-text context. It is stored with the inquiry but does not alter the technical recommendation algorithm. |
+| Use early assisted sales to improve education/recommendation logic | Architecture preserved | Recommendation inputs and server-authored decision snapshots remain versioned so observed gaps can drive later policy revisions without rewriting historical requests. |
+| Direct whole-house checkout | Explicitly deferred | PT19.1 does not enable self-service whole-house checkout. Formal quote creation/approval is the next assisted-sales dependency; payment remains downstream of an approved quote. |

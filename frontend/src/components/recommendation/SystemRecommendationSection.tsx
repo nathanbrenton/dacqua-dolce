@@ -95,8 +95,12 @@ export function SystemRecommendationSection({
     useState(false);
   const [sourceWater, setSourceWater] =
     useState<SourceWater>("unsure");
+  const [servicePostalCode, setServicePostalCode] =
+    useState("");
   const [hardWaterSigns, setHardWaterSigns] =
     useState<TriState>("unsure");
+  const [waterHardness, setWaterHardness] =
+    useState("");
   const [bathrooms, setBathrooms] =
     useState<BathroomCount>("unsure");
   const [occupants, setOccupants] =
@@ -107,8 +111,14 @@ export function SystemRecommendationSection({
     useState<TriState>("unsure");
   const [chlorineSigns, setChlorineSigns] =
     useState<TriState>("unsure");
+  const [chlorineDetails, setChlorineDetails] =
+    useState("");
   const [ironManganeseConcern, setIronManganeseConcern] =
     useState<TriState>("unsure");
+  const [ironManganeseDetails, setIronManganeseDetails] =
+    useState("");
+  const [ph, setPh] =
+    useState("");
   const [existingEquipment, setExistingEquipment] =
     useState("");
   const [drainAvailable, setDrainAvailable] =
@@ -125,19 +135,26 @@ export function SystemRecommendationSection({
     useState<TriState>("unsure");
   const [networkExperience, setNetworkExperience] =
     useState<TriState>("unsure");
+  const [networkExperienceDetails, setNetworkExperienceDetails] =
+    useState("");
   const [treatmentPreference, setTreatmentPreference] =
     useState<TreatmentPreference>("unsure");
 
   const recommendationContext = useMemo<RecommendationContext>(
     () => ({
       source_water: sourceWater,
+      service_postal_code: servicePostalCode.trim() || null,
       hard_water_signs: hardWaterSigns,
+      water_hardness: waterHardness.trim() || null,
       bathrooms,
       occupants: occupants === "" ? null : Number.parseInt(occupants, 10),
       water_service_pipe_size: waterServicePipeSize.trim() || null,
       water_quality_report_read: qualityReportRead,
       chlorine_chloramine_signs: chlorineSigns,
+      chlorine_chloramine_details: chlorineDetails.trim() || null,
       iron_manganese_concerns: ironManganeseConcern,
+      iron_manganese_details: ironManganeseDetails.trim() || null,
+      ph: ph === "" ? null : Number.parseFloat(ph),
       existing_equipment: existingEquipment.trim() || null,
       drain_available: drainAvailable,
       electrical_available: electricalAvailable,
@@ -146,17 +163,24 @@ export function SystemRecommendationSection({
       drinking_water_ro: drinkingWaterRo,
       water_test_results: waterTestResults,
       water_filtration_network: networkExperience,
+      water_filtration_network_details:
+        networkExperienceDetails.trim() || null,
       treatment_preference: treatmentPreference,
     }),
     [
       sourceWater,
+      servicePostalCode,
       hardWaterSigns,
+      waterHardness,
       bathrooms,
       occupants,
       waterServicePipeSize,
       qualityReportRead,
       chlorineSigns,
+      chlorineDetails,
       ironManganeseConcern,
+      ironManganeseDetails,
+      ph,
       existingEquipment,
       drainAvailable,
       electricalAvailable,
@@ -165,6 +189,7 @@ export function SystemRecommendationSection({
       drinkingWaterRo,
       waterTestResults,
       networkExperience,
+      networkExperienceDetails,
       treatmentPreference,
     ],
   );
@@ -303,7 +328,7 @@ export function SystemRecommendationSection({
             Build a starting point from what you already know.
           </h3>
           <p>
-            Technical measurements are helpful when available, but they are not required to begin. Signs you have noticed and installation details are useful context too.
+            Technical measurements are helpful when available, but they are not required to begin. These details help a D'Acqua Dolce employee confirm the right system before an early assisted sale.
           </p>
         </div>
 
@@ -319,12 +344,40 @@ export function SystemRecommendationSection({
             ]}
           />
 
+          <label className="recommendation-field">
+            <span>Service ZIP code</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="postal-code"
+              maxLength={20}
+              value={servicePostalCode}
+              placeholder="If known"
+              onChange={(event) => {
+                setServicePostalCode(event.target.value);
+              }}
+            />
+          </label>
+
           <SelectField
             label="Signs of hard water"
             value={hardWaterSigns}
             onChange={(value) => setHardWaterSigns(value as TriState)}
             options={yesNoUnsureOptions}
           />
+
+          <label className="recommendation-field">
+            <span>Known water hardness</span>
+            <input
+              type="text"
+              maxLength={120}
+              value={waterHardness}
+              placeholder="Optional — include units if known"
+              onChange={(event) => {
+                setWaterHardness(event.target.value);
+              }}
+            />
+          </label>
 
           <SelectField
             label="Number of bathrooms"
@@ -390,6 +443,48 @@ export function SystemRecommendationSection({
             options={yesNoUnsureOptions}
           />
 
+          <label className="recommendation-field">
+            <span>Known chlorine / chloramine details</span>
+            <input
+              type="text"
+              maxLength={240}
+              value={chlorineDetails}
+              placeholder="Optional — measurement, report note, or concern"
+              onChange={(event) => {
+                setChlorineDetails(event.target.value);
+              }}
+            />
+          </label>
+
+          <label className="recommendation-field">
+            <span>Known iron / manganese details</span>
+            <input
+              type="text"
+              maxLength={240}
+              value={ironManganeseDetails}
+              placeholder="Optional — measurement or report note"
+              onChange={(event) => {
+                setIronManganeseDetails(event.target.value);
+              }}
+            />
+          </label>
+
+          <label className="recommendation-field">
+            <span>Known pH</span>
+            <input
+              type="number"
+              min="0"
+              max="14"
+              step="0.1"
+              inputMode="decimal"
+              value={ph}
+              placeholder="If known"
+              onChange={(event) => {
+                setPh(event.target.value);
+              }}
+            />
+          </label>
+
           <SelectField
             label="Electrical power available near treatment equipment"
             value={electricalAvailable}
@@ -439,6 +534,19 @@ export function SystemRecommendationSection({
             options={yesNoUnsureOptions}
           />
 
+          <label className="recommendation-field recommendation-field-wide">
+            <span>What have you heard or noticed about their filtration?</span>
+            <textarea
+              rows={2}
+              maxLength={1000}
+              value={networkExperienceDetails}
+              placeholder="Optional — what they use and why they chose filtration"
+              onChange={(event) => {
+                setNetworkExperienceDetails(event.target.value);
+              }}
+            />
+          </label>
+
           <SelectField
             label="Preferred treatment direction"
             value={treatmentPreference}
@@ -473,7 +581,7 @@ export function SystemRecommendationSection({
         >
           <p className="eyebrow">
             {recommendationResult?.human_review
-              ? "Review path"
+              ? "Staff review required"
               : "Starting recommendation"}
           </p>
           {recommendationResult ? (
@@ -494,7 +602,7 @@ export function SystemRecommendationSection({
           )}
           {recommendationResult?.requires_third_party_lab ? (
             <p className="recommendation-result-note">
-              A third-party laboratory test is mandatory before an automatic system recommendation is made for well water.
+              A third-party laboratory test and employee review are required before D'Acqua Dolce makes a final system recommendation for well water.
             </p>
           ) : null}
           {recommendationResult?.sizing ? (

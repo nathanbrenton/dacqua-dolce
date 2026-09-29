@@ -1894,9 +1894,9 @@ export function OperationsPage({
                       <div className="operations-recommendation-flags">
                         <span>Guided recommendation</span>
                         {quote.recommendation_decision.human_review ? (
-                          <span>Human review</span>
+                          <span>Staff review required</span>
                         ) : (
-                          <span>Automatic starting path</span>
+                          <span>Historical automatic starting path</span>
                         )}
                         {quote.recommendation_decision.requires_third_party_lab ? (
                           <span className="is-important">

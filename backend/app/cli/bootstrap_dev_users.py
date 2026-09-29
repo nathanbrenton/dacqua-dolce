@@ -13,7 +13,11 @@ CANONICAL_USERS = (
     ("admin@dacquadolce.test", RoleName.administrator, "DACQUA_BOOTSTRAP_ADMIN_PASSWORD"),
     ("employee@dacquadolce.test", RoleName.employee, "DACQUA_BOOTSTRAP_EMPLOYEE_PASSWORD"),
     ("customer@dacquadolce.test", RoleName.customer, "DACQUA_BOOTSTRAP_CUSTOMER_PASSWORD"),
-    ("payment-test-customer@dacquadolce.test", RoleName.customer, "DACQUA_BOOTSTRAP_PAYMENT_TEST_PASSWORD"),
+    (
+        "payment-test-customer@dacquadolce.test",
+        RoleName.customer,
+        "DACQUA_BOOTSTRAP_PAYMENT_TEST_PASSWORD",
+    ),
 )
 
 

@@ -47,13 +47,18 @@ def test_recommendation_context_is_structured_and_cleaned() -> None:
         email="person@example.test",
         recommendation_context={
             "source_water": "municipal",
+            "service_postal_code": " 92618 ",
             "hard_water_signs": "yes",
+            "water_hardness": " 12 gpg ",
             "bathrooms": "2",
             "occupants": 4,
             "water_service_pipe_size": "1 inch",
             "water_quality_report_read": "no",
             "chlorine_chloramine_signs": "unsure",
+            "chlorine_chloramine_details": "  utility report available ",
             "iron_manganese_concerns": "no",
+            "iron_manganese_details": None,
+            "ph": 7.4,
             "existing_equipment": "  Existing softener  ",
             "drain_available": "yes",
             "electrical_available": "yes",
@@ -62,12 +67,19 @@ def test_recommendation_context_is_structured_and_cleaned() -> None:
             "drinking_water_ro": "no",
             "water_test_results": "yes",
             "water_filtration_network": "yes",
+            "water_filtration_network_details": "  Neighbors use carbon filtration. ",
             "treatment_preference": "softened",
         },
     )
 
     assert payload.recommendation_context is not None
     assert payload.recommendation_context.source_water == "municipal"
+    assert payload.recommendation_context.service_postal_code == "92618"
+    assert payload.recommendation_context.water_hardness == "12 gpg"
+    assert payload.recommendation_context.ph == 7.4
+    assert payload.recommendation_context.water_filtration_network_details == (
+        "Neighbors use carbon filtration."
+    )
     assert payload.recommendation_context.existing_equipment == "Existing softener"
     assert payload.recommendation_context.occupants == 4
     assert payload.recommendation_context.water_service_pipe_size == "1 inch"
@@ -87,6 +99,34 @@ def test_recommendation_context_rejects_unknown_source_water() -> None:
                 "water_quality_report_read": "unsure",
                 "chlorine_chloramine_signs": "unsure",
                 "iron_manganese_concerns": "unsure",
+                "existing_equipment": None,
+                "drain_available": "unsure",
+                "electrical_available": "unsure",
+                "irrigation_hose_bib": "unsure",
+                "pool_autofill": "unsure",
+                "drinking_water_ro": "unsure",
+                "water_test_results": "unsure",
+                "water_filtration_network": "unsure",
+                "treatment_preference": "unsure",
+            },
+        )
+
+
+def test_recommendation_context_rejects_invalid_ph() -> None:
+    with pytest.raises(ValidationError):
+        QuoteRequestCreate(
+            name="Test Customer",
+            email="person@example.test",
+            recommendation_context={
+                "source_water": "municipal",
+                "hard_water_signs": "unsure",
+                "bathrooms": "unsure",
+                "occupants": None,
+                "water_service_pipe_size": None,
+                "water_quality_report_read": "unsure",
+                "chlorine_chloramine_signs": "unsure",
+                "iron_manganese_concerns": "unsure",
+                "ph": 15,
                 "existing_equipment": None,
                 "drain_available": "unsure",
                 "electrical_available": "unsure",

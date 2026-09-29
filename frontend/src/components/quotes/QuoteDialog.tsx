@@ -21,6 +21,37 @@ export type QuoteInquiryContext =
   | "recommendation"
   | "product";
 
+type SourceWater = RecommendationContext["source_water"];
+type BathroomCount = RecommendationContext["bathrooms"];
+
+function emptyRecommendationContext(): RecommendationContext {
+  return {
+    source_water: "unsure",
+    service_postal_code: null,
+    hard_water_signs: "unsure",
+    water_hardness: null,
+    bathrooms: "unsure",
+    occupants: null,
+    water_service_pipe_size: null,
+    water_quality_report_read: "unsure",
+    chlorine_chloramine_signs: "unsure",
+    chlorine_chloramine_details: null,
+    iron_manganese_concerns: "unsure",
+    iron_manganese_details: null,
+    ph: null,
+    existing_equipment: null,
+    drain_available: "unsure",
+    electrical_available: "unsure",
+    irrigation_hose_bib: "unsure",
+    pool_autofill: "unsure",
+    drinking_water_ro: "unsure",
+    water_test_results: "unsure",
+    water_filtration_network: "unsure",
+    water_filtration_network_details: null,
+    treatment_preference: "unsure",
+  };
+}
+
 type QuoteDialogProps = {
   open: boolean;
   productId: string | null;
@@ -52,6 +83,14 @@ export function QuoteDialog({
     useState(initialEmail ?? "");
   const [phone, setPhone] =
     useState("");
+  const [servicePostalCode, setServicePostalCode] =
+    useState("");
+  const [sourceWater, setSourceWater] =
+    useState<SourceWater>("unsure");
+  const [bathrooms, setBathrooms] =
+    useState<BathroomCount>("unsure");
+  const [occupants, setOccupants] =
+    useState("");
   const [message, setMessage] =
     useState("");
   const [error, setError] =
@@ -82,11 +121,29 @@ export function QuoteDialog({
       setName("");
       setEmail(initialEmail ?? "");
       setPhone("");
+      setServicePostalCode(
+        recommendationContext?.service_postal_code ?? "",
+      );
+      setSourceWater(
+        recommendationContext?.source_water ?? "unsure",
+      );
+      setBathrooms(
+        recommendationContext?.bathrooms ?? "unsure",
+      );
+      setOccupants(
+        recommendationContext?.occupants?.toString() ?? "",
+      );
       setMessage("");
       setError(null);
       setSuccessId(null);
     }
-  }, [open, initialEmail, inquiryContext, productId]);
+  }, [
+    open,
+    initialEmail,
+    inquiryContext,
+    productId,
+    recommendationContext,
+  ]);
 
   const isProductInquiry =
     inquiryContext === "product"
@@ -130,6 +187,18 @@ export function QuoteDialog({
     setSubmitting(true);
 
     try {
+      const qualificationContext = {
+        ...(recommendationContext ?? emptyRecommendationContext()),
+        source_water: sourceWater,
+        service_postal_code:
+          servicePostalCode.trim() || null,
+        bathrooms,
+        occupants:
+          occupants === ""
+            ? null
+            : Number.parseInt(occupants, 10),
+      } satisfies RecommendationContext;
+
       const response =
         await submitQuoteRequest({
           product_id: productId,
@@ -137,7 +206,7 @@ export function QuoteDialog({
           email,
           phone: phone || null,
           message: message || null,
-          recommendation_context: recommendationContext,
+          recommendation_context: qualificationContext,
         });
 
       setSuccessId(response.id);
@@ -338,6 +407,88 @@ export function QuoteDialog({
               automatically.
             </small>
           </label>
+
+          <fieldset className="quote-qualification">
+            <legend>Property basics</legend>
+
+            <p className="field-helper">
+              For the early assisted-sales phase, a D'Acqua Dolce employee
+              reviews each system request before purchase. These basics help
+              make that conversation useful.
+            </p>
+
+            <label>
+              <span>Service ZIP code</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                required
+                minLength={5}
+                maxLength={20}
+                value={servicePostalCode}
+                onChange={(event) => {
+                  setServicePostalCode(event.target.value);
+                }}
+              />
+            </label>
+
+            <label>
+              <span>Source water</span>
+              <select
+                value={sourceWater}
+                onChange={(event) => {
+                  setSourceWater(
+                    event.target.value as SourceWater,
+                  );
+                }}
+              >
+                <option value="unsure">Not sure</option>
+                <option value="municipal">Municipal water</option>
+                <option value="well">Private well</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Number of bathrooms</span>
+              <select
+                value={bathrooms}
+                onChange={(event) => {
+                  setBathrooms(
+                    event.target.value as BathroomCount,
+                  );
+                }}
+              >
+                <option value="unsure">Not sure</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5+">5 or more</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Household size <small>(optional)</small></span>
+              <input
+                type="number"
+                min="1"
+                inputMode="numeric"
+                value={occupants}
+                onChange={(event) => {
+                  setOccupants(event.target.value);
+                }}
+              />
+            </label>
+
+            {sourceWater === "well" ? (
+              <p className="field-helper">
+                Well-water recommendations require employee review and
+                third-party laboratory water-quality results before a final
+                system recommendation.
+              </p>
+            ) : null}
+          </fieldset>
 
           <label>
             <span>

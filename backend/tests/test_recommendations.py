@@ -49,7 +49,7 @@ def test_missing_power_uses_limited_utilities_path() -> None:
     result = evaluate_recommendation(context(electrical_available="no"))
 
     assert result.code == "limited_utilities"
-    assert result.human_review is False
+    assert result.human_review is True
     assert result.components == ["harmony", "cartridge_filtration"]
 
 
@@ -70,6 +70,7 @@ def test_salt_free_path_is_authoritative() -> None:
     result = evaluate_recommendation(context(treatment_preference="salt_free"))
 
     assert result.code == "salt_free"
+    assert result.human_review is True
     assert result.components == ["backwashing_carbon", "harmony"]
 
 
@@ -82,6 +83,7 @@ def test_softener_path_always_includes_reverse_osmosis() -> None:
     )
 
     assert result.code == "softened_with_ro"
+    assert result.human_review is True
     assert result.components == [
         "backwashing_carbon",
         "water_softener",
@@ -124,4 +126,4 @@ def test_sizing_readiness_is_complete_when_confirmed_inputs_are_present() -> Non
 
 
 def test_recommendation_policy_version_is_explicit() -> None:
-    assert RECOMMENDATION_POLICY_VERSION == "2"
+    assert RECOMMENDATION_POLICY_VERSION == "3"

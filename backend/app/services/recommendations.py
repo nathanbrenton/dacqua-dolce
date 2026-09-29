@@ -4,7 +4,7 @@ from app.schemas.quote import (
     RecommendationSizingAssessment,
 )
 
-RECOMMENDATION_POLICY_VERSION = "2"
+RECOMMENDATION_POLICY_VERSION = "3"
 
 
 def evaluate_sizing_readiness(
@@ -55,7 +55,7 @@ def evaluate_recommendation(
             title="Source water comes first.",
             description=(
                 "Confirm whether the property uses municipal or well water before "
-                "relying on an automatic starting recommendation."
+                "a final system recommendation is made."
             ),
             human_review=True,
             sizing=sizing,
@@ -67,9 +67,11 @@ def evaluate_recommendation(
             title="Harmony + cartridge filtration",
             description=(
                 "With power or a backwash drain unavailable, Harmony conditioning "
-                "with cartridge filtration is the confirmed starting path."
+                "with cartridge filtration is the current starting path. During "
+                "the assisted-sales phase, a D'Acqua Dolce employee confirms the "
+                "final system fit before purchase."
             ),
-            human_review=False,
+            human_review=True,
             components=[
                 "harmony",
                 "cartridge_filtration",
@@ -98,10 +100,12 @@ def evaluate_recommendation(
             title="Backwashing carbon + Harmony",
             description=(
                 "For municipal water with power and drain access, this is the "
-                "confirmed starting path when carbon filtration and scale/deposit "
-                "mitigation without salt are preferred."
+                "current starting path when carbon filtration and scale/deposit "
+                "mitigation without salt are preferred. During the assisted-sales "
+                "phase, a D'Acqua Dolce employee confirms the final system fit "
+                "before purchase."
             ),
-            human_review=False,
+            human_review=True,
             components=[
                 "backwashing_carbon",
                 "harmony",
@@ -115,11 +119,12 @@ def evaluate_recommendation(
             title="Backwashing carbon + water softener + reverse osmosis",
             description=(
                 "For municipal water with power and drain access, this is the "
-                "confirmed starting path when conventionally softened water is "
-                "preferred. Reverse osmosis is always included with the softener "
-                "recommendation."
+                "current starting path when conventionally softened water is "
+                "preferred. Reverse osmosis is included with the softener path. "
+                "During the assisted-sales phase, a D'Acqua Dolce employee confirms "
+                "the final system fit before purchase."
             ),
-            human_review=False,
+            human_review=True,
             components=[
                 "backwashing_carbon",
                 "water_softener",
