@@ -2349,8 +2349,8 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   padding: 7px 11px;
-  color: #ffffff;
-  background: var(--control-highlight);
+  color: var(--action-text);
+  background: var(--action);
   text-decoration: none;
   font-size: 0.90rem;
   font-weight: 700;
@@ -5121,3 +5121,122 @@ summary {
  * add data-typography-specific font-size overrides. If the hierarchy changes,
  * change the shared token once so all typography choices respond identically.
  */
+
+/* PT18 — authentication, Operations refresh, and governance polish */
+
+/* Lagoon Editorial's blue control highlight is useful as a focus color, but
+ * the primary auth mode is a brand/action state rather than a focus state. */
+:root[data-theme="lagoon-editorial"]
+.auth-mode-switch button.is-active {
+  color: var(--action-text);
+  background: var(--action);
+}
+
+.operations-route-loading {
+  max-width: 760px;
+  padding-top: clamp(72px, 12vw, 150px);
+}
+
+.operations-route-loading h1 {
+  margin: 8px 0 12px;
+  font-family: var(--font-heading);
+  font-size: var(--type-display-compact-page);
+  font-weight: var(--heading-weight);
+  line-height: 1.05;
+  letter-spacing: var(--tracking-heading);
+}
+
+.operations-route-loading > p:last-child {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+/* Badge rows are sometimes grid children whose row is taller than the badge
+ * content. Prevent flex cross-axis stretching from turning provenance/status
+ * labels into oversized bubbles. */
+.operations-governance-badges {
+  align-items: flex-start;
+  align-self: start;
+}
+
+.operations-governance-badges span {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 0;
+  line-height: 1.25;
+}
+
+/* Pricing/inventory cards use the wide desktop canvas deliberately: product
+ * identity and relationships share the top row, while the two editing panels
+ * receive the full card width below instead of being squeezed into the narrow
+ * identity column. */
+#catalog-governance .operations-product {
+  grid-template-columns:
+    minmax(250px, 0.72fr)
+    minmax(0, 1.28fr);
+  grid-template-areas:
+    "summary relationships"
+    "controls controls";
+  column-gap: clamp(22px, 3vw, 40px);
+  row-gap: 20px;
+  align-items: start;
+}
+
+#catalog-governance .operations-product > header {
+  grid-area: summary;
+}
+
+#catalog-governance .operations-product > .operations-product-relationships {
+  grid-area: relationships;
+  min-width: 0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#catalog-governance .operations-product > .operations-product-grid {
+  grid-area: controls;
+  width: 100%;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+#catalog-governance .operations-product-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+#catalog-governance .operations-product fieldset {
+  align-content: start;
+  padding: 16px;
+  background: var(--surface-1);
+}
+
+#catalog-governance .operations-product-relationship-create {
+  grid-template-columns:
+    minmax(14rem, 2fr)
+    minmax(10rem, 1fr)
+    auto;
+}
+
+@media (max-width: 980px) {
+  #catalog-governance .operations-product {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "summary"
+      "relationships"
+      "controls";
+  }
+
+  #catalog-governance .operations-product > .operations-product-relationships {
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+  }
+}
+
+@media (max-width: 720px) {
+  #catalog-governance .operations-product-grid {
+    grid-template-columns: 1fr;
+  }
+}

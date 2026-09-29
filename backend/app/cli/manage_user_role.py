@@ -1,13 +1,14 @@
 import argparse
 import sys
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.db.session import SessionLocal
 from app.models.identity import (
     RoleName,
     User,
     UserRole,
+    UserStatus,
 )
 from app.services.audit import (
     record_audit_event,
@@ -79,6 +80,13 @@ def add_role(
     role: RoleName,
 ) -> int:
     normalized = normalized_email(email)
+
+    if role == RoleName.manager:
+        print(
+            "ERROR: manager is a legacy role and cannot be newly assigned.",
+            file=sys.stderr,
+        )
+        return 2
 
     with SessionLocal() as db:
         user = db.scalar(select(User).where(User.email == normalized))
@@ -156,6 +164,27 @@ def remove_role(
         if assignment is None:
             print(f"{normalized} does not have role {role.value}.")
             return 0
+
+        if role == RoleName.developer:
+            other_active_developers = (
+                db.scalar(
+                    select(func.count())
+                    .select_from(UserRole)
+                    .join(User, User.id == UserRole.user_id)
+                    .where(
+                        UserRole.role == RoleName.developer,
+                        UserRole.user_id != user.id,
+                        User.status == UserStatus.active,
+                    )
+                )
+                or 0
+            )
+            if other_active_developers == 0:
+                print(
+                    "ERROR: refusing to remove the final active developer role.",
+                    file=sys.stderr,
+                )
+                return 2
 
         db.delete(assignment)
 

@@ -41,7 +41,7 @@ class AuditDatabase:
         return RowResult(self.rows)
 
 
-def test_audit_events_require_privileged_access(
+def test_audit_events_require_developer_access(
     monkeypatch: Any,
 ) -> None:
     database = AuditDatabase([])
@@ -58,7 +58,7 @@ def test_audit_events_require_privileged_access(
 
     monkeypatch.setattr(
         operations,
-        "require_privileged_operations",
+        "require_audit_log_read",
         deny,
     )
 
@@ -100,7 +100,7 @@ def test_audit_event_response_excludes_sensitive_context(
 
     monkeypatch.setattr(
         operations,
-        "require_privileged_operations",
+        "require_audit_log_read",
         lambda db, user: None,
     )
 

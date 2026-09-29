@@ -84,9 +84,12 @@ const OPERATIONS_ROLES = new Set([
   "developer",
 ]);
 
-const PRIVILEGED_ROLES = new Set([
-  "manager",
+const WRITE_ROLES = new Set([
   "administrator",
+  "developer",
+]);
+
+const AUDIT_LOG_ROLES = new Set([
   "developer",
 ]);
 
@@ -407,7 +410,12 @@ export function OperationsPage({
   );
 
   const privileged = useMemo(
-    () => roles.some((role) => PRIVILEGED_ROLES.has(role)),
+    () => roles.some((role) => WRITE_ROLES.has(role)),
+    [roles],
+  );
+
+  const auditLogAllowed = useMemo(
+    () => roles.some((role) => AUDIT_LOG_ROLES.has(role)),
     [roles],
   );
 
@@ -643,7 +651,7 @@ export function OperationsPage({
 
   async function loadAuditEvents(): Promise<void> {
     if (
-      !privileged
+      !auditLogAllowed
       || auditLoaded
       || auditLoading
     ) {
@@ -814,6 +822,68 @@ export function OperationsPage({
     auditEntityFilter,
   ]);
 
+
+  // Keep every Hook above the authorization return below. On a hard
+  // refresh the session starts unresolved, so roles can legitimately change
+  // from [] to an authorized set between renders. Conditional Hooks here
+  // would violate React's Rules of Hooks and blank the Operations route.
+  const lifecycleQuotes = useMemo(() => {
+    if (requestView === "all") {
+      return quotes;
+    }
+
+    return quotes.filter((quote) =>
+      requestView === "closed"
+        ? quote.status === "closed"
+        : quote.status !== "closed",
+    );
+  }, [quotes, requestView]);
+
+  const visibleQuotes = useMemo(() => {
+    if (recommendationTriageView === "all") {
+      return lifecycleQuotes;
+    }
+
+    return lifecycleQuotes.filter((quote) => {
+      if (recommendationTriageView === "guided") {
+        return quote.recommendation_context !== null;
+      }
+
+      if (recommendationTriageView === "human_review") {
+        return quote.recommendation_decision?.human_review === true;
+      }
+
+      return (
+        quote.recommendation_decision?.requires_third_party_lab === true
+      );
+    });
+  }, [lifecycleQuotes, recommendationTriageView]);
+
+  const requestCounts = useMemo(() => ({
+    active: quotes.filter((quote) => quote.status !== "closed").length,
+    closed: quotes.filter((quote) => quote.status === "closed").length,
+    all: quotes.length,
+  }), [quotes]);
+
+  const recommendationTriageCounts = useMemo(() => ({
+    all: lifecycleQuotes.length,
+    guided: lifecycleQuotes.filter(
+      (quote) => quote.recommendation_context !== null,
+    ).length,
+    human_review: lifecycleQuotes.filter(
+      (quote) => quote.recommendation_decision?.human_review === true,
+    ).length,
+    lab_testing: lifecycleQuotes.filter(
+      (quote) => (
+        quote.recommendation_decision?.requires_third_party_lab === true
+      ),
+    ).length,
+  }), [lifecycleQuotes]);
+
+  const failedDeliveries = useMemo(
+    () => communications.filter((item) => item.status === "failed"),
+    [communications],
+  );
 
   async function saveCustomerEquipment(customerId: string): Promise<void> {
     if (!equipmentDraft.productId) {
@@ -1360,63 +1430,6 @@ export function OperationsPage({
     });
   }
 
-  const lifecycleQuotes = useMemo(() => {
-    if (requestView === "all") {
-      return quotes;
-    }
-
-    return quotes.filter((quote) =>
-      requestView === "closed"
-        ? quote.status === "closed"
-        : quote.status !== "closed",
-    );
-  }, [quotes, requestView]);
-
-  const visibleQuotes = useMemo(() => {
-    if (recommendationTriageView === "all") {
-      return lifecycleQuotes;
-    }
-
-    return lifecycleQuotes.filter((quote) => {
-      if (recommendationTriageView === "guided") {
-        return quote.recommendation_context !== null;
-      }
-
-      if (recommendationTriageView === "human_review") {
-        return quote.recommendation_decision?.human_review === true;
-      }
-
-      return (
-        quote.recommendation_decision?.requires_third_party_lab === true
-      );
-    });
-  }, [lifecycleQuotes, recommendationTriageView]);
-
-  const requestCounts = useMemo(() => ({
-    active: quotes.filter((quote) => quote.status !== "closed").length,
-    closed: quotes.filter((quote) => quote.status === "closed").length,
-    all: quotes.length,
-  }), [quotes]);
-
-  const recommendationTriageCounts = useMemo(() => ({
-    all: lifecycleQuotes.length,
-    guided: lifecycleQuotes.filter(
-      (quote) => quote.recommendation_context !== null,
-    ).length,
-    human_review: lifecycleQuotes.filter(
-      (quote) => quote.recommendation_decision?.human_review === true,
-    ).length,
-    lab_testing: lifecycleQuotes.filter(
-      (quote) => (
-        quote.recommendation_decision?.requires_third_party_lab === true
-      ),
-    ).length,
-  }), [lifecycleQuotes]);
-
-  const failedDeliveries = useMemo(
-    () => communications.filter((item) => item.status === "failed"),
-    [communications],
-  );
 
   const operatorName = [
     operatorProfile?.first_name,
@@ -2535,7 +2548,7 @@ export function OperationsPage({
 
                     {!privileged ? (
                       <p className="operations-note">
-                        Manager, administrator, or developer role required
+                        Administrator or developer role required
                         to change pricing.
                       </p>
                     ) : null}
@@ -2548,6 +2561,7 @@ export function OperationsPage({
                       <span>Status</span>
                       <select
                         value={inventory.status}
+                        disabled={!privileged}
                         onChange={(event: ChangeEvent<HTMLSelectElement>) => {
                           updateInventoryDraft(
                             product.id,
@@ -2575,6 +2589,7 @@ export function OperationsPage({
                           min={0}
                           step={1}
                           value={inventory.quantityOnHand}
+                          disabled={!privileged}
                           onChange={(event: ChangeEvent<HTMLInputElement>) => {
                             updateInventoryDraft(
                               product.id,
@@ -2610,6 +2625,7 @@ export function OperationsPage({
                         maxLength={120}
                         placeholder="Example: 2–3 weeks"
                         value={inventory.estimatedLeadTime}
+                        disabled={!privileged}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => {
                           updateInventoryDraft(
                             product.id,
@@ -2641,7 +2657,8 @@ export function OperationsPage({
                         )
                       }
                       disabled={
-                        inventorySaveState === "saving"
+                        !privileged
+                        || inventorySaveState === "saving"
                       }
                       onClick={() => void saveInventory(product)}
                     >
@@ -2651,6 +2668,13 @@ export function OperationsPage({
                           ? "Saved ✓"
                           : "Save Inventory"}
                     </button>
+
+                    {!privileged ? (
+                      <p className="operations-note">
+                        Administrator or developer role required
+                        to change inventory.
+                      </p>
+                    ) : null}
                   </fieldset>
                 </div>
               </article>
@@ -3183,7 +3207,7 @@ export function OperationsPage({
         </details>
       ) : null}
 
-      {privileged ? (
+      {auditLogAllowed ? (
         <section
           id="audit-events"
           className="operations-section operations-audit-section"

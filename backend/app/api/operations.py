@@ -85,8 +85,10 @@ from app.services.communications_reply import (
     send_communication_reply,
 )
 from app.services.operations_access import (
+    require_audit_log_read,
+    require_customer_equipment_write,
     require_operations,
-    require_privileged_operations,
+    require_pricing_inventory_write,
 )
 from app.services.pricing import select_effective_price
 
@@ -256,7 +258,7 @@ def list_audit_events(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> list[OperationsAuditEventRead]:
-    require_privileged_operations(
+    require_audit_log_read(
         db,
         user=current_user,
     )
@@ -1153,7 +1155,7 @@ def create_customer_equipment(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsCustomerRead:
-    require_privileged_operations(db, user=current_user)
+    require_customer_equipment_write(db, user=current_user)
     customer = db.get(User, customer_id)
     if customer is None:
         raise HTTPException(
@@ -1223,7 +1225,7 @@ def update_customer_equipment(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsCustomerRead:
-    require_privileged_operations(db, user=current_user)
+    require_customer_equipment_write(db, user=current_user)
     customer = db.get(User, customer_id)
     if customer is None:
         raise HTTPException(
@@ -1550,7 +1552,7 @@ def create_product_relationship(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsProductRead:
-    require_privileged_operations(db, user=current_user)
+    require_pricing_inventory_write(db, user=current_user)
 
     product = load_product_for_operations(db, product_id)
     if product is None:
@@ -1637,7 +1639,7 @@ def update_product_relationship(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsProductRead:
-    require_privileged_operations(db, user=current_user)
+    require_pricing_inventory_write(db, user=current_user)
 
     relationship = db.scalar(
         select(ProductRelationship)
@@ -1712,7 +1714,7 @@ def delete_product_relationship(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsProductRead:
-    require_privileged_operations(db, user=current_user)
+    require_pricing_inventory_write(db, user=current_user)
 
     relationship = db.scalar(
         select(ProductRelationship)
@@ -1767,7 +1769,7 @@ def update_product_pricing(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsProductRead:
-    require_privileged_operations(db, user=current_user)
+    require_pricing_inventory_write(db, user=current_user)
 
     product = load_product_for_operations(db, product_id)
 

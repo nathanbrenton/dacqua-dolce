@@ -565,21 +565,35 @@ export function App() {
           onNavigate={navigate}
         />
       ) : path === "/operations" ? (
-        <OperationsPage
-          roles={account?.roles ?? []}
-          currentUserEmail={account?.email ?? null}
-          onNavigate={navigate}
-          appearance={appearance}
-          logoVariant={logoVariant}
-          developerControlsOpen={
-            developerControlsOpen
-          }
-          onToggleDeveloperControls={() => {
-            setDeveloperControlsOpen(
-              (current) => !current,
-            );
-          }}
-        />
+        accountReady ? (
+          <OperationsPage
+            roles={account?.roles ?? []}
+            currentUserEmail={account?.email ?? null}
+            onNavigate={navigate}
+            appearance={appearance}
+            logoVariant={logoVariant}
+            developerControlsOpen={
+              developerControlsOpen
+            }
+            onToggleDeveloperControls={() => {
+              setDeveloperControlsOpen(
+                (current) => !current,
+              );
+            }}
+          />
+        ) : (
+          <main className="operations-shell">
+            <section
+              className="operations-route-loading"
+              role="status"
+              aria-live="polite"
+            >
+              <p className="eyebrow">Operations</p>
+              <h1>Restoring your workspace…</h1>
+              <p>Checking the current authenticated session.</p>
+            </section>
+          </main>
+        )
       ) : path === "/account" ? (
         <AccountPage
           account={account}

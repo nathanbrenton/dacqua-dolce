@@ -25,6 +25,12 @@ def replace_web_managed_roles(
     target: User,
     desired_roles: set[RoleName],
 ) -> None:
+    if len(desired_roles) > 1:
+        raise ValueError("Staff accounts may have only one web-managed staff role.")
+
+    if RoleName.manager in desired_roles:
+        raise ValueError("Manager role is legacy and cannot be newly assigned.")
+
     if (
         desired_roles
         - WEB_MANAGED_OPERATIONS_ROLES

@@ -150,14 +150,17 @@ OPERATIONS_ROLES = frozenset(
     }
 )
 
-PRIVILEGED_OPERATIONS_ROLES = (
-    frozenset(
-        {
-            RoleName.manager,
-            RoleName.administrator,
-            RoleName.developer,
-        }
-    )
+PRICING_INVENTORY_WRITE_ROLES = frozenset(
+    {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
+AUDIT_LOG_READ_ROLES = frozenset(
+    {
+        RoleName.developer,
+    }
 )
 
 ADMINISTRATION_ROLES = frozenset(

@@ -22,10 +22,22 @@ OPERATIONS_ROLES = frozenset(
     }
 )
 
-PRIVILEGED_OPERATIONS_ROLES = frozenset(
+PRICING_INVENTORY_WRITE_ROLES = frozenset(
     {
-        RoleName.manager,
         RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
+CUSTOMER_EQUIPMENT_WRITE_ROLES = frozenset(
+    {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
+AUDIT_LOG_READ_ROLES = frozenset(
+    {
         RoleName.developer,
     }
 )
@@ -80,7 +92,7 @@ def require_operations(
     )
 
 
-def require_privileged_operations(
+def require_pricing_inventory_write(
     db: Session,
     *,
     user: User,
@@ -88,7 +100,31 @@ def require_privileged_operations(
     return require_any_role(
         db,
         user=user,
-        allowed_roles=PRIVILEGED_OPERATIONS_ROLES,
+        allowed_roles=PRICING_INVENTORY_WRITE_ROLES,
+    )
+
+
+def require_customer_equipment_write(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=CUSTOMER_EQUIPMENT_WRITE_ROLES,
+    )
+
+
+def require_audit_log_read(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=AUDIT_LOG_READ_ROLES,
     )
 
 

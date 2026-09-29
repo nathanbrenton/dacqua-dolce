@@ -8,12 +8,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      DACQUA_DB_APP_PASSWORD: ${DACQUA_DB_APP_PASSWORD}
+      DACQUA_DB_MIGRATOR_PASSWORD: ${DACQUA_DB_MIGRATOR_PASSWORD}
 
     ports:
       - "127.0.0.1:15432:5432"
 
     volumes:
       - dacqua_dolce_postgres_data:/var/lib/postgresql/data
+      - ./postgresql/init_local_database.sh:/docker-entrypoint-initdb.d/10-dacqua-roles.sh:ro
 
     healthcheck:
       test:

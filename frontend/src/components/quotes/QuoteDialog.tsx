@@ -239,7 +239,7 @@ export function QuoteDialog({
         <button
           className="auth-close"
           type="button"
-          aria-label="Close quote request"
+          aria-label={isProductInquiry ? "Close quote request" : "Close inquiry"}
           onClick={onClose}
         >
           ×
@@ -381,7 +381,9 @@ export function QuoteDialog({
           >
             {submitting
               ? "Sending..."
-              : "Send Quote Request"}
+              : isProductInquiry
+                ? "Send Quote Request"
+                : "Send inquiry"}
           </button>
         </form>
       )}
