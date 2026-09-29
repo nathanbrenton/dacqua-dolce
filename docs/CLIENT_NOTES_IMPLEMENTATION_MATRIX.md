@@ -300,3 +300,16 @@ Production validation completed at runtime revision `ce8f92ff2e60e06fc8e6de809f2
 | Estimated lead time should be visible before sale | Implemented quote snapshot | Each quote line records the current applicable estimated lead time from inventory when available, so later inventory changes do not rewrite what the customer was shown. |
 | Quote should be tied to the customer account | Implemented presentation gate | Drafts may be prepared before account linkage, but presentation/approval requires a customer account associated with the request email. The presentation step safely links an existing customer account where available. |
 | Payment | Explicitly deferred | An approved formal quote is the authoritative handoff to the next payment/order milestone; PT19.2 does not create payment-provider references or orders. |
+
+## PT20.1 — Approved quote to authoritative awaiting-payment order
+
+| Client direction | PT20.1 implementation |
+| --- | --- |
+| Approved quote should become the commercial source for payment/order creation | Implemented | Customer approval now atomically materializes exactly one order from the approved formal-quote revision. The order copies the immutable quoted SKU/name/quantity/unit-price/line-total snapshots and starts in `awaiting_payment`. |
+| Retries must not create duplicate orders | Implemented | `orders.formal_quote_id` is a unique nullable link to the exact approved quote. The quote row is locked while order materialization checks for an existing order, making the operation idempotent for normal retries/concurrency. |
+| Historical orders must remain valid | Preserved | The new quote link is nullable so pre-PT20 orders remain valid and unchanged. |
+| Payment-card data must stay outside D'Acqua Dolce | Preserved and strengthened | The provider-neutral hosted-checkout request contains only order/payment amount, currency, customer email, success/cancel URLs, and an idempotency key. Card data remains absent by design. |
+| Affinity 24 payment direction | Integration seam implemented; live adapter deferred | Affinity24 publicly supports hosted/tokenized card-not-present flows but can provision multiple concrete gateways. PT20.1 does not guess an API. The tested adapter seam is ready for the authoritative gateway contract selected during merchant onboarding. |
+| Customer should see order progression after quote approval | Implemented foundation | The customer account refreshes orders immediately after quote approval and associates the new order with the exact formal quote. The order is visibly awaiting secure payment. |
+
+PT20.2 remains the provider-specific hosted-payment milestone: confirm the concrete Affinity24 gateway/account, obtain sandbox credentials and authoritative API/webhook documentation, implement the adapter, verify signed/authenticated callbacks and idempotency, and only then expose a production payment-launch action.

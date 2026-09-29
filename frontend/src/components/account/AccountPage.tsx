@@ -615,10 +615,14 @@ export function AccountPage({
     setSaveNotice(null);
     try {
       const updated = await approveCustomerFormalQuote(quote.id);
+      const refreshedOrders = await getOrders();
       setFormalQuotes((current) => current.map((candidate) => (
         candidate.id === updated.id ? updated : candidate
       )));
-      setSaveNotice(`Quote revision ${updated.revision_number} approved.`);
+      setOrders(refreshedOrders);
+      setSaveNotice(
+        `Quote revision ${updated.revision_number} approved and order prepared.`,
+      );
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -1541,11 +1545,18 @@ export function AccountPage({
                       Approve This Quote
                     </button>
                   ) : quote.status === "approved" ? (
-                    <p className="account-formal-quote-approved">
-                      Approved {quote.approved_at !== null
-                        ? new Date(quote.approved_at).toLocaleString()
-                        : ""}
-                    </p>
+                    <div>
+                      <p className="account-formal-quote-approved">
+                        Approved {quote.approved_at !== null
+                          ? new Date(quote.approved_at).toLocaleString()
+                          : ""}
+                      </p>
+                      {orders.find((order) => order.formal_quote_id === quote.id) !== undefined ? (
+                        <p className="account-muted">
+                          Order prepared · awaiting secure payment.
+                        </p>
+                      ) : null}
+                    </div>
                   ) : (
                     <p className="account-muted">This revision has been superseded.</p>
                   )}

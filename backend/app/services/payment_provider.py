@@ -17,6 +17,7 @@ class CheckoutSessionRequest:
     customer_email: str
     success_url: str
     cancel_url: str
+    idempotency_key: str
 
 
 @dataclass(frozen=True)

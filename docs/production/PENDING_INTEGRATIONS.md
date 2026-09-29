@@ -124,3 +124,9 @@ The following are no longer pending and belong in the commissioned production do
 - Inbox/System/Archived/All communication-history workflow;
 - public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
 - safe plain-text URL linkification in Customer Inbox.
+
+### PT20.1 payment/order boundary status
+
+The approved-quote-to-order boundary is now implemented in application code: an approved formal quote can produce one authoritative `awaiting_payment` order with immutable line snapshots and an auditable source-quote link. A provider-neutral hosted-checkout orchestration seam is also present and tested without card data.
+
+Production payment remains pending. Before PT20.2, Affinity24 must identify the concrete gateway/account provisioned for D'Acqua Dolce (for example, one of the gateway families they publicly support or another explicitly assigned option) and provide authoritative sandbox credentials, API documentation, webhook authentication/verification rules, idempotency behavior, refund/status semantics, and permitted retained identifiers. Do not enable a customer-facing payment launch merely from Affinity24 marketing material.

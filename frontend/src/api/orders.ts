@@ -9,6 +9,7 @@ export type OrderItem = {
 
 export type Order = {
   id: string;
+  formal_quote_id: string | null;
   status: string;
   total_amount_minor: number;
   currency: string;

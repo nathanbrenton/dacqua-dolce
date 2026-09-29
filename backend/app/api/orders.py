@@ -42,6 +42,11 @@ def list_orders(
         result.append(
             OrderRead(
                 id=str(order.id),
+                formal_quote_id=(
+                    str(order.formal_quote_id)
+                    if order.formal_quote_id is not None
+                    else None
+                ),
                 status=order.status.value,
                 total_amount_minor=(order.total_amount_minor),
                 currency=order.currency,

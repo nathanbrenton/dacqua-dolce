@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
@@ -193,6 +194,10 @@ class Order(Base):
             "total_amount_minor >= 0",
             name="total_amount_minor_nonnegative",
         ),
+        UniqueConstraint(
+            "formal_quote_id",
+            name="uq_orders_formal_quote_id",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -208,6 +213,14 @@ class Order(Base):
             ondelete="RESTRICT",
         ),
         nullable=False,
+    )
+
+    formal_quote_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "formal_quotes.id",
+            ondelete="RESTRICT",
+        ),
     )
 
     status: Mapped[OrderStatus] = mapped_column(
@@ -299,7 +312,7 @@ class OrderItem(Base):
     )
 
     name_snapshot: Mapped[str] = mapped_column(
-        String(200),
+        String(240),
         nullable=False,
     )
 
@@ -338,6 +351,13 @@ class PaymentProviderReference(Base):
     """
 
     __tablename__ = "payment_provider_references"
+    __table_args__ = (
+        UniqueConstraint(
+            "provider",
+            "provider_checkout_id",
+            name="uq_payment_provider_references_provider_checkout",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

@@ -41,6 +41,7 @@ from app.services.audit import (
     record_audit_event,
 )
 from app.services.formal_quotes import approve_formal_quote
+from app.services.quote_orders import create_order_from_approved_quote
 
 router = APIRouter(
     prefix="/account",
@@ -484,6 +485,11 @@ def approve_customer_formal_quote(
     approve_formal_quote(
         db,
         formal_quote=formal_quote,
+        customer_user=current_user,
+    )
+    create_order_from_approved_quote(
+        db,
+        formal_quote_id=formal_quote.id,
         customer_user=current_user,
     )
     db.commit()

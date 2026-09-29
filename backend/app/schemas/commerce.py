@@ -42,6 +42,7 @@ class OrderItemRead(BaseModel):
 
 class OrderRead(BaseModel):
     id: str
+    formal_quote_id: str | None
     status: str
     total_amount_minor: int
     currency: str
