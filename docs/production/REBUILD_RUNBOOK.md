@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-This is the authoritative PT12 rebuild baseline for `dacqua-platform-prod-01`, validated through 2026-09-22.
+This is the authoritative PT18 rebuild baseline for `dacqua-platform-prod-01`, validated through 2026-09-29.
 
 It documents the clean validated production architecture and the repository-supported rebuild path. It does
 not record commissioning mistakes, failed experiments, or transient troubleshooting.
@@ -73,7 +73,7 @@ Set the production hostname:
 
     dacqua-platform-prod-01
 
-The public IPv4 at the 2026-09-22 checkpoint is `144.202.114.17`; DNS must be verified against the actual rebuilt host rather than
+The currently documented production IPv4 is `144.202.114.17`; DNS must be verified against the actual rebuilt host rather than
 blindly reusing an old address.
 
 ## 5. Base Debian bootstrap
@@ -370,11 +370,57 @@ The hardened deployment sequence is:
 14. automatically restore the previous application release if post-switch validation fails;
 15. after success, retain the newest five timestamped releases by default.
 
-The release source must represent a known Git revision. Through the 2026-09-22 checkpoint the validated staging method was exact `git archive` + SHA-256 + `scp` + extraction. An rsync-based exact-revision staging cache is planned to reduce workstation-to-server transfer volume; do not rsync directly into `/srv/dacqua-dolce/current` or mutate a timestamped release in place.
+The release source must represent a known Git revision. The commissioned
+staging workflow is:
+
+    ./scripts/production/stage_release_rsync.sh \
+      REVISION_SHA \
+      n8@dacqua-prod
+
+The helper exports only the requested Git revision, generates a verified source
+manifest, rsyncs the staged artifact to the production staging directory, and
+verifies the remote copy. Independently check
+`.dacqua-release-revision`/`verify_staged_source.py` before deployment.
+
+Do not rsync directly into `/srv/dacqua-dolce/current` and never mutate a
+timestamped release in place.
 
 Database migrations are not automatically downgraded during application rollback. Migration sequencing must preserve
 compatibility with the immediately previous application release unless a deployment has an explicit database recovery
 plan. See `docs/production/DEPLOYMENT_AND_ROLLBACK.md`.
+
+
+## 18.1 Preserve and migrate production application identities
+
+Production UAM is not rebuilt from development fixtures.
+
+Before any identity-affecting release or role migration:
+
+1. take a fresh PostgreSQL backup and validate restore capability;
+2. list existing application users and role assignments;
+3. inspect linked customer/business records for any account being changed;
+4. preserve legitimate users, credentials, MFA state, communications, and audit
+   history;
+5. deploy the application release without running the dev user bootstrap or
+   destructive local database rebuild;
+6. verify user/communications counts after deployment;
+7. perform only the intended in-place role mutation.
+
+Developer provisioning and deliberate staff-only conversion use the
+out-of-band role CLI. For a target that must become exactly one staff role:
+
+    backend/.venv/bin/python3 \
+      scripts/manage_user_role.py \
+      set-staff-role \
+      --email "existing-user@example.com" \
+      --role developer \
+      --confirm-replace-all-roles
+
+The command replaces all existing application roles on that user, emits an
+audit event, rejects legacy `manager`, and protects the final active developer.
+
+Do not hard-delete/recreate a production account merely to normalize roles when
+an audited in-place migration is sufficient.
 
 ## 19. Verify application edge
 
@@ -422,8 +468,10 @@ Populate only the protected runtime environment:
     DACQUA_PUBLIC_ORIGIN=https://dacquadolce.com
     DACQUA_EMAIL_PROVIDER=postmark
     DACQUA_POSTMARK_SERVER_TOKEN=<secret>
-    DACQUA_EMAIL_FROM=<verified-no-reply-sender>
+    DACQUA_EMAIL_FROM=no-reply@dacquadolce.com
     DACQUA_EMAIL_SUPPORT_FROM=support@dacquadolce.com
+    DACQUA_EMAIL_REPLY_FROM_ADDRESSES=sales@dacquadolce.com,contact@dacquadolce.com,info@dacquadolce.com,support@dacquadolce.com
+    DACQUA_EMAIL_SENDER_NAME="D'Acqua Dolce"
     DACQUA_EMAIL_OPERATOR_TO=<business-operator-address>
 
 Never place populated tokens or credentials in Git, documentation, screenshots, tickets, or shell history. Direct TCP/25 is not required.
@@ -528,7 +576,10 @@ Use metadata-oriented diagnostics and avoid printing the private Postmark destin
 
 When reply plumbing has materially changed, send one employee reply from Customer Inbox, then answer it using the customer's normal Reply action. The return message should enter the same durable communication thread.
 
-Employee replies visibly originate from `support@dacquadolce.com`; the private thread-specific Postmark alias is used only as `Reply-To`.
+Employee replies use approved company sender roles. Quote-request replies
+prefer `sales -> contact -> info -> support -> no-reply`; other replies prefer
+`support -> contact -> info -> sales -> no-reply`. The private thread-specific
+Postmark alias is used only as `Reply-To`.
 
 Routine releases that do not change communications transport do not need another live-email acceptance test.
 
@@ -577,7 +628,7 @@ Grafana data sources for Prometheus and Loki are provisioned from `/etc/grafana/
 
 ### Rebuild-detail boundary
 
-The PT12 state capture proves the validated service locations, listeners, runtime configuration, and health, but the
+The current validated state capture proves the validated service locations, listeners, runtime configuration, and health, but the
 repository does not yet contain a complete installer/pinning manifest for every observability binary/package.
 Do not invent download URLs or checksums. Before calling this runbook fully standalone, capture the validated
 installation source/version/checksum/package procedure for each manually installed observability component and
@@ -662,7 +713,7 @@ Protected namespace:
 
 The repository password file must remain root-controlled, mode 0600, and have an independent off-server copy.
 
-At PT12, stop here. Do not initialize a fictional remote repository. AWS S3 provisioning is a later milestone.
+At the current checkpoint, stop here. Do not initialize a fictional remote repository. AWS S3 provisioning is a later milestone.
 
 ## 26. Final baseline validation
 
@@ -692,7 +743,7 @@ Expected boundaries:
 
 ## 27. Disaster-recovery boundary
 
-At PT12, loss of the entire Vultr server is not yet fully protected by an off-host commissioned repository.
+At the current checkpoint, loss of the entire Vultr server is not yet fully protected by an off-host commissioned repository.
 The local backup/restore system is validated, and restic encryption preparation is complete, but AWS S3 remains
 pending.
 

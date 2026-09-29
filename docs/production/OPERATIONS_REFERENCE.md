@@ -1,6 +1,6 @@
 # D'Acqua Dolce Production Operations Reference
 
-This is the concise operator reference for the commissioned PT12 system, validated through 2026-09-22. It is not a substitute for the full rebuild procedure.
+This is the concise operator reference for the commissioned PT18 system, validated through 2026-09-29. It is not a substitute for the full rebuild procedure.
 
 ## SSH
 
@@ -252,8 +252,11 @@ Monit uses its Unix socket only; TCP/2812 is intentionally not exposed.
 
 ## Local database backup
 
-Run a backup immediately:
+Run a backup immediately. Change to a directory readable by `postgres` first
+to avoid an inherited-working-directory warning when the administrator home is
+not traversable:
 
+    cd /tmp
     sudo -u postgres /usr/local/sbin/dacqua-postgres-backup
 
 Inventory:
@@ -395,7 +398,10 @@ Useful boundaries:
 - the inbox can be refreshed manually and polls the local API every 60 seconds
   while the Operations page is open; polling does not consume Postmark email
   allowance;
-- employee replies use the configured customer-facing support sender, while
+- employee replies use approved company sender roles; quote-request replies
+  prefer `sales -> contact -> info -> support -> no-reply`, while other replies
+  prefer `support -> contact -> info -> sales -> no-reply`;
+- the authenticated staff account remains the internal author/audit actor while
   thread-specific Postmark routing remains only in `Reply-To`;
 - Postmark inbound-routing recipient addresses are filtered out of Operations
   API responses and should never be shown in the employee UI;
@@ -472,26 +478,84 @@ The public web records remain DNS-only; do not assume Cloudflare is proxying HTT
 
 ## Account and role administration
 
-The production role model includes `customer`, `employee`, `manager`, `administrator`, and `developer`.
+Application roles are distinct from PostgreSQL service principals. Customers and
+staff never receive direct PostgreSQL credentials.
 
-The Operations **User Access & Roles** interface allows administrator/developer accounts to manage only:
+The production application role model uses `customer`, `employee`,
+`administrator`, and `developer`. `manager` remains in the enum only as a
+legacy/deprecated compatibility role and cannot be newly assigned.
 
-- `employee`;
-- `manager`;
-- `administrator`.
+Capability boundary:
 
-The web interface preserves `customer`, prevents self-removal of the current administrator role, prevents removal of the final active administrator, and refuses to edit an account carrying `developer`. `developer` remains CLI-managed.
+- `employee` — Customer Inbox/ordinary Operations plus Pricing & Inventory read;
+- `administrator` — employee capabilities plus Pricing & Inventory write and
+  ordinary User Access & Roles administration; no Audit Log;
+- `developer` — full application authority including Audit Log; developer
+  provisioning remains out-of-band.
 
-Use the repository role-management CLI for initial bootstrap/recovery or developer-role changes. Avoid shared privileged accounts.
+The web role editor allows at most one ordinary web-managed staff role, rejects
+new manager assignments, prevents self-removal/final-removal of administrator,
+and refuses to edit any account carrying `developer`.
+
+Use the repository CLI for listing identities, developer bootstrap/recovery, or
+deliberate in-place staff-role migration:
+
+    backend/.venv/bin/python3 \
+      scripts/manage_user_role.py \
+      list
+
+To replace all roles on one existing account with exactly one staff role:
+
+    backend/.venv/bin/python3 \
+      scripts/manage_user_role.py \
+      set-staff-role \
+      --email "existing-user@example.com" \
+      --role developer \
+      --confirm-replace-all-roles
+
+The replacement command is audited, rejects legacy `manager`, and protects the
+final active developer. Audit the target and take a current database backup
+before using it in production.
+
+Never run `scripts/bootstrap_dev_users.py` or
+`scripts/rebuild_local_database.sh` in production. Preserve legitimate
+production identities and migrate roles in place.
 
 ## Deployment and rollback
 
-Deploy from a complete release source on the production host:
+Production releases are staged from an exact immutable Git revision. From the
+local repository:
 
-    sudo /path/to/release-source/scripts/production/deploy_release.sh \
-      /path/to/release-source
+    ./scripts/production/stage_release_rsync.sh \
+      REVISION_SHA \
+      n8@dacqua-prod
 
-The helper builds before activation, creates a pre-migration database backup when available, runs Alembic, reconciles the canonical production catalog, normalizes release ownership, atomically switches the `current` symlink, validates readiness/public behavior, automatically restores the previous application release after a failed activation, and prunes old timestamped releases only after success.
+The staging helper exports only that revision, writes/verifies its manifest, and
+copies it to the separate production staging path. Never rsync directly into
+`/srv/dacqua-dolce/current` or mutate an existing timestamped release.
+
+On production, verify the staged revision before deployment:
+
+    cat ~/dacqua-dolce-deploy-source/.dacqua-release-revision
+
+    python3 \
+      ~/dacqua-dolce-deploy-source/scripts/production/verify_staged_source.py \
+      verify \
+      ~/dacqua-dolce-deploy-source \
+      REVISION_SHA
+
+Then deploy from the staged source:
+
+    sudo \
+      ~/dacqua-dolce-deploy-source/scripts/production/deploy_release.sh \
+      ~/dacqua-dolce-deploy-source
+
+The helper builds before activation, creates a pre-migration database backup
+when available, runs Alembic with the migration identity, reconciles the
+canonical production catalog, normalizes release ownership, atomically switches
+the `current` symlink, validates readiness/public behavior, automatically
+restores the previous application release after a failed activation, and prunes
+old timestamped releases only after success.
 
 List rollback targets:
 

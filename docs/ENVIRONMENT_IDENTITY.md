@@ -57,3 +57,29 @@ as one layer of defense:
 
 Environment identity is not a substitute for feature-level authorization,
 provider sandboxing, idempotency, or explicit customer consent.
+
+
+## Application identity domains
+
+Development/test and production application identities are intentionally
+visually distinct:
+
+- development/test company identities use `@dacquadolce.test`;
+- production company identities use `@dacquadolce.com`.
+
+The canonical development fixture set belongs only to development/test.
+Production must never receive the dev fixture bootstrap merely because the
+application schemas are compatible.
+
+Production UAM changes preserve existing legitimate users and migrate roles in
+place. Development/test may be destructively rebuilt through the guarded local
+rebuild workflow.
+
+## Database identity is separate from application identity
+
+`DACQUA_ENVIRONMENT` identifies the application environment. It does not grant
+database authority.
+
+FastAPI uses the runtime PostgreSQL principal `dacqua_dolce_app`; Alembic uses
+`dacqua_dolce_migrator`. Application roles such as customer, employee,
+administrator, and developer do not map to PostgreSQL logins.

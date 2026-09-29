@@ -75,3 +75,59 @@ Automated tests explicitly identify as `test`; production deployment requires
 Frontend developer-only controls remain governed by
 `VITE_DEVELOPER_MODE=true`, which is a capability flag rather than an
 environment identity. `VITE_APP_ENVIRONMENT` defaults to `development` locally.
+
+
+## Local PostgreSQL least-privilege model
+
+Local development mirrors the production separation of duties while keeping a
+disposable Docker DBA identity for cluster bootstrap:
+
+- `dacqua_dolce_dba` — local Docker/bootstrap administrator; may be superuser
+  inside the disposable local container; never used by FastAPI or Alembic;
+- `dacqua_dolce_migrator` — owns `dacqua_dolce_dev` and application objects,
+  runs Alembic, and has DDL authority without superuser/CREATEDB/CREATEROLE/
+  replication/BYPASSRLS privileges;
+- `dacqua_dolce_app` — FastAPI runtime role with required DML/default
+  privileges, schema `USAGE`, no schema `CREATE`, and no database/table
+  ownership.
+
+`infra/.env` stores the local DBA/migrator/runtime database secrets. The
+untracked `backend/.env` contains only the runtime `DACQUA_DATABASE_URL`.
+Alembic uses `scripts/alembic_local.sh`, which constructs the migrator URL for
+that process rather than persisting it in `backend/.env`.
+
+Use:
+
+    python3 scripts/configure_local_database_credentials.py
+
+to generate distinct local DBA/migrator/runtime credentials without printing
+them. To validate existing separation without rotating credentials:
+
+    python3 scripts/configure_local_database_credentials.py --check
+
+## Guarded local rebuild
+
+When a clean development database is required, use:
+
+    scripts/rebuild_local_database.sh --confirm-destroy-local-data
+
+The explicit flag is required because this destroys the local Docker database
+volume. Before destruction, the workflow takes a local `pg_dump` safety backup
+under the ignored repository-local `.local-backups/` directory.
+
+The rebuild script is development-only. Never copy its destructive reset
+behavior into production.
+
+After a rebuild:
+
+1. run Alembic through the migrator-only wrapper:
+
+       scripts/alembic_local.sh upgrade head
+
+2. reconcile/seed the supported local catalog;
+3. bootstrap canonical dev/test users with `scripts/bootstrap_dev_users.py`;
+4. keep reusable dev account passwords in
+   `~/.dacqua-dolce/dev-bootstrap.env`, outside Git.
+
+Canonical dev/test identities use `@dacquadolce.test`; production identities
+are never populated from that fixture set.

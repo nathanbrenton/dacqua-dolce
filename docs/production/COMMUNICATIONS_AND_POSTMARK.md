@@ -8,7 +8,7 @@ It describes the validated final implementation only. It intentionally omits tra
 
 Production validation checkpoint:
 
-- date: 2026-09-22;
+- date: 2026-09-29;
 - exact deployed source revisions are recorded by immutable release metadata/deployment history rather than treated as configuration constants in this runbook;
 - Postmark transactional sending: commissioned;
 - PostgreSQL communications archive: commissioned;
@@ -46,7 +46,24 @@ Employee replies follow the reverse application path:
       -> Postmark HTTPS API
       -> customer
 
-The visible sender for employee customer-service replies is `support@dacquadolce.com`. A thread-specific private Postmark inbound alias is used only as `Reply-To` so a customer's normal Reply action returns to the same archived conversation.
+Employee customer-service replies use approved company sender roles:
+`sales@dacquadolce.com`, `contact@dacquadolce.com`,
+`info@dacquadolce.com`, `support@dacquadolce.com`, and the fallback
+`no-reply@dacquadolce.com`.
+
+Quote-request replies prefer:
+
+    sales -> contact -> info -> support -> no-reply
+
+Other conversation replies prefer:
+
+    support -> contact -> info -> sales -> no-reply
+
+The authenticated staff account remains the internal author/audit actor. The
+visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive retains
+the canonical bare sender address. A thread-specific private Postmark inbound
+alias is used only as `Reply-To` so a customer's normal Reply action returns to
+the same archived conversation.
 
 Cloudflare is authoritative for DNS, but the production web `A`/`CNAME` records are intentionally **DNS only**. Cloudflare is therefore providing authoritative DNS and inbound Email Routing without acting as the HTTP reverse proxy for the site at this checkpoint.
 
@@ -120,6 +137,14 @@ Authentication/security messages such as password-reset or verification mail may
 - Reply-To
 
 into separate rows associated with the archived message.
+
+Operations To input accepts comma- or semicolon-separated addresses.
+Server-side normalization deduplicates and validates recipients, limits a send
+to at most 10 To recipients, applies the existing combined-length constraint,
+and archives each recipient as its own `CommunicationRecipient`.
+
+CC/BCC composition remains deferred even though the archive schema can represent
+those recipient kinds.
 
 ### Attachments
 
@@ -262,6 +287,8 @@ Relevant non-secret variable names:
     DACQUA_POSTMARK_SERVER_TOKEN
     DACQUA_EMAIL_FROM
     DACQUA_EMAIL_SUPPORT_FROM
+    DACQUA_EMAIL_REPLY_FROM_ADDRESSES
+    DACQUA_EMAIL_SENDER_NAME
     DACQUA_EMAIL_OPERATOR_TO
     DACQUA_POSTMARK_INBOUND_WEBHOOK_USERNAME
     DACQUA_POSTMARK_INBOUND_WEBHOOK_PASSWORD
@@ -269,11 +296,19 @@ Relevant non-secret variable names:
 Never put populated secret values into the repository.
 
 `DACQUA_EMAIL_FROM` is the transactional no-reply identity used for account
-mail. `DACQUA_EMAIL_SUPPORT_FROM` is the customer-facing sender for employee
-conversation replies. The thread-specific Postmark inbound alias belongs only
-in the outbound `Reply-To` header and protected server configuration; the
-Operations API filters Postmark inbound-routing recipient addresses so the
-assigned inbound mailbox is not exposed in the employee web UI.
+mail. `DACQUA_EMAIL_SUPPORT_FROM` is the support-role sender, while
+`DACQUA_EMAIL_REPLY_FROM_ADDRESSES` defines the approved selectable sender
+roles. The sender display name must be shell-quoted:
+
+    DACQUA_EMAIL_SENDER_NAME="D'Acqua Dolce"
+
+The display name is applied at the Postmark delivery boundary; the archive keeps
+the bare sender address.
+
+The thread-specific Postmark inbound alias belongs only in the outbound
+`Reply-To` header and protected server configuration; the Operations API
+filters Postmark inbound-routing recipient addresses so the assigned inbound
+mailbox is not exposed in the employee web UI.
 
 The observability reporting environment is separate:
 
@@ -394,7 +429,7 @@ Use Postmark **Check**. A successful check must produce `200` and an archived in
 
 For transport/webhook commissioning, one controlled message to the private Postmark inbound destination may be used before public routing exists. Once the public route is commissioned, normal acceptance should target `support@dacquadolce.com` instead of exposing or teaching operators to use the provider-assigned address.
 
-The public-address acceptance validated on 2026-09-22 was:
+The public-address acceptance validated in production was:
 
     external Gmail sender
       -> support@dacquadolce.com
@@ -414,6 +449,17 @@ The production acceptance conversation contains three messages in one durable th
     inbound received -> outbound sent -> inbound received
 
 This proves that an employee reply sent from Customer Inbox can be answered with the customer's normal Reply action and routed back into the same thread through the private thread-specific `Reply-To` alias.
+
+
+## 11.1 Mail-authentication status
+
+SPF and DKIM have passed live delivery inspection. A prior Gmail **Show
+original** check reported DMARC FAIL.
+
+Treat DMARC as an outstanding mail-authentication audit item. Do not describe
+DMARC as healthy until a newly delivered production message is explicitly
+revalidated as DMARC PASS. SPF/DKIM success alone does not establish DMARC
+alignment.
 
 ## 12. Operational diagnostics
 
@@ -463,6 +509,10 @@ Commissioned:
 - authenticated employee Customer Inbox list/detail UI with active/archive/all views;
 - independent scrolling for the thread list and selected conversation;
 - employee replies archived into the existing communication thread;
+- original website request content remains visible separately from later correspondence;
+- quoted reply history may be collapsed in the UI while the full body remains archived;
+- approved From-role selection with the authenticated employee retained as the internal author/audit actor;
+- multi-recipient To parsing/normalization/deduplication with a maximum of 10 recipients;
 - thread-specific Postmark `Reply-To` routing using `MailboxHash`;
 - production round trip proving employee outbound -> customer reply -> the same archived thread;
 - Operations API filtering that keeps Postmark inbound-routing addresses out of the employee UI;

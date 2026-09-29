@@ -10,7 +10,7 @@ The canonical public origin is:
 
 The `www` hostname is an alias and redirects permanently to the canonical bare domain.
 
-This document represents the validated production state through 2026-09-22.
+This document represents the validated production state through 2026-09-29.
 
 ## 2. Production host
 
@@ -67,10 +67,14 @@ Production identity currently includes:
 - email verification using expiring, single-use, hash-only tokens;
 - explicit verification confirmation so ordinary GET/link scanning does not consume the token;
 - privileged MFA;
-- roles `customer`, `employee`, `manager`, `administrator`, and `developer`;
-- web administration of `employee`, `manager`, and `administrator` by administrator/developer accounts;
-- CLI-only management of the `developer` role;
-- audit events for privileged identity changes.
+- application roles `customer`, `employee`, `administrator`, and `developer`, with `manager` retained only as a legacy/deprecated enum value for compatibility;
+- capability-based authorization: employee Operations + pricing/inventory read, administrator Operations + pricing/inventory write + ordinary account administration, and developer full application authority including Audit Log;
+- developer-only Audit Log visibility;
+- out-of-band CLI management of `developer`;
+- guarded CLI `set-staff-role` migration for replacing all roles on an existing account with exactly one staff role;
+- audited privileged identity changes.
+
+Application roles are not PostgreSQL roles. Human/customer identities never receive direct database credentials. Production identities are preserved and migrated in place; the destructive dev fixture/bootstrap workflow is not used in production.
 
 ### Catalog
 
@@ -228,7 +232,14 @@ The hardened deployment workflow:
 
 PostgreSQL migrations are never automatically downgraded as part of application rollback. See `DEPLOYMENT_AND_ROLLBACK.md`.
 
-The transport used to place a complete source tree on the production host is separate from activation. Through the 2026-09-22 checkpoint, exact Git commits were exported with `git archive` and transferred with `scp`. Future deployments may use an rsync-based exact-commit staging cache to reduce transfer volume, but the source still must represent a known commit and must never be rsynced directly into `/srv/dacqua-dolce/current`.
+The transport used to place a complete source tree on the production host is
+separate from activation. The commissioned staging workflow uses
+`scripts/production/stage_release_rsync.sh` to export an exact Git revision,
+generate/verify a source manifest, and copy that staged artifact to the
+production staging directory. The production copy is independently checked with
+`verify_staged_source.py` before activation. Source must never be rsynced
+directly into `/srv/dacqua-dolce/current`, and timestamped releases are
+immutable.
 
 ## 8. Observability stack
 
@@ -267,7 +278,7 @@ Prometheus rules cover, among other conditions:
 - high/critical CPU utilization;
 - PostgreSQL backup and restore-check timer health/freshness.
 
-At the 2026-09-22 production checkpoint there were no firing or pending Prometheus alerts and no failed systemd units.
+Operational acceptance requires zero firing/pending production alerts attributable to the release and zero failed systemd units; verify the live state rather than relying on a historical checkpoint.
 
 ## 9. External monitoring
 
@@ -351,7 +362,7 @@ Cloudflare's root MX/SPF/DKIM records coexist with Postmark's separate sending-d
 
 FastAPI sends transactional mail through the Postmark HTTPS API. Direct outbound TCP/25 is not required.
 
-Account/security mail uses the transactional no-reply sender. Employee customer-service replies use `support@dacquadolce.com` as the visible sender.
+Account/security mail uses the transactional no-reply sender. Employee customer-service replies choose from approved company sender roles. Quote-request replies prefer `sales`, then `contact`, `info`, `support`, and `no-reply`; other replies prefer `support`, then `contact`, `info`, `sales`, and `no-reply`. The authenticated staff user remains the internal author/audit actor.
 
 ### Durable communications archive — commissioned
 
@@ -393,18 +404,23 @@ The inbox renders archived plain-text message bodies. Explicit `http://` and `ht
 
 ### Address roles
 
-Current commissioned public/application addresses:
+Current commissioned application sender roles:
 
-- `support@dacquadolce.com` — customer correspondence into Customer Inbox and visible sender for employee replies;
-- `no-reply@dacquadolce.com` — application transactional/account mail sender.
+- `sales@dacquadolce.com`;
+- `contact@dacquadolce.com`;
+- `info@dacquadolce.com`;
+- `support@dacquadolce.com`;
+- `no-reply@dacquadolce.com`.
 
-Addresses such as `nathan@dacquadolce.com`, `jamie@dacquadolce.com`, `info@dacquadolce.com`, and `admin@dacquadolce.com` are **not** automatically provisioned as human mailboxes by Cloudflare Email Routing. Add explicit forwarding/mailbox arrangements later if the business needs them.
+`support@dacquadolce.com` remains the public inbound Customer Inbox address. These role addresses are application identities, not automatically provisioned human IMAP mailboxes. Individual human custom-domain mailboxes/forwarding require separate explicit provisioning.
+
+The visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive retains the canonical bare sender address. The private thread-aware Postmark inbound alias is used only as `Reply-To`.
 
 ### Observability reports — pending delivery
 
 The application Postmark path being live does not automatically commission the separate `/usr/local/sbin/dacqua-observability-report.py` delivery/timer workflow. That remains pending until its Postmark integration, recipients, timers, failure handling, and heartbeats are validated.
 
-## 13. Production boundaries at PT12
+## 13. Production boundaries at PT18
 
 Commissioned:
 

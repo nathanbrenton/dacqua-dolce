@@ -116,7 +116,6 @@ Before enabling live checkout:
 
 The following are no longer pending and belong in the commissioned production documents:
 
-- rsync exact-revision workstation -> production staging;
 - durable communications archive;
 - outbound communication archival;
 - authenticated Postmark inbound webhook;

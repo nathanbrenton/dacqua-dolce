@@ -2,7 +2,7 @@
 
 This directory is the authoritative documentation namespace for the D'Acqua Dolce production platform.
 
-**Production state represented:** PT12/M7 communications + public support routing, validated through 2026-09-22.
+**Production state represented:** PT18 identity/database least-privilege alignment plus commissioned communications and public support routing, validated through 2026-09-29.
 
 Production releases are timestamped immutable artifacts created by the standard deployment workflow. The exact source revision for a running release is recorded by release metadata/deployment output; do not treat a historical commit hash in prose as a configuration constant.
 
@@ -20,7 +20,7 @@ Production releases are timestamped immutable artifacts created by the standard 
 
 1. These documents describe the **validated production state**, not the history of how it was reached.
 2. Secrets never belong in Git. Variable names and file locations may be documented; secret values may not.
-3. A component is described as commissioned only after it has been installed and validated on `dacqua-platform-prod-01`.
+3. A component is described as commissioned only after it has been installed and validated on the production host `dacqua-platform-prod-01`. Workstation SSH may use the convenience alias `dacqua-prod`.
 4. Pending work is isolated in `PENDING_INTEGRATIONS.md` rather than written into the runbook as though it already exists.
 5. When production changes, update these documents in the same milestone as the validated infrastructure/application change.
 6. Historical planning, meeting notes, failed attempts, temporary diagnostics, and superseded implementation paths do not belong in the rebuild runbook.
