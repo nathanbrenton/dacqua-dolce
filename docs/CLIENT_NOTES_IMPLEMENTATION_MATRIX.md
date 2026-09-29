@@ -313,3 +313,14 @@ Production validation completed at runtime revision `ce8f92ff2e60e06fc8e6de809f2
 | Customer should see order progression after quote approval | Implemented foundation | The customer account refreshes orders immediately after quote approval and associates the new order with the exact formal quote. The order is visibly awaiting secure payment. |
 
 PT20.2 remains the provider-specific hosted-payment milestone: confirm the concrete Affinity24 gateway/account, obtain sandbox credentials and authoritative API/webhook documentation, implement the adapter, verify signed/authenticated callbacks and idempotency, and only then expose a production payment-launch action.
+
+## PT20.2A — Verified payment-event core
+
+| Client direction | PT20.2A implementation |
+|---|---|
+| Payment must remain behind the contracted hosted/tokenized provider boundary | Preserved | No public payment webhook or provider credential contract is guessed. The new core accepts only events that a future gateway adapter has already authenticated and normalized. |
+| Successful payment should become an authoritative order state change | Implemented provider-neutral core | A verified success can move `awaiting_payment` to `paid` only when provider identity, amount, and currency match the authoritative payment reference/order. |
+| Provider retries must not duplicate business effects | Implemented | Normalized provider events are durable and unique by provider + provider event ID; sequential retries are idempotent and the database uniqueness constraint is the concurrency backstop. |
+| Payment data must remain minimal | Strengthened | The event table stores normalized status, provider identifiers, amount/currency, and permitted display metadata only. No raw webhook payload or prohibited card data is modeled. |
+| Refund handling | Deliberately deferred | Refund events are retained without changing order/payment state until the exact gateway semantics and D'Acqua Dolce full/partial-refund policy are commissioned. |
+| Affinity24 production integration | Still externally blocked | The exact provisioned gateway, sandbox/API contract, webhook verification method, and credentials remain required before the provider adapter and public webhook endpoint can be implemented. |

@@ -22,6 +22,7 @@ from app.models.commerce import (
     Order,
     OrderItem,
     OrderStatus,
+    PaymentProviderEvent,
     PaymentProviderReference,
     PaymentReferenceStatus,
 )
@@ -96,6 +97,7 @@ __all__ = [
     "OrderItem",
     "OrderStatus",
     "PasswordResetToken",
+    "PaymentProviderEvent",
     "PaymentProviderReference",
     "PaymentReferenceStatus",
     "PricingPolicyMode",

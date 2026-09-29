@@ -130,3 +130,31 @@ The following are no longer pending and belong in the commissioned production do
 The approved-quote-to-order boundary is now implemented in application code: an approved formal quote can produce one authoritative `awaiting_payment` order with immutable line snapshots and an auditable source-quote link. A provider-neutral hosted-checkout orchestration seam is also present and tested without card data.
 
 Production payment remains pending. Before PT20.2, Affinity24 must identify the concrete gateway/account provisioned for D'Acqua Dolce (for example, one of the gateway families they publicly support or another explicitly assigned option) and provide authoritative sandbox credentials, API documentation, webhook authentication/verification rules, idempotency behavior, refund/status semantics, and permitted retained identifiers. Do not enable a customer-facing payment launch merely from Affinity24 marketing material.
+
+### PT20.2A verified-event readiness
+
+The provider-neutral verified-payment-event core is implemented. It gives the
+future gateway adapter a narrow authenticated handoff: provider event identity,
+normalized payment status, authoritative amount/currency, provider-issued
+references, and minimal payment-method display metadata. Provider events are
+idempotent and raw webhook payloads are not stored.
+
+A verified successful event may mark an `awaiting_payment` order `paid` only on
+an exact amount/currency match. Refund events are recorded without guessing
+full/partial-refund policy.
+
+Still required before customer-facing payment can be enabled:
+
+1. the exact Affinity24-provisioned gateway/platform;
+2. authoritative sandbox and production endpoint documentation;
+3. server-side authentication/credential names;
+4. hosted checkout/session creation contract;
+5. webhook signature/authentication rules and event identifiers;
+6. provider event/status mapping, including asynchronous/out-of-order behavior;
+7. refund, void, retry, and idempotency semantics;
+8. return/cancel URL requirements;
+9. merchant/account identifiers and permitted retained fields;
+10. confirmation of enabled payment methods such as ACH.
+
+Do not create an unauthenticated generic payment webhook merely to exercise the
+new event core. The public endpoint belongs with the concrete verified adapter.

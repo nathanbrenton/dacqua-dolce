@@ -424,3 +424,98 @@ class PaymentProviderReference(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+class PaymentProviderEvent(Base):
+    """Normalized, verified provider event with no raw payment payload.
+
+    A gateway-specific adapter must authenticate the inbound webhook and
+    translate it to this narrow safe record before the application can use it.
+    Raw provider payloads and cardholder data are intentionally not stored.
+    """
+
+    __tablename__ = "payment_provider_events"
+    __table_args__ = (
+        CheckConstraint(
+            "amount_minor IS NULL OR amount_minor >= 0",
+            name="amount_minor_nonnegative",
+        ),
+        UniqueConstraint(
+            "provider",
+            "provider_event_id",
+            name="uq_payment_provider_events_provider_event",
+        ),
+        Index(
+            "ix_payment_provider_events_reference_created",
+            "payment_reference_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    payment_reference_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "payment_provider_references.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    provider: Mapped[str] = mapped_column(
+        String(80),
+        nullable=False,
+    )
+
+    provider_event_id: Mapped[str] = mapped_column(
+        String(300),
+        nullable=False,
+    )
+
+    status: Mapped[PaymentReferenceStatus] = mapped_column(
+        PGEnum(
+            PaymentReferenceStatus,
+            name="payment_reference_status",
+            create_type=False,
+        ),
+        nullable=False,
+    )
+
+    amount_minor: Mapped[int | None] = mapped_column(
+        BigInteger,
+    )
+
+    currency: Mapped[str | None] = mapped_column(
+        String(3),
+    )
+
+    provider_payment_id: Mapped[str | None] = mapped_column(
+        String(300),
+    )
+
+    provider_customer_id: Mapped[str | None] = mapped_column(
+        String(300),
+    )
+
+    payment_method_type: Mapped[str | None] = mapped_column(
+        String(80),
+    )
+
+    payment_method_brand: Mapped[str | None] = mapped_column(
+        String(80),
+    )
+
+    payment_method_last4: Mapped[str | None] = mapped_column(
+        String(4),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )

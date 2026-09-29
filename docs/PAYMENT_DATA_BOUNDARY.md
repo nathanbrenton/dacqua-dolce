@@ -70,3 +70,27 @@ PT20.1 connects the assisted-sales workflow to the payment boundary without pret
 The provider-neutral hosted-checkout orchestration accepts only safe commercial context: internal order ID, amount, currency, customer email, success/cancel return URLs, and a deterministic idempotency key. It stores only the provider name and provider-issued checkout reference before a later provider event establishes payment status. Redirect URLs are not persisted as payment credentials or card data.
 
 Affinity24 advertises hosted payment pages and tokenized vaults for card-not-present transactions, but also lists multiple gateway/omni-channel options. Therefore the production adapter remains deliberately unimplemented until D'Acqua Dolce's merchant onboarding identifies the actual gateway and supplies its authoritative sandbox/API/webhook contract.
+
+## PT20.2A verified payment-event core
+
+The application now has a provider-neutral boundary for **already authenticated**
+payment events. A future gateway adapter must verify the provider's webhook
+signature/authentication first, then normalize only the safe fields required by
+D'Acqua Dolce into `VerifiedPaymentEvent`. Raw webhook bodies are not retained.
+
+The normalized event layer is idempotent by provider + provider event ID and
+persists only provider references, normalized status, amount/currency, and the
+minimal display metadata already allowed by this document. A successful event
+can move an `awaiting_payment` order to `paid` only when its amount and currency
+exactly match the authoritative order. Late failure/cancellation events cannot
+regress a successful payment.
+
+Refund events are retained for audit/idempotency but intentionally do not yet
+change the order or payment-reference state. Full-versus-partial refund rules,
+provider status semantics, and refund operations remain a provider/business
+commissioning decision.
+
+This core is **not** a public webhook endpoint and does not authenticate any
+Affinity24/gateway request by itself. Production payment remains disabled until
+the provisioned gateway's authoritative webhook verification contract is known
+and implemented.

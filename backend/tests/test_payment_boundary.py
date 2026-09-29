@@ -1,8 +1,10 @@
 from dataclasses import fields
 
 from app.models.commerce import (
+    PaymentProviderEvent,
     PaymentProviderReference,
 )
+from app.services.payment_events import VerifiedPaymentEvent
 from app.services.payment_provider import (
     CheckoutSessionRequest,
     PaymentMethodDisplay,
@@ -46,5 +48,17 @@ def test_payment_display_metadata_is_minimal() -> None:
 
 def test_payment_table_has_no_forbidden_fields() -> None:
     column_names = {column.name for column in PaymentProviderReference.__table__.columns}
+
+    assert column_names.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+
+
+def test_verified_event_contract_has_no_card_data_fields() -> None:
+    event_fields = {field.name for field in fields(VerifiedPaymentEvent)}
+
+    assert event_fields.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+
+
+def test_payment_event_table_has_no_forbidden_fields() -> None:
+    column_names = {column.name for column in PaymentProviderEvent.__table__.columns}
 
     assert column_names.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
