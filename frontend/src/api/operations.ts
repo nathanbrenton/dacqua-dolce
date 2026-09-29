@@ -89,16 +89,31 @@ export type OperationsCommunicationThread = {
   mailbox_kind: "inbox" | "system";
 };
 
+export type OperationsCommunicationOriginatingRequest = {
+  request_type: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  product_name: string | null;
+  message: string | null;
+  created_at: string;
+};
+
 export type OperationsCommunicationThreadDetail =
   OperationsCommunicationThread & {
     reply_target: string | null;
     reply_target_source: string | null;
+    reply_sender_addresses: string[];
+    reply_sender_default: string | null;
+    originating_request: OperationsCommunicationOriginatingRequest | null;
     messages: OperationsCommunicationMessage[];
   };
 
 export type OperationsCommunicationReply = {
   delivery_status: string;
   recipient: string;
+  recipients: string[];
+  sender: string;
   thread: OperationsCommunicationThreadDetail;
 };
 
@@ -374,11 +389,16 @@ export function replyToOperationsCommunicationThread(
   threadId: string,
   bodyText: string,
   recipient: string,
+  sender: string,
 ): Promise<OperationsCommunicationReply> {
   return writeJson(
     `/api/operations/communication-threads/${encodeURIComponent(threadId)}/reply`,
     "POST",
-    { body_text: bodyText, recipient },
+    {
+      body_text: bodyText,
+      recipient,
+      sender,
+    },
   );
 }
 

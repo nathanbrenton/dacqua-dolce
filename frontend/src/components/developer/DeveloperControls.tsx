@@ -24,6 +24,7 @@ import {
 
 type DeveloperControlsProps = {
   open: boolean;
+  onClose: () => void;
   theme: ThemeId;
   onThemeChange: (theme: ThemeId) => void;
   appearance: AppearanceMode;
@@ -42,6 +43,7 @@ type DeveloperControlsProps = {
 
 export function DeveloperControls({
   open,
+  onClose,
   theme,
   onThemeChange,
   appearance,
@@ -60,9 +62,20 @@ export function DeveloperControls({
       className="developer-controls"
       aria-label="Aesthetic lab"
     >
-      <span className="developer-mode-label">
-        Aesthetic Lab
-      </span>
+      <div className="developer-controls-heading">
+        <span className="developer-mode-label">
+          Aesthetic Lab
+        </span>
+
+        <button
+          type="button"
+          className="developer-controls-close"
+          aria-label="Close aesthetic lab"
+          onClick={onClose}
+        >
+          ×
+        </button>
+      </div>
 
       <label htmlFor="developer-theme">
         Color theme

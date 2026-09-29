@@ -7,6 +7,7 @@ from pydantic import (
     Field,
     SecretStr,
     field_validator,
+    model_validator,
 )
 from pydantic_settings import (
     BaseSettings,
@@ -23,6 +24,12 @@ class EmailRuntimeSettings(BaseSettings):
         extra="ignore",
     )
 
+    environment: Literal[
+        "development",
+        "test",
+        "production",
+    ] = "development"
+
     public_origin: str = "http://127.0.0.1:15173"
 
     email_provider: Literal[
@@ -36,8 +43,9 @@ class EmailRuntimeSettings(BaseSettings):
     postmark_inbound_webhook_password: SecretStr | None = None
     postmark_inbound_address: str | None = None
 
-    email_from: str = "no-reply@localhost.invalid"
+    email_from: str = "no-reply@dacquadolce.test"
     email_support_from: str | None = None
+    email_reply_from_addresses: str | None = None
 
     email_operator_to: str | None = None
 
@@ -52,6 +60,42 @@ class EmailRuntimeSettings(BaseSettings):
         ge=15,
         le=7 * 24 * 60,
     )
+
+    @property
+    def company_email_domain(self) -> str:
+        if self.environment == "production":
+            return "dacquadolce.com"
+
+        return "dacquadolce.test"
+
+    @property
+    def default_company_reply_from_addresses(
+        self,
+    ) -> tuple[str, ...]:
+        domain = self.company_email_domain
+
+        return (
+            f"sales@{domain}",
+            f"contact@{domain}",
+            f"info@{domain}",
+            f"support@{domain}",
+        )
+
+    @model_validator(mode="after")
+    def apply_environment_email_defaults(
+        self,
+    ) -> "EmailRuntimeSettings":
+        default_sender_addresses = {
+            "no-reply@localhost.invalid",
+            "no-reply@dacquadolce.test",
+        }
+
+        if self.email_from in default_sender_addresses:
+            self.email_from = (
+                f"no-reply@{self.company_email_domain}"
+            )
+
+        return self
 
     @field_validator("postmark_inbound_address")
     @classmethod
@@ -90,6 +134,76 @@ class EmailRuntimeSettings(BaseSettings):
             return None
 
         return normalize_email_address(stripped)
+
+    @field_validator("email_reply_from_addresses")
+    @classmethod
+    def validate_email_reply_from_addresses(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
+        candidates = [
+            item.strip()
+            for item in value.replace(";", ",").split(",")
+            if item.strip()
+        ]
+
+        if not candidates:
+            return None
+
+        if len(candidates) > 20:
+            raise ValueError(
+                "email_reply_from_addresses supports at most 20 addresses."
+            )
+
+        normalized: list[str] = []
+        seen: set[str] = set()
+
+        for candidate in candidates:
+            address = normalize_email_address(candidate)
+
+            if address in seen:
+                continue
+
+            seen.add(address)
+            normalized.append(address)
+
+        return ",".join(normalized)
+
+    @property
+    def communication_reply_from_addresses(
+        self,
+    ) -> tuple[str, ...]:
+        configured = (
+            self.email_reply_from_addresses.split(",")
+            if self.email_reply_from_addresses
+            else list(self.default_company_reply_from_addresses)
+        )
+
+        candidates = [
+            *configured,
+            self.email_support_from,
+            self.email_from,
+        ]
+
+        addresses: list[str] = []
+        seen: set[str] = set()
+
+        for candidate in candidates:
+            if candidate is None:
+                continue
+
+            address = normalize_email_address(candidate)
+
+            if address in seen:
+                continue
+
+            seen.add(address)
+            addresses.append(address)
+
+        return tuple(addresses)
 
     @field_validator("public_origin")
     @classmethod

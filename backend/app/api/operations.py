@@ -45,6 +45,7 @@ from app.schemas.operations import (
     OperationsAuditEventRead,
     OperationsCommunicationAttachmentRead,
     OperationsCommunicationMessageRead,
+    OperationsCommunicationOriginatingRequestRead,
     OperationsCommunicationRead,
     OperationsCommunicationRecipientRead,
     OperationsCommunicationReplyCreate,
@@ -78,6 +79,8 @@ from app.services.commerce import (
 from app.services.communications_reply import (
     CommunicationReplyConfigurationError,
     CommunicationReplyRecipientUnavailable,
+    CommunicationReplySenderNotAllowed,
+    resolve_communication_reply_sender_options,
     resolve_communication_reply_target_details,
     send_communication_reply,
 )
@@ -653,6 +656,44 @@ def _communication_message_reads(
     ]
 
 
+def _communication_originating_request_read(
+    db: DatabaseSession,
+    *,
+    thread: CommunicationThread,
+) -> OperationsCommunicationOriginatingRequestRead | None:
+    if (
+        thread.related_entity_type != "quote_request"
+        or thread.related_entity_id is None
+    ):
+        return None
+
+    try:
+        quote_id = uuid.UUID(thread.related_entity_id)
+    except ValueError:
+        return None
+
+    quote = db.get(
+        QuoteRequest,
+        quote_id,
+    )
+
+    if quote is None:
+        return None
+
+    return OperationsCommunicationOriginatingRequestRead(
+        request_type="website_quote_request",
+        name=quote.name,
+        email=quote.email,
+        phone=quote.phone,
+        product_name=product_name_for_quote(
+            db,
+            quote.product_id,
+        ),
+        message=quote.message,
+        created_at=quote.created_at.isoformat(),
+    )
+
+
 @router.patch(
     "/communication-threads/{thread_id}",
     response_model=OperationsCommunicationThreadRead,
@@ -750,11 +791,21 @@ def get_communication_thread(
         db,
         thread=thread,
     )
+    sender_options = resolve_communication_reply_sender_options(
+        get_email_runtime_settings(),
+        thread=thread,
+    )
 
     return OperationsCommunicationThreadDetailRead(
         **summary.model_dump(),
         reply_target=reply_target.address,
         reply_target_source=reply_target.source,
+        reply_sender_addresses=list(sender_options.addresses),
+        reply_sender_default=sender_options.default,
+        originating_request=_communication_originating_request_read(
+            db,
+            thread=thread,
+        ),
         messages=_communication_message_reads(
             db,
             messages=messages,
@@ -797,10 +848,16 @@ def reply_to_communication_thread(
             author_user_id=current_user.id,
             body_text=payload.body_text,
             recipient_override=payload.recipient,
+            sender_override=payload.sender,
         )
     except CommunicationReplyRecipientUnavailable as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+    except CommunicationReplySenderNotAllowed as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from exc
     except CommunicationReplyConfigurationError as exc:
@@ -819,6 +876,8 @@ def reply_to_communication_thread(
             "delivery_status": result.delivery.status.value,
             "provider": result.delivery.provider,
             "recipient": result.recipient,
+            "recipients": list(result.recipients),
+            "sender": result.sender,
         },
     )
 
@@ -828,6 +887,8 @@ def reply_to_communication_thread(
     return OperationsCommunicationReplyRead(
         delivery_status=result.delivery.status.value,
         recipient=result.recipient,
+        recipients=list(result.recipients),
+        sender=result.sender,
         thread=get_communication_thread(
             thread.id,
             db,

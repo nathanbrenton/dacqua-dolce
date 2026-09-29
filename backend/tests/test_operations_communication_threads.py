@@ -123,6 +123,7 @@ def test_communication_thread_list_and_detail_expose_archive(
         )
 
         assert detail.id == str(thread.id)
+        assert detail.originating_request is None
         assert len(detail.messages) == 1
 
         message = detail.messages[0]
@@ -490,6 +491,12 @@ def test_quote_request_email_is_preferred_over_account_and_previous_outbound(
         assert detail.reply_target == "quote-contact@example.test"
         assert detail.reply_target_source == "quote_request"
         assert detail.customer_email == customer.email
+        assert detail.originating_request is not None
+        assert detail.originating_request.request_type == "website_quote_request"
+        assert detail.originating_request.name == "Customer Example"
+        assert detail.originating_request.email == "quote-contact@example.test"
+        assert detail.originating_request.message == "Question about filters"
+        assert detail.originating_request.created_at
         db.rollback()
 
 
@@ -571,6 +578,9 @@ def test_manual_reply_recipient_override_is_archived(
                 email_provider="disabled",
                 email_from="no-reply@dacquadolce.com",
                 email_support_from="support@dacquadolce.com",
+                email_reply_from_addresses=(
+                    "sales@dacquadolce.com,info@dacquadolce.com"
+                ),
                 postmark_inbound_address="abc123@inbound.postmarkapp.com",
             ),
         )
@@ -583,16 +593,35 @@ def test_manual_reply_recipient_override_is_archived(
         result = operations.reply_to_communication_thread(
             thread.id,
             OperationsCommunicationReplyCreate(
-                body_text="Sending to the selected contact address.",
-                recipient="chosen@example.test",
+                body_text="Sending to the selected contact addresses.",
+                recipient=(
+                    "chosen@example.test; second@example.test, "
+                    "chosen@example.test"
+                ),
+                sender="sales@dacquadolce.com",
             ),
             db,  # type: ignore[arg-type]
             employee,  # type: ignore[arg-type]
         )
 
-        assert result.recipient == "chosen@example.test"
+        assert result.recipient == (
+            "chosen@example.test, second@example.test"
+        )
+        assert result.recipients == [
+            "chosen@example.test",
+            "second@example.test",
+        ]
+        assert result.sender == "sales@dacquadolce.com"
+
         reply = result.thread.messages[-1]
-        assert reply.recipients[0].address == "chosen@example.test"
+        assert reply.sender_address == "sales@dacquadolce.com"
+        assert [
+            recipient.address
+            for recipient in reply.recipients
+        ] == [
+            "chosen@example.test",
+            "second@example.test",
+        ]
         db.rollback()
 
 
@@ -602,3 +631,67 @@ def test_reply_recipient_override_must_be_valid_email() -> None:
             body_text="Hello",
             recipient="not-an-email",
         )
+
+
+def test_reply_sender_must_be_approved(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        employee = User(
+            email=f"employee-{uuid.uuid4()}@example.test",
+        )
+        db.add(employee)
+        db.flush()
+
+        thread = CommunicationThread(
+            subject="Sender validation test",
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+
+        monkeypatch.setattr(
+            operations,
+            "get_email_runtime_settings",
+            lambda: EmailRuntimeSettings(
+                email_provider="disabled",
+                email_from="no-reply@dacquadolce.com",
+                email_support_from="support@dacquadolce.com",
+                email_reply_from_addresses="sales@dacquadolce.com",
+                postmark_inbound_address="abc123@inbound.postmarkapp.com",
+            ),
+        )
+
+        with pytest.raises(HTTPException) as exc:
+            operations.reply_to_communication_thread(
+                thread.id,
+                OperationsCommunicationReplyCreate(
+                    body_text="Hello",
+                    recipient="customer@example.test",
+                    sender="outsider@example.test",
+                ),
+                db,  # type: ignore[arg-type]
+                employee,  # type: ignore[arg-type]
+            )
+
+        assert exc.value.status_code == 422
+        assert exc.value.detail == "Select an approved company sender address."
+        db.rollback()
+
+
+def test_reply_recipient_list_normalizes_delimiters_and_duplicates() -> None:
+    payload = OperationsCommunicationReplyCreate(
+        body_text="Hello",
+        recipient=(
+            "first@example.test; second@example.test, "
+            "FIRST@example.test"
+        ),
+    )
+
+    assert payload.recipient == (
+        "first@example.test, second@example.test"
+    )

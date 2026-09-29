@@ -49,9 +49,11 @@ import {
   type ThemeId,
 } from "../../theme/themes";
 import {
-  formatUsPhoneInput,
   isCompleteUsPhone,
 } from "../../utils/phone";
+import {
+  UsPhoneInput,
+} from "../forms/UsPhoneInput";
 
 type AccountPageProps = {
   onNavigate: (path: string) => void;
@@ -922,8 +924,7 @@ export function AccountPage({
 
             <label>
               <span>Phone</span>
-              <input
-                type="tel"
+              <UsPhoneInput
                 inputMode="tel"
                 autoComplete="tel"
                 maxLength={14}
@@ -940,16 +941,9 @@ export function AccountPage({
                   "(949) 555-1234"
                 }
                 value={
-                  formatUsPhoneInput(
-                    profile.phone ?? "",
-                  )
+                  profile.phone ?? ""
                 }
-                onChange={(event) => {
-                  const formatted =
-                    formatUsPhoneInput(
-                      event.target.value,
-                    );
-
+                onValueChange={(formatted) => {
                   setProfile({
                     ...profile,
                     phone:

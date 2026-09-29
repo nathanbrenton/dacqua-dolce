@@ -476,6 +476,9 @@ export function App() {
     <>
       <DeveloperControls
         open={developerControlsOpen}
+        onClose={() => {
+          setDeveloperControlsOpen(false);
+        }}
         theme={theme}
         onThemeChange={setTheme}
         appearance={appearance}

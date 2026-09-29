@@ -481,6 +481,39 @@ h2 {
   box-shadow: var(--shadow-lab);
 }
 
+.developer-controls-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.developer-controls-close {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  flex: 0 0 auto;
+  margin: -6px -6px -2px 0;
+  padding: 0;
+  color: #ffffff;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 50%;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.developer-controls-close:hover {
+  background: rgb(255 255 255 / 8%);
+  border-color: rgb(255 255 255 / 52%);
+}
+
+.developer-controls-close:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
 .developer-controls label {
   margin-top: 4px;
   font-size: var(--type-small);
@@ -3276,6 +3309,59 @@ textarea:focus-visible {
   letter-spacing: 0.04em;
 }
 
+.operations-inbox-originating-request {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--control-highlight);
+}
+
+.operations-inbox-originating-request header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.operations-inbox-originating-request header > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.operations-inbox-originating-request header strong {
+  overflow-wrap: anywhere;
+  font-size: var(--type-ui-base);
+}
+
+.operations-inbox-originating-request header small {
+  flex: 0 0 auto;
+  color: var(--ink-muted);
+  font-size: var(--type-micro);
+}
+
+.operations-inbox-originating-request-contact {
+  margin: 9px 0 0;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+  font-size: var(--type-small);
+}
+
+.operations-inbox-originating-request h4 {
+  margin: 14px 0 8px;
+  font-size: 0.98rem;
+}
+
+.operations-inbox-message-list-label {
+  margin: 2px 0 0;
+  color: var(--ink-muted);
+  font-size: var(--type-small);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .operations-inbox-message-list {
   display: grid;
   gap: 10px;
@@ -3465,7 +3551,8 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
-.operations-inbox-reply-recipient-field input {
+.operations-inbox-reply-recipient-field input,
+.operations-inbox-reply-recipient-field select {
   width: 100%;
   padding: 10px 12px;
   color: var(--field-text);
@@ -3475,7 +3562,8 @@ textarea:focus-visible {
   font: inherit;
 }
 
-.operations-inbox-reply-recipient-field input:disabled {
+.operations-inbox-reply-recipient-field input:disabled,
+.operations-inbox-reply-recipient-field select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -3534,7 +3622,8 @@ textarea:focus-visible {
 }
 
 @media (max-width: 620px) {
-  .operations-inbox-message header {
+  .operations-inbox-message header,
+  .operations-inbox-originating-request header {
     display: grid;
   }
 }

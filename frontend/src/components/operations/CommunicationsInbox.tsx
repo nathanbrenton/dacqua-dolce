@@ -329,6 +329,7 @@ export function CommunicationsInbox() {
   const [view, setView] = useState<InboxView>("active");
   const [replyBody, setReplyBody] = useState("");
   const [replyRecipient, setReplyRecipient] = useState("");
+  const [replySender, setReplySender] = useState("");
   const [replyNotice, setReplyNotice] = useState<string | null>(null);
   const [replyFailed, setReplyFailed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -472,6 +473,7 @@ export function CommunicationsInbox() {
     setDetailLoading(true);
     setReplyBody("");
     setReplyRecipient("");
+    setReplySender("");
     setReplyNotice(null);
     setReplyFailed(false);
     setError(null);
@@ -480,6 +482,7 @@ export function CommunicationsInbox() {
       const result = await getOperationsCommunicationThread(threadId);
       setThreadDetail(result);
       setReplyRecipient(result.reply_target ?? "");
+      setReplySender(result.reply_sender_default ?? "");
     } catch (caught) {
       setThreadDetail(null);
       setError(
@@ -603,6 +606,7 @@ export function CommunicationsInbox() {
       threadDetail === null
       || replyBody.trim().length === 0
       || replyRecipient.trim().length === 0
+      || replySender.trim().length === 0
     ) {
       return;
     }
@@ -617,9 +621,11 @@ export function CommunicationsInbox() {
         threadDetail.id,
         replyBody,
         replyRecipient,
+        replySender,
       );
 
       setThreadDetail(result.thread);
+      setReplySender(result.sender);
       setThreads((current) =>
         current
           .map((thread) =>
@@ -927,7 +933,55 @@ export function CommunicationsInbox() {
                 ) : null}
               </header>
 
+              {threadDetail.originating_request !== null ? (
+                <article className="operations-inbox-originating-request">
+                  <header>
+                    <div>
+                      <span className="operations-inbox-direction">
+                        Original website request
+                      </span>
+                      <strong>
+                        {threadDetail.originating_request.name}
+                      </strong>
+                    </div>
+                    <small>
+                      {formatTimestamp(
+                        threadDetail.originating_request.created_at,
+                      )}
+                    </small>
+                  </header>
+
+                  <p className="operations-inbox-originating-request-contact">
+                    {threadDetail.originating_request.email}
+                    {threadDetail.originating_request.phone !== null
+                      ? ` · ${threadDetail.originating_request.phone}`
+                      : ""}
+                  </p>
+
+                  <h4>
+                    {threadDetail.originating_request.product_name
+                      ?? "General consultation"}
+                  </h4>
+
+                  <div className="operations-inbox-body">
+                    {threadDetail.originating_request.message !== null
+                      && threadDetail.originating_request.message.trim().length > 0 ? (
+                        <p>
+                          <PlainTextWithLinks
+                            text={threadDetail.originating_request.message}
+                          />
+                        </p>
+                      ) : (
+                        <em>No written question was included with this request.</em>
+                      )}
+                  </div>
+                </article>
+              ) : null}
+
               <div className="operations-inbox-message-list">
+                <p className="operations-inbox-message-list-label">
+                  Email correspondence
+                </p>
                 {threadDetail.messages.map((message) => (
                   <article
                     key={message.id}
@@ -1012,10 +1066,40 @@ export function CommunicationsInbox() {
                 </div>
 
                 <label className="operations-inbox-reply-recipient-field">
+                  <span>From</span>
+                  <select
+                    aria-label="Reply sender"
+                    value={replySender}
+                    required
+                    disabled={
+                      replySending
+                      || threadDetail.status === "closed"
+                      || threadDetail.reply_sender_addresses.length === 0
+                    }
+                    onChange={(event) => {
+                      setReplySender(event.target.value);
+                      setReplyNotice(null);
+                      setReplyFailed(false);
+                    }}
+                  >
+                    {threadDetail.reply_sender_addresses.map((address) => (
+                      <option key={address} value={address}>
+                        {address}
+                      </option>
+                    ))}
+                  </select>
+                  <small>
+                    Approved D’Acqua Dolce sender · customer replies remain
+                    attached to this archived conversation.
+                  </small>
+                </label>
+
+                <label className="operations-inbox-reply-recipient-field">
                   <span>To</span>
                   <input
-                    type="email"
-                    aria-label="Reply recipient"
+                    type="text"
+                    inputMode="email"
+                    aria-label="Reply recipients"
                     placeholder="customer@example.com"
                     value={replyRecipient}
                     maxLength={320}
@@ -1038,6 +1122,7 @@ export function CommunicationsInbox() {
                       && threadDetail.customer_email !== threadDetail.reply_target
                       ? ` · Account email: ${threadDetail.customer_email}`
                       : ""}
+                    {" · Separate multiple recipients with commas or semicolons."}
                   </small>
                 </label>
 
@@ -1081,6 +1166,7 @@ export function CommunicationsInbox() {
                       replySending
                       || threadDetail.status === "closed"
                       || replyRecipient.trim().length === 0
+                      || replySender.trim().length === 0
                       || replyBody.trim().length === 0
                     }
                   >

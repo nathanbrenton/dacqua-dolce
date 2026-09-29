@@ -28,6 +28,10 @@ class CommunicationReplyConfigurationError(RuntimeError):
     pass
 
 
+class CommunicationReplySenderNotAllowed(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class CommunicationReplyTarget:
     address: str | None
@@ -38,6 +42,8 @@ class CommunicationReplyTarget:
 class CommunicationReplyResult:
     delivery: EmailDelivery
     recipient: str
+    recipients: tuple[str, ...]
+    sender: str
 
 
 def _normalized_address(value: str | None) -> str | None:
@@ -157,6 +163,73 @@ def resolve_communication_reply_target(
     ).address
 
 
+def _reply_recipients(
+    value: str,
+) -> tuple[str, ...]:
+    recipients: list[str] = []
+    seen: set[str] = set()
+
+    for candidate in value.replace(";", ",").split(","):
+        stripped = candidate.strip()
+
+        if not stripped:
+            continue
+
+        address = normalize_email_address(stripped)
+
+        if address in seen:
+            continue
+
+        seen.add(address)
+        recipients.append(address)
+
+    return tuple(recipients)
+
+
+@dataclass(frozen=True)
+class CommunicationReplySenderOptions:
+    addresses: tuple[str, ...]
+    default: str | None
+
+
+def resolve_communication_reply_sender_options(
+    settings: EmailRuntimeSettings,
+    *,
+    thread: CommunicationThread,
+) -> CommunicationReplySenderOptions:
+    addresses = settings.communication_reply_from_addresses
+
+    if not addresses:
+        return CommunicationReplySenderOptions(
+            addresses=(),
+            default=None,
+        )
+
+    preferred_local_parts = (
+        ("sales", "contact", "info", "support", "no-reply")
+        if thread.related_entity_type == "quote_request"
+        else ("support", "contact", "info", "sales", "no-reply")
+    )
+
+    by_local_part = {
+        address.rsplit("@", 1)[0].casefold(): address
+        for address in addresses
+    }
+
+    for local_part in preferred_local_parts:
+        match = by_local_part.get(local_part)
+        if match is not None:
+            return CommunicationReplySenderOptions(
+                addresses=addresses,
+                default=match,
+            )
+
+    return CommunicationReplySenderOptions(
+        addresses=addresses,
+        default=addresses[0],
+    )
+
+
 def _reply_subject(
     db: Session,
     *,
@@ -192,9 +265,10 @@ def send_communication_reply(
     author_user_id: uuid.UUID,
     body_text: str,
     recipient_override: str | None = None,
+    sender_override: str | None = None,
 ) -> CommunicationReplyResult:
-    recipient = (
-        normalize_email_address(recipient_override)
+    recipient_value = (
+        recipient_override
         if recipient_override is not None
         else resolve_communication_reply_target(
             db,
@@ -202,9 +276,39 @@ def send_communication_reply(
         )
     )
 
-    if recipient is None:
+    if recipient_value is None:
         raise CommunicationReplyRecipientUnavailable(
             "No customer reply address is available for this conversation."
+        )
+
+    recipients = _reply_recipients(recipient_value)
+
+    if not recipients:
+        raise CommunicationReplyRecipientUnavailable(
+            "No customer reply address is available for this conversation."
+        )
+
+    recipient = ", ".join(recipients)
+
+    sender_options = resolve_communication_reply_sender_options(
+        settings,
+        thread=thread,
+    )
+
+    if sender_options.default is None:
+        raise CommunicationReplyConfigurationError(
+            "No approved company sender address is configured."
+        )
+
+    sender = (
+        normalize_email_address(sender_override)
+        if sender_override is not None
+        else sender_options.default
+    )
+
+    if sender not in sender_options.addresses:
+        raise CommunicationReplySenderNotAllowed(
+            "Select an approved company sender address."
         )
 
     reply_to = settings.postmark_thread_reply_to(thread.id)
@@ -218,7 +322,7 @@ def send_communication_reply(
         db,
         settings=settings,
         message=EmailMessage(
-            sender=(settings.email_support_from or settings.email_from),
+            sender=sender,
             recipient=recipient,
             subject=_reply_subject(db, thread=thread),
             body_text=body_text,
@@ -235,4 +339,6 @@ def send_communication_reply(
     return CommunicationReplyResult(
         delivery=delivery,
         recipient=recipient,
+        recipients=recipients,
+        sender=sender,
     )

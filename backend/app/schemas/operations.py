@@ -110,11 +110,24 @@ class OperationsCommunicationThreadRead(BaseModel):
     mailbox_kind: str
 
 
+class OperationsCommunicationOriginatingRequestRead(BaseModel):
+    request_type: str
+    name: str
+    email: str
+    phone: str | None
+    product_name: str | None
+    message: str | None
+    created_at: str
+
+
 class OperationsCommunicationThreadDetailRead(
     OperationsCommunicationThreadRead
 ):
     reply_target: str | None = None
     reply_target_source: str | None = None
+    reply_sender_addresses: list[str] = Field(default_factory=list)
+    reply_sender_default: str | None = None
+    originating_request: OperationsCommunicationOriginatingRequestRead | None = None
     messages: list[OperationsCommunicationMessageRead] = Field(
         default_factory=list,
     )
@@ -130,6 +143,10 @@ class OperationsCommunicationReplyCreate(BaseModel):
         max_length=20000,
     )
     recipient: str | None = Field(
+        default=None,
+        max_length=320,
+    )
+    sender: str | None = Field(
         default=None,
         max_length=320,
     )
@@ -156,15 +173,64 @@ class OperationsCommunicationReplyCreate(BaseModel):
         if value is None:
             return None
 
+        parts = [
+            item.strip()
+            for item in value.replace(";", ",").split(",")
+            if item.strip()
+        ]
+
+        if not parts:
+            return None
+
+        if len(parts) > 10:
+            raise ValueError("Enter no more than 10 recipient email addresses.")
+
+        recipients: list[str] = []
+        seen: set[str] = set()
+
+        try:
+            for part in parts:
+                address = normalize_email_address(part)
+
+                if address in seen:
+                    continue
+
+                seen.add(address)
+                recipients.append(address)
+        except ValueError as exc:
+            raise ValueError(
+                "Enter valid recipient email addresses separated by commas or semicolons."
+            ) from exc
+
+        combined = ", ".join(recipients)
+
+        if len(combined) > 320:
+            raise ValueError(
+                "The combined recipient addresses are too long."
+            )
+
+        return combined
+
+    @field_validator("sender")
+    @classmethod
+    def clean_sender(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+
         try:
             return normalize_email_address(value)
         except ValueError as exc:
-            raise ValueError("Enter a valid recipient email address.") from exc
+            raise ValueError("Select a valid sender email address.") from exc
 
 
 class OperationsCommunicationReplyRead(BaseModel):
     delivery_status: str
     recipient: str
+    recipients: list[str] = Field(default_factory=list)
+    sender: str
     thread: OperationsCommunicationThreadDetailRead
 
 

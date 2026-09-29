@@ -58,6 +58,9 @@ export function AuthDialog({
   const dialogRef =
     useRef<HTMLDialogElement>(null);
 
+  const backdropPointerStartedOutsideRef =
+    useRef(false);
+
   const [mode, setMode] =
     useState<AuthMode>("login");
 
@@ -397,6 +400,61 @@ export function AuthDialog({
       ref={dialogRef}
       className="auth-dialog"
       aria-labelledby="auth-dialog-title"
+      onPointerDown={(event) => {
+        const bounds =
+          event.currentTarget
+            .getBoundingClientRect();
+
+        backdropPointerStartedOutsideRef.current =
+          event.clientX < bounds.left
+          || event.clientX > bounds.right
+          || event.clientY < bounds.top
+          || event.clientY > bounds.bottom;
+      }}
+      onPointerCancel={() => {
+        backdropPointerStartedOutsideRef.current = false;
+      }}
+      onClick={(event) => {
+        const startedOutside =
+          backdropPointerStartedOutsideRef.current;
+
+        /*
+         * Reset before deciding what to do so a canceled or unusual
+         * pointer sequence cannot affect a later interaction. Pointer
+         * events cover mouse, pen, and touch input. A drag/selection
+         * that starts inside the dialog therefore never becomes a
+         * backdrop dismissal merely because it ends outside.
+         */
+        backdropPointerStartedOutsideRef.current = false;
+
+        if (!startedOutside) {
+          return;
+        }
+
+        const bounds =
+          event.currentTarget
+            .getBoundingClientRect();
+
+        const clickedOutside =
+          event.clientX < bounds.left
+          || event.clientX > bounds.right
+          || event.clientY < bounds.top
+          || event.clientY > bounds.bottom;
+
+        if (!clickedOutside) {
+          return;
+        }
+
+        /*
+         * showModal() keeps the underlying document inert. Consuming
+         * the completed backdrop activation here ensures this one
+         * mouse/touch/pen action only dismisses the modal and cannot
+         * activate the page visually underneath it.
+         */
+        event.preventDefault();
+        event.stopPropagation();
+        requestClose();
+      }}
       onClose={onClose}
       onCancel={(event) => {
         event.preventDefault();

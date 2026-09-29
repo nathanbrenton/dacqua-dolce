@@ -142,3 +142,37 @@ def test_postmark_send_includes_reply_to(
     payload = captured["json"]
     assert isinstance(payload, dict)
     assert payload["ReplyTo"] == message.reply_to
+
+
+def test_postmark_send_preserves_comma_separated_recipients(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_post(*args: object, **kwargs: object) -> httpx.Response:
+        captured.update(kwargs)
+        request = httpx.Request("POST", PostmarkEmailProvider.API_URL)
+        return httpx.Response(
+            200,
+            request=request,
+            json={
+                "ErrorCode": 0,
+                "Message": "OK",
+                "MessageID": "provider-message-id",
+            },
+        )
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+
+    message = EmailMessage(
+        sender="sales@dacquadolce.com",
+        recipient="first@example.com, second@example.com",
+        subject="Multiple recipients",
+        body_text="Hello both.",
+    )
+
+    PostmarkEmailProvider(server_token="secret").send(message)
+
+    payload = captured["json"]
+    assert isinstance(payload, dict)
+    assert payload["To"] == "first@example.com, second@example.com"

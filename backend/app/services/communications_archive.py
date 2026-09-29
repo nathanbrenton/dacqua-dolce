@@ -126,14 +126,22 @@ def archive_outbound_email(
     db.add(archived_message)
     db.flush()
 
-    db.add(
-        CommunicationRecipient(
-            message_id=archived_message.id,
-            recipient_type=CommunicationRecipientType.to,
-            address=message.recipient,
-            position=0,
+    recipient_addresses = [
+        value.strip()
+        for value in message.recipient.split(",")
+        if value.strip()
+    ]
+
+    for position, address in enumerate(recipient_addresses):
+        db.add(
+            CommunicationRecipient(
+                message_id=archived_message.id,
+                recipient_type=CommunicationRecipientType.to,
+                address=address,
+                position=position,
+            )
         )
-    )
+
     db.flush()
 
     return archived_message

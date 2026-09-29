@@ -61,3 +61,81 @@ def test_blank_support_sender_uses_fallback_path() -> None:
     )
 
     assert settings.email_support_from is None
+
+
+def test_reply_sender_addresses_are_normalized_and_deduplicated() -> None:
+    settings = EmailRuntimeSettings(
+        email_from="no-reply@dacquadolce.com",
+        email_support_from="support@dacquadolce.com",
+        email_reply_from_addresses=(
+            " Sales@DacquaDolce.com; info@dacquadolce.com, "
+            "sales@dacquadolce.com "
+        ),
+    )
+
+    assert settings.communication_reply_from_addresses == (
+        "sales@dacquadolce.com",
+        "info@dacquadolce.com",
+        "support@dacquadolce.com",
+        "no-reply@dacquadolce.com",
+    )
+
+
+def test_development_environment_uses_safe_test_company_addresses() -> None:
+    settings = EmailRuntimeSettings(
+        environment="development",
+    )
+
+    assert settings.email_from == "no-reply@dacquadolce.test"
+    assert settings.communication_reply_from_addresses == (
+        "sales@dacquadolce.test",
+        "contact@dacquadolce.test",
+        "info@dacquadolce.test",
+        "support@dacquadolce.test",
+        "no-reply@dacquadolce.test",
+    )
+
+
+def test_test_environment_uses_safe_test_company_addresses() -> None:
+    settings = EmailRuntimeSettings(
+        environment="test",
+    )
+
+    assert settings.email_from == "no-reply@dacquadolce.test"
+    assert settings.communication_reply_from_addresses[0:4] == (
+        "sales@dacquadolce.test",
+        "contact@dacquadolce.test",
+        "info@dacquadolce.test",
+        "support@dacquadolce.test",
+    )
+
+
+def test_production_environment_switches_company_addresses_to_dot_com() -> None:
+    settings = EmailRuntimeSettings(
+        environment="production",
+    )
+
+    assert settings.email_from == "no-reply@dacquadolce.com"
+    assert settings.communication_reply_from_addresses == (
+        "sales@dacquadolce.com",
+        "contact@dacquadolce.com",
+        "info@dacquadolce.com",
+        "support@dacquadolce.com",
+        "no-reply@dacquadolce.com",
+    )
+
+
+def test_configured_reply_senders_override_environment_generated_roles() -> None:
+    settings = EmailRuntimeSettings(
+        environment="production",
+        email_from="no-reply@dacquadolce.com",
+        email_reply_from_addresses=(
+            "sales@dacquadolce.com,info@dacquadolce.com"
+        ),
+    )
+
+    assert settings.communication_reply_from_addresses == (
+        "sales@dacquadolce.com",
+        "info@dacquadolce.com",
+        "no-reply@dacquadolce.com",
+    )

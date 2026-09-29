@@ -10,9 +10,11 @@ import {
   type RecommendationContext,
 } from "../../api/quotes";
 import {
-  formatUsPhoneInput,
   isCompleteUsPhone,
 } from "../../utils/phone";
+import {
+  UsPhoneInput,
+} from "../forms/UsPhoneInput";
 
 export type QuoteInquiryContext =
   | "general"
@@ -40,6 +42,9 @@ export function QuoteDialog({
 }: QuoteDialogProps) {
   const dialogRef =
     useRef<HTMLDialogElement>(null);
+
+  const backdropPointerStartedOutsideRef =
+    useRef(false);
 
   const [name, setName] =
     useState("");
@@ -152,6 +157,61 @@ export function QuoteDialog({
       ref={dialogRef}
       className="quote-dialog"
       aria-labelledby="quote-dialog-title"
+      onPointerDown={(event) => {
+        const bounds =
+          event.currentTarget
+            .getBoundingClientRect();
+
+        backdropPointerStartedOutsideRef.current =
+          event.clientX < bounds.left
+          || event.clientX > bounds.right
+          || event.clientY < bounds.top
+          || event.clientY > bounds.bottom;
+      }}
+      onPointerCancel={() => {
+        backdropPointerStartedOutsideRef.current = false;
+      }}
+      onClick={(event) => {
+        const startedOutside =
+          backdropPointerStartedOutsideRef.current;
+
+        /*
+         * Reset before deciding what to do so a canceled or unusual
+         * pointer sequence cannot affect a later interaction. Pointer
+         * events cover mouse, pen, and touch input. A drag/selection
+         * that starts inside the dialog therefore never becomes a
+         * backdrop dismissal merely because it ends outside.
+         */
+        backdropPointerStartedOutsideRef.current = false;
+
+        if (!startedOutside) {
+          return;
+        }
+
+        const bounds =
+          event.currentTarget
+            .getBoundingClientRect();
+
+        const clickedOutside =
+          event.clientX < bounds.left
+          || event.clientX > bounds.right
+          || event.clientY < bounds.top
+          || event.clientY > bounds.bottom;
+
+        if (!clickedOutside) {
+          return;
+        }
+
+        /*
+         * showModal() keeps the underlying document inert. Consuming
+         * the completed backdrop activation here ensures this one
+         * mouse/touch/pen action only dismisses the modal and cannot
+         * activate the page visually underneath it.
+         */
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+      }}
       onClose={onClose}
       onCancel={onClose}
     >
@@ -252,8 +312,7 @@ export function QuoteDialog({
               <small>(optional)</small>
             </span>
 
-            <input
-              type="tel"
+            <UsPhoneInput
               inputMode="tel"
               autoComplete="tel"
               maxLength={14}
@@ -270,13 +329,7 @@ export function QuoteDialog({
                 "(949) 555-1234"
               }
               value={phone}
-              onChange={(event) => {
-                setPhone(
-                  formatUsPhoneInput(
-                    event.target.value,
-                  ),
-                );
-              }}
+              onValueChange={setPhone}
             />
 
             <small className="field-helper">
