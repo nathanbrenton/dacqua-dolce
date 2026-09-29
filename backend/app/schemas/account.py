@@ -185,6 +185,16 @@ class CustomerEquipmentDocumentRead(BaseModel):
     version: str
 
 
+class CustomerConsumableRead(BaseModel):
+    product_id: str
+    name: str
+    sku: str
+    public_path: str
+    replacement_interval_days: int | None = None
+    next_replacement_due_on: str | None = None
+    online_reorder_available: bool = False
+
+
 class CustomerEquipmentRead(BaseModel):
     id: str
     product_id: str | None
@@ -198,4 +208,5 @@ class CustomerEquipmentRead(BaseModel):
     installed_on: str | None = None
     last_service_on: str | None = None
     next_service_due_on: str | None = None
+    consumables: list[CustomerConsumableRead] = Field(default_factory=list)
     documents: list[CustomerEquipmentDocumentRead] = Field(default_factory=list)

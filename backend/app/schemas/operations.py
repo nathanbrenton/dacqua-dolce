@@ -515,6 +515,8 @@ class OperationsProductRelationshipRead(BaseModel):
     relationship_type: ProductRelationshipType
     public: bool
     active: bool
+    is_consumable: bool = False
+    replacement_interval_days: int | None = None
     sort_order: int
 
 
@@ -545,7 +547,19 @@ class ProductRelationshipCreateRequest(BaseModel):
     relationship_type: ProductRelationshipType
     public: bool = False
     active: bool = True
+    is_consumable: bool = False
+    replacement_interval_days: int | None = Field(default=None, ge=1, le=3650)
     sort_order: int = Field(default=0, ge=0, le=10_000)
+
+    @model_validator(mode="after")
+    def validate_consumable_interval(
+        self,
+    ) -> "ProductRelationshipCreateRequest":
+        if self.replacement_interval_days is not None and not self.is_consumable:
+            raise ValueError(
+                "Replacement interval requires a consumable relationship."
+            )
+        return self
 
 
 class ProductRelationshipUpdateRequest(BaseModel):
@@ -554,7 +568,19 @@ class ProductRelationshipUpdateRequest(BaseModel):
     relationship_type: ProductRelationshipType
     public: bool
     active: bool
+    is_consumable: bool = False
+    replacement_interval_days: int | None = Field(default=None, ge=1, le=3650)
     sort_order: int = Field(ge=0, le=10_000)
+
+    @model_validator(mode="after")
+    def validate_consumable_interval(
+        self,
+    ) -> "ProductRelationshipUpdateRequest":
+        if self.replacement_interval_days is not None and not self.is_consumable:
+            raise ValueError(
+                "Replacement interval requires a consumable relationship."
+            )
+        return self
 
 
 class PricingUpdateRequest(BaseModel):

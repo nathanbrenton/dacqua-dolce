@@ -36,3 +36,24 @@ def test_equipment_create_cleans_optional_text():
 def test_equipment_update_can_deactivate_record():
     payload = CustomerEquipmentUpdateRequest(active=False)
     assert payload.active is False
+
+
+def test_customer_equipment_read_accepts_consumable_reorder_metadata():
+    payload = CustomerEquipmentRead(
+        id="equipment-1",
+        product_id="system-1",
+        product_name="Harmony",
+        sku="HARMONY",
+        consumables=[{
+            "product_id": "filter-1",
+            "name": "Carbon Block",
+            "sku": "CB-01",
+            "public_path": "/products/carbon-block",
+            "replacement_interval_days": 180,
+            "next_replacement_due_on": "2026-12-01",
+            "online_reorder_available": True,
+        }],
+    )
+
+    assert payload.consumables[0].online_reorder_available is True
+    assert payload.consumables[0].replacement_interval_days == 180

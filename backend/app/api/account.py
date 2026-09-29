@@ -12,7 +12,7 @@ from app.api.dependencies.auth import (
     CurrentUser,
     DatabaseSession,
 )
-from app.models.catalog import Product, ProductDocument
+from app.models.catalog import Product, ProductDocument, ProductRelationship
 from app.models.customer import (
     CustomerAddress,
     CustomerCommunicationPreferences,
@@ -29,6 +29,7 @@ from app.schemas.account import (
     AddressRead,
     CommunicationPreferencesRead,
     CommunicationPreferencesUpdate,
+    CustomerConsumableRead,
     CustomerEquipmentDocumentRead,
     CustomerEquipmentRead,
     CustomerFormalQuoteItemRead,
@@ -41,6 +42,8 @@ from app.services.audit import (
     record_audit_event,
 )
 from app.services.formal_quotes import approve_formal_quote
+from app.services.post_purchase import next_replacement_due_on
+from app.services.pricing import resolve_pricing, select_effective_price
 from app.services.quote_orders import create_order_from_approved_quote
 
 router = APIRouter(
@@ -311,6 +314,7 @@ def get_customer_equipment(
             else None
         )
         documents = []
+        consumables: list[CustomerConsumableRead] = []
         if product is not None:
             documents = db.scalars(
                 select(ProductDocument)
@@ -321,6 +325,58 @@ def get_customer_equipment(
                 )
                 .order_by(ProductDocument.document_type, ProductDocument.title)
             ).all()
+
+            relationships = db.scalars(
+                select(ProductRelationship)
+                .options(
+                    selectinload(ProductRelationship.related_product).selectinload(
+                        Product.prices
+                    )
+                )
+                .where(
+                    ProductRelationship.product_id == product.id,
+                    ProductRelationship.active.is_(True),
+                    ProductRelationship.public.is_(True),
+                    ProductRelationship.is_consumable.is_(True),
+                )
+                .order_by(
+                    ProductRelationship.sort_order,
+                    ProductRelationship.created_at,
+                )
+            ).all()
+
+            for relationship in relationships:
+                consumable = relationship.related_product
+                if not consumable.active:
+                    continue
+
+                price = select_effective_price(consumable.prices)
+                pricing = resolve_pricing(price, authenticated=True)
+                due_on = next_replacement_due_on(
+                    installed_on=equipment.installed_on,
+                    last_service_on=equipment.last_service_on,
+                    replacement_interval_days=(
+                        relationship.replacement_interval_days
+                    ),
+                )
+                consumables.append(
+                    CustomerConsumableRead(
+                        product_id=str(consumable.id),
+                        name=consumable.name,
+                        sku=consumable.sku,
+                        public_path=consumable.public_path,
+                        replacement_interval_days=(
+                            relationship.replacement_interval_days
+                        ),
+                        next_replacement_due_on=(
+                            due_on.isoformat() if due_on is not None else None
+                        ),
+                        online_reorder_available=(
+                            consumable.online_sale_approved
+                            and pricing.can_add_to_cart
+                        ),
+                    )
+                )
         results.append(
             CustomerEquipmentRead(
                 id=str(equipment.id),
@@ -343,6 +399,7 @@ def get_customer_equipment(
                     if equipment.next_service_due_on
                     else None
                 ),
+                consumables=consumables,
                 documents=[
                     CustomerEquipmentDocumentRead(
                         title=document.title,

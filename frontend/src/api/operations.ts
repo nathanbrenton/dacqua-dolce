@@ -277,6 +277,8 @@ export type OperationsProductRelationship = {
   relationship_type: "option" | "accessory";
   public: boolean;
   active: boolean;
+  is_consumable: boolean;
+  replacement_interval_days: number | null;
   sort_order: number;
 };
 
@@ -580,6 +582,8 @@ export function createProductRelationship(
     relationship_type: "option" | "accessory";
     public: boolean;
     active: boolean;
+    is_consumable: boolean;
+    replacement_interval_days: number | null;
     sort_order: number;
   },
 ): Promise<OperationsProduct> {
@@ -597,6 +601,8 @@ export function updateProductRelationship(
     relationship_type: "option" | "accessory";
     public: boolean;
     active: boolean;
+    is_consumable: boolean;
+    replacement_interval_days: number | null;
     sort_order: number;
   },
 ): Promise<OperationsProduct> {

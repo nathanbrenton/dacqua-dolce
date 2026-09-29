@@ -220,3 +220,11 @@ business/provider requirements justify them.
 Fulfillment transitions are forward-only and require the order to remain in the
 `paid` payment state. Each transition is audited. Cancellation/refund policy
 remains separate from fulfillment and must not be inferred from this workflow.
+
+## Consumable relationship governance
+
+A catalog relationship may be marked as a consumable/replacement item independently of its option/accessory classification. This keeps compatibility modeling separate from post-purchase service behavior.
+
+`replacement_interval_days` is intentionally optional. Staff must not populate an interval from generic assumptions; record one only when D'Acqua Dolce has product/manufacturer-supported guidance. A consumable without a supported interval can still be surfaced for reorder without generating a date target.
+
+Making a consumable relationship public controls whether it can appear in the signed-in customer's installed-equipment view. Online reorder remains subject to the related product's own sale approval and pricing policy.

@@ -220,3 +220,31 @@ def test_fulfillment_update_forbids_unknown_fields() -> None:
             status=FulfillmentStatus.received_ready,
             internal_note="not part of fulfillment contract",
         )
+
+
+def test_product_relationship_consumable_interval_requires_consumable_flag() -> None:
+    with pytest.raises(ValidationError):
+        ProductRelationshipCreateRequest(
+            related_product_id="00000000-0000-0000-0000-000000000001",
+            relationship_type=ProductRelationshipType.accessory,
+            public=True,
+            active=True,
+            is_consumable=False,
+            replacement_interval_days=180,
+            sort_order=0,
+        )
+
+
+def test_product_relationship_consumable_interval_is_optional() -> None:
+    payload = ProductRelationshipCreateRequest(
+        related_product_id="00000000-0000-0000-0000-000000000001",
+        relationship_type=ProductRelationshipType.accessory,
+        public=True,
+        active=True,
+        is_consumable=True,
+        replacement_interval_days=None,
+        sort_order=0,
+    )
+
+    assert payload.is_consumable is True
+    assert payload.replacement_interval_days is None

@@ -50,6 +50,16 @@ export type CustomerEquipmentDocument = {
   version: string;
 };
 
+export type CustomerConsumable = {
+  product_id: string;
+  name: string;
+  sku: string;
+  public_path: string;
+  replacement_interval_days: number | null;
+  next_replacement_due_on: string | null;
+  online_reorder_available: boolean;
+};
+
 export type CustomerEquipment = {
   id: string;
   product_id: string | null;
@@ -63,6 +73,7 @@ export type CustomerEquipment = {
   installed_on: string | null;
   last_service_on: string | null;
   next_service_due_on: string | null;
+  consumables: CustomerConsumable[];
   documents: CustomerEquipmentDocument[];
 };
 

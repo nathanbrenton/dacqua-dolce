@@ -1205,6 +1205,8 @@ export function OperationsPage({
         relationship_type: relationshipType,
         public: false,
         active: true,
+        is_consumable: false,
+        replacement_interval_days: null,
         sort_order: 0,
       });
       setProducts((current) => replaceProduct(current, updated));
@@ -1233,7 +1235,12 @@ export function OperationsPage({
   async function changeProductRelationship(
     product: OperationsProduct,
     relationship: OperationsProduct["relationships"][number],
-    changes: Partial<{ public: boolean; active: boolean }>,
+    changes: Partial<{
+      public: boolean;
+      active: boolean;
+      is_consumable: boolean;
+      replacement_interval_days: number | null;
+    }>,
   ) {
     setError(null);
     setMessage(null);
@@ -1246,6 +1253,11 @@ export function OperationsPage({
           relationship_type: relationship.relationship_type,
           public: changes.public ?? relationship.public,
           active: changes.active ?? relationship.active,
+          is_consumable: changes.is_consumable ?? relationship.is_consumable,
+          replacement_interval_days:
+            "replacement_interval_days" in changes
+              ? changes.replacement_interval_days ?? null
+              : relationship.replacement_interval_days,
           sort_order: relationship.sort_order,
         },
       );
@@ -2399,12 +2411,12 @@ export function OperationsPage({
                 </header>
 
                 <details className="operations-product-relationships">
-                  <summary>Options &amp; accessories</summary>
+                  <summary>Options, accessories &amp; consumables</summary>
 
                   <div className="operations-product-relationship-list">
                     {product.relationships.length === 0 ? (
                       <p className="operations-note">
-                        No product relationships are recorded. Add only options or accessories whose compatibility has been verified.
+                        No product relationships are recorded. Add only options, accessories, or replacement items whose compatibility has been verified.
                       </p>
                     ) : (
                       product.relationships.map((relationship) => (
@@ -2421,6 +2433,10 @@ export function OperationsPage({
                                 : "Accessory"}
                               {relationship.active ? " · active" : " · inactive"}
                               {relationship.public ? " · public" : " · internal"}
+                              {relationship.is_consumable ? " · consumable" : ""}
+                              {relationship.replacement_interval_days !== null
+                                ? ` · ${relationship.replacement_interval_days}-day interval`
+                                : ""}
                             </small>
                           </div>
 
@@ -2452,6 +2468,51 @@ export function OperationsPage({
                               >
                                 {relationship.active ? "Deactivate" : "Activate"}
                               </button>
+                              <button
+                                type="button"
+                                className="operations-action secondary"
+                                onClick={() => {
+                                  void changeProductRelationship(
+                                    product,
+                                    relationship,
+                                    {
+                                      is_consumable: !relationship.is_consumable,
+                                      replacement_interval_days: null,
+                                    },
+                                  );
+                                }}
+                              >
+                                {relationship.is_consumable
+                                  ? "Remove consumable flag"
+                                  : "Mark consumable"}
+                              </button>
+                              {relationship.is_consumable ? (
+                                <label className="operations-field compact">
+                                  <span>Replacement interval (days)</span>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="3650"
+                                    defaultValue={relationship.replacement_interval_days ?? ""}
+                                    placeholder="Optional"
+                                    onBlur={(event) => {
+                                      const raw = event.currentTarget.value.trim();
+                                      const value = raw.length === 0
+                                        ? null
+                                        : Number.parseInt(raw, 10);
+                                      if (value !== null && (!Number.isInteger(value) || value < 1)) {
+                                        setError("Replacement interval must be a positive number of days.");
+                                        return;
+                                      }
+                                      void changeProductRelationship(
+                                        product,
+                                        relationship,
+                                        { replacement_interval_days: value },
+                                      );
+                                    }}
+                                  />
+                                </label>
+                              ) : null}
                               <button
                                 type="button"
                                 className="operations-action secondary"
@@ -2524,7 +2585,7 @@ export function OperationsPage({
                           : "Add as internal"}
                       </button>
                       <p className="operations-note">
-                        New relationships start internal. Make them public only after compatibility and public presentation are confirmed.
+                        New relationships start internal. Mark verified replacement items as consumable; add an interval only when product/manufacturer guidance supports one.
                       </p>
                     </div>
                   ) : null}

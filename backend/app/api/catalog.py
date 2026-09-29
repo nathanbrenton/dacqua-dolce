@@ -351,6 +351,7 @@ def get_public_product(
                 for relationship in product.related_options
                 if relationship.active
                 and relationship.public
+                and not relationship.is_consumable
                 and relationship.related_product.active
             ],
             documents=public_document_reads(

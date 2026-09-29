@@ -339,3 +339,12 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Manufacturer inventory/API/EDI integration | Deferred / needs manufacturer details | PT21 remains manual-first and does not invent an external supplier integration. |
 | Partial or multiple shipments | Deferred / needs business confirmation | PT21 intentionally supports one shipment record per order. |
 | Cancellation/refund effects on fulfillment | Needs client/provider policy | PT21 does not invent reverse fulfillment transitions or refund-driven shipment behavior. |
+
+## PT22.1 — Post-purchase consumables and replacement guidance
+
+- Installed equipment now resolves verified public consumable/replacement relationships.
+- A replacement item may be recorded without a replacement interval; the interval is optional until product/manufacturer guidance supports one.
+- When an interval is configured, the customer account derives the next replacement target from last service date first, then installation date.
+- Customer communication preferences remain explicit opt-in controls; PT22.1 does not claim reminder delivery is commissioned.
+- Online reorder is shown only when the related consumable is independently approved and priced for online cart purchase.
+- Customer equipment is now loaded by the account page; the previously present Installed Systems UI was not calling its API.

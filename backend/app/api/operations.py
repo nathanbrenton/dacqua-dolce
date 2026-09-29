@@ -1632,7 +1632,9 @@ def operations_product_read(
         public_option_count=sum(
             1
             for relationship in product.related_options
-            if relationship.active and relationship.public
+            if relationship.active
+            and relationship.public
+            and not relationship.is_consumable
         ),
         relationships=[
             OperationsProductRelationshipRead(
@@ -1643,6 +1645,8 @@ def operations_product_read(
                 relationship_type=relationship.relationship_type,
                 public=relationship.public,
                 active=relationship.active,
+                is_consumable=relationship.is_consumable,
+                replacement_interval_days=relationship.replacement_interval_days,
                 sort_order=relationship.sort_order,
             )
             for relationship in product.related_options
@@ -1787,6 +1791,8 @@ def create_product_relationship(
         relationship_type=payload.relationship_type,
         public=payload.public,
         active=payload.active,
+        is_consumable=payload.is_consumable,
+        replacement_interval_days=payload.replacement_interval_days,
         sort_order=payload.sort_order,
     )
     db.add(relationship)
@@ -1804,6 +1810,8 @@ def create_product_relationship(
             "relationship_type": payload.relationship_type.value,
             "public": payload.public,
             "active": payload.active,
+            "is_consumable": payload.is_consumable,
+            "replacement_interval_days": payload.replacement_interval_days,
             "sort_order": payload.sort_order,
         },
     )
@@ -1864,6 +1872,8 @@ def update_product_relationship(
     relationship.relationship_type = payload.relationship_type
     relationship.public = payload.public
     relationship.active = payload.active
+    relationship.is_consumable = payload.is_consumable
+    relationship.replacement_interval_days = payload.replacement_interval_days
     relationship.sort_order = payload.sort_order
     db.flush()
 
@@ -1880,6 +1890,8 @@ def update_product_relationship(
             "relationship_type": payload.relationship_type.value,
             "public": payload.public,
             "active": payload.active,
+            "is_consumable": payload.is_consumable,
+            "replacement_interval_days": payload.replacement_interval_days,
             "sort_order": payload.sort_order,
         },
     )

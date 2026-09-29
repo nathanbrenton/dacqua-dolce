@@ -284,6 +284,11 @@ class ProductRelationship(Base):
             "product_id <> related_product_id",
             name="product_relationships_not_self",
         ),
+        CheckConstraint(
+            "replacement_interval_days IS NULL OR "
+            "(is_consumable AND replacement_interval_days > 0)",
+            name="consumable_interval_valid",
+        ),
         Index("ix_product_relationships_product_id", "product_id"),
         Index("ix_product_relationships_related_product_id", "related_product_id"),
     )
@@ -309,6 +314,8 @@ class ProductRelationship(Base):
     )
     public: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_consumable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    replacement_interval_days: Mapped[int | None] = mapped_column(Integer)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

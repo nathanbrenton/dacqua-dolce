@@ -31,6 +31,7 @@ import {
   type AuthenticationStatus,
 } from "../../api/authentication";
 import {
+  addCartItem,
   getCart,
   removeCartItem,
   type Cart,
@@ -582,6 +583,7 @@ export function AccountPage({
       getCommunicationPreferences(),
       getCustomerRequests(),
       getCustomerFormalQuotes(),
+      getCustomerEquipment(),
     ])
       .then(
         ([
@@ -591,6 +593,7 @@ export function AccountPage({
           preferenceResult,
           requestResult,
           formalQuoteResult,
+          equipmentResult,
         ]) => {
           setProfile(profileResult);
           setCart(cartResult);
@@ -598,6 +601,7 @@ export function AccountPage({
           setCommunicationPreferences(preferenceResult);
           setCustomerRequests(requestResult);
           setFormalQuotes(formalQuoteResult);
+          setCustomerEquipment(equipmentResult);
           setError(null);
         },
       )
@@ -861,6 +865,29 @@ export function AccountPage({
         caught instanceof Error
           ? caught.message
           : "Communication preference update failed.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function reorderConsumable(
+    productId: string,
+    name: string,
+  ) {
+    setSaving(true);
+    setError(null);
+    setSaveNotice(null);
+
+    try {
+      const updatedCart = await addCartItem(productId);
+      setCart(updatedCart);
+      setSaveNotice(`${name} added to your cart.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to add replacement item to cart.",
       );
     } finally {
       setSaving(false);
@@ -1454,6 +1481,53 @@ export function AccountPage({
                     <div><dt>Last service</dt><dd>{equipment.last_service_on ? new Date(`${equipment.last_service_on}T00:00:00`).toLocaleDateString() : "Not recorded"}</dd></div>
                     <div><dt>Next service</dt><dd>{equipment.next_service_due_on ? new Date(`${equipment.next_service_due_on}T00:00:00`).toLocaleDateString() : "Not scheduled"}</dd></div>
                   </dl>
+                  {equipment.consumables.length > 0 ? (
+                    <div className="account-equipment-consumables">
+                      <strong>Replacement items</strong>
+                      {equipment.consumables.map((consumable) => (
+                        <div
+                          key={consumable.product_id}
+                          className="account-equipment-consumable"
+                        >
+                          <div>
+                            <span>{consumable.name}</span>
+                            <small>
+                              {consumable.next_replacement_due_on !== null
+                                ? `Next replacement target: ${new Date(`${consumable.next_replacement_due_on}T00:00:00`).toLocaleDateString()}`
+                                : consumable.replacement_interval_days !== null
+                                  ? `Replacement interval: ${consumable.replacement_interval_days} days; service baseline not recorded.`
+                                  : "Replacement interval has not been configured."}
+                            </small>
+                          </div>
+                          {consumable.online_reorder_available ? (
+                            <button
+                              type="button"
+                              className="account-action compact"
+                              disabled={saving}
+                              onClick={() => {
+                                void reorderConsumable(
+                                  consumable.product_id,
+                                  consumable.name,
+                                );
+                              }}
+                            >
+                              Add to Cart
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="text-button compact"
+                              onClick={() => {
+                                onNavigate(consumable.public_path);
+                              }}
+                            >
+                              View Item
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   {equipment.documents.length > 0 ? (
                     <div className="account-equipment-documents">
                       <strong>Documents</strong>
