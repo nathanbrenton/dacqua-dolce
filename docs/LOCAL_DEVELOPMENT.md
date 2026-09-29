@@ -9,7 +9,7 @@ database URLs, and development instructions from drifting between sessions.
 | Service | Host endpoint | Purpose |
 | --- | --- | --- |
 | React / Vite frontend | `127.0.0.1:15173` | Browser-facing local development UI |
-| FastAPI / Uvicorn backend | `127.0.0.1:18080` | Local API and health/readiness endpoints |
+| FastAPI / Uvicorn backend | `127.0.0.1:8000` | Local API and health/readiness endpoints |
 | PostgreSQL Docker host mapping | `127.0.0.1:15432` | PostgreSQL access from macOS host tools and the locally run backend |
 | PostgreSQL inside the Docker network | `postgres:5432` | Native PostgreSQL container port; do not change to the host port |
 
@@ -39,11 +39,11 @@ From `backend/`:
     .venv/bin/uvicorn app.main:app \
       --reload \
       --host 127.0.0.1 \
-      --port 18080
+      --port 8000
 
 The local API is then available at:
 
-    http://127.0.0.1:18080
+    http://127.0.0.1:8000
 
 ## Start the frontend
 
@@ -52,7 +52,7 @@ From `frontend/`:
     npm run dev
 
 Vite is configured to bind to `127.0.0.1:15173` and proxy application API,
-health, and readiness requests to `127.0.0.1:18080`.
+health, and readiness requests to `127.0.0.1:8000`.
 
 Open:
 

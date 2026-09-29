@@ -77,13 +77,13 @@ From the repository root:
     .venv/bin/uvicorn app.main:app \
       --reload \
       --host 127.0.0.1 \
-      --port 18080
+      --port 8000
 
 Keep this terminal running.
 
 The backend API is available at:
 
-    http://127.0.0.1:18080
+    http://127.0.0.1:8000
 
 ### 2. Start the frontend
 

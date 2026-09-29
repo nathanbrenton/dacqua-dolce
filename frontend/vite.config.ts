@@ -10,17 +10,17 @@ export default defineConfig({
 
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:18080",
+        target: "http://127.0.0.1:8000",
         changeOrigin: false
       },
 
       "/health": {
-        target: "http://127.0.0.1:18080",
+        target: "http://127.0.0.1:8000",
         changeOrigin: false
       },
 
       "/readiness": {
-        target: "http://127.0.0.1:18080",
+        target: "http://127.0.0.1:8000",
         changeOrigin: false
       }
     }
