@@ -46,6 +46,7 @@ class EmailRuntimeSettings(BaseSettings):
     email_from: str = "no-reply@dacquadolce.test"
     email_support_from: str | None = None
     email_reply_from_addresses: str | None = None
+    email_sender_name: str = "D'Acqua Dolce"
 
     email_operator_to: str | None = None
 
@@ -96,6 +97,24 @@ class EmailRuntimeSettings(BaseSettings):
             )
 
         return self
+
+    @field_validator("email_sender_name")
+    @classmethod
+    def validate_email_sender_name(
+        cls,
+        value: str,
+    ) -> str:
+        normalized = value.strip()
+
+        if not normalized:
+            raise ValueError("email_sender_name must not be blank.")
+
+        if any(character in normalized for character in "\r\n<>"):
+            raise ValueError(
+                "email_sender_name must not contain header delimiters."
+            )
+
+        return normalized
 
     @field_validator("postmark_inbound_address")
     @classmethod

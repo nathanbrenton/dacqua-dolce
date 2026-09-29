@@ -87,6 +87,7 @@ def deliver_email(
     try:
         result = PostmarkEmailProvider(
             server_token=token,
+            sender_name=settings.email_sender_name,
         ).send(message)
     except Exception as exc:
         # Never persist provider payloads or

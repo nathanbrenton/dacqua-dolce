@@ -176,3 +176,71 @@ def test_postmark_send_preserves_comma_separated_recipients(
     payload = captured["json"]
     assert isinstance(payload, dict)
     assert payload["To"] == "first@example.com, second@example.com"
+
+
+def test_postmark_send_uses_company_display_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_post(*args: object, **kwargs: object) -> httpx.Response:
+        captured.update(kwargs)
+        request = httpx.Request("POST", PostmarkEmailProvider.API_URL)
+        return httpx.Response(
+            200,
+            request=request,
+            json={
+                "ErrorCode": 0,
+                "Message": "OK",
+                "MessageID": "provider-message-id",
+            },
+        )
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+
+    message = EmailMessage(
+        sender="sales@dacquadolce.com",
+        recipient="customer@example.com",
+        subject="Display name",
+        body_text="Hello.",
+    )
+
+    PostmarkEmailProvider(
+        server_token="secret",
+        sender_name="D'Acqua Dolce",
+    ).send(message)
+
+    payload = captured["json"]
+    assert isinstance(payload, dict)
+    assert payload["From"] == (
+        "D'Acqua Dolce <sales@dacquadolce.com>"
+    )
+
+
+def test_postmark_send_without_display_name_preserves_bare_sender(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_post(*args: object, **kwargs: object) -> httpx.Response:
+        captured.update(kwargs)
+        request = httpx.Request("POST", PostmarkEmailProvider.API_URL)
+        return httpx.Response(
+            200,
+            request=request,
+            json={
+                "ErrorCode": 0,
+                "Message": "OK",
+                "MessageID": "provider-message-id",
+            },
+        )
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+
+    PostmarkEmailProvider(
+        server_token="secret",
+    ).send(_message())
+
+    payload = captured["json"]
+    assert isinstance(payload, dict)
+    assert payload["From"] == "no-reply@dacquadolce.com"

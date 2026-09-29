@@ -13,10 +13,21 @@ class PostmarkEmailProvider:
         self,
         *,
         server_token: str,
+        sender_name: str | None = None,
         timeout_seconds: float = 10.0,
     ) -> None:
         self._server_token = server_token
+        self._sender_name = sender_name
         self._timeout_seconds = timeout_seconds
+
+    def _from_value(
+        self,
+        sender: str,
+    ) -> str:
+        if self._sender_name is None:
+            return sender
+
+        return f"{self._sender_name} <{sender}>"
 
     @staticmethod
     def _rejection_detail(
@@ -77,7 +88,7 @@ class PostmarkEmailProvider:
         message: EmailMessage,
     ) -> EmailSendResult:
         payload: dict[str, object] = {
-            "From": message.sender,
+            "From": self._from_value(message.sender),
             "To": message.recipient,
             "Subject": message.subject,
             "TextBody": message.body_text,

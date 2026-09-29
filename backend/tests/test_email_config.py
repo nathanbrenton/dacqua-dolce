@@ -139,3 +139,35 @@ def test_configured_reply_senders_override_environment_generated_roles() -> None
         "info@dacquadolce.com",
         "no-reply@dacquadolce.com",
     )
+
+
+def test_sender_display_name_defaults_to_company_brand() -> None:
+    settings = EmailRuntimeSettings()
+
+    assert settings.email_sender_name == "D'Acqua Dolce"
+
+
+def test_sender_display_name_is_trimmed() -> None:
+    settings = EmailRuntimeSettings(
+        email_sender_name="  D'Acqua Dolce  ",
+    )
+
+    assert settings.email_sender_name == "D'Acqua Dolce"
+
+
+@pytest.mark.parametrize(
+    "sender_name",
+    [
+        "",
+        "   ",
+        "D'Acqua Dolce\nBcc: attacker@example.test",
+        "D'Acqua Dolce <spoof@example.test>",
+    ],
+)
+def test_sender_display_name_rejects_unsafe_values(
+    sender_name: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        EmailRuntimeSettings(
+            email_sender_name=sender_name,
+        )

@@ -129,6 +129,7 @@ def test_postmark_success_updates_archived_message(monkeypatch) -> None:
         self: PostmarkEmailProvider,
         message: EmailMessage,
     ) -> EmailSendResult:
+        assert self._sender_name == "D'Acqua Dolce"
         return EmailSendResult(provider_reference=reference)
 
     monkeypatch.setattr(PostmarkEmailProvider, "send", fake_send)
@@ -160,6 +161,8 @@ def test_postmark_success_updates_archived_message(monkeypatch) -> None:
         )
 
         assert archived is not None
+        assert delivery.sender == "no-reply@example.test"
+        assert archived.sender_address == "no-reply@example.test"
         assert delivery.status == EmailDeliveryStatus.sent
         assert delivery.provider_reference == reference
         assert delivery.sent_at is not None
