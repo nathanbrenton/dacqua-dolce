@@ -284,6 +284,13 @@ class FormalQuote(Base):
         order_by="FormalQuoteCharge.sort_order",
     )
 
+    policy_snapshots = relationship(
+        "FormalQuotePolicySnapshot",
+        back_populates="formal_quote",
+        cascade="all, delete-orphan",
+        order_by="FormalQuotePolicySnapshot.sort_order",
+    )
+
 
 class FormalQuoteCharge(Base):
     __tablename__ = "formal_quote_charges"

@@ -384,3 +384,13 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Payment adapter must charge the authoritative final total | Preserved | Existing hosted-checkout and verified-payment logic continues to use `orders.total_amount_minor`; PT24.1 changes that field to the approved final commercial total rather than the product-only subtotal. |
 | Deposits / partial-payment schedules | Explicitly deferred | PT24.1 does not model deposits or partial payment. Until a payment-schedule model exists, the authoritative final order total remains the amount that must be collected before the current workflow may mark the order paid. |
 | Automatic tax/shipping calculation | Explicitly deferred | No external tax engine, carrier-rate service, installation calculator, or provider-specific commercial policy is invented by PT24.1. |
+
+## PT24.2 launch-policy boundary
+
+| Client / launch direction | Classification | Implementation |
+| --- | --- | --- |
+| Final privacy and commercial policies require business/legal review | Implemented as launch gate | Policy records now have explicit draft/approved/retired states. Draft text is not public. |
+| Customer must review applicable terms before quote approval/payment | Implemented | Presented formal quotes snapshot the exact approved commercial policy versions and customer approval acknowledges those snapshots. |
+| Shipping, cancellation, refund, and warranty policy are required before first assisted sale | Implemented as configuration requirement | Quote presentation is blocked until approved Terms, Shipping, Cancellation, Refund, and Warranty versions exist. |
+| Installation model remains undecided | Preserved | Installation Terms are required only when an installation charge is included; no installation policy or business model is invented. |
+| Privacy policy remains a separate public-launch requirement | Preserved | Public Privacy exposes only an explicitly approved version; absence remains visible as pre-launch status. |

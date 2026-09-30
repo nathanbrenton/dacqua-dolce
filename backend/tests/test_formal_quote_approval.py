@@ -43,6 +43,13 @@ def test_customer_approval_locks_presented_revision() -> None:
         total_amount_minor=249900,
         currency="USD",
     )
+    policy_snapshot = SimpleNamespace(
+        id=uuid.uuid4(),
+        kind=SimpleNamespace(value="terms"),
+        version_snapshot="2026-10-01",
+        content_sha256="a" * 64,
+    )
+    quote.policy_snapshots = [policy_snapshot]
     customer = SimpleNamespace(id=customer_id)
     db = FakeDatabase()
 
@@ -50,6 +57,7 @@ def test_customer_approval_locks_presented_revision() -> None:
         db,  # type: ignore[arg-type]
         formal_quote=quote,  # type: ignore[arg-type]
         customer_user=customer,  # type: ignore[arg-type]
+        acknowledged_policy_snapshot_ids={policy_snapshot.id},
     )
 
     assert result.status == FormalQuoteStatus.approved
@@ -70,6 +78,7 @@ def test_customer_cannot_approve_another_customers_quote() -> None:
             FakeDatabase(),  # type: ignore[arg-type]
             formal_quote=quote,  # type: ignore[arg-type]
             customer_user=SimpleNamespace(id=uuid.uuid4()),  # type: ignore[arg-type]
+            acknowledged_policy_snapshot_ids=set(),
         )
 
     assert exc.value.status_code == 404
@@ -88,6 +97,35 @@ def test_superseded_quote_cannot_be_approved() -> None:
             FakeDatabase(),  # type: ignore[arg-type]
             formal_quote=quote,  # type: ignore[arg-type]
             customer_user=SimpleNamespace(id=customer_id),  # type: ignore[arg-type]
+            acknowledged_policy_snapshot_ids=set(),
+        )
+
+    assert exc.value.status_code == 409
+
+
+def test_customer_policy_acknowledgment_must_match_attached_snapshots() -> None:
+    customer_id = uuid.uuid4()
+    policy_snapshot = SimpleNamespace(
+        id=uuid.uuid4(),
+        kind=SimpleNamespace(value="terms"),
+        version_snapshot="2026-10-01",
+        content_sha256="b" * 64,
+    )
+    quote = SimpleNamespace(
+        id=uuid.uuid4(),
+        quote_request_id=uuid.uuid4(),
+        revision_number=1,
+        customer_user_id=customer_id,
+        status=FormalQuoteStatus.presented,
+        policy_snapshots=[policy_snapshot],
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        approve_formal_quote(
+            FakeDatabase(),  # type: ignore[arg-type]
+            formal_quote=quote,  # type: ignore[arg-type]
+            customer_user=SimpleNamespace(id=customer_id),  # type: ignore[arg-type]
+            acknowledged_policy_snapshot_ids={uuid.uuid4()},
         )
 
     assert exc.value.status_code == 409

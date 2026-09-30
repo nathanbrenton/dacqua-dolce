@@ -9,6 +9,12 @@ from app.api.health import router as health_router
 from app.api.operations import router as operations_router
 from app.api.orders import router as orders_router
 from app.api.password_reset import router as password_reset_router
+from app.api.policies import (
+    operations_router as policy_operations_router,
+)
+from app.api.policies import (
+    public_router as policy_public_router,
+)
 from app.api.quotes import router as quotes_router
 from app.api.webhooks import router as webhooks_router
 from app.core.config import get_settings
@@ -64,6 +70,14 @@ def create_app(
     )
     application.include_router(
         password_reset_router,
+        prefix=resolved_settings.api_prefix,
+    )
+    application.include_router(
+        policy_public_router,
+        prefix=resolved_settings.api_prefix,
+    )
+    application.include_router(
+        policy_operations_router,
         prefix=resolved_settings.api_prefix,
     )
     application.include_router(

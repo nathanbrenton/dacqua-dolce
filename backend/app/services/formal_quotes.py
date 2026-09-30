@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -23,6 +24,7 @@ from app.models.quote import (
     QuoteRequestStatus,
 )
 from app.services.audit import record_audit_event
+from app.services.policies import snapshot_quote_policies
 from app.services.pricing import select_effective_price
 
 
@@ -413,6 +415,11 @@ def present_formal_quote(
             detail="A presented quote must have a positive final total.",
         )
 
+    policy_snapshots = snapshot_quote_policies(
+        db,
+        formal_quote=formal_quote,
+    )
+
     for previous in db.scalars(
         select(FormalQuote).where(
             FormalQuote.quote_request_id == request.id,
@@ -438,6 +445,10 @@ def present_formal_quote(
         metadata={
             "quote_request_id": str(request.id),
             "revision_number": formal_quote.revision_number,
+            "policy_versions": {
+                snapshot.kind.value: snapshot.version_snapshot
+                for snapshot in policy_snapshots
+            },
         },
     )
     return formal_quote
@@ -448,6 +459,7 @@ def approve_formal_quote(
     *,
     formal_quote: FormalQuote,
     customer_user: User,
+    acknowledged_policy_snapshot_ids: set[uuid.UUID],
 ) -> FormalQuote:
     if formal_quote.customer_user_id != customer_user.id:
         raise HTTPException(
@@ -458,6 +470,21 @@ def approve_formal_quote(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Only a currently presented quote can be approved.",
+        )
+
+    expected_policy_ids = {
+        snapshot.id
+        for snapshot in formal_quote.policy_snapshots
+    }
+    if not expected_policy_ids:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This quote does not contain the required policy snapshots.",
+        )
+    if acknowledged_policy_snapshot_ids != expected_policy_ids:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Review and acknowledge every policy version attached to this quote.",
         )
 
     for draft in db.scalars(
@@ -487,6 +514,14 @@ def approve_formal_quote(
             "charges_amount_minor": formal_quote.charges_amount_minor,
             "total_amount_minor": formal_quote.total_amount_minor,
             "currency": formal_quote.currency,
+            "policy_acknowledgments": [
+                {
+                    "kind": snapshot.kind.value,
+                    "version": snapshot.version_snapshot,
+                    "content_sha256": snapshot.content_sha256,
+                }
+                for snapshot in formal_quote.policy_snapshots
+            ],
         },
     )
     return formal_quote

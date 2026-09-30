@@ -65,6 +65,9 @@ import {
 import {
   OrderFulfillmentControls,
 } from "./OrderFulfillmentControls";
+import {
+  PolicyManagementPanel,
+} from "./PolicyManagementPanel";
 
 import {
   type AppearanceMode,
@@ -1869,6 +1872,8 @@ export function OperationsPage({
           </div>
         </section>
       ) : null}
+
+      <PolicyManagementPanel roles={roles} />
 
       {nextAction !== null ? (
         <section

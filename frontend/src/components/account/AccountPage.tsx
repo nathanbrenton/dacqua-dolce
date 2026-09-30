@@ -544,6 +544,8 @@ export function AccountPage({
     useState<CustomerRequestSummary[]>([]);
   const [formalQuotes, setFormalQuotes] =
     useState<CustomerFormalQuote[]>([]);
+  const [policyAcknowledgments, setPolicyAcknowledgments] =
+    useState<Record<string, boolean>>({});
   const [customerEquipment, setCustomerEquipment] =
     useState<CustomerEquipment[]>([]);
   const [error, setError] =
@@ -630,6 +632,11 @@ export function AccountPage({
   ]);
 
   async function approveFormalQuote(quote: CustomerFormalQuote): Promise<void> {
+    if (policyAcknowledgments[quote.id] !== true) {
+      setError("Review and acknowledge the policy versions attached to this quote.");
+      return;
+    }
+
     const confirmed = window.confirm(
       `Approve quote revision ${quote.revision_number} for ${money(
         quote.total_amount_minor,
@@ -643,7 +650,10 @@ export function AccountPage({
     setError(null);
     setSaveNotice(null);
     try {
-      const updated = await approveCustomerFormalQuote(quote.id);
+      const updated = await approveCustomerFormalQuote(
+        quote.id,
+        quote.policy_snapshots.map((snapshot) => snapshot.id),
+      );
       const refreshedOrders = await getOrders();
       setFormalQuotes((current) => current.map((candidate) => (
         candidate.id === updated.id ? updated : candidate
@@ -1690,7 +1700,37 @@ export function AccountPage({
                     <p className="account-formal-quote-note">{quote.customer_note}</p>
                   ) : null}
 
+                  <div className="account-formal-quote-policies">
+                    <strong>Policy versions attached to this quote</strong>
+                    {quote.policy_snapshots.map((snapshot) => (
+                      <details key={snapshot.id}>
+                        <summary>
+                          {snapshot.title} · version {snapshot.version}
+                        </summary>
+                        <div className="account-policy-snapshot-body">
+                          {snapshot.body}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+
                   {quote.status === "presented" ? (
+                    <>
+                      <label className="account-policy-acknowledgment">
+                        <input
+                          type="checkbox"
+                          checked={policyAcknowledgments[quote.id] === true}
+                          onChange={(event) => {
+                            setPolicyAcknowledgments((current) => ({
+                              ...current,
+                              [quote.id]: event.target.checked,
+                            }));
+                          }}
+                        />
+                        <span>
+                          I reviewed the policy versions attached to this quote.
+                        </span>
+                      </label>
                     <button
                       type="button"
                       className="account-action"
@@ -1700,6 +1740,7 @@ export function AccountPage({
                     >
                       Approve This Quote
                     </button>
+                    </>
                   ) : quote.status === "approved" ? (
                     <div>
                       <p className="account-formal-quote-approved">

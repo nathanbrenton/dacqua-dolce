@@ -92,6 +92,16 @@ export type CustomerFormalQuoteItem = {
   estimated_lead_time: string | null;
 };
 
+export type CustomerFormalQuotePolicySnapshot = {
+  id: string;
+  kind: string;
+  version: string;
+  title: string;
+  body: string;
+  content_sha256: string;
+  effective_at: string | null;
+};
+
 export type CustomerFormalQuote = {
   id: string;
   request_id: string;
@@ -104,6 +114,7 @@ export type CustomerFormalQuote = {
   delivery_address: CommercialAddress | null;
   billing_address: CommercialAddress | null;
   charges: CommercialCharge[];
+  policy_snapshots: CustomerFormalQuotePolicySnapshot[];
   customer_note: string | null;
   presented_at: string | null;
   approved_at: string | null;
@@ -316,6 +327,7 @@ export async function getCustomerFormalQuotes(): Promise<CustomerFormalQuote[]> 
 
 export async function approveCustomerFormalQuote(
   quoteId: string,
+  policySnapshotIds: string[],
 ): Promise<CustomerFormalQuote> {
   const csrfToken = await getCsrfToken();
   const response = await fetch(
@@ -328,7 +340,9 @@ export async function approveCustomerFormalQuote(
         "Content-Type": "application/json",
         "X-CSRF-Token": csrfToken,
       },
-      body: "{}",
+      body: JSON.stringify({
+        policy_snapshot_ids: policySnapshotIds,
+      }),
     },
   );
   if (!response.ok) {

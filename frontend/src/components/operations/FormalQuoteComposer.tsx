@@ -360,6 +360,13 @@ export function FormalQuoteComposer({
                 <strong>
                   Final total {money(formalQuote.total_amount_minor, formalQuote.currency)}
                 </strong>
+                {formalQuote.policy_snapshots.length > 0 ? (
+                  <small>
+                    Policies: {formalQuote.policy_snapshots
+                      .map((snapshot) => `${snapshot.title} ${snapshot.version}`)
+                      .join(" · ")}
+                  </small>
+                ) : null}
               </div>
               {formalQuote.status === "draft" ? (
                 <button

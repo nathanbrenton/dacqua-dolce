@@ -333,3 +333,31 @@ payment state machine treats a successful provider event for the exact order
 total as payment completion. A future deposit workflow therefore requires a
 separate payment-schedule/remaining-balance design rather than overloading a
 commercial adjustment or silently marking a partially paid order as paid.
+
+## PT24.2 launch-policy governance
+
+Customer-facing policy text is versioned application data, not hard-coded launch copy.
+Policy versions move through explicit `draft`, `approved`, and `retired` states.
+Draft policy text remains Operations-only and is never returned by the public policy
+endpoint.
+
+Only administrator/developer roles may create or approve policy versions. Approving
+a new version retires the previously approved version for that policy kind. Public
+policy pages expose only the current approved version.
+
+Newly presented formal quotes snapshot the exact approved policy text, version,
+effective timestamp, and SHA-256 digest that apply at presentation time. The baseline
+commercial policy set is Terms, Shipping, Cancellation, Refund, and Warranty.
+Installation Terms are additionally required only when the quote contains an
+installation charge. Privacy remains a separate public-launch policy and is not
+treated as a commercial quote term.
+
+A formal quote cannot be presented while an applicable required policy lacks an
+approved version. Customer approval must acknowledge the exact policy snapshots
+attached to the presented quote. The approval audit event retains the policy kind,
+version, and content digest without relying on whatever version may be current later.
+
+This architecture does not make draft language legally sufficient and does not
+constitute legal approval. Final policy text must still be reviewed and explicitly
+approved by the business and appropriate legal counsel before production workflows
+that depend on it are commissioned.

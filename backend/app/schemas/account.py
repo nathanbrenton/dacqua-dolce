@@ -11,6 +11,7 @@ from app.schemas.commercial import (
     CommercialAddressSnapshot,
     CommercialChargeRead,
 )
+from app.schemas.policies import FormalQuotePolicySnapshotRead
 
 
 class AddressCreate(BaseModel):
@@ -179,6 +180,7 @@ class CustomerFormalQuoteRead(BaseModel):
     delivery_address: CommercialAddressSnapshot | None
     billing_address: CommercialAddressSnapshot | None
     charges: list[CommercialChargeRead] = Field(default_factory=list)
+    policy_snapshots: list[FormalQuotePolicySnapshotRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
     approved_at: str | None

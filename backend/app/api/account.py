@@ -40,6 +40,7 @@ from app.schemas.account import (
     CustomerProfileUpdate,
     CustomerRequestRead,
 )
+from app.schemas.policies import FormalQuoteApprovalRequest
 from app.services.audit import (
     record_audit_event,
 )
@@ -633,6 +634,18 @@ def customer_formal_quote_read(
             }
             for charge in formal_quote.charges
         ],
+        policy_snapshots=[
+            {
+                "id": snapshot.id,
+                "kind": snapshot.kind,
+                "version": snapshot.version_snapshot,
+                "title": snapshot.title_snapshot,
+                "body": snapshot.body_snapshot,
+                "content_sha256": snapshot.content_sha256,
+                "effective_at": snapshot.effective_at_snapshot,
+            }
+            for snapshot in formal_quote.policy_snapshots
+        ],
         customer_note=formal_quote.customer_note,
         presented_at=(
             formal_quote.presented_at.isoformat()
@@ -673,6 +686,7 @@ def get_customer_formal_quotes(
         .options(
             selectinload(FormalQuote.items),
             selectinload(FormalQuote.charges),
+            selectinload(FormalQuote.policy_snapshots),
         )
         .where(
             FormalQuote.customer_user_id == current_user.id,
@@ -700,6 +714,7 @@ def get_customer_formal_quotes(
 )
 def approve_customer_formal_quote(
     formal_quote_id: uuid.UUID,
+    payload: FormalQuoteApprovalRequest,
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> CustomerFormalQuoteRead:
@@ -708,6 +723,7 @@ def approve_customer_formal_quote(
         .options(
             selectinload(FormalQuote.items),
             selectinload(FormalQuote.charges),
+            selectinload(FormalQuote.policy_snapshots),
         )
         .where(FormalQuote.id == formal_quote_id)
     )
@@ -721,6 +737,7 @@ def approve_customer_formal_quote(
         db,
         formal_quote=formal_quote,
         customer_user=current_user,
+        acknowledged_policy_snapshot_ids=set(payload.policy_snapshot_ids),
     )
     create_order_from_approved_quote(
         db,

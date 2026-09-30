@@ -164,6 +164,18 @@ def operations_formal_quote_read(
             }
             for charge in formal_quote.charges
         ],
+        policy_snapshots=[
+            {
+                "id": snapshot.id,
+                "kind": snapshot.kind,
+                "version": snapshot.version_snapshot,
+                "title": snapshot.title_snapshot,
+                "body": snapshot.body_snapshot,
+                "content_sha256": snapshot.content_sha256,
+                "effective_at": snapshot.effective_at_snapshot,
+            }
+            for snapshot in formal_quote.policy_snapshots
+        ],
         customer_note=formal_quote.customer_note,
         presented_at=(
             formal_quote.presented_at.isoformat()
@@ -1056,7 +1068,10 @@ def list_quotes(
             ),
             selectinload(QuoteRequest.formal_quotes).selectinload(
                 FormalQuote.charges
-            )
+            ),
+            selectinload(QuoteRequest.formal_quotes).selectinload(
+                FormalQuote.policy_snapshots
+            ),
         )
         .order_by(QuoteRequest.created_at.desc())
         .limit(200)
@@ -2317,6 +2332,7 @@ def present_quote_to_customer(
         .options(
             selectinload(FormalQuote.items),
             selectinload(FormalQuote.charges),
+            selectinload(FormalQuote.policy_snapshots),
         )
         .where(FormalQuote.id == formal_quote_id)
     )

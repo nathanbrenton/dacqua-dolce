@@ -10,6 +10,9 @@ import type {
 import type {
   RecommendationDecision,
 } from "./quotes";
+import type {
+  PolicySnapshot,
+} from "./policies";
 
 export type OperationsSummary = {
   new_quotes: number;
@@ -166,6 +169,7 @@ export type OperationsFormalQuote = {
   delivery_address: CommercialAddress | null;
   billing_address: CommercialAddress | null;
   charges: CommercialCharge[];
+  policy_snapshots: PolicySnapshot[];
   customer_note: string | null;
   presented_at: string | null;
   approved_at: string | null;

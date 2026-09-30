@@ -5555,3 +5555,85 @@ summary {
     grid-column: auto;
   }
 }
+
+.policy-approved-body,
+.account-policy-snapshot-body {
+  white-space: pre-wrap;
+}
+
+.account-formal-quote-policies {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.account-formal-quote-policies details {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+
+.account-policy-snapshot-body {
+  margin-top: 0.75rem;
+}
+
+.account-policy-acknowledgment {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  margin: 1rem 0;
+}
+
+.operations-policy-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.operations-policy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.operations-policy-card,
+.operations-policy-editor {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.operations-policy-card header,
+.operations-policy-history > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.operations-policy-history {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.operations-policy-editor {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.operations-policy-editor textarea {
+  min-height: 14rem;
+  resize: vertical;
+}
+
+.policy-version-list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.policy-version-section {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.policy-version-section h2 {
+  margin-bottom: 0;
+}
