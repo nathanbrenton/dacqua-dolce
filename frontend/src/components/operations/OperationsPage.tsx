@@ -265,6 +265,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "formal_quote.created": "Formal quote created",
   "formal_quote.presented": "Formal quote presented",
   "formal_quote.approved": "Formal quote approved",
+  "maintenance.reminder_delivery_attempted": "Maintenance reminder attempted",
 };
 
 const AUDIT_ENTITY_LABELS: Record<string, string> = {
@@ -278,6 +279,7 @@ const AUDIT_ENTITY_LABELS: Record<string, string> = {
   product_relationship: "Product relationship",
   quote_request: "Customer request",
   formal_quote: "Formal quote",
+  maintenance_reminder: "Maintenance reminder",
   user: "User account",
   user_session: "User session",
 };
@@ -1207,6 +1209,7 @@ export function OperationsPage({
         active: true,
         is_consumable: false,
         replacement_interval_days: null,
+        reminder_preference: null,
         sort_order: 0,
       });
       setProducts((current) => replaceProduct(current, updated));
@@ -1240,6 +1243,11 @@ export function OperationsPage({
       active: boolean;
       is_consumable: boolean;
       replacement_interval_days: number | null;
+      reminder_preference:
+        | "filter_replacement"
+        | "uv_service"
+        | "product_specific"
+        | null;
     }>,
   ) {
     setError(null);
@@ -1258,6 +1266,10 @@ export function OperationsPage({
             "replacement_interval_days" in changes
               ? changes.replacement_interval_days ?? null
               : relationship.replacement_interval_days,
+          reminder_preference:
+            "reminder_preference" in changes
+              ? changes.reminder_preference ?? null
+              : relationship.reminder_preference,
           sort_order: relationship.sort_order,
         },
       );
@@ -2437,6 +2449,9 @@ export function OperationsPage({
                               {relationship.replacement_interval_days !== null
                                 ? ` · ${relationship.replacement_interval_days}-day interval`
                                 : ""}
+                              {relationship.reminder_preference !== null
+                                ? ` · ${relationship.reminder_preference.replaceAll("_", " ")} reminder`
+                                : ""}
                             </small>
                           </div>
 
@@ -2478,6 +2493,7 @@ export function OperationsPage({
                                     {
                                       is_consumable: !relationship.is_consumable,
                                       replacement_interval_days: null,
+                                      reminder_preference: null,
                                     },
                                   );
                                 }}
@@ -2507,10 +2523,52 @@ export function OperationsPage({
                                       void changeProductRelationship(
                                         product,
                                         relationship,
-                                        { replacement_interval_days: value },
+                                        {
+                                          replacement_interval_days: value,
+                                          reminder_preference:
+                                            value === null
+                                              ? null
+                                              : relationship.reminder_preference,
+                                        },
                                       );
                                     }}
                                   />
+                                </label>
+                              ) : null}
+                              {relationship.is_consumable
+                                && relationship.replacement_interval_days !== null ? (
+                                <label className="operations-field compact">
+                                  <span>Reminder opt-in</span>
+                                  <select
+                                    value={relationship.reminder_preference ?? ""}
+                                    onChange={(event) => {
+                                      const value = event.currentTarget.value;
+                                      void changeProductRelationship(
+                                        product,
+                                        relationship,
+                                        {
+                                          reminder_preference:
+                                            value === ""
+                                              ? null
+                                              : value as
+                                                | "filter_replacement"
+                                                | "uv_service"
+                                                | "product_specific",
+                                        },
+                                      );
+                                    }}
+                                  >
+                                    <option value="">No scheduled reminder</option>
+                                    <option value="filter_replacement">
+                                      Filter replacement reminders
+                                    </option>
+                                    <option value="uv_service">
+                                      UV service reminders
+                                    </option>
+                                    <option value="product_specific">
+                                      Product-specific reminders
+                                    </option>
+                                  </select>
                                 </label>
                               ) : null}
                               <button

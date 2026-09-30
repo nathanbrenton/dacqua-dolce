@@ -13,6 +13,7 @@ from app.models.catalog import (
     ProductInventory,
     ProductPrice,
     ProductVariant,
+    ReminderPreferenceKind,
     StockNotificationSubscription,
 )
 from app.models.commerce import (
@@ -57,6 +58,10 @@ from app.models.identity import (
     UserSession,
     UserStatus,
 )
+from app.models.maintenance import (
+    MaintenanceReminder,
+    MaintenanceReminderStatus,
+)
 from app.models.quote import (
     FormalQuote,
     FormalQuoteItem,
@@ -95,6 +100,8 @@ __all__ = [
     "FulfillmentStatus",
     "InventoryStatus",
     "JurisdictionEligibility",
+    "MaintenanceReminder",
+    "MaintenanceReminderStatus",
     "Manufacturer",
     "Order",
     "OrderItem",
@@ -113,6 +120,7 @@ __all__ = [
     "ProductInventory",
     "ProductPrice",
     "ProductVariant",
+    "ReminderPreferenceKind",
     "StockNotificationSubscription",
     "QuoteRequest",
     "QuoteRequestStatus",

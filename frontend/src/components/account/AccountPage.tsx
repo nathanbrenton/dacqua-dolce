@@ -1481,6 +1481,15 @@ export function AccountPage({
                     <div><dt>Last service</dt><dd>{equipment.last_service_on ? new Date(`${equipment.last_service_on}T00:00:00`).toLocaleDateString() : "Not recorded"}</dd></div>
                     <div><dt>Next service</dt><dd>{equipment.next_service_due_on ? new Date(`${equipment.next_service_due_on}T00:00:00`).toLocaleDateString() : "Not scheduled"}</dd></div>
                   </dl>
+                  {equipment.service_calendar_path !== null ? (
+                    <a
+                      className="text-button compact"
+                      href={equipment.service_calendar_path}
+                      download
+                    >
+                      Add service target to calendar
+                    </a>
+                  ) : null}
                   {equipment.consumables.length > 0 ? (
                     <div className="account-equipment-consumables">
                       <strong>Replacement items</strong>
@@ -1499,31 +1508,42 @@ export function AccountPage({
                                   : "Replacement interval has not been configured."}
                             </small>
                           </div>
-                          {consumable.online_reorder_available ? (
-                            <button
-                              type="button"
-                              className="account-action compact"
-                              disabled={saving}
-                              onClick={() => {
-                                void reorderConsumable(
-                                  consumable.product_id,
-                                  consumable.name,
-                                );
-                              }}
-                            >
-                              Add to Cart
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="text-button compact"
-                              onClick={() => {
-                                onNavigate(consumable.public_path);
-                              }}
-                            >
-                              View Item
-                            </button>
-                          )}
+                          <div className="account-equipment-consumable-actions">
+                            {consumable.calendar_path !== null ? (
+                              <a
+                                className="text-button compact"
+                                href={consumable.calendar_path}
+                                download
+                              >
+                                Add to calendar
+                              </a>
+                            ) : null}
+                            {consumable.online_reorder_available ? (
+                              <button
+                                type="button"
+                                className="account-action compact"
+                                disabled={saving}
+                                onClick={() => {
+                                  void reorderConsumable(
+                                    consumable.product_id,
+                                    consumable.name,
+                                  );
+                                }}
+                              >
+                                Add to Cart
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="text-button compact"
+                                onClick={() => {
+                                  onNavigate(consumable.public_path);
+                                }}
+                              >
+                                View Item
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

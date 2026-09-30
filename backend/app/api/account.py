@@ -3,6 +3,7 @@ import uuid
 from fastapi import (
     APIRouter,
     HTTPException,
+    Response,
     status,
 )
 from sqlalchemy import select
@@ -12,6 +13,7 @@ from app.api.dependencies.auth import (
     CurrentUser,
     DatabaseSession,
 )
+from app.core.email_config import get_email_runtime_settings
 from app.models.catalog import Product, ProductDocument, ProductRelationship
 from app.models.customer import (
     CustomerAddress,
@@ -41,6 +43,7 @@ from app.schemas.account import (
 from app.services.audit import (
     record_audit_event,
 )
+from app.services.calendar_export import build_all_day_ics
 from app.services.formal_quotes import approve_formal_quote
 from app.services.post_purchase import next_replacement_due_on
 from app.services.pricing import resolve_pricing, select_effective_price
@@ -371,6 +374,15 @@ def get_customer_equipment(
                         next_replacement_due_on=(
                             due_on.isoformat() if due_on is not None else None
                         ),
+                        calendar_path=(
+                            (
+                                f"/api/account/equipment/{equipment.id}/"
+                                f"consumables/{consumable.id}/"
+                                "replacement-calendar.ics"
+                            )
+                            if due_on is not None
+                            else None
+                        ),
                         online_reorder_available=(
                             consumable.online_sale_approved
                             and pricing.can_add_to_cart
@@ -399,6 +411,11 @@ def get_customer_equipment(
                     if equipment.next_service_due_on
                     else None
                 ),
+                service_calendar_path=(
+                    f"/api/account/equipment/{equipment.id}/service-calendar.ics"
+                    if equipment.next_service_due_on is not None
+                    else None
+                ),
                 consumables=consumables,
                 documents=[
                     CustomerEquipmentDocumentRead(
@@ -413,6 +430,145 @@ def get_customer_equipment(
             )
         )
     return results
+
+
+def _owned_active_equipment(
+    db: DatabaseSession,
+    *,
+    equipment_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> CustomerEquipment:
+    equipment = db.scalar(
+        select(CustomerEquipment).where(
+            CustomerEquipment.id == equipment_id,
+            CustomerEquipment.user_id == user_id,
+            CustomerEquipment.active.is_(True),
+        )
+    )
+    if equipment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Installed equipment not found.",
+        )
+    return equipment
+
+
+@router.get(
+    "/equipment/{equipment_id}/service-calendar.ics",
+)
+def get_service_calendar(
+    equipment_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> Response:
+    equipment = _owned_active_equipment(
+        db,
+        equipment_id=equipment_id,
+        user_id=current_user.id,
+    )
+    if equipment.next_service_due_on is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No service date is recorded for this equipment.",
+        )
+
+    ics = build_all_day_ics(
+        uid=f"service-{equipment.id}@dacquadolce.com",
+        summary=f"Service {equipment.name_snapshot}",
+        event_date=equipment.next_service_due_on,
+        description=(
+            "D'Acqua Dolce service target for "
+            f"{equipment.name_snapshot}. "
+            "Review your account for current equipment and service information."
+        ),
+        url=get_email_runtime_settings().public_url("/account"),
+    )
+    return Response(
+        content=ics,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="dacqua-dolce-service.ics"'
+            )
+        },
+    )
+
+
+@router.get(
+    "/equipment/{equipment_id}/consumables/"
+    "{related_product_id}/replacement-calendar.ics",
+)
+def get_replacement_calendar(
+    equipment_id: uuid.UUID,
+    related_product_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> Response:
+    equipment = _owned_active_equipment(
+        db,
+        equipment_id=equipment_id,
+        user_id=current_user.id,
+    )
+    if equipment.product_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Replacement schedule not found.",
+        )
+
+    relationship = db.scalar(
+        select(ProductRelationship)
+        .options(selectinload(ProductRelationship.related_product))
+        .where(
+            ProductRelationship.product_id == equipment.product_id,
+            ProductRelationship.related_product_id == related_product_id,
+            ProductRelationship.active.is_(True),
+            ProductRelationship.public.is_(True),
+            ProductRelationship.is_consumable.is_(True),
+        )
+    )
+    if relationship is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Replacement schedule not found.",
+        )
+
+    due_on = next_replacement_due_on(
+        installed_on=equipment.installed_on,
+        last_service_on=equipment.last_service_on,
+        replacement_interval_days=relationship.replacement_interval_days,
+    )
+    if due_on is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No supported replacement date is available.",
+        )
+
+    consumable = relationship.related_product
+    ics = build_all_day_ics(
+        uid=(
+            f"replacement-{equipment.id}-{consumable.id}-"
+            f"{due_on.isoformat()}@dacquadolce.com"
+        ),
+        summary=f"Replace {consumable.name}",
+        event_date=due_on,
+        description=(
+            f"Replacement target for {consumable.name}, "
+            f"used with {equipment.name_snapshot}. "
+            "Review your D'Acqua Dolce account for current guidance."
+        ),
+        url=get_email_runtime_settings().public_url(
+            consumable.public_path
+        ),
+    )
+    return Response(
+        content=ics,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="dacqua-dolce-replacement.ics"'
+            )
+        },
+    )
 
 
 @router.get(

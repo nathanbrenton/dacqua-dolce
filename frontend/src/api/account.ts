@@ -57,6 +57,7 @@ export type CustomerConsumable = {
   public_path: string;
   replacement_interval_days: number | null;
   next_replacement_due_on: string | null;
+  calendar_path: string | null;
   online_reorder_available: boolean;
 };
 
@@ -73,6 +74,7 @@ export type CustomerEquipment = {
   installed_on: string | null;
   last_service_on: string | null;
   next_service_due_on: string | null;
+  service_calendar_path: string | null;
   consumables: CustomerConsumable[];
   documents: CustomerEquipmentDocument[];
 };

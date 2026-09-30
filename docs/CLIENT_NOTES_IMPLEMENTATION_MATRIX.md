@@ -348,3 +348,14 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 - Customer communication preferences remain explicit opt-in controls; PT22.1 does not claim reminder delivery is commissioned.
 - Online reorder is shown only when the related consumable is independently approved and priced for online cart purchase.
 - Customer equipment is now loaded by the account page; the previously present Installed Systems UI was not calling its API.
+
+## PT22.2 — replacement reminders and customer-controlled calendar export
+
+- Replacement reminder delivery reuses the existing explicit customer communication preferences; no second preference system is introduced.
+- Each verified consumable relationship may optionally bind its supported replacement interval to one existing opt-in: filter replacement, UV service, or product-specific reminders.
+- No reminder binding is allowed without both a consumable relationship and a supported replacement interval.
+- The reminder runner is preview-only by default. Live sending requires an explicit `--send` flag plus a commissioned Postmark provider/token.
+- Reminder attempts are durable and idempotent by equipment + replacement product + reminder kind + due date, and outbound messages continue through the existing PostgreSQL communications archive.
+- Customer calendar export is self-service `.ics`; it does not request Google, Microsoft, Apple, or other calendar-account access.
+- Installed-equipment service targets and supported consumable replacement targets can be downloaded to the customer's calendar when a date exists.
+- Production scheduling of the reminder runner remains a deployment/operations decision; local validation does not send email.

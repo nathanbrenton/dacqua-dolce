@@ -1647,6 +1647,7 @@ def operations_product_read(
                 active=relationship.active,
                 is_consumable=relationship.is_consumable,
                 replacement_interval_days=relationship.replacement_interval_days,
+                reminder_preference=relationship.reminder_preference,
                 sort_order=relationship.sort_order,
             )
             for relationship in product.related_options
@@ -1793,6 +1794,7 @@ def create_product_relationship(
         active=payload.active,
         is_consumable=payload.is_consumable,
         replacement_interval_days=payload.replacement_interval_days,
+        reminder_preference=payload.reminder_preference,
         sort_order=payload.sort_order,
     )
     db.add(relationship)
@@ -1812,6 +1814,11 @@ def create_product_relationship(
             "active": payload.active,
             "is_consumable": payload.is_consumable,
             "replacement_interval_days": payload.replacement_interval_days,
+            "reminder_preference": (
+                payload.reminder_preference.value
+                if payload.reminder_preference is not None
+                else None
+            ),
             "sort_order": payload.sort_order,
         },
     )
@@ -1874,6 +1881,7 @@ def update_product_relationship(
     relationship.active = payload.active
     relationship.is_consumable = payload.is_consumable
     relationship.replacement_interval_days = payload.replacement_interval_days
+    relationship.reminder_preference = payload.reminder_preference
     relationship.sort_order = payload.sort_order
     db.flush()
 
@@ -1892,6 +1900,11 @@ def update_product_relationship(
             "active": payload.active,
             "is_consumable": payload.is_consumable,
             "replacement_interval_days": payload.replacement_interval_days,
+            "reminder_preference": (
+                payload.reminder_preference.value
+                if payload.reminder_preference is not None
+                else None
+            ),
             "sort_order": payload.sort_order,
         },
     )

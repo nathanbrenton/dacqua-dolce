@@ -5434,6 +5434,15 @@ summary {
   color: var(--text-muted);
 }
 
+
+.account-equipment-consumable-actions {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem !important;
+  flex-wrap: wrap;
+}
+
 .operations-field.compact {
   min-width: 11rem;
 }

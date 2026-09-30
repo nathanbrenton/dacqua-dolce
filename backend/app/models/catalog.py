@@ -47,6 +47,12 @@ class ProductRelationshipType(StrEnum):
     accessory = "accessory"
 
 
+class ReminderPreferenceKind(StrEnum):
+    filter_replacement = "filter_replacement"
+    uv_service = "uv_service"
+    product_specific = "product_specific"
+
+
 class ProductDocumentType(StrEnum):
     specification = "specification"
     owners_manual = "owners_manual"
@@ -289,6 +295,11 @@ class ProductRelationship(Base):
             "(is_consumable AND replacement_interval_days > 0)",
             name="consumable_interval_valid",
         ),
+        CheckConstraint(
+            "reminder_preference IS NULL OR "
+            "(is_consumable AND replacement_interval_days IS NOT NULL)",
+            name="reminder_preference_valid",
+        ),
         Index("ix_product_relationships_product_id", "product_id"),
         Index("ix_product_relationships_related_product_id", "related_product_id"),
     )
@@ -316,6 +327,12 @@ class ProductRelationship(Base):
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     is_consumable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     replacement_interval_days: Mapped[int | None] = mapped_column(Integer)
+    reminder_preference: Mapped[ReminderPreferenceKind | None] = mapped_column(
+        Enum(
+            ReminderPreferenceKind,
+            name="reminder_preference_kind",
+        )
+    )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

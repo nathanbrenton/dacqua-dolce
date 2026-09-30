@@ -228,3 +228,31 @@ A catalog relationship may be marked as a consumable/replacement item independen
 `replacement_interval_days` is intentionally optional. Staff must not populate an interval from generic assumptions; record one only when D'Acqua Dolce has product/manufacturer-supported guidance. A consumable without a supported interval can still be surfaced for reorder without generating a date target.
 
 Making a consumable relationship public controls whether it can appear in the signed-in customer's installed-equipment view. Online reorder remains subject to the related product's own sale approval and pricing policy.
+
+## PT22.2 reminder and calendar governance
+
+Automated replacement reminders must remain opt-in. A consumable relationship may
+be associated with one existing reminder preference only when D'Acqua Dolce has
+also recorded a supported replacement interval. The supported bindings are
+filter replacement, UV service, and product-specific reminders. The application
+must not infer a reminder category from product names, SKUs, or marketing copy.
+
+The due-reminder runner is read-only unless explicitly invoked with `--send`.
+Live sending additionally requires the commissioned Postmark provider and token.
+Every attempted send uses the existing email delivery/archive boundary and a
+durable maintenance-reminder business key consisting of installed equipment,
+replacement product, reminder kind, and due date. A successful or deliberately
+suppressed business key is not resent.
+
+Failed delivery attempts may be retried for the same business key. No payment,
+supplier, or private Operations metadata belongs in reminder content.
+
+Calendar integration is intentionally customer-controlled. The account may
+generate an all-day `.ics` file for a recorded service target or supported
+consumable replacement target. Calendar export is a download only: it does not
+request calendar OAuth, write to an external calendar account, or create a
+background calendar dependency.
+
+A production schedule for the reminder runner is not implied by application
+code. The send window and production timer must be reviewed explicitly during
+deployment/commissioning.

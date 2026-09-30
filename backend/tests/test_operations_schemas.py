@@ -5,6 +5,7 @@ from app.models.catalog import (
     InventoryStatus,
     PricingPolicyMode,
     ProductRelationshipType,
+    ReminderPreferenceKind,
 )
 from app.models.commerce import FulfillmentStatus
 from app.schemas.operations import (
@@ -248,3 +249,35 @@ def test_product_relationship_consumable_interval_is_optional() -> None:
 
     assert payload.is_consumable is True
     assert payload.replacement_interval_days is None
+
+
+def test_product_relationship_reminder_requires_supported_consumable_interval() -> None:
+    with pytest.raises(ValidationError):
+        ProductRelationshipCreateRequest(
+            related_product_id="00000000-0000-0000-0000-000000000001",
+            relationship_type=ProductRelationshipType.accessory,
+            public=True,
+            active=True,
+            is_consumable=True,
+            replacement_interval_days=None,
+            reminder_preference=ReminderPreferenceKind.filter_replacement,
+            sort_order=0,
+        )
+
+
+def test_product_relationship_reminder_can_bind_existing_opt_in() -> None:
+    payload = ProductRelationshipCreateRequest(
+        related_product_id="00000000-0000-0000-0000-000000000001",
+        relationship_type=ProductRelationshipType.accessory,
+        public=True,
+        active=True,
+        is_consumable=True,
+        replacement_interval_days=180,
+        reminder_preference=ReminderPreferenceKind.filter_replacement,
+        sort_order=0,
+    )
+
+    assert (
+        payload.reminder_preference
+        == ReminderPreferenceKind.filter_replacement
+    )

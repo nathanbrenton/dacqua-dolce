@@ -279,6 +279,11 @@ export type OperationsProductRelationship = {
   active: boolean;
   is_consumable: boolean;
   replacement_interval_days: number | null;
+  reminder_preference:
+    | "filter_replacement"
+    | "uv_service"
+    | "product_specific"
+    | null;
   sort_order: number;
 };
 
@@ -584,6 +589,11 @@ export function createProductRelationship(
     active: boolean;
     is_consumable: boolean;
     replacement_interval_days: number | null;
+    reminder_preference:
+      | "filter_replacement"
+      | "uv_service"
+      | "product_specific"
+      | null;
     sort_order: number;
   },
 ): Promise<OperationsProduct> {
@@ -603,6 +613,11 @@ export function updateProductRelationship(
     active: boolean;
     is_consumable: boolean;
     replacement_interval_days: number | null;
+    reminder_preference:
+      | "filter_replacement"
+      | "uv_service"
+      | "product_specific"
+      | null;
     sort_order: number;
   },
 ): Promise<OperationsProduct> {

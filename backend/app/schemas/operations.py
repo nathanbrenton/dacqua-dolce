@@ -14,6 +14,7 @@ from app.models.catalog import (
     InventoryStatus,
     PricingPolicyMode,
     ProductRelationshipType,
+    ReminderPreferenceKind,
 )
 from app.models.commerce import FulfillmentStatus
 from app.models.communications import (
@@ -517,6 +518,7 @@ class OperationsProductRelationshipRead(BaseModel):
     active: bool
     is_consumable: bool = False
     replacement_interval_days: int | None = None
+    reminder_preference: ReminderPreferenceKind | None = None
     sort_order: int
 
 
@@ -549,6 +551,7 @@ class ProductRelationshipCreateRequest(BaseModel):
     active: bool = True
     is_consumable: bool = False
     replacement_interval_days: int | None = Field(default=None, ge=1, le=3650)
+    reminder_preference: ReminderPreferenceKind | None = None
     sort_order: int = Field(default=0, ge=0, le=10_000)
 
     @model_validator(mode="after")
@@ -558,6 +561,14 @@ class ProductRelationshipCreateRequest(BaseModel):
         if self.replacement_interval_days is not None and not self.is_consumable:
             raise ValueError(
                 "Replacement interval requires a consumable relationship."
+            )
+        if self.reminder_preference is not None and (
+            not self.is_consumable
+            or self.replacement_interval_days is None
+        ):
+            raise ValueError(
+                "Reminder preference requires a consumable relationship "
+                "with a supported replacement interval."
             )
         return self
 
@@ -570,6 +581,7 @@ class ProductRelationshipUpdateRequest(BaseModel):
     active: bool
     is_consumable: bool = False
     replacement_interval_days: int | None = Field(default=None, ge=1, le=3650)
+    reminder_preference: ReminderPreferenceKind | None = None
     sort_order: int = Field(ge=0, le=10_000)
 
     @model_validator(mode="after")
@@ -579,6 +591,14 @@ class ProductRelationshipUpdateRequest(BaseModel):
         if self.replacement_interval_days is not None and not self.is_consumable:
             raise ValueError(
                 "Replacement interval requires a consumable relationship."
+            )
+        if self.reminder_preference is not None and (
+            not self.is_consumable
+            or self.replacement_interval_days is None
+        ):
+            raise ValueError(
+                "Reminder preference requires a consumable relationship "
+                "with a supported replacement interval."
             )
         return self
 
