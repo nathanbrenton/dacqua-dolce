@@ -42,6 +42,14 @@ class InventoryStatus(StrEnum):
     not_tracked = "not_tracked"
 
 
+class InventorySourceKind(StrEnum):
+    unspecified = "unspecified"
+    operator_entry = "operator_entry"
+    supplier_report = "supplier_report"
+    manufacturer_report = "manufacturer_report"
+    internal_stock = "internal_stock"
+
+
 class ProductRelationshipType(StrEnum):
     option = "option"
     accessory = "accessory"
@@ -531,6 +539,15 @@ class ProductInventory(Base):
         default=0,
     )
     estimated_lead_time: Mapped[str | None] = mapped_column(String(120))
+    source_kind: Mapped[InventorySourceKind] = mapped_column(
+        Enum(InventorySourceKind, name="inventory_source_kind"),
+        nullable=False,
+        default=InventorySourceKind.unspecified,
+    )
+    source_reference: Mapped[str | None] = mapped_column(String(240))
+    source_observed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

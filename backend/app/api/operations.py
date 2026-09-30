@@ -64,6 +64,7 @@ from app.schemas.operations import (
     OperationsCustomerRead,
     OperationsFormalQuoteItemRead,
     OperationsFormalQuoteRead,
+    OperationsInsightBucketRead,
     OperationsInventoryRead,
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
@@ -74,6 +75,7 @@ from app.schemas.operations import (
     OperationsProductRelationshipRead,
     OperationsProductVariantRead,
     OperationsQuoteRead,
+    OperationsSalesInsightsRead,
     OperationsSummaryRead,
     OrderFulfillmentUpdate,
     PricingUpdateRequest,
@@ -103,6 +105,10 @@ from app.services.fulfillment import (
     FulfillmentError,
     transition_order_fulfillment,
 )
+from app.services.inventory_observations import (
+    InventoryObservation,
+    apply_inventory_observation,
+)
 from app.services.operations_access import (
     require_audit_log_read,
     require_customer_equipment_write,
@@ -110,6 +116,7 @@ from app.services.operations_access import (
     require_pricing_inventory_write,
 )
 from app.services.pricing import select_effective_price
+from app.services.sales_insights import summarize_assisted_sales
 
 router = APIRouter(prefix="/operations", tags=["operations"])
 
@@ -307,6 +314,46 @@ def operations_summary(
         recommendation_lab_testing=recommendation_lab_testing,
         active_products=int(active_products),
         failed_email_deliveries=int(failed_email_deliveries),
+    )
+
+
+@router.get(
+    "/sales-insights",
+    response_model=OperationsSalesInsightsRead,
+)
+def operations_sales_insights(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsSalesInsightsRead:
+    require_operations(db, user=current_user)
+
+    rows = db.execute(
+        select(
+            QuoteRequest.recommendation_context,
+            QuoteRequest.recommendation_decision,
+        ).order_by(QuoteRequest.created_at)
+    ).all()
+    insights = summarize_assisted_sales(rows)
+
+    def buckets(values):
+        return [
+            OperationsInsightBucketRead(
+                value=item.value,
+                count=item.count,
+            )
+            for item in values
+        ]
+
+    return OperationsSalesInsightsRead(
+        total_requests=insights.total_requests,
+        structured_requests=insights.structured_requests,
+        source_water=buckets(insights.source_water),
+        treatment_preference=buckets(insights.treatment_preference),
+        service_postal_codes=buckets(insights.service_postal_codes),
+        limited_utility_requests=insights.limited_utility_requests,
+        lab_required_requests=insights.lab_required_requests,
+        known_hardness_requests=insights.known_hardness_requests,
+        research_network_yes=insights.research_network_yes,
     )
 
 
@@ -1677,6 +1724,22 @@ def operations_product_read(
                 if inventory is not None
                 else None
             ),
+            source_kind=(
+                inventory.source_kind
+                if inventory is not None
+                else "unspecified"
+            ),
+            source_reference=(
+                inventory.source_reference
+                if inventory is not None
+                else None
+            ),
+            source_observed_at=(
+                inventory.source_observed_at.isoformat()
+                if inventory is not None
+                and inventory.source_observed_at is not None
+                else None
+            ),
         ),
     )
 
@@ -2057,7 +2120,7 @@ def update_product_inventory(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsProductRead:
-    require_operations(db, user=current_user)
+    require_pricing_inventory_write(db, user=current_user)
 
     product = load_product_for_operations(db, product_id)
 
@@ -2103,25 +2166,20 @@ def update_product_inventory(
         inventory = ProductInventory(
             product_id=product.id,
             variant_id=None,
-            inventory_status=payload.status,
-            quantity_on_hand=(
-                payload.quantity_on_hand
-            ),
-            estimated_lead_time=(
-                payload.estimated_lead_time
-            ),
         )
         db.add(inventory)
-    else:
-        inventory.inventory_status = (
-            payload.status
-        )
-        inventory.quantity_on_hand = (
-            payload.quantity_on_hand
-        )
-        inventory.estimated_lead_time = (
-            payload.estimated_lead_time
-        )
+
+    apply_inventory_observation(
+        inventory,
+        InventoryObservation(
+            status=payload.status,
+            quantity_on_hand=payload.quantity_on_hand,
+            estimated_lead_time=payload.estimated_lead_time,
+            source_kind=payload.source_kind,
+            source_reference=payload.source_reference,
+            observed_at=datetime.now(UTC),
+        ),
+    )
 
     db.flush()
 
@@ -2143,6 +2201,8 @@ def update_product_inventory(
             "estimated_lead_time": (
                 payload.estimated_lead_time
             ),
+            "source_kind": payload.source_kind.value,
+            "source_reference": payload.source_reference,
         },
     )
 

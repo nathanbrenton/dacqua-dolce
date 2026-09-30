@@ -11,6 +11,7 @@ from pydantic import (
 
 from app.core.email import normalize_email_address
 from app.models.catalog import (
+    InventorySourceKind,
     InventoryStatus,
     PricingPolicyMode,
     ProductRelationshipType,
@@ -499,6 +500,26 @@ class OperationsInventoryRead(BaseModel):
     quantity_on_hand: int
     quantity_reserved: int
     estimated_lead_time: str | None = None
+    source_kind: InventorySourceKind = InventorySourceKind.unspecified
+    source_reference: str | None = None
+    source_observed_at: str | None = None
+
+
+class OperationsInsightBucketRead(BaseModel):
+    value: str
+    count: int
+
+
+class OperationsSalesInsightsRead(BaseModel):
+    total_requests: int
+    structured_requests: int
+    source_water: list[OperationsInsightBucketRead] = Field(default_factory=list)
+    treatment_preference: list[OperationsInsightBucketRead] = Field(default_factory=list)
+    service_postal_codes: list[OperationsInsightBucketRead] = Field(default_factory=list)
+    limited_utility_requests: int
+    lab_required_requests: int
+    known_hardness_requests: int
+    research_network_yes: int
 
 
 class OperationsProductVariantRead(BaseModel):
@@ -663,10 +684,15 @@ class InventoryUpdateRequest(BaseModel):
         default=None,
         max_length=120,
     )
+    source_kind: InventorySourceKind = InventorySourceKind.operator_entry
+    source_reference: str | None = Field(
+        default=None,
+        max_length=240,
+    )
 
-    @field_validator("estimated_lead_time")
+    @field_validator("estimated_lead_time", "source_reference")
     @classmethod
-    def normalize_estimated_lead_time(
+    def normalize_optional_inventory_text(
         cls,
         value: str | None,
     ) -> str | None:

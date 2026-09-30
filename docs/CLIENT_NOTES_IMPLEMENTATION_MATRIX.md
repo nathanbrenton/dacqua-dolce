@@ -359,3 +359,15 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 - Customer calendar export is self-service `.ics`; it does not request Google, Microsoft, Apple, or other calendar-account access.
 - Installed-equipment service targets and supported consumable replacement targets can be downloaded to the customer's calendar when a date exists.
 - Production scheduling of the reminder runner remains a deployment/operations decision; local validation does not send email.
+
+## PT23 — inventory provenance and assisted-sales intelligence
+
+| Client direction | Implementation status | Current behavior |
+| --- | --- | --- |
+| Initial inventory is supplier/manufacturer-driven and manual-first | Implemented foundation | The existing authoritative inventory record now captures whether provenance is unspecified or the observation came from an operator entry, supplier report, manufacturer report, or future internal stock, plus an optional internal reference and observation timestamp. |
+| Customer-facing availability and lead time should remain authoritative | Preserved | Public catalog availability continues to use the existing normalized status/lead-time boundary. Internal source provenance is not exposed to customers. |
+| Manufacturer API/EDI integration | Adapter boundary prepared; provider details still required | A normalized inventory-observation service is now the integration seam. PT23 does not invent provider endpoints, credentials, payloads, semantics, or polling cadence. |
+| Employees should not change pricing/inventory | Backend enforcement corrected | The inventory write endpoint now uses the same administrator/developer pricing-and-inventory authorization boundary already used by the UI and pricing workflow. Employee access remains read-only. |
+| Early assisted sales should improve future education/recommendation work | Implemented observational reporting | Operations now summarizes structured request patterns such as source-water mix, treatment preference, limited utilities, lab-review need, supplied hardness, and top service ZIPs. |
+| Optional neighbor/friend/family filtration questions are research/marketing context | Preserved separation | The existing filtration-network signal is shown only as a research aggregate. It is not fed into the technical recommendation decision. |
+| First 20+ whole-house sales remain assisted | Preserved | PT23 adds no automatic sale-count unlock and does not enable self-service whole-house purchasing. |

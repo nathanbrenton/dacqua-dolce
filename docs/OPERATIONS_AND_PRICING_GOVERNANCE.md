@@ -256,3 +256,40 @@ background calendar dependency.
 A production schedule for the reminder runner is not implied by application
 code. The send window and production timer must be reviewed explicitly during
 deployment/commissioning.
+
+## PT23 inventory provenance and assisted-sales intelligence
+
+The existing `product_inventory` row remains the single authoritative inventory
+record. PT23 does not introduce a parallel supplier-inventory table and does not
+assume any manufacturer API, EDI format, refresh cadence, or credential model.
+
+Each inventory update now records internal provenance alongside the existing
+status, quantity, and estimated lead time:
+
+- `unspecified` preserves legacy/unknown provenance without inventing a source;
+- `operator_entry` for an operator-entered observation without a more specific
+  external source;
+- `supplier_report` when the information came from a supplier;
+- `manufacturer_report` when it came from a manufacturer; and
+- `internal_stock` for future locally held inventory.
+
+An optional internal source reference may identify the portal, report, rep, or
+other evidence used. It is Operations-only and must never be exposed to
+customers. `source_observed_at` records when the authoritative observation was
+entered/checked. Future provider adapters should normalize provider data into the
+same inventory-observation service rather than bypassing catalog governance.
+
+Inventory writes require administrator/developer pricing-and-inventory write
+authority. Employee access remains read-only. Customer-facing availability
+continues to expose only the normalized availability state and supported
+estimated lead time, never internal provenance.
+
+Assisted-sales intelligence is observational reporting over the structured
+customer-request data already collected. Current aggregates include source-water
+mix, treatment-preference mix, top service ZIPs, limited-utility requests,
+third-party-lab-review requirements, known hardness values, and the optional
+filtration-network research signal.
+
+These aggregates do not modify recommendation decisions, scoring, quote prices,
+or self-service eligibility. The optional filtration-network signal remains
+research/marketing context and is not part of technical suitability logic.

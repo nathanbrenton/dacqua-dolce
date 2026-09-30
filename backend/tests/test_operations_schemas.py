@@ -2,6 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.models.catalog import (
+    InventorySourceKind,
     InventoryStatus,
     PricingPolicyMode,
     ProductRelationshipType,
@@ -281,3 +282,22 @@ def test_product_relationship_reminder_can_bind_existing_opt_in() -> None:
         payload.reminder_preference
         == ReminderPreferenceKind.filter_replacement
     )
+
+def test_inventory_source_reference_is_trimmed() -> None:
+    payload = InventoryUpdateRequest(
+        status=InventoryStatus.backordered,
+        quantity_on_hand=0,
+        source_kind=InventorySourceKind.supplier_report,
+        source_reference="  Supplier portal  ",
+    )
+
+    assert payload.source_reference == "Supplier portal"
+
+
+def test_inventory_source_defaults_to_operator_entry() -> None:
+    payload = InventoryUpdateRequest(
+        status=InventoryStatus.not_tracked,
+        quantity_on_hand=0,
+    )
+
+    assert payload.source_kind == InventorySourceKind.operator_entry

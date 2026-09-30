@@ -24,6 +24,7 @@ import {
   getOperationsCustomers,
   getOperationsOrders,
   getOperationsQuotes,
+  getOperationsSalesInsights,
   getOperationsSummary,
   createProductRelationship,
   createCustomerEquipment,
@@ -41,6 +42,7 @@ import {
   type OperationsFormalQuote,
   type OperationsProduct,
   type OperationsQuote,
+  type OperationsSalesInsights,
   type OperationsSummary,
 } from "../../api/operations";
 
@@ -218,6 +220,14 @@ const INVENTORY_STATUSES = [
   "not_tracked",
 ] as const;
 
+const INVENTORY_SOURCE_KINDS = [
+  "unspecified",
+  "operator_entry",
+  "supplier_report",
+  "manufacturer_report",
+  "internal_stock",
+] as const;
+
 const PRICING_MODE_LABELS: Record<string, string> = {
   PUBLIC: "Public price",
   MAP_LIMITED: "MAP-limited",
@@ -234,6 +244,14 @@ const INVENTORY_STATUS_LABELS: Record<string, string> = {
   backordered: "Backordered",
   unavailable: "Unavailable",
   not_tracked: "Not tracked",
+};
+
+const INVENTORY_SOURCE_LABELS: Record<string, string> = {
+  unspecified: "Not recorded",
+  operator_entry: "Operator entry",
+  supplier_report: "Supplier report",
+  manufacturer_report: "Manufacturer report",
+  internal_stock: "Internal stock",
 };
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {
@@ -306,6 +324,8 @@ type InventoryDraft = {
   status: string;
   quantityOnHand: string;
   estimatedLeadTime: string;
+  sourceKind: OperationsProduct["inventory"]["source_kind"];
+  sourceReference: string;
 };
 
 
@@ -441,6 +461,8 @@ export function OperationsPage({
 
   const [summary, setSummary] =
     useState<OperationsSummary | null>(null);
+  const [salesInsights, setSalesInsights] =
+    useState<OperationsSalesInsights | null>(null);
   const [quotes, setQuotes] =
     useState<OperationsQuote[]>([]);
   const [requestView, setRequestView] =
@@ -539,6 +561,7 @@ export function OperationsPage({
       getOperationsCustomers(),
       getOperationsOrders(),
       getOperationsCatalog(),
+      getOperationsSalesInsights(),
     ])
       .then(([
         summaryResult,
@@ -547,8 +570,10 @@ export function OperationsPage({
         customerResult,
         orderResult,
         productResult,
+        salesInsightsResult,
       ]) => {
         setSummary(summaryResult);
+        setSalesInsights(salesInsightsResult);
         setQuotes(quoteResult);
         setCommunications(communicationResult);
         setCustomers(customerResult);
@@ -582,6 +607,8 @@ export function OperationsPage({
             estimatedLeadTime: (
               product.inventory.estimated_lead_time ?? ""
             ),
+            sourceKind: product.inventory.source_kind,
+            sourceReference: product.inventory.source_reference ?? "",
           };
         }
 
@@ -1412,6 +1439,8 @@ export function OperationsPage({
           estimated_lead_time: (
             draft.estimatedLeadTime.trim() || null
           ),
+          source_kind: draft.sourceKind,
+          source_reference: draft.sourceReference.trim() || null,
         },
       );
 
@@ -1426,6 +1455,8 @@ export function OperationsPage({
           estimatedLeadTime: (
             updated.inventory.estimated_lead_time ?? ""
           ),
+          sourceKind: updated.inventory.source_kind,
+          sourceReference: updated.inventory.source_reference ?? "",
         },
       }));
       setMessage(`Inventory saved for ${updated.sku}.`);
@@ -1475,10 +1506,10 @@ export function OperationsPage({
     });
   }
 
-  function updateInventoryDraft(
+  function updateInventoryDraft<K extends keyof InventoryDraft>(
     productId: string,
-    field: keyof InventoryDraft,
-    value: string,
+    field: K,
+    value: InventoryDraft[K],
   ) {
     setInventoryDrafts((current) => {
       const existing = current[productId];
@@ -1766,6 +1797,64 @@ export function OperationsPage({
               <small>Open</small>
             </button>
           ))}
+        </section>
+      ) : null}
+
+      {salesInsights !== null ? (
+        <section
+          className="operations-sales-insights"
+          aria-labelledby="assisted-sales-insights-title"
+        >
+          <div className="operations-section-heading compact">
+            <p className="eyebrow">Assisted sales</p>
+            <h2 id="assisted-sales-insights-title">Observed request patterns</h2>
+            <p>
+              Read-only aggregates from structured customer requests. These
+              observations do not change recommendation policy or unlock
+              self-service purchasing.
+            </p>
+          </div>
+          <div className="operations-insight-grid">
+            <div>
+              <strong>{salesInsights.structured_requests}</strong>
+              <span>Structured requests</span>
+              <small>{salesInsights.total_requests} total requests</small>
+            </div>
+            <div>
+              <strong>{salesInsights.lab_required_requests}</strong>
+              <span>Lab review required</span>
+              <small>Well-water decision snapshot</small>
+            </div>
+            <div>
+              <strong>{salesInsights.limited_utility_requests}</strong>
+              <span>Limited utilities</span>
+              <small>Power or drain reported unavailable</small>
+            </div>
+            <div>
+              <strong>{salesInsights.known_hardness_requests}</strong>
+              <span>Hardness value supplied</span>
+              <small>Customer-provided structured context</small>
+            </div>
+            <div>
+              <strong>{salesInsights.research_network_yes}</strong>
+              <span>Filtration network signal</span>
+              <small>Research-only; excluded from technical suitability</small>
+            </div>
+          </div>
+          <div className="operations-insight-lists">
+            <div>
+              <strong>Source water</strong>
+              <p>{salesInsights.source_water.map((item) => `${item.value}: ${item.count}`).join(" · ") || "No structured data yet"}</p>
+            </div>
+            <div>
+              <strong>Treatment preference</strong>
+              <p>{salesInsights.treatment_preference.map((item) => `${item.value}: ${item.count}`).join(" · ") || "No structured data yet"}</p>
+            </div>
+            <div>
+              <strong>Top service ZIPs</strong>
+              <p>{salesInsights.service_postal_codes.map((item) => `${item.value}: ${item.count}`).join(" · ") || "No ZIP data yet"}</p>
+            </div>
+          </div>
         </section>
       ) : null}
 
@@ -2831,6 +2920,55 @@ export function OperationsPage({
                         Leave blank until fulfillment timing is reliable.
                       </small>
                     </label>
+
+                    <div className="operations-field-row">
+                      <label className="operations-field">
+                        <span>Inventory information source</span>
+                        <select
+                          value={inventory.sourceKind}
+                          disabled={!privileged}
+                          onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                            updateInventoryDraft(
+                              product.id,
+                              "sourceKind",
+                              event.target.value as InventoryDraft["sourceKind"],
+                            );
+                          }}
+                        >
+                          {INVENTORY_SOURCE_KINDS.map((sourceKind) => (
+                            <option key={sourceKind} value={sourceKind}>
+                              {INVENTORY_SOURCE_LABELS[sourceKind]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="operations-field">
+                        <span>Internal source reference</span>
+                        <input
+                          type="text"
+                          maxLength={240}
+                          placeholder="Portal, rep, report, or internal count"
+                          value={inventory.sourceReference}
+                          disabled={!privileged}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                            updateInventoryDraft(
+                              product.id,
+                              "sourceReference",
+                              event.target.value,
+                            );
+                          }}
+                        />
+                        <small>Internal only; never shown to customers.</small>
+                      </label>
+                    </div>
+
+                    <p className="operations-governance-context">
+                      Source: {INVENTORY_SOURCE_LABELS[product.inventory.source_kind] ?? product.inventory.source_kind}
+                      {product.inventory.source_observed_at !== null
+                        ? ` · checked ${new Date(product.inventory.source_observed_at).toLocaleString()}`
+                        : " · not yet timestamped"}
+                    </p>
 
                     <p className="operations-governance-context">
                       Authoritative stock: {product.inventory.quantity_on_hand}

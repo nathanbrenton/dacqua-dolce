@@ -15,6 +15,23 @@ export type OperationsSummary = {
   failed_email_deliveries: number;
 };
 
+export type OperationsInsightBucket = {
+  value: string;
+  count: number;
+};
+
+export type OperationsSalesInsights = {
+  total_requests: number;
+  structured_requests: number;
+  source_water: OperationsInsightBucket[];
+  treatment_preference: OperationsInsightBucket[];
+  service_postal_codes: OperationsInsightBucket[];
+  limited_utility_requests: number;
+  lab_required_requests: number;
+  known_hardness_requests: number;
+  research_network_yes: number;
+};
+
 export type OperationsAuditEvent = {
   id: string;
   actor_user_id: string | null;
@@ -259,6 +276,14 @@ export type OperationsInventory = {
   quantity_on_hand: number;
   quantity_reserved: number;
   estimated_lead_time: string | null;
+  source_kind:
+    | "unspecified"
+    | "operator_entry"
+    | "supplier_report"
+    | "manufacturer_report"
+    | "internal_stock";
+  source_reference: string | null;
+  source_observed_at: string | null;
 };
 
 export type OperationsProductVariant = {
@@ -391,6 +416,12 @@ async function writeJson<T>(
 export function getOperationsSummary(): Promise<OperationsSummary> {
   return getJson(
     "/api/operations/summary",
+  );
+}
+
+export function getOperationsSalesInsights(): Promise<OperationsSalesInsights> {
+  return getJson(
+    "/api/operations/sales-insights",
   );
 }
 
@@ -571,6 +602,8 @@ export function updateProductInventory(
     status: string;
     quantity_on_hand: number;
     estimated_lead_time: string | null;
+    source_kind: OperationsInventory["source_kind"];
+    source_reference: string | null;
   },
 ): Promise<OperationsProduct> {
   return writeJson(

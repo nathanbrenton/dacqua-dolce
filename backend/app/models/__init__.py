@@ -1,6 +1,7 @@
 from app.models.audit import AuditEvent
 from app.models.catalog import (
     ApprovedProductClaim,
+    InventorySourceKind,
     InventoryStatus,
     JurisdictionEligibility,
     Manufacturer,
@@ -98,6 +99,7 @@ __all__ = [
     "FormalQuoteItem",
     "FormalQuoteStatus",
     "FulfillmentStatus",
+    "InventorySourceKind",
     "InventoryStatus",
     "JurisdictionEligibility",
     "MaintenanceReminder",
