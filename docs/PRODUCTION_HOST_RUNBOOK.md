@@ -15,7 +15,8 @@ Use:
   yet commissioned.
 
 The current production platform includes live Postmark application email,
-durable Customer Inbox communications, immutable application releases,
+Cloudflare split inbound routing, Proton human/business mail for the commissioned
+`jamie@dacquadolce.com` identity, durable Customer Inbox communications, immutable application releases,
 separated PostgreSQL migrator/runtime principals, repo-managed catalog
 reconciliation, capability-based application authorization, out-of-band
 developer provisioning, full observability, and local backup/real-restore
@@ -25,6 +26,6 @@ The server hostname remains `dacqua-platform-prod-01`. Workstation SSH
 configuration may use the convenience alias `dacqua-prod`; the alias is not a
 server hostname or application configuration value.
 
-Current validated documentation checkpoint: 2026-09-29 / PT18.
+Current application checkpoint: PT18. Email/DNS/vendor-routing documentation is validated through 2026-09-30.
 
 Do not use superseded bootstrap instructions as production commands.

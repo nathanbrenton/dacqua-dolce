@@ -1,21 +1,31 @@
-# D'Acqua Dolce Communications and Postmark Production Runbook
+# D'Acqua Dolce Communications, DNS, Proton, and Postmark Production Runbook
 
 ## Purpose
 
-This document is the technical source of truth for the commissioned D'Acqua Dolce application-email and customer-correspondence boundary.
+This document is the technical source of truth for D'Acqua Dolce email/DNS routing, human business mail, application transactional/customer correspondence, and the still-pending infrastructure-monitoring mail boundary.
 
 It describes the validated final implementation only. It intentionally omits transient troubleshooting, failed commands, incorrect diagnostics, temporary test assumptions, and superseded implementation paths.
 
 Production validation checkpoint:
 
-- date: 2026-09-29;
-- exact deployed source revisions are recorded by immutable release metadata/deployment history rather than treated as configuration constants in this runbook;
+- email/DNS state date: 2026-09-30;
+- exact deployed application source revisions are recorded by immutable release metadata/deployment history rather than treated as configuration constants in this runbook;
+- Cloudflare remains authoritative DNS and the root-domain MX/front-door;
+- Proton Mail Essentials is commissioned for human/business mail;
+- `dacquadolce@proton.me` remains the Proton organizational/bootstrap/recovery identity;
+- `jamie@dacquadolce.com` is active as Jamie's human/business address;
+- inbound and outbound `jamie@dacquadolce.com` acceptance: validated;
 - Postmark transactional sending: commissioned;
 - PostgreSQL communications archive: commissioned;
 - authenticated Postmark inbound webhook: commissioned;
 - authenticated Operations Customer Inbox and threaded employee replies: commissioned;
 - public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing: commissioned;
-- real public-address acceptance (`support@` -> Cloudflare -> Postmark -> webhook -> Customer Inbox): validated.
+- real public-address acceptance (`support@` -> Cloudflare -> Postmark -> webhook -> Customer Inbox): validated;
+- SPF: validated with one combined root policy authorizing Cloudflare and Proton;
+- Proton DKIM: validated;
+- DMARC: validated in commissioning mode with `p=none`;
+- Proton-requested MX records: intentionally not installed because Cloudflare must remain the split-routing MX boundary;
+- Vultr outbound TCP/25 approval for direct infrastructure-monitoring mail: pending, not commissioned.
 
 ## 1. Architecture
 
@@ -46,6 +56,32 @@ Employee replies follow the reverse application path:
       -> Postmark HTTPS API
       -> customer
 
+Human/business mail is intentionally separate:
+
+    external sender
+      -> jamie@dacquadolce.com
+      -> Cloudflare MX / Email Routing
+      -> dacquadolce@proton.me
+      -> Proton mailbox
+
+    Proton composer
+      -> From: jamie@dacquadolce.com
+      -> Proton outbound mail
+      -> external recipient
+
+Cloudflare therefore remains the inbound MX/front-door even though Proton hosts the human mailbox. Proton's setup UI will show its requested MX records as unconfigured/red under this design; that status is expected and must not be treated as an outage.
+
+Infrastructure-monitoring mail is a third, separate boundary. The intended path, only after Vultr explicitly approves and connectivity is validated, is:
+
+    observability/report job
+      -> local Postfix/sendmail
+      -> recipient MX
+      -> administrative mailbox
+
+That direct path requires outbound TCP/25. It is intended to keep routine infrastructure/status traffic separate from the limited Postmark application-email allowance. It is not commissioned yet.
+
+Opening TCP/25 is necessary but not sufficient for reliable direct Internet mail. Before commissioning this path, explicitly choose the visible `From`/envelope-sender domain and Postfix HELO identity; verify forward DNS and provider-controlled PTR/reverse DNS as applicable; determine whether the selected sender is authorized by SPF; decide whether DKIM signing is required for that sender; and inspect a received test message for SPF/DKIM/DMARC alignment. Do not add the production host to SPF or tighten DMARC merely because port 25 becomes reachable—those are separate, reviewed mail-authentication changes.
+
 Employee customer-service replies use approved company sender roles:
 `sales@dacquadolce.com`, `contact@dacquadolce.com`,
 `info@dacquadolce.com`, `support@dacquadolce.com`, and the fallback
@@ -72,7 +108,7 @@ returns to the same archived conversation.
 
 Cloudflare is authoritative for DNS, but the production web `A`/`CNAME` records are intentionally **DNS only**. Cloudflare is therefore providing authoritative DNS and inbound Email Routing without acting as the HTTP reverse proxy for the site at this checkpoint.
 
-The production server does not need a general-purpose SMTP/IMAP mailbox stack for this workflow. Direct outbound TCP/25 remains blocked by the hosting provider and is not required by the Postmark HTTPS API path.
+The production server does not need a public general-purpose SMTP/IMAP mailbox stack for application/customer mail. Postmark uses HTTPS and does not require TCP/25. Vultr's outbound TCP/25 restriction is separately under review for the optional direct Postfix infrastructure-monitoring path; do not describe that path as commissioned until Vultr approves it and acceptance testing passes.
 
 ### Email/DNS terminology
 
@@ -85,7 +121,8 @@ The production server does not need a general-purpose SMTP/IMAP mailbox stack fo
 - **CNAME (Canonical Name):** a DNS alias from one hostname to another. Postmark's custom Return-Path uses a CNAME.
 - **Return-Path:** the envelope/bounce address used for delivery-status handling; it is distinct from the human-visible `From` address.
 - **TTL (Time To Live):** how long recursive DNS resolvers may cache a record before asking again.
-- **SMTP (Simple Mail Transfer Protocol):** the standard protocol used between mail systems. D'Acqua Dolce does not run a public SMTP server.
+- **SMTP (Simple Mail Transfer Protocol):** the standard protocol used between mail systems. D'Acqua Dolce does not expose a public SMTP server.
+- **MTA (Mail Transfer Agent):** software that transfers email between systems. Postfix may act as the production host's local MTA for infrastructure reports only after outbound TCP/25 is approved and validated.
 - **IMAP (Internet Message Access Protocol):** a mailbox-access protocol. D'Acqua Dolce does not need an IMAP server for the application Customer Inbox.
 - **Webhook:** an HTTPS callback sent by one service to another when an event occurs; Postmark uses the inbound webhook to deliver normalized inbound message data to FastAPI.
 
@@ -326,42 +363,125 @@ The observability reporting environment is separate:
 
 Do not assume application-email commissioning automatically commissions observability report delivery.
 
-## 9. Clean Postmark + Cloudflare inbound setup order
+## 9. Clean Cloudflare + Proton + Postmark setup/rebuild order
 
-Use this order for a new company/domain or a D'Acqua Dolce rebuild. Vendor-generated values must be taken from the current provider dashboards rather than copied blindly from an old environment.
+Use this order for a D'Acqua Dolce rebuild or for adapting the design to a new company/domain. Vendor-generated values must be taken from the current provider dashboards rather than copied blindly from an old environment.
 
-1. Establish a business-controlled recovery/bootstrap email identity that does not depend on the custom domain. D'Acqua Dolce currently keeps a provider-native recovery identity for this purpose.
-2. Establish/restore the Postmark Server under business-controlled ownership.
-3. Add/verify the sending domain in Postmark and record the Postmark-generated DKIM selector/value and custom Return-Path CNAME.
-4. Configure the application Postmark server token only in protected server configuration.
-5. Deploy the application schema/code through the normal release mechanism so Alembic reaches `c41b7e2a9d63` or a later compatible head.
-6. Generate strong inbound webhook Basic Auth credentials and store them only in `/etc/dacqua-dolce/backend.env`.
-7. Restart the API and validate the webhook over loopback: wrong credentials -> `401`; correct credentials + `{}` -> `422`.
-8. Install the canonical HTTPS Nginx template and repeat the authentication-boundary test through public HTTPS.
-9. In Postmark, configure the **Default Inbound Stream** webhook using the authenticated HTTPS URL prepared privately in Section 10. Keep raw-email inclusion disabled unless a later requirement explicitly justifies it.
-10. Use Postmark **Check** and confirm the synthetic message is archived.
-11. Create the Cloudflare zone and import existing DNS **before** changing authoritative nameservers. Preserve the web origin, `www`, Postmark Return-Path, and Postmark DKIM records. Keep mail/third-party records DNS-only; D'Acqua Dolce also keeps its web records DNS-only at this checkpoint.
-12. Change the registrar delegation to the provider-assigned Cloudflare nameservers only after the imported zone is complete. Keep DNSSEC disabled during the delegation migration unless an already-correct DS/DNSSEC migration has been explicitly planned.
-13. Verify public resolvers and the Cloudflare authoritative nameservers return the expected web and Postmark records, and verify HTTPS still returns the expected status codes.
-14. Enable Cloudflare Email Routing and allow Cloudflare to create its current MX/SPF/DKIM routing records. Do not overwrite the separate Postmark DKIM selector or Postmark Return-Path CNAME.
-15. Add the private Postmark inbound address as a Cloudflare **Destination Address** and complete Cloudflare's verification message through the D'Acqua Dolce Customer Inbox. Do not record that private destination in Git/docs.
-16. Create an enabled routing rule for `support@dacquadolce.com` -> the verified private Postmark destination. Leave catch-all disabled unless the business deliberately decides otherwise.
-17. Send one controlled external message to `support@dacquadolce.com` and verify it appears as a new inbound Customer Inbox conversation.
-18. Verify one threaded employee reply/return-reply round trip when reply routing itself has materially changed. Avoid repeating live acceptance mail for unrelated releases.
+### 9.1 Establish account/recovery boundaries
 
-Current D'Acqua Dolce DNS/mail-routing shape:
+1. Preserve a business-controlled recovery/bootstrap identity that does not depend on `dacquadolce.com`. D'Acqua Dolce uses `dacquadolce@proton.me` for the Proton organizational/bootstrap/recovery identity.
+2. Restore business-controlled access to the registrar, Cloudflare, Proton, Postmark, Vultr, and other critical vendors.
+3. Restore/verify the Proton Mail Essentials organization and add `dacquadolce.com` to Proton.
+4. Verify Proton domain ownership using the current Proton-supplied DNS verification value.
+
+Do not remove the provider-native `dacquadolce@proton.me` identity merely because custom-domain mail is available.
+
+### 9.2 Restore the application/Postmark boundary
+
+1. Establish/restore the Postmark Server under business-controlled ownership.
+2. Add/verify the sending domain in Postmark and obtain the current Postmark DKIM selector/value and custom Return-Path CNAME.
+3. Configure the application Postmark server token only in protected server configuration.
+4. Deploy the application schema/code through the normal release mechanism so Alembic reaches the intended production head.
+5. Generate strong inbound webhook Basic Auth credentials and store them only in `/etc/dacqua-dolce/backend.env`.
+6. Restart the API and validate the webhook over loopback: wrong credentials -> `401`; correct credentials + `{}` -> `422`.
+7. Install the canonical HTTPS Nginx template and repeat the authentication-boundary test through public HTTPS.
+8. Configure Postmark's **Default Inbound Stream** webhook using the authenticated HTTPS URL prepared privately in Section 10. Keep raw-email inclusion disabled unless a later requirement explicitly justifies it.
+9. Use Postmark **Check** and confirm the synthetic message is archived.
+
+### 9.3 Rebuild Cloudflare DNS without breaking split mail routing
+
+Cloudflare is both authoritative DNS and the root-domain MX/front-door. Preserve/import the complete zone before any registrar delegation change.
+
+Current D'Acqua Dolce mail-routing MX hosts are:
+
+    route1.mx.cloudflare.net
+    route2.mx.cloudflare.net
+    route3.mx.cloudflare.net
+
+Do **not** replace those with Proton's `mail.protonmail.ch` / `mailsec.protonmail.ch` MX records under the current architecture. Proton MX remaining red/unconfigured is intentional because Cloudflare must route different addresses to different downstream systems.
+
+Preserve/recreate at minimum:
+
+- apex web `A` and `www` records;
+- Postmark custom Return-Path CNAME;
+- current Postmark DKIM selector/value;
+- Cloudflare Email Routing records;
+- Proton domain-verification record when still required by Proton;
+- Proton DKIM CNAME selectors:
+  - `protonmail._domainkey`
+  - `protonmail2._domainkey`
+  - `protonmail3._domainkey`
+- exactly one root SPF TXT record;
+- the `_dmarc` TXT record;
+- any current CAA/other verification records.
+
+The three Proton DKIM targets are provider-generated. Retrieve the current values from **Proton -> Settings -> Domain names -> dacquadolce.com -> DKIM** during a rebuild. Do not hard-code stale long CNAME targets in this repository.
+
+Current root SPF policy:
+
+    v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+
+There must be only one root-domain SPF policy. If another legitimate sender is introduced later, reconcile it into the single policy rather than adding a second root SPF TXT record.
+
+Current DMARC record:
+
+    host:  _dmarc
+    value: v=DMARC1; p=none
+
+`p=none` is deliberate commissioning/monitoring mode while all legitimate sending paths are observed. Do not automatically accept a provider wizard suggestion to change it to `p=quarantine` or `p=reject`. Hardening must be a deliberate later change after Proton, Postmark, and any commissioned direct Postfix path have been validated for alignment.
+
+Cloudflare automatically normalizing a trailing dot off a Proton DKIM CNAME target is normal DNS-provider behavior.
+
+### 9.4 Restore address-specific Cloudflare Email Routing
+
+Verify the downstream destinations first, then create/restore these enabled routes:
+
+    jamie@dacquadolce.com
+      -> dacquadolce@proton.me
+
+    support@dacquadolce.com
+      -> verified private Postmark inbound destination
+
+The private Postmark inbound destination remains secret/private operational configuration and must not be committed to Git.
+
+Keep catch-all disabled.
+
+### 9.5 Validate the split architecture
+
+Human/business acceptance:
+
+1. send from an external mailbox to `jamie@dacquadolce.com`;
+2. verify Cloudflare routes it into the Proton mailbox;
+3. send from Proton with **From: `jamie@dacquadolce.com`** to an external recipient;
+4. verify receipt and inspect current authentication results when performing a mail-authentication acceptance check.
+
+Application/customer acceptance:
+
+1. send one controlled external message to `support@dacquadolce.com`;
+2. verify it enters the Customer Inbox through Cloudflare -> Postmark -> webhook -> PostgreSQL;
+3. when reply routing materially changed, verify one employee reply and customer return reply remain in the same durable thread.
+
+Avoid repeating live provider mail for unrelated releases.
+
+### 9.6 Current non-secret DNS/mail-routing shape
 
     registrar: Moniker
-    authoritative DNS: Cloudflare
-    web apex A: 144.202.114.17 (DNS only)
+    authoritative DNS / root MX: Cloudflare
+    web apex A: 144.202.114.17 (DNS only at this checkpoint)
     www: CNAME -> dacquadolce.com (DNS only)
+    Cloudflare MX: route1/route2/route3.mx.cloudflare.net
+    root SPF: v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+    DMARC: _dmarc TXT "v=DMARC1; p=none"
+    Proton DKIM selectors: protonmail / protonmail2 / protonmail3
+    Proton MX: intentionally not installed
     Postmark Return-Path: pm-bounces -> pm.mtasv.net (DNS only)
-    Postmark DKIM selector: 20260917171819pm._domainkey
-    Cloudflare Email Routing: root MX/SPF + Cloudflare DKIM selector
-    public customer address: support@dacquadolce.com
+    Postmark DKIM selector: use the current Postmark-generated value
+    human route: jamie@dacquadolce.com -> dacquadolce@proton.me -> Proton
+    customer route: support@dacquadolce.com -> private Postmark inbound destination
     catch-all: disabled
 
-The current Cloudflare Email Routing MX priorities/hostnames and DKIM/SPF values are public DNS data, but they are provider-managed implementation details. During a rebuild, prefer the values Cloudflare currently proposes rather than assuming old values can never change.
+During any rebuild, prefer current provider-generated validation/authentication values over assuming an old selector or verification value can never change.
+
 
 ## 10. Safe credential preparation for Postmark UI
 
@@ -463,13 +583,15 @@ This proves that an employee reply sent from Customer Inbox can be answered with
 
 ## 11.1 Mail-authentication status
 
-SPF and DKIM have passed live delivery inspection. A prior Gmail **Show
-original** check reported DMARC FAIL.
+As of 2026-09-30:
 
-Treat DMARC as an outstanding mail-authentication audit item. Do not describe
-DMARC as healthy until a newly delivered production message is explicitly
-revalidated as DMARC PASS. SPF/DKIM success alone does not establish DMARC
-alignment.
+- the single combined root SPF policy is valid and Proton reports SPF green;
+- Proton DKIM is valid/green for all three configured selectors;
+- `_dmarc` exists and Proton reports DMARC green;
+- DMARC policy remains deliberately `p=none` during commissioning;
+- Proton MX remains red/unconfigured by design because Cloudflare owns the root MX/front-door.
+
+A provider dashboard showing green DNS presence is not, by itself, proof that every sender aligns correctly. Periodically inspect a newly delivered message from each legitimate sending path and verify the receiver's authentication results before tightening DMARC to `quarantine` or `reject`.
 
 ## 12. Operational diagnostics
 
@@ -537,8 +659,10 @@ Not yet commissioned:
 - any privileged permanent-delete workflow;
 - final customer-thread assignment workflow if the business needs assignment/ownership;
 - additional Postmark delivery/bounce event ingestion if required;
-- named human custom-domain mailboxes such as `nathan@` or `jamie@` if the business chooses to commission them; approved application sender roles such as `info@` are not evidence that a hosted human mailbox exists;
-- observability-report delivery/timers;
+- additional named human custom-domain identities beyond the commissioned `jamie@dacquadolce.com` route/mail identity; approved application sender roles such as `info@` are not evidence that a hosted human mailbox exists;
+- DMARC enforcement hardening from `p=none` to `quarantine`/`reject` after all legitimate senders are validated;
+- Vultr outbound TCP/25 approval and acceptance testing for direct Postfix infrastructure-monitoring mail;
+- observability-report delivery/timers and Better Stack report heartbeats;
 - payment-provider checkout.
 
 ## 15. Vendor references

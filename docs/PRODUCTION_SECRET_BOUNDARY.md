@@ -47,8 +47,11 @@ receive either PostgreSQL credential.
 
 ## Email secret boundary
 
-Non-secret sender identities may be documented. Provider tokens, private inbound
-addresses, and webhook Basic Auth values may not.
+Non-secret sender identities, routing rules, DNS record names, and public DNS policies may be documented. Provider tokens, private inbound addresses, webhook Basic Auth values, Proton login/recovery secrets, and vendor session credentials may not.
+
+Human Proton credentials belong in the approved business password manager/recovery process and are not production application secrets. The production server does not need a Proton mailbox password for the current architecture.
+
+Postmark application secrets remain under `/etc/dacqua-dolce/`. Observability/report configuration remains separate under `/etc/dacqua-observability/`; the intended direct Postfix monitoring path must not reuse the application Postmark token.
 
 When stored in shell environment syntax, the visible sender display name must
 remain quoted:

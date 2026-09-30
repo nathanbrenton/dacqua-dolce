@@ -1,6 +1,6 @@
 # D'Acqua Dolce Production Operations Reference
 
-This is the concise operator reference for the commissioned PT18 system, validated through 2026-09-29. It is not a substitute for the full rebuild procedure.
+This is the concise operator reference for the commissioned PT18 application/host system. Application state is validated through 2026-09-29; email/DNS/vendor-routing state is reconciled through 2026-09-30. It is not a substitute for the full rebuild procedure.
 
 ## SSH
 
@@ -301,12 +301,14 @@ The report generator is installed at:
 
     /usr/local/sbin/dacqua-observability-report.py
 
-Dry-run rendering is validated, but delivery timers remain disabled pending the dedicated Postmark delivery integration. Desired schedules/recipients are:
+Dry-run rendering is validated. Earlier commissioning documentation recorded report delivery timers as disabled; verify the actual current timer/service state rather than assuming it. The intended transport is local Postfix/sendmail -> recipient MX, separate from Postmark application email. Vultr outbound TCP/25 approval is still pending, and the daily D'Acqua Dolce status email was not being received as of 2026-09-30.
+
+Desired schedules/recipients are:
 
 - daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
 - weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
 
-Do not enable the timers until real delivery, failure behavior, and Better Stack heartbeat submission have been validated.
+Before blaming TCP/25 alone, inspect report generation/timer state, configured recipients, `postqueue -p`, and `journalctl -u postfix --no-pager`. After Vultr approval, explicitly validate TCP/25 to the actual recipient-domain MX and prove a controlled report is received. Do not newly enable/re-enable recurring timers or Better Stack report heartbeats until real delivery and failure behavior are validated.
 
 ## Local health timer
 
@@ -375,11 +377,11 @@ Current protected configuration namespaces include:
 
 The restic repository password is intentionally stored outside Git and has an additional off-server copy.
 
-The application Postmark server token lives in `/etc/dacqua-dolce/backend.env`. The observability reporting token/configuration is separate under `/etc/dacqua-observability/reporting.env`. Never print either token during routine checks.
+The application Postmark server token lives in `/etc/dacqua-dolce/backend.env`. Observability/report configuration is separate under `/etc/dacqua-observability/`; the intended direct Postfix path does not reuse the application Postmark token. Never print application tokens or report configuration secrets during routine checks.
 
 ## Application email and communications archive
 
-Application transactional mail is commissioned through the Postmark HTTPS API. Direct outbound TCP/25 remains blocked by Vultr and is not required for the application mail path.
+Application transactional mail is commissioned through the Postmark HTTPS API and does not require direct outbound TCP/25. Vultr outbound TCP/25 is separately pending approval for the intended direct Postfix infrastructure-monitoring path; do not treat that pending path as part of application/customer email.
 
 Public inbound customer mail is commissioned:
 
@@ -415,8 +417,11 @@ Useful boundaries:
 - System contains structured application-generated verification/reset/welcome mail and remains separate from the routine customer Inbox;
 - explicit `http://` and `https://` URLs in archived plain-text bodies are rendered as safe external links; inbound HTML remains untrusted and is not rendered as executable markup;
 - `support@dacquadolce.com` is the public inbound customer address; the private Postmark destination remains hidden;
+- `jamie@dacquadolce.com` is the commissioned human/business identity routed by Cloudflare to `dacquadolce@proton.me` / Proton;
+- Cloudflare remains the root MX provider; Proton MX being unconfigured/red is intentional;
+- the root SPF policy authorizes Cloudflare + Proton in one TXT policy, Proton DKIM is valid, and DMARC is `p=none` during commissioning;
 - Cloudflare catch-all routing remains disabled;
-- observability report delivery/timers remain separate and pending.
+- observability report delivery/timers remain separate and pending Vultr TCP/25 acceptance.
 
 Protected application configuration:
 
@@ -480,8 +485,14 @@ Safe DNS/mail-routing checks from LOCAL macOS:
     dig +short NS dacquadolce.com
     dig +short MX dacquadolce.com
     dig +short TXT dacquadolce.com
+    dig +short TXT _dmarc.dacquadolce.com
+    dig +short CNAME protonmail._domainkey.dacquadolce.com
+    dig +short CNAME protonmail2._domainkey.dacquadolce.com
+    dig +short CNAME protonmail3._domainkey.dacquadolce.com
     dig +short CNAME pm-bounces.dacquadolce.com
     dig +short TXT 20260917171819pm._domainkey.dacquadolce.com
+
+Expected root MX provider: Cloudflare. The MX answer should remain the Cloudflare routing tier, not Proton MX. Proton's MX warning is expected under the split-routing architecture.
 
 Expected authoritative DNS provider: Cloudflare. Current assigned nameservers:
 

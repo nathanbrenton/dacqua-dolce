@@ -187,7 +187,12 @@ requiring the production server to operate a general-purpose IMAP mailbox.
 
 ## Mail-authentication validation
 
-SPF and DKIM have passed live delivery checks. A previous Gmail **Show
-original** inspection reported DMARC FAIL. Treat DMARC alignment as an
-outstanding audit item until a new live message is explicitly revalidated as
-DMARC PASS; do not document DMARC as healthy merely because SPF/DKIM pass.
+As of 2026-09-30, the root-domain mail-authentication DNS has been reconciled for the current split-routing architecture:
+
+- one root SPF policy authorizes Cloudflare Email Routing and Proton:
+  `v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all`;
+- Proton's three DKIM selectors are published and Proton reports DKIM valid;
+- `_dmarc` is published as `v=DMARC1; p=none` and Proton reports DMARC valid;
+- Cloudflare remains the root MX provider, so Proton's requested MX records are intentionally not installed.
+
+`p=none` is commissioning/monitoring mode, not the final enforcement target. Revalidate actual received-message alignment for each legitimate sender before moving to `quarantine` or `reject`.

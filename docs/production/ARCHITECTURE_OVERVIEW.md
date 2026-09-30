@@ -10,7 +10,7 @@ The canonical public origin is:
 
 The `www` hostname is an alias and redirects permanently to the canonical bare domain.
 
-This document represents the validated production state through 2026-09-29.
+Application/host state reflects the validated PT18 production baseline through 2026-09-29; email/DNS/vendor-routing state is reconciled through 2026-09-30.
 
 ## 2. Production host
 
@@ -298,14 +298,14 @@ The production observability report generator is:
 
     /usr/local/sbin/dacqua-observability-report.py
 
-Dry-run report generation has been validated. Report timers remain intentionally disabled until real report delivery is implemented and validated.
+Dry-run report generation has been validated. Earlier commissioning documentation recorded report timers as disabled; current timer/service state should be verified before diagnosing missing mail, and recurring delivery should not be newly enabled/re-enabled until real report delivery is validated.
 
 Desired schedule after commissioning:
 
 - daily — 09:00 `America/Los_Angeles` to `nathan@nathanbrenton.com`;
 - weekly — Saturday 11:00 `America/Los_Angeles` to `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
 
-Recipient declarations should remain obvious in protected report configuration. Application Postmark delivery is already commissioned; the remaining work is specifically the observability-report sender/timer path, not general application email approval.
+The intended monitoring transport is local Postfix/sendmail -> recipient MX, separate from Postmark application mail, so routine status traffic does not consume the limited Postmark allowance. Vultr outbound TCP/25 approval and delivery acceptance remain pending. Recipient declarations should remain obvious in protected report configuration, and timers/Better Stack heartbeats must remain disabled until actual delivery succeeds.
 
 ## 11. Backup and recovery model
 
@@ -356,11 +356,37 @@ Public customer correspondence enters through:
 
 Catch-all mail routing is disabled. The private Postmark destination is intentionally omitted from documentation and employee UI.
 
-Cloudflare's root MX/SPF/DKIM records coexist with Postmark's separate sending-domain authentication because the two providers use different DNS purposes/selectors. The Postmark custom Return-Path remains a DNS-only CNAME at `pm-bounces.dacquadolce.com`.
+Cloudflare remains the root-domain MX/front-door. Current inbound MX hosts are `route1.mx.cloudflare.net`, `route2.mx.cloudflare.net`, and `route3.mx.cloudflare.net`. Proton's requested MX records are intentionally not installed because Cloudflare must route different local parts to different downstream systems.
+
+The current single root SPF policy is:
+
+    v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+
+Proton DKIM uses the three selectors `protonmail`, `protonmail2`, and `protonmail3`; their provider-generated CNAME targets must be retrieved from Proton during rebuild rather than hard-coded. DMARC is published as:
+
+    v=DMARC1; p=none
+
+`p=none` is deliberate monitoring/commissioning mode. Hardening to `quarantine` or `reject` is a future explicit security change after every legitimate sender is validated.
+
+Postmark retains its independent sending-domain DKIM and custom Return-Path CNAME at `pm-bounces.dacquadolce.com`.
+
+### Human/business email — commissioned
+
+Proton Mail Essentials hosts human/business mail while Cloudflare remains the inbound routing boundary.
+
+Current validated human route:
+
+    external sender
+      -> jamie@dacquadolce.com
+      -> Cloudflare Email Routing
+      -> dacquadolce@proton.me
+      -> Proton mailbox
+
+Outbound Proton mail can use `jamie@dacquadolce.com` as the visible From identity. Inbound and outbound acceptance passed on 2026-09-30. The provider-native `dacquadolce@proton.me` identity remains the Proton organizational/bootstrap/recovery identity.
 
 ### Application transactional email — commissioned
 
-FastAPI sends transactional mail through the Postmark HTTPS API. Direct outbound TCP/25 is not required.
+FastAPI sends transactional mail through the Postmark HTTPS API. Direct outbound TCP/25 is not required for application/customer email.
 
 Account/security mail uses the transactional no-reply sender. Employee customer-service replies choose from approved company sender roles. Quote-request replies prefer `sales`, then `contact`, `info`, `support`, and `no-reply`; other replies prefer `support`, then `contact`, `info`, `sales`, and `no-reply`. The authenticated staff user remains the internal author/audit actor.
 
@@ -413,13 +439,13 @@ Current commissioned application sender roles:
 - `support@dacquadolce.com`;
 - `no-reply@dacquadolce.com`.
 
-`support@dacquadolce.com` remains the public inbound Customer Inbox address. These role addresses are **mail identities**, not application UAM accounts and not automatically provisioned human IMAP mailboxes. Individual staff authenticate with their own application identities; named human custom-domain mailboxes/forwarding require separate explicit provisioning.
+`support@dacquadolce.com` remains the public inbound Customer Inbox address. These application role addresses are **mail identities**, not application UAM accounts. Human custom-domain mail is a separate Proton/Cloudflare concern: `jamie@dacquadolce.com` is currently commissioned as a named human/business identity routed by Cloudflare to the Proton organization mailbox. Additional named human identities require explicit provisioning.
 
 The visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive retains the canonical bare sender address. The private thread-aware Postmark inbound alias is used only as `Reply-To`.
 
 ### Observability reports — pending delivery
 
-The application Postmark path being live does not automatically commission the separate `/usr/local/sbin/dacqua-observability-report.py` delivery/timer workflow. That remains pending until its Postmark integration, recipients, timers, failure handling, and heartbeats are validated.
+The application Postmark path being live does not commission the separate `/usr/local/sbin/dacqua-observability-report.py` workflow. The intended infrastructure-report path is local Postfix/sendmail -> recipient MX, contingent on Vultr outbound TCP/25 approval. Delivery, recipients, timers, failure handling, and Better Stack heartbeats remain uncommissioned until a real controlled report is received successfully.
 
 ## 13. Production boundaries at PT18
 

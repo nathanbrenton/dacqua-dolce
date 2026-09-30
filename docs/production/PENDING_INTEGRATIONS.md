@@ -37,24 +37,43 @@ Generator:
 Current state:
 
 - dry-run report generation is validated;
-- application Postmark transactional email is live;
-- report delivery itself is not yet wired/validated;
-- report timers remain disabled;
+- application Postmark transactional email is live and remains reserved for application/customer transactional traffic;
+- direct infrastructure-monitoring delivery is intended to use local Postfix/sendmail -> recipient MX so routine status traffic does not consume the limited Postmark allowance;
+- Vultr outbound TCP/25 approval is still pending;
+- daily D'Acqua Dolce status email was not being received as of 2026-09-30;
+- earlier commissioning documentation recorded report timers as disabled; verify the actual current timer/service state during diagnosis and do not newly enable/re-enable recurring delivery until the path is accepted;
 - Better Stack report heartbeats remain unsubmitted until the successful-delivery boundary is commissioned.
 
-Desired schedule/recipients:
+Desired schedule/recipients remain:
 
 - daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
 - weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
 
-Future milestone must:
+Before attributing the missing reports solely to TCP/25, diagnose all boundaries:
 
-- keep recipients explicit in protected reporting configuration;
-- submit through the approved Postmark path without exposing credentials;
-- distinguish render success from delivery success;
-- enable daily/weekly timers only after real delivery succeeds;
-- submit the corresponding Better Stack heartbeat only after successful report delivery;
-- monitor timer/job failure and report freshness.
+1. confirm the report generator renders successfully;
+2. inspect installed/disabled report timer and service state;
+3. inspect the Postfix queue with `postqueue -p`;
+4. inspect Postfix logs with `journalctl -u postfix --no-pager`;
+5. confirm the configured recipients;
+6. test outbound TCP/25 only against the actual recipient-domain MX after Vultr reports approval.
+
+Acceptance after Vultr approval must prove:
+
+- TCP/25 connectivity to the intended recipient MX;
+- the selected sender/envelope domain and Postfix HELO identity are explicit;
+- forward DNS and provider-controlled PTR/reverse DNS are appropriate for the selected direct-delivery identity;
+- SPF authorization and any DKIM signing required by the selected sender design are deliberately configured rather than assumed;
+- a received test message shows the intended SPF/DKIM/DMARC alignment;
+- a controlled report is accepted for delivery;
+- the recipient actually receives it;
+- Postfix queue/log state is clean;
+- failure behavior is visible;
+- only then are daily/weekly timers enabled;
+- the corresponding Better Stack heartbeat is submitted only after successful delivery.
+
+Do not silently fall back to the application Postmark token/allowance merely to make routine observability mail appear functional. If the business later chooses Postmark as the monitoring transport, document and commission that as an explicit architecture change.
+
 
 ## 3. Communications retention, purge, and attachment lifecycle
 
