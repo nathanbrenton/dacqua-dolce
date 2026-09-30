@@ -37,6 +37,15 @@ class FormalQuoteStatus(StrEnum):
     superseded = "superseded"
 
 
+class CommercialChargeKind(StrEnum):
+    shipping = "shipping"
+    tax = "tax"
+    installation = "installation"
+    discount = "discount"
+    other_charge = "other_charge"
+    other_credit = "other_credit"
+
+
 class QuoteRequest(Base):
     __tablename__ = "quote_requests"
 
@@ -141,6 +150,14 @@ class FormalQuote(Base):
             "subtotal_amount_minor >= 0",
             name="formal_quotes_subtotal_nonnegative",
         ),
+        CheckConstraint(
+            "total_amount_minor >= 0",
+            name="formal_quotes_total_nonnegative",
+        ),
+        CheckConstraint(
+            "total_amount_minor = subtotal_amount_minor + charges_amount_minor",
+            name="formal_quotes_total_matches_components",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -199,6 +216,25 @@ class FormalQuote(Base):
         nullable=False,
     )
 
+    charges_amount_minor: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        default=0,
+    )
+
+    total_amount_minor: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+    )
+
+    delivery_address_snapshot: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+    )
+
+    billing_address_snapshot: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+    )
+
     customer_note: Mapped[str | None] = mapped_column(
         Text,
     )
@@ -240,6 +276,75 @@ class FormalQuote(Base):
         back_populates="formal_quote",
         cascade="all, delete-orphan",
         order_by="FormalQuoteItem.sort_order",
+    )
+
+    charges: Mapped[list[FormalQuoteCharge]] = relationship(
+        back_populates="formal_quote",
+        cascade="all, delete-orphan",
+        order_by="FormalQuoteCharge.sort_order",
+    )
+
+
+class FormalQuoteCharge(Base):
+    __tablename__ = "formal_quote_charges"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('shipping', 'tax', 'installation', 'discount', "
+            "'other_charge', 'other_credit')",
+            name="formal_quote_charges_kind_valid",
+        ),
+        CheckConstraint(
+            "((kind IN ('shipping', 'tax', 'installation', 'other_charge') "
+            "AND amount_minor > 0) OR "
+            "(kind IN ('discount', 'other_credit') AND amount_minor < 0))",
+            name="formal_quote_charges_amount_sign_valid",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    formal_quote_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "formal_quotes.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    kind: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+    )
+
+    label: Mapped[str] = mapped_column(
+        String(160),
+        nullable=False,
+    )
+
+    amount_minor: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+    )
+
+    sort_order: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    formal_quote: Mapped[FormalQuote] = relationship(
+        back_populates="charges",
     )
 
 

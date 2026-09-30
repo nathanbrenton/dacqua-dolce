@@ -293,3 +293,43 @@ filtration-network research signal.
 These aggregates do not modify recommendation decisions, scoring, quote prices,
 or self-service eligibility. The optional filtration-network signal remains
 research/marketing context and is not part of technical suitability logic.
+
+## PT24.1 commercial quote and order snapshots
+
+Formal quote revisions are the customer-visible commercial source of truth. A new
+revision now preserves four distinct layers rather than treating the product-line
+subtotal as the entire sale:
+
+1. immutable product/variant line-item snapshots;
+2. an explicit product subtotal;
+3. zero or more signed commercial adjustments; and
+4. the final commercial total.
+
+Supported adjustment categories are shipping/delivery, tax, installation,
+discount, other charge, and other credit. Charges are positive; discounts and
+credits are negative. Operations must enter the amount explicitly. The
+application does not calculate tax, freight, installation pricing, or discount
+eligibility in PT24.1.
+
+The final total must equal product subtotal plus the signed adjustment total and
+must not be negative. Database constraints preserve the same invariant on both
+formal quotes and orders. The hosted-payment boundary continues to use the order
+`total_amount_minor`, so a provider adapter cannot accidentally charge only the
+product subtotal once PT24.1 is deployed.
+
+Every newly authored formal quote also includes an immutable delivery/service
+address snapshot and billing address snapshot. These are commercial-record
+snapshots, not live references to the customer's mutable address book. When the
+customer approves a quote, both snapshots are copied to the authoritative order.
+Changing an account address later must not rewrite what was approved.
+
+Legacy records are preserved conservatively during migration. Existing quote
+totals become their product subtotal with zero adjustments; existing order
+subtotals become their prior total with zero adjustments. No historical address
+is inferred or backfilled from current customer data.
+
+Deposits and partial-payment schedules remain outside this model. The current
+payment state machine treats a successful provider event for the exact order
+total as payment completion. A future deposit workflow therefore requires a
+separate payment-schedule/remaining-balance design rather than overloading a
+commercial adjustment or silently marking a partially paid order as paid.

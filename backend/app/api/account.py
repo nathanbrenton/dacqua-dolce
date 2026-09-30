@@ -621,6 +621,18 @@ def customer_formal_quote_read(
         status=formal_quote.status.value,
         currency=formal_quote.currency,
         subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+        charges_amount_minor=formal_quote.charges_amount_minor,
+        total_amount_minor=formal_quote.total_amount_minor,
+        delivery_address=formal_quote.delivery_address_snapshot,
+        billing_address=formal_quote.billing_address_snapshot,
+        charges=[
+            {
+                "kind": charge.kind,
+                "label": charge.label,
+                "amount_minor": charge.amount_minor,
+            }
+            for charge in formal_quote.charges
+        ],
         customer_note=formal_quote.customer_note,
         presented_at=(
             formal_quote.presented_at.isoformat()
@@ -658,7 +670,10 @@ def get_customer_formal_quotes(
 ) -> list[CustomerFormalQuoteRead]:
     rows = db.scalars(
         select(FormalQuote)
-        .options(selectinload(FormalQuote.items))
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+        )
         .where(
             FormalQuote.customer_user_id == current_user.id,
             FormalQuote.status.in_(
@@ -688,7 +703,14 @@ def approve_customer_formal_quote(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> CustomerFormalQuoteRead:
-    formal_quote = db.get(FormalQuote, formal_quote_id)
+    formal_quote = db.scalar(
+        select(FormalQuote)
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+        )
+        .where(FormalQuote.id == formal_quote_id)
+    )
     if formal_quote is None or formal_quote.customer_user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

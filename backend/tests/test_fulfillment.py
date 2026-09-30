@@ -48,6 +48,8 @@ def make_order(
         user_id=uuid.uuid4(),
         status=payment_status,
         fulfillment_status=fulfillment_status,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
         total_amount_minor=250000,
         currency="USD",
     )

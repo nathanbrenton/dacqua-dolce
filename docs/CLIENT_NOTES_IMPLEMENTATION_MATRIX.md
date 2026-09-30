@@ -371,3 +371,16 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Early assisted sales should improve future education/recommendation work | Implemented observational reporting | Operations now summarizes structured request patterns such as source-water mix, treatment preference, limited utilities, lab-review need, supplied hardness, and top service ZIPs. |
 | Optional neighbor/friend/family filtration questions are research/marketing context | Preserved separation | The existing filtration-network signal is shown only as a research aggregate. It is not fed into the technical recommendation decision. |
 | First 20+ whole-house sales remain assisted | Preserved | PT23 adds no automatic sale-count unlock and does not enable self-service whole-house purchasing. |
+
+## PT24.1 — Commercial quote and order readiness
+
+| Launch-readiness need | Implementation status | Current behavior |
+| --- | --- | --- |
+| Final payable amount must include more than product-line subtotal | Implemented | Formal quotes now preserve product subtotal, signed commercial adjustments, and a separate final total. The final total is the amount copied to the authoritative order and remains the amount used by the hosted-payment boundary. |
+| Shipping/delivery, tax, installation, discount, and other amounts must be explicit | Implemented manual-first | Operations may add explicit customer-facing adjustments for shipping/delivery, tax, installation, discount, other charge, or other credit. No tax, freight, installation, or discount amount is calculated or inferred automatically. |
+| Customer/service address must not change underneath an approved sale | Implemented snapshot | Each new formal quote revision stores an immutable delivery/service address snapshot and billing address snapshot. The approved quote copies both snapshots into the order rather than re-reading the customer's mutable address book. |
+| Legacy quote/order history must remain truthful | Preserved | Migration backfills legacy quote/order commercial components as existing total/subtotal plus zero adjustments. Historical address snapshots remain unknown/null rather than being fabricated from today's customer profile. |
+| Customer must review the actual final commercial terms before approval | Implemented | Customer quote review now shows product subtotal, every commercial adjustment, final total, delivery/service address, and billing address before explicit approval. |
+| Payment adapter must charge the authoritative final total | Preserved | Existing hosted-checkout and verified-payment logic continues to use `orders.total_amount_minor`; PT24.1 changes that field to the approved final commercial total rather than the product-only subtotal. |
+| Deposits / partial-payment schedules | Explicitly deferred | PT24.1 does not model deposits or partial payment. Until a payment-schedule model exists, the authoritative final order total remains the amount that must be collected before the current workflow may mark the order paid. |
+| Automatic tax/shipping calculation | Explicitly deferred | No external tax engine, carrier-rate service, installation calculator, or provider-specific commercial policy is invented by PT24.1. |

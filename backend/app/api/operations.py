@@ -18,6 +18,7 @@ from app.models.catalog import (
 )
 from app.models.commerce import (
     Order,
+    OrderCharge,
     OrderItem,
     OrderShipment,
 )
@@ -97,6 +98,7 @@ from app.services.communications_reply import (
     send_communication_reply,
 )
 from app.services.formal_quotes import (
+    FormalQuoteChargeInput,
     FormalQuoteLineInput,
     create_formal_quote_revision,
     present_formal_quote,
@@ -150,6 +152,18 @@ def operations_formal_quote_read(
         ),
         currency=formal_quote.currency,
         subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+        charges_amount_minor=formal_quote.charges_amount_minor,
+        total_amount_minor=formal_quote.total_amount_minor,
+        delivery_address=formal_quote.delivery_address_snapshot,
+        billing_address=formal_quote.billing_address_snapshot,
+        charges=[
+            {
+                "kind": charge.kind,
+                "label": charge.label,
+                "amount_minor": charge.amount_minor,
+            }
+            for charge in formal_quote.charges
+        ],
         customer_note=formal_quote.customer_note,
         presented_at=(
             formal_quote.presented_at.isoformat()
@@ -1039,6 +1053,9 @@ def list_quotes(
         .options(
             selectinload(QuoteRequest.formal_quotes).selectinload(
                 FormalQuote.items
+            ),
+            selectinload(QuoteRequest.formal_quotes).selectinload(
+                FormalQuote.charges
             )
         )
         .order_by(QuoteRequest.created_at.desc())
@@ -1429,6 +1446,11 @@ def operations_order_read(
         .order_by(OrderShipment.created_at.desc())
     ).all()
     shipment = shipments[0] if shipments else None
+    charges = db.scalars(
+        select(OrderCharge)
+        .where(OrderCharge.order_id == order.id)
+        .order_by(OrderCharge.sort_order, OrderCharge.created_at)
+    ).all()
 
     return OperationsOrderRead(
         id=str(order.id),
@@ -1455,8 +1477,20 @@ def operations_order_read(
             if order.delivered_at is not None
             else None
         ),
+        subtotal_amount_minor=order.subtotal_amount_minor,
+        charges_amount_minor=order.charges_amount_minor,
         total_amount_minor=order.total_amount_minor,
         currency=order.currency,
+        delivery_address=order.delivery_address_snapshot,
+        billing_address=order.billing_address_snapshot,
+        charges=[
+            {
+                "kind": charge.kind,
+                "label": charge.label,
+                "amount_minor": charge.amount_minor,
+            }
+            for charge in charges
+        ],
         created_at=order.created_at.isoformat(),
         customer=OperationsOrderCustomerRead(
             id=str(customer.id),
@@ -2249,6 +2283,16 @@ def create_formal_quote(
             )
             for item in payload.items
         ],
+        charges=[
+            FormalQuoteChargeInput(
+                kind=charge.kind,
+                label=charge.label,
+                amount_minor=charge.amount_minor,
+            )
+            for charge in payload.charges
+        ],
+        delivery_address_snapshot=payload.delivery_address.model_dump(),
+        billing_address_snapshot=payload.billing_address.model_dump(),
         customer_note=payload.customer_note,
         actor_user=current_user,
         actor_roles=actor_roles,
@@ -2270,7 +2314,10 @@ def present_quote_to_customer(
     require_operations(db, user=current_user)
     formal_quote = db.scalar(
         select(FormalQuote)
-        .options(selectinload(FormalQuote.items))
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+        )
         .where(FormalQuote.id == formal_quote_id)
     )
     if formal_quote is None:

@@ -43,6 +43,8 @@ def make_order_and_reference():
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=240000,
+        charges_amount_minor=10000,
         total_amount_minor=250000,
         currency="USD",
     )

@@ -44,6 +44,8 @@ def test_hosted_checkout_passes_only_safe_order_context() -> None:
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=240000,
+        charges_amount_minor=10000,
         total_amount_minor=250000,
         currency="USD",
     )
@@ -74,6 +76,8 @@ def test_hosted_checkout_rejects_non_payment_order() -> None:
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         status=OrderStatus.paid,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
         total_amount_minor=250000,
         currency="USD",
     )

@@ -30,6 +30,7 @@ import {
   requestEmailVerification,
   type AuthenticationStatus,
 } from "../../api/authentication";
+import type { CommercialAddress } from "../../api/commercial";
 import {
   addCartItem,
   getCart,
@@ -97,6 +98,17 @@ function money(
       currency,
     },
   ).format(amountMinor / 100);
+}
+
+function commercialAddressLines(address: CommercialAddress): string[] {
+  return [
+    address.recipient_name,
+    address.line1,
+    address.line2,
+    `${address.city}, ${address.region_code} ${address.postal_code}`,
+    address.country_code,
+    address.phone,
+  ].filter((value): value is string => value !== null && value !== "");
 }
 
 
@@ -620,7 +632,7 @@ export function AccountPage({
   async function approveFormalQuote(quote: CustomerFormalQuote): Promise<void> {
     const confirmed = window.confirm(
       `Approve quote revision ${quote.revision_number} for ${money(
-        quote.subtotal_amount_minor,
+        quote.total_amount_minor,
         quote.currency,
       )}?`,
     );
@@ -1622,7 +1634,7 @@ export function AccountPage({
                       <strong>Quote revision {quote.revision_number}</strong>
                       <p>{quote.status.replaceAll("_", " ")}</p>
                     </div>
-                    <strong>{money(quote.subtotal_amount_minor, quote.currency)}</strong>
+                    <strong>{money(quote.total_amount_minor, quote.currency)}</strong>
                   </header>
 
                   <div className="account-formal-quote-lines">
@@ -1635,6 +1647,43 @@ export function AccountPage({
                         ) : null}
                       </div>
                     ))}
+                    <div>
+                      <span>Product subtotal</span>
+                      <strong>{money(quote.subtotal_amount_minor, quote.currency)}</strong>
+                    </div>
+                    {quote.charges.map((charge, index) => (
+                      <div key={`${quote.id}-${charge.kind}-${index}`}>
+                        <span>{charge.label}</span>
+                        <strong>{money(charge.amount_minor, quote.currency)}</strong>
+                      </div>
+                    ))}
+                    <div>
+                      <span>Final total</span>
+                      <strong>{money(quote.total_amount_minor, quote.currency)}</strong>
+                    </div>
+                  </div>
+
+                  <div className="account-formal-quote-addresses">
+                    {quote.delivery_address !== null ? (
+                      <div>
+                        <strong>Delivery / service address</strong>
+                        <address>
+                          {commercialAddressLines(quote.delivery_address).map((line) => (
+                            <span key={line}>{line}<br /></span>
+                          ))}
+                        </address>
+                      </div>
+                    ) : null}
+                    {quote.billing_address !== null ? (
+                      <div>
+                        <strong>Billing address</strong>
+                        <address>
+                          {commercialAddressLines(quote.billing_address).map((line) => (
+                            <span key={line}>{line}<br /></span>
+                          ))}
+                        </address>
+                      </div>
+                    ) : null}
                   </div>
 
                   {quote.customer_note !== null ? (
@@ -1822,6 +1871,24 @@ export function AccountPage({
                           </>
                         ) : null}
                       </p>
+                    ) : null}
+
+                    {order.charges.length > 0 ? (
+                      <p className="account-muted">
+                        Products {money(order.subtotal_amount_minor, order.currency)}
+                        {order.charges.map((charge) => (
+                          ` · ${charge.label} ${money(charge.amount_minor, order.currency)}`
+                        )).join("")}
+                      </p>
+                    ) : null}
+
+                    {order.delivery_address !== null ? (
+                      <address className="account-order-address">
+                        <strong>Delivery / service address</strong><br />
+                        {commercialAddressLines(order.delivery_address).map((line) => (
+                          <span key={line}>{line}<br /></span>
+                        ))}
+                      </address>
                     ) : null}
                   </div>
 

@@ -1,5 +1,10 @@
 from pydantic import BaseModel, Field
 
+from app.schemas.commercial import (
+    CommercialAddressSnapshot,
+    CommercialChargeRead,
+)
+
 
 class CartItemCreate(BaseModel):
     product_id: str
@@ -54,8 +59,13 @@ class OrderRead(BaseModel):
     formal_quote_id: str | None
     status: str
     fulfillment_status: str
+    subtotal_amount_minor: int
+    charges_amount_minor: int
     total_amount_minor: int
     currency: str
+    delivery_address: CommercialAddressSnapshot | None
+    billing_address: CommercialAddressSnapshot | None
+    charges: list[CommercialChargeRead] = Field(default_factory=list)
     created_at: str
     items: list[OrderItemRead]
     shipment: OrderShipmentRead | None = None

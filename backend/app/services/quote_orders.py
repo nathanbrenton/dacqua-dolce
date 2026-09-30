@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models.commerce import (
     FulfillmentStatus,
     Order,
+    OrderCharge,
     OrderItem,
     OrderStatus,
 )
@@ -30,7 +31,10 @@ def create_order_from_approved_quote(
 
     formal_quote = db.scalar(
         select(FormalQuote)
-        .options(selectinload(FormalQuote.items))
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+        )
         .where(FormalQuote.id == formal_quote_id)
         .with_for_update()
     )
@@ -78,6 +82,17 @@ def create_order_from_approved_quote(
             detail="The approved quote does not contain any orderable lines.",
         )
 
+    if formal_quote.delivery_address_snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The approved quote does not contain a delivery address snapshot.",
+        )
+    if formal_quote.billing_address_snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The approved quote does not contain a billing address snapshot.",
+        )
+
     subtotal = 0
     order_items: list[OrderItem] = []
 
@@ -118,12 +133,30 @@ def create_order_from_approved_quote(
             detail="The approved quote subtotal does not match its line items.",
         )
 
+    charges_total = sum(charge.amount_minor for charge in formal_quote.charges)
+    if charges_total != formal_quote.charges_amount_minor:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The approved quote charge total does not match its adjustments.",
+        )
+
+    expected_total = subtotal + charges_total
+    if expected_total != formal_quote.total_amount_minor or expected_total <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="The approved quote final total is inconsistent.",
+        )
+
     order = Order(
         user_id=customer_user.id,
         formal_quote_id=formal_quote.id,
         status=OrderStatus.awaiting_payment,
         fulfillment_status=FulfillmentStatus.not_started,
-        total_amount_minor=formal_quote.subtotal_amount_minor,
+        subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+        charges_amount_minor=formal_quote.charges_amount_minor,
+        total_amount_minor=formal_quote.total_amount_minor,
+        delivery_address_snapshot=dict(formal_quote.delivery_address_snapshot),
+        billing_address_snapshot=dict(formal_quote.billing_address_snapshot),
         currency=formal_quote.currency.upper(),
     )
     db.add(order)
@@ -132,6 +165,17 @@ def create_order_from_approved_quote(
     for item in order_items:
         item.order_id = order.id
         db.add(item)
+
+    for charge in formal_quote.charges:
+        db.add(
+            OrderCharge(
+                order_id=order.id,
+                kind=charge.kind,
+                label=charge.label,
+                amount_minor=charge.amount_minor,
+                sort_order=charge.sort_order,
+            )
+        )
 
     record_audit_event(
         db,
@@ -143,9 +187,12 @@ def create_order_from_approved_quote(
             "formal_quote_id": str(formal_quote.id),
             "quote_request_id": str(formal_quote.quote_request_id),
             "revision_number": formal_quote.revision_number,
+            "subtotal_amount_minor": order.subtotal_amount_minor,
+            "charges_amount_minor": order.charges_amount_minor,
             "total_amount_minor": order.total_amount_minor,
             "currency": order.currency,
             "line_count": len(order_items),
+            "charge_count": len(formal_quote.charges),
         },
     )
     db.flush()

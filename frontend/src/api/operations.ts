@@ -3,6 +3,11 @@ import {
 } from "./authentication";
 
 import type {
+  CommercialAddress,
+  CommercialCharge,
+  CommercialChargeKind,
+} from "./commercial";
+import type {
   RecommendationDecision,
 } from "./quotes";
 
@@ -156,6 +161,11 @@ export type OperationsFormalQuote = {
   authored_by_user_id: string | null;
   currency: string;
   subtotal_amount_minor: number;
+  charges_amount_minor: number;
+  total_amount_minor: number;
+  delivery_address: CommercialAddress | null;
+  billing_address: CommercialAddress | null;
+  charges: CommercialCharge[];
   customer_note: string | null;
   presented_at: string | null;
   approved_at: string | null;
@@ -256,8 +266,13 @@ export type OperationsOrder = {
   received_ready_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  subtotal_amount_minor: number;
+  charges_amount_minor: number;
   total_amount_minor: number;
   currency: string;
+  delivery_address: CommercialAddress | null;
+  billing_address: CommercialAddress | null;
+  charges: CommercialCharge[];
   created_at: string;
   customer: OperationsOrderCustomer;
   items: OperationsOrderItem[];
@@ -526,6 +541,13 @@ export function createFormalQuote(
       quantity: number;
       unit_amount_minor: number | null;
     }>;
+    charges: Array<{
+      kind: CommercialChargeKind;
+      label: string;
+      amount_minor: number;
+    }>;
+    delivery_address: CommercialAddress;
+    billing_address: CommercialAddress;
     customer_note: string | null;
   },
 ): Promise<OperationsFormalQuote> {

@@ -14,7 +14,9 @@ from app.models.catalog import (
 )
 from app.models.identity import RoleName, User, UserRole, UserStatus
 from app.models.quote import (
+    CommercialChargeKind,
     FormalQuote,
+    FormalQuoteCharge,
     FormalQuoteItem,
     FormalQuoteStatus,
     QuoteRequest,
@@ -22,6 +24,13 @@ from app.models.quote import (
 )
 from app.services.audit import record_audit_event
 from app.services.pricing import select_effective_price
+
+
+@dataclass(frozen=True)
+class FormalQuoteChargeInput:
+    kind: CommercialChargeKind
+    label: str
+    amount_minor: int
 
 
 @dataclass(frozen=True)
@@ -198,6 +207,9 @@ def create_formal_quote_revision(
     *,
     quote_request: QuoteRequest,
     lines: list[FormalQuoteLineInput],
+    charges: list[FormalQuoteChargeInput],
+    delivery_address_snapshot: dict[str, object],
+    billing_address_snapshot: dict[str, object],
     customer_note: str | None,
     actor_user: User,
     actor_roles: set[RoleName],
@@ -257,6 +269,53 @@ def create_formal_quote_revision(
         )
 
     subtotal = sum(item.line_total_minor for item in items)
+    charge_rows: list[FormalQuoteCharge] = []
+    for sort_order, charge in enumerate(charges):
+        label = charge.label.strip()
+        if not label:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Commercial charge labels cannot be blank.",
+            )
+
+        positive_kinds = {
+            CommercialChargeKind.shipping,
+            CommercialChargeKind.tax,
+            CommercialChargeKind.installation,
+            CommercialChargeKind.other_charge,
+        }
+        credit_kinds = {
+            CommercialChargeKind.discount,
+            CommercialChargeKind.other_credit,
+        }
+        if charge.kind in positive_kinds and charge.amount_minor <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Commercial charges must be greater than zero.",
+            )
+        if charge.kind in credit_kinds and charge.amount_minor >= 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Discounts and credits must be negative amounts.",
+            )
+
+        charge_rows.append(
+            FormalQuoteCharge(
+                kind=charge.kind.value,
+                label=label,
+                amount_minor=charge.amount_minor,
+                sort_order=sort_order,
+            )
+        )
+
+    charges_total = sum(charge.amount_minor for charge in charge_rows)
+    total = subtotal + charges_total
+    if total < 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Commercial credits cannot reduce the quote total below zero.",
+        )
+
     formal_quote = FormalQuote(
         quote_request_id=quote_request.id,
         revision_number=revision_number,
@@ -265,8 +324,13 @@ def create_formal_quote_revision(
         authored_by_user_id=actor_user.id,
         currency=currencies.pop(),
         subtotal_amount_minor=subtotal,
+        charges_amount_minor=charges_total,
+        total_amount_minor=total,
+        delivery_address_snapshot=delivery_address_snapshot,
+        billing_address_snapshot=billing_address_snapshot,
         customer_note=customer_note,
         items=items,
+        charges=charge_rows,
     )
     db.add(formal_quote)
     db.flush()
@@ -282,6 +346,9 @@ def create_formal_quote_revision(
             "revision_number": revision_number,
             "line_count": len(items),
             "subtotal_amount_minor": subtotal,
+            "charges_amount_minor": charges_total,
+            "total_amount_minor": total,
+            "charge_count": len(charge_rows),
             "currency": formal_quote.currency,
         },
     )
@@ -328,6 +395,22 @@ def present_formal_quote(
                 "A customer account using the request email is required "
                 "before this quote can be presented for approval."
             ),
+        )
+
+    if formal_quote.delivery_address_snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A delivery/service address snapshot is required before presentation.",
+        )
+    if formal_quote.billing_address_snapshot is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A billing address snapshot is required before presentation.",
+        )
+    if formal_quote.total_amount_minor <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A presented quote must have a positive final total.",
         )
 
     for previous in db.scalars(
@@ -401,6 +484,8 @@ def approve_formal_quote(
             "quote_request_id": str(formal_quote.quote_request_id),
             "revision_number": formal_quote.revision_number,
             "subtotal_amount_minor": formal_quote.subtotal_amount_minor,
+            "charges_amount_minor": formal_quote.charges_amount_minor,
+            "total_amount_minor": formal_quote.total_amount_minor,
             "currency": formal_quote.currency,
         },
     )

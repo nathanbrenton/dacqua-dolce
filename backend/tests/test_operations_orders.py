@@ -62,6 +62,9 @@ class OrderHistoryDatabase:
         if "FROM order_shipments" in query:
             return ScalarResult([])
 
+        if "FROM order_charges" in query:
+            return ScalarResult([])
+
         raise AssertionError(
             f"Unexpected query: {query}"
         )
@@ -125,7 +128,11 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         received_ready_at=None,
         shipped_at=None,
         delivered_at=None,
+        subtotal_amount_minor=249900,
+        charges_amount_minor=0,
         total_amount_minor=249900,
+        delivery_address_snapshot=None,
+        billing_address_snapshot=None,
         currency="USD",
         created_at=datetime.now(UTC),
     )
@@ -169,8 +176,13 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         "received_ready_at": None,
         "shipped_at": None,
         "delivered_at": None,
+        "subtotal_amount_minor": 249900,
+        "charges_amount_minor": 0,
         "total_amount_minor": 249900,
         "currency": "USD",
+        "delivery_address": None,
+        "billing_address": None,
+        "charges": [],
         "created_at": order.created_at.isoformat(),
         "customer": {
             "id": str(customer_id),

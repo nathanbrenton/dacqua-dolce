@@ -1,5 +1,7 @@
 import { getCsrfToken } from "./authentication";
 
+import type { CommercialAddress, CommercialCharge } from "./commercial";
+
 export type CustomerAddress = {
   id: string;
   label: string;
@@ -97,6 +99,11 @@ export type CustomerFormalQuote = {
   status: "presented" | "approved" | "superseded";
   currency: string;
   subtotal_amount_minor: number;
+  charges_amount_minor: number;
+  total_amount_minor: number;
+  delivery_address: CommercialAddress | null;
+  billing_address: CommercialAddress | null;
+  charges: CommercialCharge[];
   customer_note: string | null;
   presented_at: string | null;
   approved_at: string | null;

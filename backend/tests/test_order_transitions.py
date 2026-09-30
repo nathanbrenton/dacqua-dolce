@@ -25,6 +25,8 @@ def test_invalid_transition_error_is_specific() -> None:
         id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         status=OrderStatus.delivered,
+        subtotal_amount_minor=100,
+        charges_amount_minor=0,
         total_amount_minor=100,
         currency="USD",
     )

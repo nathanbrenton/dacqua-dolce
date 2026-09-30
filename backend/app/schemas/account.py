@@ -7,6 +7,10 @@ from pydantic import (
 from app.core.phone import (
     normalize_us_phone,
 )
+from app.schemas.commercial import (
+    CommercialAddressSnapshot,
+    CommercialChargeRead,
+)
 
 
 class AddressCreate(BaseModel):
@@ -170,6 +174,11 @@ class CustomerFormalQuoteRead(BaseModel):
     status: str
     currency: str
     subtotal_amount_minor: int
+    charges_amount_minor: int
+    total_amount_minor: int
+    delivery_address: CommercialAddressSnapshot | None
+    billing_address: CommercialAddressSnapshot | None
+    charges: list[CommercialChargeRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
     approved_at: str | None

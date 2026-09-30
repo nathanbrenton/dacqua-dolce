@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    JSON,
     BigInteger,
     CheckConstraint,
     DateTime,
@@ -202,6 +203,14 @@ class Order(Base):
             "total_amount_minor >= 0",
             name="total_amount_minor_nonnegative",
         ),
+        CheckConstraint(
+            "subtotal_amount_minor >= 0",
+            name="orders_subtotal_nonnegative",
+        ),
+        CheckConstraint(
+            "total_amount_minor = subtotal_amount_minor + charges_amount_minor",
+            name="orders_total_matches_components",
+        ),
         UniqueConstraint(
             "formal_quote_id",
             name="uq_orders_formal_quote_id",
@@ -273,10 +282,30 @@ class Order(Base):
         DateTime(timezone=True),
     )
 
+    subtotal_amount_minor: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        default=0,
+    )
+
+    charges_amount_minor: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+        default=0,
+    )
+
     total_amount_minor: Mapped[int] = mapped_column(
         BigInteger,
         nullable=False,
         default=0,
+    )
+
+    delivery_address_snapshot: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+    )
+
+    billing_address_snapshot: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
     )
 
     currency: Mapped[str] = mapped_column(
@@ -379,6 +408,65 @@ class OrderItem(Base):
 
     estimated_lead_time_snapshot: Mapped[str | None] = mapped_column(
         String(120),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+
+class OrderCharge(Base):
+    __tablename__ = "order_charges"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('shipping', 'tax', 'installation', 'discount', "
+            "'other_charge', 'other_credit')",
+            name="order_charges_kind_valid",
+        ),
+        CheckConstraint(
+            "((kind IN ('shipping', 'tax', 'installation', 'other_charge') "
+            "AND amount_minor > 0) OR "
+            "(kind IN ('discount', 'other_credit') AND amount_minor < 0))",
+            name="order_charges_amount_sign_valid",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "orders.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    kind: Mapped[str] = mapped_column(
+        String(40),
+        nullable=False,
+    )
+
+    label: Mapped[str] = mapped_column(
+        String(160),
+        nullable=False,
+    )
+
+    amount_minor: Mapped[int] = mapped_column(
+        BigInteger,
+        nullable=False,
+    )
+
+    sort_order: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
     )
 
     created_at: Mapped[datetime] = mapped_column(

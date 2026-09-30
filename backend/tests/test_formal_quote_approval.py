@@ -39,6 +39,8 @@ def test_customer_approval_locks_presented_revision() -> None:
         approved_at=None,
         approved_by_user_id=None,
         subtotal_amount_minor=249900,
+        charges_amount_minor=0,
+        total_amount_minor=249900,
         currency="USD",
     )
     customer = SimpleNamespace(id=customer_id)

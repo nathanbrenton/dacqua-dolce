@@ -24,6 +24,11 @@ from app.models.communications import (
 from app.models.quote import (
     QuoteRequestStatus,
 )
+from app.schemas.commercial import (
+    CommercialAddressSnapshot,
+    CommercialChargeInput,
+    CommercialChargeRead,
+)
 
 
 class OperationsSummaryRead(BaseModel):
@@ -246,6 +251,9 @@ class FormalQuoteItemCreate(BaseModel):
 
 class FormalQuoteCreate(BaseModel):
     items: list[FormalQuoteItemCreate] = Field(min_length=1, max_length=50)
+    charges: list[CommercialChargeInput] = Field(default_factory=list, max_length=20)
+    delivery_address: CommercialAddressSnapshot
+    billing_address: CommercialAddressSnapshot
     customer_note: str | None = Field(default=None, max_length=4000)
 
     @field_validator("customer_note")
@@ -279,6 +287,11 @@ class OperationsFormalQuoteRead(BaseModel):
     authored_by_user_id: str | None
     currency: str
     subtotal_amount_minor: int
+    charges_amount_minor: int
+    total_amount_minor: int
+    delivery_address: CommercialAddressSnapshot | None
+    billing_address: CommercialAddressSnapshot | None
+    charges: list[CommercialChargeRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
     approved_at: str | None
@@ -419,8 +432,13 @@ class OperationsOrderRead(BaseModel):
     received_ready_at: str | None
     shipped_at: str | None
     delivered_at: str | None
+    subtotal_amount_minor: int
+    charges_amount_minor: int
     total_amount_minor: int
     currency: str
+    delivery_address: CommercialAddressSnapshot | None
+    billing_address: CommercialAddressSnapshot | None
+    charges: list[CommercialChargeRead] = Field(default_factory=list)
     created_at: str
     customer: OperationsOrderCustomerRead
     items: list[OperationsOrderItemRead] = Field(

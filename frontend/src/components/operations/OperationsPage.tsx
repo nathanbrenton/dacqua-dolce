@@ -9,6 +9,7 @@ import {
   getProfile,
   type CustomerProfile,
 } from "../../api/account";
+import type { CommercialAddress } from "../../api/commercial";
 
 import {
   getAdministrationAccounts,
@@ -402,6 +403,17 @@ function formatMoney(
       currency,
     },
   ).format(amountMinor / 100);
+}
+
+function commercialAddressLines(address: CommercialAddress): string[] {
+  return [
+    address.recipient_name,
+    address.line1,
+    address.line2,
+    `${address.city}, ${address.region_code} ${address.postal_code}`,
+    address.country_code,
+    address.phone,
+  ].filter((value): value is string => value !== null && value !== "");
 }
 
 function lockedSelfAdminText(
@@ -2385,21 +2397,57 @@ export function OperationsPage({
                     ))}
 
                     <div className="operations-address">
-                      <strong>
-                        Order total
-                      </strong>
+                      <strong>Commercial total</strong>
 
                       <address>
-                        {formatMoney(
-                          order.total_amount_minor,
+                        Products: {formatMoney(
+                          order.subtotal_amount_minor,
                           order.currency,
                         )}
+                        {order.charges.map((charge, index) => (
+                          <span key={`${order.id}-${charge.kind}-${index}`}>
+                            <br />
+                            {charge.label}: {formatMoney(
+                              charge.amount_minor,
+                              order.currency,
+                            )}
+                          </span>
+                        ))}
+                        <br />
+                        <strong>
+                          Final total: {formatMoney(
+                            order.total_amount_minor,
+                            order.currency,
+                          )}
+                        </strong>
                       </address>
 
                       <small>
                         Payment state remains separate from fulfillment.
                       </small>
                     </div>
+
+                    {order.delivery_address !== null ? (
+                      <div className="operations-address">
+                        <strong>Delivery / service snapshot</strong>
+                        <address>
+                          {commercialAddressLines(order.delivery_address).map((line) => (
+                            <span key={line}>{line}<br /></span>
+                          ))}
+                        </address>
+                      </div>
+                    ) : null}
+
+                    {order.billing_address !== null ? (
+                      <div className="operations-address">
+                        <strong>Billing snapshot</strong>
+                        <address>
+                          {commercialAddressLines(order.billing_address).map((line) => (
+                            <span key={line}>{line}<br /></span>
+                          ))}
+                        </address>
+                      </div>
+                    ) : null}
                   </div>
 
                   <OrderFulfillmentControls

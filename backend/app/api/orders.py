@@ -7,6 +7,7 @@ from app.api.dependencies.auth import (
 )
 from app.models.commerce import (
     Order,
+    OrderCharge,
     OrderItem,
     OrderShipment,
 )
@@ -48,6 +49,11 @@ def list_orders(
             .order_by(OrderShipment.created_at.desc())
         ).all()
         shipment = shipments[0] if shipments else None
+        charges = db.scalars(
+            select(OrderCharge)
+            .where(OrderCharge.order_id == order.id)
+            .order_by(OrderCharge.sort_order, OrderCharge.created_at)
+        ).all()
 
         result.append(
             OrderRead(
@@ -59,8 +65,20 @@ def list_orders(
                 ),
                 status=order.status.value,
                 fulfillment_status=order.fulfillment_status.value,
+                subtotal_amount_minor=order.subtotal_amount_minor,
+                charges_amount_minor=order.charges_amount_minor,
                 total_amount_minor=(order.total_amount_minor),
                 currency=order.currency,
+                delivery_address=order.delivery_address_snapshot,
+                billing_address=order.billing_address_snapshot,
+                charges=[
+                    {
+                        "kind": charge.kind,
+                        "label": charge.label,
+                        "amount_minor": charge.amount_minor,
+                    }
+                    for charge in charges
+                ],
                 created_at=(order.created_at.isoformat()),
                 items=[
                     OrderItemRead(

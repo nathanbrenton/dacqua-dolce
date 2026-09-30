@@ -35,6 +35,8 @@ class CustomerOrdersDatabase:
             return ScalarResult([self.item])
         if "FROM order_shipments" in query:
             return ScalarResult([self.shipment])
+        if "FROM order_charges" in query:
+            return ScalarResult([])
 
         raise AssertionError(query)
 
@@ -53,7 +55,11 @@ def test_customer_order_exposes_fulfillment_and_tracking_without_supplier_refere
         supplier_order_reference="INTERNAL-PO-123",
         shipped_at=shipped_at,
         delivered_at=None,
+        subtotal_amount_minor=249900,
+        charges_amount_minor=0,
         total_amount_minor=249900,
+        delivery_address_snapshot=None,
+        billing_address_snapshot=None,
         currency="USD",
         created_at=datetime.now(UTC),
     )
