@@ -34,6 +34,7 @@ def public_price() -> ProductPrice:
 def test_unapproved_product_forces_no_online_sale() -> None:
     product = SimpleNamespace(
         prices=[public_price()],
+        assisted_sale_required=False,
         online_sale_approved=False,
     )
 
@@ -48,6 +49,25 @@ def test_unapproved_product_forces_no_online_sale() -> None:
     assert result.can_add_to_cart is False
     assert result.can_checkout_online is False
     assert result.action == "REQUEST_QUOTE"
+
+
+def test_assisted_sale_product_forces_request_quote() -> None:
+    product = SimpleNamespace(
+        prices=[public_price()],
+        assisted_sale_required=True,
+        online_sale_approved=True,
+    )
+
+    result = pricing_read(
+        product,  # type: ignore[arg-type]
+        authenticated=True,
+    )
+
+    assert result.mode == "NO_ONLINE_SALE"
+    assert result.can_add_to_cart is False
+    assert result.can_checkout_online is False
+    assert result.action == "REQUEST_QUOTE"
+    assert result.action_label == "Request a Quote"
 
 
 def test_public_catalog_schema_hides_manufacturer() -> None:
@@ -107,8 +127,15 @@ def test_documents_require_explicit_public_approval() -> None:
 
 
 class ProductOnlyDatabase:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        online_sale_approved: bool = False,
+        assisted_sale_required: bool = False,
+    ) -> None:
         self.calls = 0
+        self.online_sale_approved = online_sale_approved
+        self.assisted_sale_required = assisted_sale_required
 
     def scalar(
         self,
@@ -118,7 +145,8 @@ class ProductOnlyDatabase:
 
         return SimpleNamespace(
             id=uuid.uuid4(),
-            online_sale_approved=False,
+            online_sale_approved=self.online_sale_approved,
+            assisted_sale_required=self.assisted_sale_required,
         )
 
 
@@ -128,6 +156,27 @@ def test_cart_service_rechecks_online_sale_policy() -> None:
     with pytest.raises(
         commerce.CommerceError,
         match="not approved for online sale",
+    ):
+        commerce.add_item_to_cart(
+            database,  # type: ignore[arg-type]
+            user_id=uuid.uuid4(),
+            product_id=uuid.uuid4(),
+            variant_id=None,
+            quantity=1,
+        )
+
+    assert database.calls == 1
+
+
+def test_cart_service_rechecks_assisted_sale_requirement() -> None:
+    database = ProductOnlyDatabase(
+        online_sale_approved=True,
+        assisted_sale_required=True,
+    )
+
+    with pytest.raises(
+        commerce.CommerceError,
+        match="requires employee review",
     ):
         commerce.add_item_to_cart(
             database,  # type: ignore[arg-type]

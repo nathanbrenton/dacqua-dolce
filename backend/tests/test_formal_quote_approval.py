@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
@@ -64,6 +65,27 @@ def test_customer_approval_locks_presented_revision() -> None:
     assert result.approved_at is not None
     assert result.approved_by_user_id == customer_id
     assert db.added
+
+
+def test_expired_presented_quote_cannot_be_approved() -> None:
+    customer_id = uuid.uuid4()
+    quote = SimpleNamespace(
+        id=uuid.uuid4(),
+        customer_user_id=customer_id,
+        status=FormalQuoteStatus.presented,
+        expires_at=datetime.now(UTC) - timedelta(seconds=1),
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        approve_formal_quote(
+            FakeDatabase(),  # type: ignore[arg-type]
+            formal_quote=quote,  # type: ignore[arg-type]
+            customer_user=SimpleNamespace(id=customer_id),  # type: ignore[arg-type]
+            acknowledged_policy_snapshot_ids=set(),
+        )
+
+    assert exc.value.status_code == 409
+    assert "expired" in str(exc.value.detail).lower()
 
 
 def test_customer_cannot_approve_another_customers_quote() -> None:

@@ -118,6 +118,7 @@ def test_operations_product_exposes_catalog_architecture_context() -> None:
         active_variant_count=2,
         public_option_count=0,
         active=True,
+        assisted_sale_required=True,
         online_sale_approved=False,
         pricing=OperationsPricingRead(
             mode="NO_ONLINE_SALE",
@@ -133,6 +134,7 @@ def test_operations_product_exposes_catalog_architecture_context() -> None:
     )
 
     assert product.product_family == "Harmony"
+    assert product.assisted_sale_required is True
     assert product.system_type == "Water Conditioner"
     assert product.active_variant_count == 2
     assert product.public_option_count == 0

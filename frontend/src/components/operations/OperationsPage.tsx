@@ -2791,9 +2791,18 @@ export function OperationsPage({
                     </span>
                     <span>Reserved: {product.inventory.quantity_reserved}</span>
                     <span>
+                      Employee review: {product.assisted_sale_required ? "required" : "not required"}
+                    </span>
+                    <span>
                       Online sale: {product.online_sale_approved ? "approved" : "blocked"}
                     </span>
                   </div>
+
+                  {product.assisted_sale_required ? (
+                    <p className="operations-note">
+                      Assisted sale: employee review is required before purchase.
+                    </p>
+                  ) : null}
 
                   {!product.online_sale_approved ? (
                     <p className="operations-note">

@@ -200,6 +200,7 @@ export type OperationsFormalQuote = {
   policy_snapshots: PolicySnapshot[];
   customer_note: string | null;
   presented_at: string | null;
+  expires_at: string | null;
   approved_at: string | null;
   created_at: string;
   items: OperationsFormalQuoteItem[];
@@ -372,6 +373,7 @@ export type OperationsProduct = {
   public_option_count: number;
   relationships: OperationsProductRelationship[];
   active: boolean;
+  assisted_sale_required: boolean;
   online_sale_approved: boolean;
   pricing: OperationsPricing;
   inventory: OperationsInventory;

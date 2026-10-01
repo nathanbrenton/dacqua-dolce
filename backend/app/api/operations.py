@@ -184,6 +184,11 @@ def operations_formal_quote_read(
             if formal_quote.presented_at is not None
             else None
         ),
+        expires_at=(
+            formal_quote.expires_at.isoformat()
+            if formal_quote.expires_at is not None
+            else None
+        ),
         approved_at=(
             formal_quote.approved_at.isoformat()
             if formal_quote.approved_at is not None
@@ -2039,6 +2044,9 @@ def operations_product_read(
             for relationship in product.related_options
         ],
         active=product.active,
+        assisted_sale_required=(
+            product.assisted_sale_required
+        ),
         online_sale_approved=(
             product.online_sale_approved
         ),

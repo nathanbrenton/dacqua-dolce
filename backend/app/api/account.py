@@ -652,6 +652,11 @@ def customer_formal_quote_read(
             if formal_quote.presented_at is not None
             else None
         ),
+        expires_at=(
+            formal_quote.expires_at.isoformat()
+            if formal_quote.expires_at is not None
+            else None
+        ),
         approved_at=(
             formal_quote.approved_at.isoformat()
             if formal_quote.approved_at is not None

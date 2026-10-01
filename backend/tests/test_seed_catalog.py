@@ -36,6 +36,17 @@ def test_production_catalog_manifest_is_valid() -> None:
 
     products = {product["sku"]: product for product in catalog["products"]}
 
+    assert all(
+        product["assisted_sale_required"] is True
+        for product in catalog["products"]
+        if product["category_slug"] == "whole-home-filtration"
+    )
+    assert all(
+        product["assisted_sale_required"] is False
+        for product in catalog["products"]
+        if product["category_slug"] == "reverse-osmosis"
+    )
+
     assert products["DD15CAT-TTACPTV"]["product_family"] == "Harmony"
     assert products["DD15CAT-TTACPTV"]["system_type"] == "Water Conditioner"
     assert products["DD15CAT-TTACRV"]["active"] is False
@@ -83,6 +94,7 @@ def test_reconcile_existing_product_updates_catalog_metadata() -> None:
         description="Old description.",
         product_family="Old Family",
         system_type="Old System Type",
+        assisted_sale_required=True,
         active=False,
         online_sale_approved=True,
         public_path="/systems/dd5ro",
@@ -99,6 +111,7 @@ def test_reconcile_existing_product_updates_catalog_metadata() -> None:
         description="Updated description.",
         product_family="Reverse Osmosis",
         system_type="Reverse Osmosis System",
+        assisted_sale_required=False,
         public_path="/systems/dd5ro",
     )
 
@@ -110,6 +123,7 @@ def test_reconcile_existing_product_updates_catalog_metadata() -> None:
     assert product.description == "Updated description."
     assert product.product_family == "Reverse Osmosis"
     assert product.system_type == "Reverse Osmosis System"
+    assert product.assisted_sale_required is False
     assert product.public_path == "/systems/dd5ro"
 
     # Stable identifiers are not rewritten by metadata reconciliation.

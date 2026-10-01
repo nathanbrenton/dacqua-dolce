@@ -323,7 +323,13 @@ export function FormalQuoteComposer({
     try {
       const updated = await presentFormalQuote(formalQuote.id);
       onChanged(quote.id, updated);
-      setNotice(`Revision ${updated.revision_number} is ready for customer approval.`);
+      setNotice(
+        `Revision ${updated.revision_number} is ready for customer approval through ${
+          updated.expires_at !== null
+            ? new Date(updated.expires_at).toLocaleDateString()
+            : "the configured validity period"
+        }.`
+      );
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Formal quote could not be presented.",
@@ -347,6 +353,11 @@ export function FormalQuoteComposer({
               <div>
                 <strong>Revision {formalQuote.revision_number}</strong>
                 <span>{formalQuote.status.replaceAll("_", " ")}</span>
+                {formalQuote.expires_at !== null ? (
+                  <small>
+                    Valid through {new Date(formalQuote.expires_at).toLocaleDateString()}
+                  </small>
+                ) : null}
               </div>
               <div className="operations-commercial-breakdown">
                 <span>

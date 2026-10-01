@@ -114,6 +114,17 @@ def validate_catalog_manifest(data: dict[str, Any]) -> None:
     }
 
     for product in data["products"]:
+        for boolean_field in (
+            "active",
+            "online_sale_approved",
+            "assisted_sale_required",
+        ):
+            if not isinstance(product.get(boolean_field), bool):
+                raise CatalogSeedError(
+                    "Product requires a boolean "
+                    f"{boolean_field}: {product['sku']}"
+                )
+
         if product["manufacturer_slug"] not in manufacturer_slugs:
             raise CatalogSeedError(
                 "Product references unknown manufacturer: "
@@ -214,6 +225,7 @@ def reconcile_product_metadata(
     description: str,
     product_family: str,
     system_type: str | None,
+    assisted_sale_required: bool,
     public_path: str,
 ) -> bool:
     """Update seed-owned mutable catalog metadata on an existing product."""
@@ -225,6 +237,7 @@ def reconcile_product_metadata(
         "description": description,
         "product_family": product_family,
         "system_type": system_type,
+        "assisted_sale_required": assisted_sale_required,
         "public_path": public_path,
     }
 
@@ -404,6 +417,7 @@ def apply_catalog_manifest(
                 description=row["description"],
                 product_family=row["product_family"],
                 system_type=row.get("system_type"),
+                assisted_sale_required=row["assisted_sale_required"],
                 online_sale_approved=row["online_sale_approved"],
                 active=row["active"],
                 public_path=row["public_path"],
@@ -428,6 +442,7 @@ def apply_catalog_manifest(
                 description=row["description"],
                 product_family=row["product_family"],
                 system_type=row.get("system_type"),
+                assisted_sale_required=row["assisted_sale_required"],
                 public_path=row["public_path"],
             ):
                 result.products_updated += 1

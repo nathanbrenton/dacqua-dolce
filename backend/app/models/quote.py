@@ -243,6 +243,10 @@ class FormalQuote(Base):
         DateTime(timezone=True),
     )
 
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
     approved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
     )

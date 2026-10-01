@@ -183,6 +183,7 @@ class CustomerFormalQuoteRead(BaseModel):
     policy_snapshots: list[FormalQuotePolicySnapshotRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
+    expires_at: str | None
     approved_at: str | None
     created_at: str
     items: list[CustomerFormalQuoteItemRead] = Field(default_factory=list)

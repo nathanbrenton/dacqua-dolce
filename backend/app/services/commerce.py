@@ -247,6 +247,11 @@ def add_item_to_cart(
             "System not found."
         )
 
+    if product.assisted_sale_required:
+        raise CommerceError(
+            "This system requires employee review before purchase."
+        )
+
     if not product.online_sale_approved:
         raise CommerceError(
             "This system is not approved for online sale."

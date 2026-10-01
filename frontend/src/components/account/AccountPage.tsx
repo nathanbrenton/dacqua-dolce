@@ -103,6 +103,11 @@ function money(
   ).format(amountMinor / 100);
 }
 
+function formalQuoteExpired(quote: CustomerFormalQuote): boolean {
+  return quote.expires_at !== null
+    && new Date(quote.expires_at).getTime() <= Date.now();
+}
+
 function commercialAddressLines(address: CommercialAddress): string[] {
   return [
     address.recipient_name,
@@ -1640,6 +1645,11 @@ export function AccountPage({
                     <div>
                       <strong>Quote revision {quote.revision_number}</strong>
                       <p>{quote.status.replaceAll("_", " ")}</p>
+                      {quote.expires_at !== null ? (
+                        <small>
+                          Valid through {new Date(quote.expires_at).toLocaleDateString()}
+                        </small>
+                      ) : null}
                     </div>
                     <strong>{money(quote.total_amount_minor, quote.currency)}</strong>
                   </header>
@@ -1728,14 +1738,20 @@ export function AccountPage({
                           I reviewed the policy versions attached to this quote.
                         </span>
                       </label>
+                    {formalQuoteExpired(quote) ? (
+                      <p className="account-muted">
+                        This quote has expired. Contact D’Acqua Dolce for a current revision.
+                      </p>
+                    ) : null}
                     <button
                       type="button"
                       className="account-action"
+                      disabled={formalQuoteExpired(quote)}
                       onClick={() => {
                         void approveFormalQuote(quote);
                       }}
                     >
-                      Approve This Quote
+                      {formalQuoteExpired(quote) ? "Quote Expired" : "Approve This Quote"}
                     </button>
                     </>
                   ) : quote.status === "approved" ? (

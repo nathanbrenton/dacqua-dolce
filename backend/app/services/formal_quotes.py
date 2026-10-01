@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -26,6 +26,8 @@ from app.models.quote import (
 from app.services.audit import record_audit_event
 from app.services.policies import snapshot_quote_policies
 from app.services.pricing import select_effective_price
+
+FORMAL_QUOTE_VALIDITY_DAYS = 30
 
 
 @dataclass(frozen=True)
@@ -433,6 +435,9 @@ def present_formal_quote(
     formal_quote.customer_user_id = customer.id
     formal_quote.status = FormalQuoteStatus.presented
     formal_quote.presented_at = now
+    formal_quote.expires_at = now + timedelta(
+        days=FORMAL_QUOTE_VALIDITY_DAYS
+    )
     request.user_id = customer.id
     request.status = QuoteRequestStatus.quoted
 
@@ -445,6 +450,7 @@ def present_formal_quote(
         metadata={
             "quote_request_id": str(request.id),
             "revision_number": formal_quote.revision_number,
+            "expires_at": formal_quote.expires_at.isoformat(),
             "policy_versions": {
                 snapshot.kind.value: snapshot.version_snapshot
                 for snapshot in policy_snapshots
@@ -472,6 +478,17 @@ def approve_formal_quote(
             detail="Only a currently presented quote can be approved.",
         )
 
+    now = datetime.now(UTC)
+    expires_at = getattr(formal_quote, "expires_at", None)
+    if expires_at is not None and expires_at <= now:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "This formal quote has expired. "
+                "Request a current quote before approval."
+            ),
+        )
+
     expected_policy_ids = {
         snapshot.id
         for snapshot in formal_quote.policy_snapshots
@@ -496,7 +513,6 @@ def approve_formal_quote(
     ):
         draft.status = FormalQuoteStatus.superseded
 
-    now = datetime.now(UTC)
     formal_quote.status = FormalQuoteStatus.approved
     formal_quote.approved_at = now
     formal_quote.approved_by_user_id = customer_user.id

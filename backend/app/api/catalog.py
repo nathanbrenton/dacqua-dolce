@@ -150,7 +150,10 @@ def availability_read(
     decision = resolve_public_availability(
         inventory,
         reserved_quantity=reserved_quantity,
-        online_sale_approved=product.online_sale_approved,
+        online_sale_approved=(
+            product.online_sale_approved
+            and not product.assisted_sale_required
+        ),
     )
 
     return CatalogAvailabilityRead(
@@ -175,6 +178,18 @@ def pricing_read(
         price,
         authenticated=authenticated,
     )
+
+    if product.assisted_sale_required:
+        return CatalogPricingRead(
+            mode=PricingPolicyMode.NO_ONLINE_SALE.value,
+            amount_minor=None,
+            currency=decision.currency,
+            display_price=False,
+            can_add_to_cart=False,
+            can_checkout_online=False,
+            action="REQUEST_QUOTE",
+            action_label="Request a Quote",
+        )
 
     if not product.online_sale_approved:
         return CatalogPricingRead(

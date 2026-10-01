@@ -117,6 +117,7 @@ export type CustomerFormalQuote = {
   policy_snapshots: CustomerFormalQuotePolicySnapshot[];
   customer_note: string | null;
   presented_at: string | null;
+  expires_at: string | null;
   approved_at: string | null;
   created_at: string;
   items: CustomerFormalQuoteItem[];

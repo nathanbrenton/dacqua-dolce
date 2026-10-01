@@ -308,6 +308,7 @@ class OperationsFormalQuoteRead(BaseModel):
     policy_snapshots: list[FormalQuotePolicySnapshotRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
+    expires_at: str | None
     approved_at: str | None
     created_at: str
     items: list[OperationsFormalQuoteItemRead] = Field(default_factory=list)
@@ -590,6 +591,7 @@ class OperationsProductRead(BaseModel):
         default_factory=list,
     )
     active: bool
+    assisted_sale_required: bool
     online_sale_approved: bool
     pricing: OperationsPricingRead
     inventory: OperationsInventoryRead

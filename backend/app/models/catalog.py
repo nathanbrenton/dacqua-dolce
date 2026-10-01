@@ -210,6 +210,11 @@ class Product(Base):
     )
     product_family: Mapped[str | None] = mapped_column(String(120))
     system_type: Mapped[str | None] = mapped_column(String(160))
+    assisted_sale_required: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
     online_sale_approved: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
