@@ -37,6 +37,7 @@ import {
   updateQuoteNotes,
   updateQuoteStatus,
   type OperationsAuditEvent,
+  type OperationsAuditEventQuery,
   type OperationsCommunication,
   type OperationsCustomer,
   type OperationsOrder,
@@ -263,6 +264,9 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "customer.equipment_updated": "Installed equipment updated",
   "account.registered": "Account registered",
   "authentication.failed": "Authentication failed",
+  "authentication.email_verification_issued": "Email verification issued",
+  "authentication.email_verification_completed": "Email verification completed",
+  "authentication.email_verification.failed": "Email verification failed",
   "authentication.logout": "Signed out",
   "authentication.session_revoked": "Session revoked",
   "cart.item_added": "Cart item added",
@@ -304,6 +308,7 @@ const AUDIT_ENTITY_LABELS: Record<string, string> = {
   maintenance_reminder: "Maintenance reminder",
   user: "User account",
   user_session: "User session",
+  email_verification: "Email verification",
 };
 
 function auditActionLabel(action: string): string {
@@ -312,6 +317,107 @@ function auditActionLabel(action: string): string {
 
 function auditEntityLabel(entityType: string): string {
   return AUDIT_ENTITY_LABELS[entityType] ?? entityType.replaceAll("_", " ");
+}
+
+type AuditFilterDraft = {
+  search: string;
+  fromLocal: string;
+  toLocal: string;
+  actor: string;
+  outcome: "all" | "succeeded" | "failed";
+  action: string;
+  entityType: string;
+  entityId: string;
+  environment: string;
+  requestId: string;
+  sort: "newest" | "oldest";
+};
+
+const EMPTY_AUDIT_FILTERS: AuditFilterDraft = {
+  search: "",
+  fromLocal: "",
+  toLocal: "",
+  actor: "",
+  outcome: "all",
+  action: "",
+  entityType: "",
+  entityId: "",
+  environment: "",
+  requestId: "",
+  sort: "newest",
+};
+
+function localDateTimeValue(date: Date): string {
+  const local = new Date(
+    date.getTime() - date.getTimezoneOffset() * 60_000,
+  );
+
+  return local.toISOString().slice(0, 16);
+}
+
+function auditQueryFromDraft(
+  draft: AuditFilterDraft,
+): OperationsAuditEventQuery {
+  const from = draft.fromLocal
+    ? new Date(draft.fromLocal).toISOString()
+    : undefined;
+  const to = draft.toLocal
+    ? new Date(draft.toLocal).toISOString()
+    : undefined;
+
+  return {
+    from,
+    to,
+    actor: draft.actor.trim() || undefined,
+    outcome: draft.outcome === "all"
+      ? undefined
+      : draft.outcome,
+    action: draft.action.trim() || undefined,
+    entity_type: draft.entityType.trim() || undefined,
+    entity_id: draft.entityId.trim() || undefined,
+    environment: draft.environment || undefined,
+    request_id: draft.requestId.trim() || undefined,
+    search: draft.search.trim() || undefined,
+    sort: draft.sort,
+    page_size: 50,
+  };
+}
+
+function csvCell(value: string | null): string {
+  const text = value ?? "";
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+function CopyAuditValueButton({
+  value,
+  label = "Copy",
+}: {
+  value: string;
+  label?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyValue(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="operations-audit-copy"
+      onClick={() => {
+        void copyValue();
+      }}
+    >
+      {copied ? "Copied" : label}
+    </button>
+  );
 }
 
 function roleLabel(role: string): string {
@@ -490,12 +596,19 @@ export function OperationsPage({
     useState<CustomerProfile | null>(null);
   const [auditEvents, setAuditEvents] =
     useState<OperationsAuditEvent[]>([]);
-  const [auditSearch, setAuditSearch] =
-    useState("");
-  const [auditActionFilter, setAuditActionFilter] =
-    useState("all");
-  const [auditEntityFilter, setAuditEntityFilter] =
-    useState("all");
+  const [auditDraft, setAuditDraft] =
+    useState<AuditFilterDraft>(EMPTY_AUDIT_FILTERS);
+  const [auditAppliedQuery, setAuditAppliedQuery] =
+    useState<OperationsAuditEventQuery>({
+      sort: "newest",
+      page_size: 50,
+    });
+  const [auditPage, setAuditPage] =
+    useState(1);
+  const [auditHasMore, setAuditHasMore] =
+    useState(false);
+  const [auditTimePreset, setAuditTimePreset] =
+    useState("custom");
   const [auditLoaded, setAuditLoaded] =
     useState(false);
   const [auditLoading, setAuditLoading] =
@@ -706,12 +819,11 @@ export function OperationsPage({
     }
   }
 
-  async function loadAuditEvents(): Promise<void> {
-    if (
-      !auditLogAllowed
-      || auditLoaded
-      || auditLoading
-    ) {
+  async function loadAuditEvents(
+    query: OperationsAuditEventQuery = auditAppliedQuery,
+    page = 1,
+  ): Promise<void> {
+    if (!auditLogAllowed || auditLoading) {
       return;
     }
 
@@ -720,17 +832,177 @@ export function OperationsPage({
 
     try {
       const result =
-        await getOperationsAuditEvents();
+        await getOperationsAuditEvents({
+          ...query,
+          page,
+        });
 
-      setAuditEvents(result);
+      setAuditEvents(result.items);
+      setAuditPage(result.page);
+      setAuditHasMore(result.has_more);
       setAuditLoaded(true);
-    } catch {
+    } catch (caught) {
       setAuditError(
-        "Unable to load audit events.",
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load audit events.",
       );
     } finally {
       setAuditLoading(false);
     }
+  }
+
+  function applyAuditFilters(
+    nextDraft: AuditFilterDraft = auditDraft,
+  ): void {
+    const query = auditQueryFromDraft(nextDraft);
+    setAuditAppliedQuery(query);
+    void loadAuditEvents(query, 1);
+  }
+
+  function resetAuditFilters(): void {
+    const nextDraft = { ...EMPTY_AUDIT_FILTERS };
+    const query = auditQueryFromDraft(nextDraft);
+    setAuditDraft(nextDraft);
+    setAuditTimePreset("custom");
+    setAuditAppliedQuery(query);
+    void loadAuditEvents(query, 1);
+  }
+
+  function setAuditPreset(
+    preset: "15m" | "1h" | "24h" | "today" | "yesterday" | "custom",
+  ): void {
+    setAuditTimePreset(preset);
+
+    if (preset === "custom") {
+      return;
+    }
+
+    const now = new Date();
+    let from = new Date(now);
+    let to = new Date(now);
+
+    if (preset === "15m") {
+      from = new Date(now.getTime() - 15 * 60_000);
+    } else if (preset === "1h") {
+      from = new Date(now.getTime() - 60 * 60_000);
+    } else if (preset === "24h") {
+      from = new Date(now.getTime() - 24 * 60 * 60_000);
+    } else if (preset === "today") {
+      from = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+    } else {
+      from = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() - 1,
+      );
+      to = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
+    }
+
+    const nextDraft = {
+      ...auditDraft,
+      fromLocal: localDateTimeValue(from),
+      toLocal: localDateTimeValue(to),
+    };
+
+    setAuditDraft(nextDraft);
+    applyAuditFilters(nextDraft);
+  }
+
+  function showAuditEventsAround(
+    auditEvent: OperationsAuditEvent,
+  ): void {
+    const center = new Date(auditEvent.created_at);
+    const nextDraft = {
+      ...auditDraft,
+      fromLocal: localDateTimeValue(
+        new Date(center.getTime() - 5 * 60_000),
+      ),
+      toLocal: localDateTimeValue(
+        new Date(center.getTime() + 5 * 60_000),
+      ),
+    };
+    const query = auditQueryFromDraft(nextDraft);
+
+    setAuditDraft(nextDraft);
+    setAuditTimePreset("custom");
+    setAuditAppliedQuery(query);
+    void loadAuditEvents(query, 1);
+  }
+
+  function exportAuditPage(
+    format: "json" | "csv",
+  ): void {
+    const safeRows = auditEvents.map((auditEvent) => ({
+      timestamp: auditEvent.created_at,
+      outcome: auditEvent.outcome,
+      action: auditEvent.action,
+      entity_type: auditEvent.entity_type,
+      entity_id: auditEvent.entity_id,
+      actor_user_id: auditEvent.actor_user_id,
+      actor_email: auditEvent.actor_email,
+      environment: auditEvent.environment,
+      request_id: auditEvent.request_id,
+      error_category: auditEvent.error_category,
+      endpoint: auditEvent.endpoint,
+      error_code: auditEvent.error_code,
+      audit_event_id: auditEvent.id,
+    }));
+
+    const content = format === "json"
+      ? JSON.stringify(safeRows, null, 2)
+      : [
+          [
+            "timestamp",
+            "outcome",
+            "action",
+            "entity_type",
+            "entity_id",
+            "actor_user_id",
+            "actor_email",
+            "environment",
+            "request_id",
+            "error_category",
+            "endpoint",
+            "error_code",
+            "audit_event_id",
+          ].map(csvCell).join(","),
+          ...safeRows.map((row) => [
+            row.timestamp,
+            row.outcome,
+            row.action,
+            row.entity_type,
+            row.entity_id,
+            row.actor_user_id,
+            row.actor_email,
+            row.environment,
+            row.request_id,
+            row.error_category,
+            row.endpoint,
+            row.error_code,
+            row.audit_event_id,
+          ].map(csvCell).join(",")),
+        ].join("\n");
+
+    const blob = new Blob([content], {
+      type: format === "json"
+        ? "application/json"
+        : "text/csv",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `dacqua-audit-page-${auditPage}.${format}`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   const filteredAdministrationAccounts = useMemo(() => {
@@ -835,53 +1107,19 @@ export function OperationsPage({
   ]);
 
   const auditActionOptions = useMemo(
-    () => Array.from(new Set(auditEvents.map((event) => event.action))).sort(),
+    () => Array.from(
+      new Set(auditEvents.map((event) => event.action)),
+    ).sort(),
     [auditEvents],
   );
 
   const auditEntityOptions = useMemo(
-    () => Array.from(new Set(auditEvents.map((event) => event.entity_type))).sort(),
+    () => Array.from(
+      new Set(auditEvents.map((event) => event.entity_type)),
+    ).sort(),
     [auditEvents],
   );
 
-  const filteredAuditEvents = useMemo(() => {
-    const query = auditSearch.trim().toLowerCase();
-
-    return auditEvents.filter((event) => {
-      if (auditActionFilter !== "all" && event.action !== auditActionFilter) {
-        return false;
-      }
-
-      if (auditEntityFilter !== "all" && event.entity_type !== auditEntityFilter) {
-        return false;
-      }
-
-      if (query.length === 0) {
-        return true;
-      }
-
-      const searchable = [
-        event.id,
-        event.actor_user_id ?? "",
-        event.actor_email ?? "",
-        event.action,
-        auditActionLabel(event.action),
-        event.entity_type,
-        auditEntityLabel(event.entity_type),
-        event.entity_id ?? "",
-        event.environment,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return searchable.includes(query);
-    });
-  }, [
-    auditEvents,
-    auditSearch,
-    auditActionFilter,
-    auditEntityFilter,
-  ]);
 
 
   // Keep every Hook above the authorization return below. On a hard
@@ -3628,126 +3866,399 @@ export function OperationsPage({
                 </p>
               </div>
 
-              {auditLoading ? (
+              {auditLoading && !auditLoaded ? (
                 <p className="account-muted">
                   Loading audit events…
                 </p>
-              ) : auditError !== null ? (
-                <p className="account-muted">
-                  {auditError}
-                </p>
               ) : (
                 <>
-                  <div className="operations-audit-controls">
+                  {auditError !== null ? (
+                    <p className="account-muted">
+                      {auditError}
+                    </p>
+                  ) : null}
+
+                  <div className="operations-audit-presets" aria-label="Audit time presets">
+                    {[
+                      ["15m", "Last 15 min"],
+                      ["1h", "Last hour"],
+                      ["24h", "Last 24 hours"],
+                      ["today", "Today"],
+                      ["yesterday", "Yesterday"],
+                      ["custom", "Custom"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={
+                          auditTimePreset === value
+                            ? "is-active"
+                            : ""
+                        }
+                        onClick={() => setAuditPreset(
+                          value as "15m" | "1h" | "24h" | "today" | "yesterday" | "custom",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="operations-governance-context">
+                    Time filters use {Intl.DateTimeFormat().resolvedOptions().timeZone || "your local timezone"} and are sent to the API as UTC. This screen paginates stored audit records; it does not delete or expire them.
+                  </p>
+
+                  <div className="operations-audit-controls operations-audit-controls-expanded">
                     <label className="operations-field operations-customer-search">
-                      <span>Search audit events</span>
+                      <span>Search</span>
                       <input
                         type="search"
-                        placeholder="Action, entity, actor, environment…"
-                        value={auditSearch}
-                        onChange={(event) => setAuditSearch(event.target.value)}
+                        placeholder="Action code, entity, actor, request ID…"
+                        value={auditDraft.search}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          search: event.target.value,
+                        })}
                       />
                     </label>
 
                     <label className="operations-field">
-                      <span>Action</span>
+                      <span>From</span>
+                      <input
+                        type="datetime-local"
+                        value={auditDraft.fromLocal}
+                        onChange={(event) => {
+                          setAuditTimePreset("custom");
+                          setAuditDraft({
+                            ...auditDraft,
+                            fromLocal: event.target.value,
+                          });
+                        }}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>To</span>
+                      <input
+                        type="datetime-local"
+                        value={auditDraft.toLocal}
+                        onChange={(event) => {
+                          setAuditTimePreset("custom");
+                          setAuditDraft({
+                            ...auditDraft,
+                            toLocal: event.target.value,
+                          });
+                        }}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Outcome</span>
                       <select
-                        value={auditActionFilter}
-                        onChange={(event) => setAuditActionFilter(event.target.value)}
+                        value={auditDraft.outcome}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          outcome: event.target.value as AuditFilterDraft["outcome"],
+                        })}
                       >
-                        <option value="all">All actions</option>
+                        <option value="all">All outcomes</option>
+                        <option value="succeeded">Succeeded</option>
+                        <option value="failed">Failed</option>
+                      </select>
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Action</span>
+                      <input
+                        list="audit-action-options"
+                        placeholder="Exact action code"
+                        value={auditDraft.action}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          action: event.target.value,
+                        })}
+                      />
+                      <datalist id="audit-action-options">
                         {auditActionOptions.map((action) => (
                           <option key={action} value={action}>
                             {auditActionLabel(action)}
                           </option>
                         ))}
-                      </select>
+                      </datalist>
                     </label>
 
                     <label className="operations-field">
-                      <span>Entity</span>
-                      <select
-                        value={auditEntityFilter}
-                        onChange={(event) => setAuditEntityFilter(event.target.value)}
-                      >
-                        <option value="all">All entities</option>
+                      <span>Entity type</span>
+                      <input
+                        list="audit-entity-options"
+                        placeholder="Exact entity type"
+                        value={auditDraft.entityType}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          entityType: event.target.value,
+                        })}
+                      />
+                      <datalist id="audit-entity-options">
                         {auditEntityOptions.map((entityType) => (
                           <option key={entityType} value={entityType}>
                             {auditEntityLabel(entityType)}
                           </option>
                         ))}
+                      </datalist>
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Entity ID</span>
+                      <input
+                        type="search"
+                        placeholder="Full or partial ID"
+                        value={auditDraft.entityId}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          entityId: event.target.value,
+                        })}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Actor</span>
+                      <input
+                        type="search"
+                        placeholder="Email or user ID"
+                        value={auditDraft.actor}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          actor: event.target.value,
+                        })}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Environment</span>
+                      <select
+                        value={auditDraft.environment}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          environment: event.target.value,
+                        })}
+                      >
+                        <option value="">All environments</option>
+                        <option value="production">Production</option>
+                        <option value="development">Development</option>
+                        <option value="test">Test</option>
+                      </select>
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Request ID</span>
+                      <input
+                        type="search"
+                        placeholder="Full or partial request ID"
+                        value={auditDraft.requestId}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          requestId: event.target.value,
+                        })}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Sort</span>
+                      <select
+                        value={auditDraft.sort}
+                        onChange={(event) => setAuditDraft({
+                          ...auditDraft,
+                          sort: event.target.value as AuditFilterDraft["sort"],
+                        })}
+                      >
+                        <option value="newest">Newest first</option>
+                        <option value="oldest">Oldest first</option>
                       </select>
                     </label>
                   </div>
 
+                  <div className="operations-audit-toolbar">
+                    <div>
+                      <button
+                        type="button"
+                        className="button button-primary"
+                        disabled={auditLoading}
+                        onClick={() => applyAuditFilters()}
+                      >
+                        {auditLoading ? "Loading…" : "Apply filters"}
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        disabled={auditLoading}
+                        onClick={resetAuditFilters}
+                      >
+                        Reset
+                      </button>
+                    </div>
+
+                    <div>
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        disabled={auditEvents.length === 0}
+                        onClick={() => exportAuditPage("csv")}
+                      >
+                        Export page CSV
+                      </button>
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        disabled={auditEvents.length === 0}
+                        onClick={() => exportAuditPage("json")}
+                      >
+                        Export page JSON
+                      </button>
+                    </div>
+                  </div>
+
                   <p className="operations-governance-context">
-                    Showing {filteredAuditEvents.length} of {auditEvents.length} retained recent events.
+                    Page {auditPage} · up to 50 safe audit records. Export contains only the fields visible to this privileged Audit Log API; raw metadata, IP addresses, and user-agent details remain excluded.
                   </p>
 
                   {auditEvents.length === 0 ? (
                     <p className="account-muted">
-                      No audit events recorded.
-                    </p>
-                  ) : filteredAuditEvents.length === 0 ? (
-                    <p className="account-muted">
-                      No audit events match this search.
+                      No audit events match these filters.
                     </p>
                   ) : (
-                    <div className="operations-customer-list">
-                      {filteredAuditEvents.map((event) => (
-                        <article
-                          key={event.id}
-                          className="operations-customer"
-                        >
-                          <header>
-                            <div>
-                              <p className="product-meta">
-                                {event.environment}
-                                {" · "}
-                                {auditEntityLabel(event.entity_type)}
-                              </p>
-
-                              <h3>{auditActionLabel(event.action)}</h3>
-
-                              <small>
-                                {new Date(
-                                  event.created_at,
-                                ).toLocaleString()}
-                              </small>
-                            </div>
-                          </header>
-
-                          <div className="operations-address-list">
-                            <div className="operations-address">
-                              <strong>Entity</strong>
-                              <address>
-                                {auditEntityLabel(event.entity_type)}
-                                <br />
-                                {event.entity_id
-                                  ?? "No entity identifier"}
-                              </address>
-                            </div>
-
-                            <div className="operations-address">
-                              <strong>Actor</strong>
-                              <address>
-                                {event.actor_email
-                                  ?? (event.actor_user_id
-                                    ? "Employee account"
-                                    : "System / unauthenticated")}
-                              </address>
-                              <small>
-                                {event.actor_user_id
-                                  ? `User ${event.actor_user_id} · `
-                                  : ""}
-                                Audit event {event.id}
-                              </small>
-                            </div>
-                          </div>
-                        </article>
-                      ))}
+                    <div className="operations-audit-table-wrap">
+                      <table className="operations-audit-table">
+                        <thead>
+                          <tr>
+                            <th>Timestamp</th>
+                            <th>Outcome</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>Actor</th>
+                            <th>Request ID</th>
+                            <th>Details</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {auditEvents.map((auditEvent) => (
+                            <tr key={auditEvent.id}>
+                              <td>
+                                <span>{new Date(auditEvent.created_at).toLocaleString()}</span>
+                                <CopyAuditValueButton
+                                  value={auditEvent.created_at}
+                                  label="Copy time"
+                                />
+                              </td>
+                              <td>
+                                <span className={`operations-audit-outcome is-${auditEvent.outcome}`}>
+                                  {auditEvent.outcome === "failed" ? "Failed" : "Succeeded"}
+                                </span>
+                              </td>
+                              <td>
+                                <strong>{auditActionLabel(auditEvent.action)}</strong>
+                                <code>{auditEvent.action}</code>
+                                <CopyAuditValueButton
+                                  value={auditEvent.action}
+                                  label="Copy action"
+                                />
+                              </td>
+                              <td>
+                                <span>{auditEntityLabel(auditEvent.entity_type)}</span>
+                                <code>{auditEvent.entity_id ?? "—"}</code>
+                                {auditEvent.entity_id ? (
+                                  <CopyAuditValueButton
+                                    value={auditEvent.entity_id}
+                                    label="Copy ID"
+                                  />
+                                ) : null}
+                              </td>
+                              <td>
+                                <span>
+                                  {auditEvent.actor_email
+                                    ?? (auditEvent.actor_user_id
+                                      ? "Employee account"
+                                      : "System / unauthenticated")}
+                                </span>
+                                {auditEvent.actor_user_id ? (
+                                  <code>{auditEvent.actor_user_id}</code>
+                                ) : null}
+                              </td>
+                              <td>
+                                <code>{auditEvent.request_id ?? "—"}</code>
+                                {auditEvent.request_id ? (
+                                  <CopyAuditValueButton
+                                    value={auditEvent.request_id}
+                                    label="Copy request"
+                                  />
+                                ) : null}
+                              </td>
+                              <td>
+                                <details className="operations-audit-row-details">
+                                  <summary>View</summary>
+                                  <div>
+                                    <p><strong>Environment:</strong> {auditEvent.environment}</p>
+                                    <p><strong>Audit event:</strong> <code>{auditEvent.id}</code></p>
+                                    {auditEvent.endpoint ? (
+                                      <p><strong>Endpoint:</strong> <code>{auditEvent.endpoint}</code></p>
+                                    ) : null}
+                                    {auditEvent.error_category ? (
+                                      <p><strong>Error category:</strong> {auditEvent.error_category}</p>
+                                    ) : null}
+                                    {auditEvent.error_code ? (
+                                      <p><strong>Error code:</strong> <code>{auditEvent.error_code}</code></p>
+                                    ) : null}
+                                    <div className="operations-audit-detail-actions">
+                                      <CopyAuditValueButton
+                                        value={auditEvent.id}
+                                        label="Copy audit ID"
+                                      />
+                                      <button
+                                        type="button"
+                                        className="operations-audit-copy"
+                                        onClick={() => showAuditEventsAround(auditEvent)}
+                                      >
+                                        Events ±5 min
+                                      </button>
+                                    </div>
+                                  </div>
+                                </details>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
+
+                  <div className="operations-audit-pagination">
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      disabled={auditLoading || auditPage <= 1}
+                      onClick={() => {
+                        void loadAuditEvents(
+                          auditAppliedQuery,
+                          auditPage - 1,
+                        );
+                      }}
+                    >
+                      Previous
+                    </button>
+                    <span>Page {auditPage}</span>
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      disabled={auditLoading || !auditHasMore}
+                      onClick={() => {
+                        void loadAuditEvents(
+                          auditAppliedQuery,
+                          auditPage + 1,
+                        );
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </>
               )}
             </div>

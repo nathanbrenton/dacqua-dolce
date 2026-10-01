@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.privacy import sanitize_text, sanitize_value
+from app.core.request_context import get_request_id
 from app.models.audit import AuditEvent
 
 
@@ -18,6 +19,15 @@ def record_audit_event(
     ip_address: str | None = None,
     user_agent: str | None = None,
 ) -> AuditEvent:
+    safe_metadata = dict(metadata or {})
+    request_id = get_request_id()
+
+    if request_id is not None:
+        safe_metadata.setdefault(
+            "request_id",
+            request_id,
+        )
+
     event = AuditEvent(
         actor_user_id=actor_user_id,
         action=sanitize_text(
@@ -37,7 +47,7 @@ def record_audit_event(
             else None
         ),
         environment=get_settings().environment,
-        metadata_json=sanitize_value(metadata or {}),
+        metadata_json=sanitize_value(safe_metadata),
         ip_address=(
             sanitize_text(
                 ip_address,

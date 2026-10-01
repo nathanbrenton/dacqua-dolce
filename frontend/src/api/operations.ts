@@ -48,7 +48,35 @@ export type OperationsAuditEvent = {
   entity_type: string;
   entity_id: string | null;
   environment: string;
+  outcome: "succeeded" | "failed";
+  request_id: string | null;
+  error_category: string | null;
+  endpoint: string | null;
+  error_code: string | null;
   created_at: string;
+};
+
+export type OperationsAuditEventPage = {
+  items: OperationsAuditEvent[];
+  page: number;
+  page_size: number;
+  has_more: boolean;
+};
+
+export type OperationsAuditEventQuery = {
+  from?: string;
+  to?: string;
+  actor?: string;
+  outcome?: "succeeded" | "failed";
+  action?: string;
+  entity_type?: string;
+  entity_id?: string;
+  environment?: string;
+  request_id?: string;
+  search?: string;
+  sort?: "newest" | "oldest";
+  page?: number;
+  page_size?: number;
 };
 
 export type OperationsCommunication = {
@@ -444,11 +472,23 @@ export function getOperationsSalesInsights(): Promise<OperationsSalesInsights> {
   );
 }
 
-export function getOperationsAuditEvents(): Promise<
-  OperationsAuditEvent[]
-> {
+export function getOperationsAuditEvents(
+  query: OperationsAuditEventQuery = {},
+): Promise<OperationsAuditEventPage> {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === "") {
+      continue;
+    }
+
+    params.set(key, String(value));
+  }
+
+  const suffix = params.toString();
+
   return getJson(
-    "/api/operations/audit-events",
+    `/api/operations/audit-events${suffix ? `?${suffix}` : ""}`,
   );
 }
 

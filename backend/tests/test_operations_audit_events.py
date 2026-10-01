@@ -90,6 +90,11 @@ def test_audit_event_response_excludes_sensitive_context(
         environment="development",
         metadata_json={
             "private": "do-not-expose",
+            "request_id": "request-123",
+            "outcome": "failed",
+            "error_category": "runtime_error",
+            "endpoint": "/api/example",
+            "error_code": "safe_code",
         },
         ip_address="192.0.2.10",
         user_agent="Private user agent",
@@ -111,9 +116,12 @@ def test_audit_event_response_excludes_sensitive_context(
         ),  # type: ignore[arg-type]
     )
 
-    assert len(result) == 1
+    assert len(result.items) == 1
+    assert result.page == 1
+    assert result.page_size == 50
+    assert result.has_more is False
 
-    payload = result[0].model_dump()
+    payload = result.items[0].model_dump()
 
     assert payload == {
         "id": str(event_id),
@@ -123,6 +131,11 @@ def test_audit_event_response_excludes_sensitive_context(
         "entity_type": "quote_request",
         "entity_id": event.entity_id,
         "environment": "development",
+        "outcome": "failed",
+        "request_id": "request-123",
+        "error_category": "runtime_error",
+        "endpoint": "/api/example",
+        "error_code": "safe_code",
         "created_at": created_at.isoformat(),
     }
 
@@ -130,3 +143,68 @@ def test_audit_event_response_excludes_sensitive_context(
     assert "metadata" not in payload
     assert "ip_address" not in payload
     assert "user_agent" not in payload
+
+
+def test_audit_event_failed_action_defaults_to_failed_outcome() -> None:
+    event = SimpleNamespace(
+        id=uuid.uuid4(),
+        actor_user_id=None,
+        action="authentication.failed",
+        entity_type="user",
+        entity_id=None,
+        environment="test",
+        metadata_json={},
+        ip_address=None,
+        user_agent=None,
+        created_at=datetime.now(UTC),
+    )
+
+    payload = operations.operations_audit_event_read(
+        event=event,  # type: ignore[arg-type]
+    )
+
+    assert payload.outcome == "failed"
+    assert payload.request_id is None
+
+
+def test_audit_events_page_reports_more_rows(
+    monkeypatch: Any,
+) -> None:
+    created_at = datetime.now(UTC)
+    rows = []
+
+    for index in range(11):
+        rows.append(
+            (
+                SimpleNamespace(
+                    id=uuid.uuid4(),
+                    actor_user_id=None,
+                    action=f"test.action_{index}",
+                    entity_type="test_entity",
+                    entity_id=str(index),
+                    environment="test",
+                    metadata_json={},
+                    ip_address=None,
+                    user_agent=None,
+                    created_at=created_at,
+                ),
+                None,
+            )
+        )
+
+    database = AuditDatabase(rows)
+    monkeypatch.setattr(
+        operations,
+        "require_audit_log_read",
+        lambda db, user: None,
+    )
+
+    result = operations.list_audit_events(
+        database,  # type: ignore[arg-type]
+        SimpleNamespace(id=uuid.uuid4()),  # type: ignore[arg-type]
+        page_size=10,
+    )
+
+    assert len(result.items) == 10
+    assert result.has_more is True
+    assert result.page_size == 10

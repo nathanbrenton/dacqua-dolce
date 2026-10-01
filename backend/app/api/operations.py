@@ -1,8 +1,9 @@
 import uuid
 from datetime import UTC, datetime
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, status
-from sqlalchemy import func, select
+from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import String, cast, func, not_, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
@@ -49,6 +50,7 @@ from app.schemas.operations import (
     CustomerEquipmentUpdateRequest,
     FormalQuoteCreate,
     InventoryUpdateRequest,
+    OperationsAuditEventPageRead,
     OperationsAuditEventRead,
     OperationsCommunicationAttachmentRead,
     OperationsCommunicationMessageRead,
@@ -383,6 +385,37 @@ def operations_sales_insights(
     )
 
 
+def audit_metadata_text(
+    event: AuditEvent,
+    key: str,
+) -> str | None:
+    value = (event.metadata_json or {}).get(key)
+
+    if not isinstance(value, str):
+        return None
+
+    stripped = value.strip()
+    return stripped or None
+
+
+def audit_event_outcome(
+    event: AuditEvent,
+) -> str:
+    explicit = audit_metadata_text(
+        event,
+        "outcome",
+    )
+
+    if explicit in {"succeeded", "failed"}:
+        return explicit
+
+    return (
+        "failed"
+        if event.action.endswith(".failed")
+        else "succeeded"
+    )
+
+
 def operations_audit_event_read(
     *,
     event: AuditEvent,
@@ -400,43 +433,300 @@ def operations_audit_event_read(
         entity_type=event.entity_type,
         entity_id=event.entity_id,
         environment=event.environment,
+        outcome=audit_event_outcome(event),
+        request_id=audit_metadata_text(
+            event,
+            "request_id",
+        ),
+        error_category=audit_metadata_text(
+            event,
+            "error_category",
+        ),
+        endpoint=audit_metadata_text(
+            event,
+            "endpoint",
+        ),
+        error_code=audit_metadata_text(
+            event,
+            "error_code",
+        ),
         created_at=event.created_at.isoformat(),
     )
 
 
+def escaped_like(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+
+
+AuditOutcome = Literal["succeeded", "failed"]
+AuditSort = Literal["newest", "oldest"]
+
+
 @router.get(
     "/audit-events",
-    response_model=list[OperationsAuditEventRead],
+    response_model=OperationsAuditEventPageRead,
 )
 def list_audit_events(
     db: DatabaseSession,
     current_user: CurrentUser,
-) -> list[OperationsAuditEventRead]:
+    from_at: Annotated[
+        datetime | None,
+        Query(alias="from"),
+    ] = None,
+    to_at: Annotated[
+        datetime | None,
+        Query(alias="to"),
+    ] = None,
+    actor: Annotated[
+        str | None,
+        Query(max_length=160),
+    ] = None,
+    outcome: AuditOutcome | None = None,
+    action: Annotated[
+        str | None,
+        Query(max_length=120),
+    ] = None,
+    entity_type: Annotated[
+        str | None,
+        Query(max_length=120),
+    ] = None,
+    entity_id: Annotated[
+        str | None,
+        Query(max_length=120),
+    ] = None,
+    environment: Annotated[
+        str | None,
+        Query(max_length=40),
+    ] = None,
+    request_id: Annotated[
+        str | None,
+        Query(max_length=120),
+    ] = None,
+    search: Annotated[
+        str | None,
+        Query(max_length=200),
+    ] = None,
+    sort: AuditSort = "newest",
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[
+        int,
+        Query(ge=10, le=100),
+    ] = 50,
+) -> OperationsAuditEventPageRead:
     require_audit_log_read(
         db,
         user=current_user,
     )
 
-    rows = db.execute(
+    if (
+        from_at is not None
+        and to_at is not None
+        and from_at > to_at
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=(
+                "Audit-log From time must be before "
+                "the To time."
+            ),
+        )
+
+    statement = (
         select(AuditEvent, User.email)
         .outerjoin(
             User,
             User.id == AuditEvent.actor_user_id,
         )
-        .order_by(
-            AuditEvent.created_at.desc(),
-            AuditEvent.id,
+    )
+
+    if from_at is not None:
+        statement = statement.where(
+            AuditEvent.created_at >= from_at
         )
-        .limit(500)
+
+    if to_at is not None:
+        statement = statement.where(
+            AuditEvent.created_at <= to_at
+        )
+
+    if actor:
+        actor_pattern = (
+            "%" + escaped_like(actor.strip()) + "%"
+        )
+        statement = statement.where(
+            or_(
+                User.email.ilike(
+                    actor_pattern,
+                    escape="\\",
+                ),
+                cast(
+                    AuditEvent.actor_user_id,
+                    String,
+                ).ilike(
+                    actor_pattern,
+                    escape="\\",
+                ),
+            )
+        )
+
+    failed_expression = or_(
+        AuditEvent.action.like("%.failed"),
+        func.coalesce(
+            AuditEvent.metadata_json[
+                "outcome"
+            ].astext,
+            "",
+        )
+        == "failed",
+    )
+
+    if outcome == "failed":
+        statement = statement.where(
+            failed_expression
+        )
+    elif outcome == "succeeded":
+        statement = statement.where(
+            not_(failed_expression)
+        )
+
+    if action:
+        statement = statement.where(
+            AuditEvent.action == action.strip()
+        )
+
+    if entity_type:
+        statement = statement.where(
+            AuditEvent.entity_type
+            == entity_type.strip()
+        )
+
+    if entity_id:
+        entity_pattern = (
+            "%"
+            + escaped_like(entity_id.strip())
+            + "%"
+        )
+        statement = statement.where(
+            func.coalesce(
+                AuditEvent.entity_id,
+                "",
+            ).ilike(
+                entity_pattern,
+                escape="\\",
+            )
+        )
+
+    if environment:
+        statement = statement.where(
+            AuditEvent.environment
+            == environment.strip()
+        )
+
+    if request_id:
+        request_pattern = (
+            "%"
+            + escaped_like(request_id.strip())
+            + "%"
+        )
+        statement = statement.where(
+            func.coalesce(
+                AuditEvent.metadata_json[
+                    "request_id"
+                ].astext,
+                "",
+            ).ilike(
+                request_pattern,
+                escape="\\",
+            )
+        )
+
+    if search:
+        search_pattern = (
+            "%"
+            + escaped_like(search.strip())
+            + "%"
+        )
+        statement = statement.where(
+            or_(
+                cast(
+                    AuditEvent.id,
+                    String,
+                ).ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+                User.email.ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+                AuditEvent.action.ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+                AuditEvent.entity_type.ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+                func.coalesce(
+                    AuditEvent.entity_id,
+                    "",
+                ).ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+                AuditEvent.environment.ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+                func.coalesce(
+                    AuditEvent.metadata_json[
+                        "request_id"
+                    ].astext,
+                    "",
+                ).ilike(
+                    search_pattern,
+                    escape="\\",
+                ),
+            )
+        )
+
+    ordering = (
+        (
+            AuditEvent.created_at.asc(),
+            AuditEvent.id.asc(),
+        )
+        if sort == "oldest"
+        else (
+            AuditEvent.created_at.desc(),
+            AuditEvent.id.desc(),
+        )
+    )
+
+    rows = db.execute(
+        statement.order_by(*ordering)
+        .offset((page - 1) * page_size)
+        .limit(page_size + 1)
     ).all()
 
-    return [
-        operations_audit_event_read(
-            event=event,
-            actor_email=actor_email,
-        )
-        for event, actor_email in rows
-    ]
+    has_more = len(rows) > page_size
+    visible_rows = rows[:page_size]
+
+    return OperationsAuditEventPageRead(
+        items=[
+            operations_audit_event_read(
+                event=event,
+                actor_email=actor_email,
+            )
+            for event, actor_email in visible_rows
+        ],
+        page=page,
+        page_size=page_size,
+        has_more=has_more,
+    )
 
 
 def operations_communication_read(

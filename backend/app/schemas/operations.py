@@ -49,7 +49,19 @@ class OperationsAuditEventRead(BaseModel):
     entity_type: str
     entity_id: str | None
     environment: str
+    outcome: str
+    request_id: str | None
+    error_category: str | None
+    endpoint: str | None
+    error_code: str | None
     created_at: str
+
+
+class OperationsAuditEventPageRead(BaseModel):
+    items: list[OperationsAuditEventRead]
+    page: int
+    page_size: int
+    has_more: bool
 
 
 class OperationsCommunicationRead(BaseModel):

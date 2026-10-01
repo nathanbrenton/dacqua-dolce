@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
@@ -22,6 +23,7 @@ from app.core.email_config import (
     get_email_runtime_settings,
 )
 from app.core.privacy import privacy_safe_identifier
+from app.core.request_context import get_request_id
 from app.core.security import (
     clear_csrf_cookie,
     issue_csrf_cookie,
@@ -80,6 +82,8 @@ from app.services.sessions import (
     generate_session_token,
     hash_session_token,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/auth",
@@ -615,25 +619,85 @@ def verify_email_address(
         ),
     )
 
-    completed = complete_email_verification(
-        db,
-        raw_token=payload.token,
-        request_ip_address=(
-            request_ip(request)
-        ),
-        request_user_agent=(
-            bounded_user_agent(
-                request,
-                settings,
+    try:
+        completed = complete_email_verification(
+            db,
+            raw_token=payload.token,
+            request_ip_address=(
+                request_ip(request)
+            ),
+            request_user_agent=(
+                bounded_user_agent(
+                    request,
+                    settings,
+                )
+            ),
+            settings=(
+                get_email_runtime_settings()
+            ),
+        )
+    except Exception:
+        db.rollback()
+
+        try:
+            record_audit_event(
+                db,
+                action=(
+                    "authentication."
+                    "email_verification.failed"
+                ),
+                entity_type="email_verification",
+                metadata={
+                    "outcome": "failed",
+                    "error_category": "runtime_error",
+                    "endpoint": (
+                        "/api/auth/"
+                        "email-verification/complete"
+                    ),
+                    "error_code": (
+                        "verification_completion_exception"
+                    ),
+                },
             )
-        ),
-        settings=(
-            get_email_runtime_settings()
-        ),
-    )
+            db.commit()
+        except Exception:
+            db.rollback()
+            logger.exception(
+                "Unable to persist email-verification "
+                "failure audit event request_id=%s",
+                get_request_id(),
+            )
+
+        logger.exception(
+            "Email verification completion failed "
+            "request_id=%s",
+            get_request_id(),
+        )
+        raise
 
     if not completed:
         db.rollback()
+
+        record_audit_event(
+            db,
+            action=(
+                "authentication."
+                "email_verification.failed"
+            ),
+            entity_type="email_verification",
+            metadata={
+                "outcome": "failed",
+                "error_category": "invalid_or_expired",
+                "endpoint": (
+                    "/api/auth/"
+                    "email-verification/complete"
+                ),
+                "error_code": (
+                    "verification_link_invalid_or_expired"
+                ),
+            },
+        )
+        db.commit()
 
         raise HTTPException(
             status_code=(

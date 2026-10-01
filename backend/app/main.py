@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+from collections.abc import Awaitable, Callable
+from uuid import uuid4
+
+from fastapi import FastAPI, Request, Response
 
 from app.api.account import router as account_router
 from app.api.administration import router as administration_router
@@ -18,7 +21,25 @@ from app.api.policies import (
 from app.api.quotes import router as quotes_router
 from app.api.webhooks import router as webhooks_router
 from app.core.config import get_settings
+from app.core.request_context import reset_request_id, set_request_id
 from app.core.security import CSRFMiddleware, SecurityHeadersMiddleware
+
+
+async def request_id_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    request_id = uuid4().hex
+    request.state.request_id = request_id
+    token = set_request_id(request_id)
+
+    try:
+        response = await call_next(request)
+    finally:
+        reset_request_id(token)
+
+    response.headers["X-Request-ID"] = request_id
+    return response
 
 
 def create_app(
@@ -48,6 +69,8 @@ def create_app(
             else None
         ),
     )
+
+    application.middleware("http")(request_id_middleware)
 
     application.add_middleware(
         CSRFMiddleware,
