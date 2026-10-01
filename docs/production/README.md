@@ -2,7 +2,7 @@
 
 This directory is the authoritative documentation namespace for the D'Acqua Dolce production platform.
 
-**Production application state represented:** PT18 identity/database least-privilege alignment. Email/DNS/vendor routing state is validated through 2026-09-30. Later PT19–PT24.2 application work remains local-only and is not represented as deployed production.
+**Production application state represented:** PT18 identity/database least-privilege alignment. Email/DNS/vendor routing and direct observability-mail transport are validated through 2026-10-01. Later PT19–PT24.2 application work remains local-only and is not represented as deployed production.
 
 Production releases are timestamped immutable artifacts created by the standard deployment workflow. The exact source revision for a running release is recorded by release metadata/deployment output; do not treat a historical commit hash in prose as a configuration constant.
 
@@ -12,7 +12,7 @@ Production releases are timestamped immutable artifacts created by the standard 
 - `REBUILD_RUNBOOK.md` — ordered rebuild workflow for recreating the production host from a fresh Debian 13 Vultr instance and the application repository.
 - `OPERATIONS_REFERENCE.md` — day-to-day service, health, log, backup, account, email, deployment, and validation reference.
 - `DEPLOYMENT_AND_ROLLBACK.md` — authoritative application release, catalog reconciliation, activation, retention, migration-compatibility, validation, and rollback workflow.
-- `COMMUNICATIONS_AND_POSTMARK.md` — commissioned Cloudflare split-routing + Proton human/business mail + Postmark application-mail architecture, PostgreSQL communications archive, authentication records, rebuild sequence, and production validation.
+- `COMMUNICATIONS_AND_POSTMARK.md` — commissioned Cloudflare split-routing + Proton human/business mail + Postmark application mail + direct Postfix/OpenDKIM observability mail, PostgreSQL communications archive, authentication records, rebuild sequence, and production validation.
 - `GRAFANA_DASHBOARDS.md` — repo-managed dashboard provisioning, access, and validation.
 - `PENDING_INTEGRATIONS.md` — intentionally unfinished production items that must not be mistaken for commissioned infrastructure.
 

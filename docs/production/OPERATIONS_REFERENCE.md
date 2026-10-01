@@ -301,14 +301,46 @@ The report generator is installed at:
 
     /usr/local/sbin/dacqua-observability-report.py
 
-Dry-run rendering is validated. Earlier commissioning documentation recorded report delivery timers as disabled; verify the actual current timer/service state rather than assuming it. The intended transport is local Postfix/sendmail -> recipient MX, separate from Postmark application email. Vultr outbound TCP/25 approval is still pending, and the daily D'Acqua Dolce status email was not being received as of 2026-09-30.
+Direct observability-mail delivery was commissioned on 2026-10-01 after Vultr enabled outbound TCP/25 and the production host was restarted from the provider control plane. A controlled daily report was received successfully before recurring timers were enabled.
 
-Desired schedules/recipients are:
+Commissioned transport:
 
-- daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
-- weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
+    report generator
+      -> /usr/local/sbin/dacqua-observability-send-report
+      -> local Postfix
+      -> OpenDKIM
+      -> recipient MX
 
-Before blaming TCP/25 alone, inspect report generation/timer state, configured recipients, `postqueue -p`, and `journalctl -u postfix --no-pager`. After Vultr approval, explicitly validate TCP/25 to the actual recipient-domain MX and prove a controlled report is received. Do not newly enable/re-enable recurring timers or Better Stack report heartbeats until real delivery and failure behavior are validated.
+Mail identity/authentication:
+
+- sender: `monitoring@dacquadolce.com`;
+- SMTP/HELO identity: `mailout.dacquadolce.com`;
+- forward DNS: `mailout.dacquadolce.com -> 144.202.114.17`;
+- PTR/reverse DNS: `144.202.114.17 -> mailout.dacquadolce.com`;
+- Postfix listens only on `127.0.0.1:25`; it is not a public inbound SMTP service;
+- OpenDKIM listens locally on `127.0.0.1:8891`;
+- direct-mail DKIM selector: `infra2026`;
+- the single root SPF policy authorizes `ip4:144.202.114.17` in addition to Cloudflare and Proton;
+- DMARC remains deliberately `p=none`.
+
+Commissioned schedule/recipients:
+
+- `dacqua-observability-daily-report.timer` — enabled/active, daily 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
+- `dacqua-observability-weekly-report.timer` — enabled/active, Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
+
+Protected/non-secret configuration boundary:
+
+    /etc/dacqua-observability/reporting.env
+
+Useful diagnostics:
+
+    systemctl --no-pager status dacqua-observability-daily-report.timer
+    systemctl --no-pager status dacqua-observability-weekly-report.timer
+    /usr/sbin/postqueue -p
+    journalctl -u dacqua-observability-daily-report.service -u postfix -u opendkim --no-pager
+    journalctl -u dacqua-observability-weekly-report.service -u postfix -u opendkim --no-pager
+
+Better Stack report-delivery heartbeat submission remains a separate pending integration. Do not infer heartbeat completion merely because direct report email is commissioned.
 
 ## Local health timer
 
@@ -381,7 +413,7 @@ The application Postmark server token lives in `/etc/dacqua-dolce/backend.env`. 
 
 ## Application email and communications archive
 
-Application transactional mail is commissioned through the Postmark HTTPS API and does not require direct outbound TCP/25. Vultr outbound TCP/25 is separately pending approval for the intended direct Postfix infrastructure-monitoring path; do not treat that pending path as part of application/customer email.
+Application transactional mail is commissioned through the Postmark HTTPS API and does not require direct outbound TCP/25. Direct infrastructure-monitoring mail is separately commissioned through local Postfix/OpenDKIM and must not be conflated with application/customer Postmark email.
 
 Public inbound customer mail is commissioned:
 
@@ -419,9 +451,9 @@ Useful boundaries:
 - `support@dacquadolce.com` is the public inbound customer address; the private Postmark destination remains hidden;
 - `jamie@dacquadolce.com` is the commissioned human/business identity routed by Cloudflare to `dacquadolce@proton.me` / Proton;
 - Cloudflare remains the root MX provider; Proton MX being unconfigured/red is intentional;
-- the root SPF policy authorizes Cloudflare + Proton in one TXT policy, Proton DKIM is valid, and DMARC is `p=none` during commissioning;
+- the root SPF policy authorizes `144.202.114.17` + Cloudflare + Proton in one TXT policy, Proton DKIM is valid, direct-mail DKIM selector `infra2026` is published, and DMARC is `p=none` during commissioning;
 - Cloudflare catch-all routing remains disabled;
-- observability report delivery/timers remain separate and pending Vultr TCP/25 acceptance.
+- direct Postfix/OpenDKIM observability report delivery and daily/weekly timers are commissioned; Better Stack report heartbeats remain separate/pending.
 
 Protected application configuration:
 
@@ -490,6 +522,9 @@ Safe DNS/mail-routing checks from LOCAL macOS:
     dig +short CNAME protonmail2._domainkey.dacquadolce.com
     dig +short CNAME protonmail3._domainkey.dacquadolce.com
     dig +short CNAME pm-bounces.dacquadolce.com
+    dig +short A mailout.dacquadolce.com
+    dig +short TXT infra2026._domainkey.dacquadolce.com
+    dig +short -x 144.202.114.17
     dig +short TXT 20260917171819pm._domainkey.dacquadolce.com
 
 Expected root MX provider: Cloudflare. The MX answer should remain the Cloudflare routing tier, not Proton MX. Proton's MX warning is expected under the split-routing architecture.

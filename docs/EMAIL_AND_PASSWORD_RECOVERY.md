@@ -187,11 +187,12 @@ requiring the production server to operate a general-purpose IMAP mailbox.
 
 ## Mail-authentication validation
 
-As of 2026-09-30, the root-domain mail-authentication DNS has been reconciled for the current split-routing architecture:
+As of 2026-10-01, the root-domain mail-authentication DNS has been reconciled for the current split-routing and direct observability-mail architecture:
 
-- one root SPF policy authorizes Cloudflare Email Routing and Proton:
-  `v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all`;
+- one root SPF policy authorizes the direct Vultr sender plus Cloudflare Email Routing and Proton:
+  `v=spf1 ip4:144.202.114.17 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all`;
 - Proton's three DKIM selectors are published and Proton reports DKIM valid;
+- direct infrastructure mail is DKIM-signed with selector `infra2026` for `dacquadolce.com`;
 - `_dmarc` is published as `v=DMARC1; p=none` and Proton reports DMARC valid;
 - Cloudflare remains the root MX provider, so Proton's requested MX records are intentionally not installed.
 

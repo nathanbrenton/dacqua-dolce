@@ -28,51 +28,34 @@ Future milestone must include:
 
 Do not describe off-host disaster recovery as complete until a restore from the remote repository has been rehearsed successfully.
 
-## 2. Observability report delivery
+## 2. Better Stack report-delivery heartbeats
 
-Generator:
+Direct observability report delivery is no longer pending.
 
-    /usr/local/sbin/dacqua-observability-report.py
+Commissioned on 2026-10-01:
 
-Current state:
+- `/usr/local/sbin/dacqua-observability-report.py` renders daily/weekly reports;
+- `/usr/local/sbin/dacqua-observability-send-report` submits them through local Postfix;
+- Vultr outbound TCP/25 is approved and validated;
+- `mailout.dacquadolce.com` forward/PTR identity is aligned;
+- SPF authorizes `144.202.114.17`;
+- OpenDKIM selector `infra2026` signs direct infrastructure mail;
+- a controlled daily report was received successfully;
+- `dacqua-observability-daily-report.timer` is enabled/active for 09:00 `America/Los_Angeles`;
+- `dacqua-observability-weekly-report.timer` is enabled/active for Saturday 11:00 `America/Los_Angeles`.
 
-- dry-run report generation is validated;
-- application Postmark transactional email is live and remains reserved for application/customer transactional traffic;
-- direct infrastructure-monitoring delivery is intended to use local Postfix/sendmail -> recipient MX so routine status traffic does not consume the limited Postmark allowance;
-- Vultr outbound TCP/25 approval is still pending;
-- daily D'Acqua Dolce status email was not being received as of 2026-09-30;
-- earlier commissioning documentation recorded report timers as disabled; verify the actual current timer/service state during diagnosis and do not newly enable/re-enable recurring delivery until the path is accepted;
-- Better Stack report heartbeats remain unsubmitted until the successful-delivery boundary is commissioned.
+The remaining integration is the Better Stack successful-delivery heartbeat boundary.
 
-Desired schedule/recipients remain:
+Heartbeat acceptance must ensure:
 
-- daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
-- weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
+1. heartbeat submission happens only after the report send path returns successfully;
+2. a rendering failure, sendmail/Postfix failure, or other failed report run does not submit a success heartbeat;
+3. heartbeat credentials/URLs remain in protected configuration rather than Git/docs;
+4. daily and weekly heartbeat resources map to the corresponding report schedules;
+5. one controlled successful run updates the intended heartbeat;
+6. failure behavior is observable without generating duplicate report mail.
 
-Before attributing the missing reports solely to TCP/25, diagnose all boundaries:
-
-1. confirm the report generator renders successfully;
-2. inspect installed/disabled report timer and service state;
-3. inspect the Postfix queue with `postqueue -p`;
-4. inspect Postfix logs with `journalctl -u postfix --no-pager`;
-5. confirm the configured recipients;
-6. test outbound TCP/25 only against the actual recipient-domain MX after Vultr reports approval.
-
-Acceptance after Vultr approval must prove:
-
-- TCP/25 connectivity to the intended recipient MX;
-- the selected sender/envelope domain and Postfix HELO identity are explicit;
-- forward DNS and provider-controlled PTR/reverse DNS are appropriate for the selected direct-delivery identity;
-- SPF authorization and any DKIM signing required by the selected sender design are deliberately configured rather than assumed;
-- a received test message shows the intended SPF/DKIM/DMARC alignment;
-- a controlled report is accepted for delivery;
-- the recipient actually receives it;
-- Postfix queue/log state is clean;
-- failure behavior is visible;
-- only then are daily/weekly timers enabled;
-- the corresponding Better Stack heartbeat is submitted only after successful delivery.
-
-Do not silently fall back to the application Postmark token/allowance merely to make routine observability mail appear functional. If the business later chooses Postmark as the monitoring transport, document and commission that as an explicit architecture change.
+Do not route routine reports through the application Postmark allowance merely to simplify heartbeat integration.
 
 
 ## 3. Communications retention, purge, and attachment lifecycle

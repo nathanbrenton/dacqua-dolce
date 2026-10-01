@@ -450,7 +450,7 @@ D'Acqua Dolce deliberately separates three mail responsibilities:
 
 1. **human/business mail** — Proton Mail Essentials;
 2. **application/customer transactional mail and Customer Inbox** — Postmark + the D'Acqua Dolce application/PostgreSQL;
-3. **infrastructure monitoring/status mail** — intended local Postfix direct delivery after Vultr outbound TCP/25 approval.
+3. **infrastructure monitoring/status mail** — commissioned local Postfix/OpenDKIM direct delivery using `monitoring@dacquadolce.com` and `mailout.dacquadolce.com`.
 
 Cloudflare remains authoritative DNS **and** the root-domain MX/front-door so it can route individual addresses to different downstream systems.
 
@@ -466,7 +466,7 @@ Detailed technical procedure:
 - **Proton Mail Essentials:** hosts human/business correspondence and custom-domain sending identities. `dacquadolce@proton.me` remains the organization/bootstrap/recovery identity; `jamie@dacquadolce.com` is the commissioned named business identity.
 - **Postmark:** sends application transactional/customer mail through HTTPS and converts inbound mail sent to its private inbound destination into webhook requests.
 - **FastAPI/PostgreSQL:** provide the authenticated employee Customer Inbox and durable application correspondence archive.
-- **Postfix:** local MTA intended only for infrastructure/status reports after Vultr outbound TCP/25 is approved and validated.
+- **Postfix/OpenDKIM:** local outbound-only MTA/signing path for infrastructure/status reports; Postfix listens only on loopback and is not the public inbound MX.
 
 Do not collapse these roles simply because a vendor setup wizard prefers to control all mail for the domain.
 
@@ -576,13 +576,15 @@ Current non-secret D'Acqua Dolce mail records/policies:
     MX     @     route1.mx.cloudflare.net
     MX     @     route2.mx.cloudflare.net
     MX     @     route3.mx.cloudflare.net
-    TXT    @     v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+    A      mailout     144.202.114.17
+    TXT    @     v=spf1 ip4:144.202.114.17 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
     TXT    _dmarc     v=DMARC1; p=none
     CNAME  protonmail._domainkey     <current Proton-generated target>
     CNAME  protonmail2._domainkey    <current Proton-generated target>
     CNAME  protonmail3._domainkey    <current Proton-generated target>
     CNAME  pm-bounces                pm.mtasv.net
     TXT    <current Postmark DKIM selector>    <current Postmark-generated DKIM value>
+    TXT    infra2026._domainkey    <public key matching the restored/generated direct-mail private key>
 
 There must be only **one** root SPF TXT policy. Reconcile future legitimate senders into that policy instead of adding a second SPF record.
 
@@ -601,9 +603,12 @@ For a new company/domain, use the nameservers Cloudflare actually assigns. DNSSE
 
 Cloudflare must remain the root MX provider. Do not replace its MX records with Proton MX records.
 
-Verify/create the human/business route:
+Verify/create the human/business routes:
 
     jamie@dacquadolce.com
+      -> dacquadolce@proton.me
+
+    monitoring@dacquadolce.com
       -> dacquadolce@proton.me
 
 Verify the private Postmark inbound destination as a Cloudflare destination without recording its value in Git/docs, then verify/create:
@@ -667,34 +672,64 @@ Do not:
 
 Customer Inbox Archive/Restore is a workflow state, not deletion. Define a formal retention/purge policy before adding permanent deletion, especially for attachment bytes and backup copies.
 
-### 20.12 Infrastructure-monitoring email remains pending
+### 20.12 Restore direct infrastructure-monitoring email
 
-The intended observability/status path is:
+The commissioned production path is:
 
-    report generator
-      -> local Postfix/sendmail
+    observability report
+      -> /usr/local/sbin/dacqua-observability-send-report
+      -> local Postfix
+      -> OpenDKIM
       -> recipient MX
-      -> administrative mailbox
 
-This path is **not commissioned** while Vultr outbound TCP/25 approval is pending.
+Canonical non-secret settings:
 
-Before blaming missing status mail solely on the provider block, verify report-generation state, timers/services, recipient configuration, `postqueue -p`, and `journalctl -u postfix --no-pager`.
+- visible/envelope sender: `monitoring@dacquadolce.com`;
+- Postfix `myhostname` / SMTP HELO: `mailout.dacquadolce.com`;
+- `mailout.dacquadolce.com` A -> `144.202.114.17`;
+- PTR `144.202.114.17` -> `mailout.dacquadolce.com`;
+- Postfix `inet_interfaces = loopback-only`;
+- Postfix `inet_protocols = ipv4`;
+- Postfix `mydestination = $myhostname, localhost.$mydomain, localhost`;
+- Postfix `relayhost =` empty for direct recipient-MX delivery;
+- OpenDKIM selector `infra2026`;
+- OpenDKIM local milter on `127.0.0.1:8891`;
+- Postfix `milter_default_action = accept`;
+- direct-mail private key under `/etc/opendkim/keys/dacquadolce.com/`;
+- report configuration under `/etc/dacqua-observability/reporting.env`.
 
-After Vultr explicitly approves TCP/25:
+The private DKIM key is secret material. If an authoritative secure backup of the matching private key is unavailable during rebuild, generate a fresh selector/key pair and publish the new public TXT record instead of reusing the old public selector with no matching key.
 
-1. resolve the actual recipient-domain MX;
-2. verify outbound TCP/25 connectivity to that MX;
-3. choose/document the report's visible `From`, envelope-sender domain, and Postfix HELO identity;
-4. verify forward DNS and provider-controlled PTR/reverse DNS for the selected direct-delivery identity as applicable;
-5. determine whether the current SPF policy authorizes that sender and whether DKIM signing is required; make any authentication change as a separate reviewed DNS/mail change;
-6. send one controlled report;
-7. confirm the recipient receives it and inspect SPF/DKIM/DMARC results;
-8. confirm the Postfix queue/logs are clean;
-9. validate failure behavior;
-10. only then enable report timers and successful-delivery Better Stack heartbeats.
+Restore/install:
 
-Do not reuse the application Postmark allowance for routine monitoring without a deliberate architecture decision.
+- Postfix;
+- OpenDKIM + tools;
+- `/usr/local/sbin/dacqua-observability-report.py`;
+- `/usr/local/sbin/dacqua-observability-send-report`;
+- `dacqua-observability-daily-report.service/.timer`;
+- `dacqua-observability-weekly-report.service/.timer`.
 
+Do not enable the report timers until all of these pass:
+
+1. outbound TCP/25 connectivity to an actual recipient MX;
+2. forward/PTR identity alignment;
+3. SPF authorization for the selected envelope domain;
+4. OpenDKIM public/private key validation;
+5. Postfix/OpenDKIM active with only loopback listeners for local submission/milter;
+6. one controlled report is received successfully and authentication results are inspected;
+7. Postfix queue returns clean.
+
+Then enable:
+
+    dacqua-observability-daily-report.timer
+    dacqua-observability-weekly-report.timer
+
+Canonical schedules:
+
+- daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
+- weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
+
+Better Stack successful-delivery heartbeat submission remains a separate commissioning step. Do not submit a success heartbeat merely because the report rendered.
 
 
 ## 21. Install observability stack
@@ -760,7 +795,7 @@ External monitors currently cover:
 
 Do not externally monitor `/readiness`.
 
-Daily/weekly heartbeat resources exist, but heartbeat submission is not commissioned until the dedicated observability report-delivery path is validated. Application transactional Postmark email is already commissioned; the intended report path is separate local Postfix direct delivery and remains pending Vultr TCP/25 approval plus real-delivery acceptance.
+Daily/weekly heartbeat resources exist, but heartbeat submission is not yet commissioned. Application transactional Postmark email and the separate local Postfix/OpenDKIM report-delivery path are both commissioned; heartbeat success must be wired only after confirmed report delivery.
 
 ## 24. Install local PostgreSQL backup and restore validation
 

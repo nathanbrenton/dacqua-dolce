@@ -21,11 +21,12 @@ Production validation checkpoint:
 - authenticated Operations Customer Inbox and threaded employee replies: commissioned;
 - public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing: commissioned;
 - real public-address acceptance (`support@` -> Cloudflare -> Postmark -> webhook -> Customer Inbox): validated;
-- SPF: validated with one combined root policy authorizing Cloudflare and Proton;
+- SPF: validated with one combined root policy authorizing `144.202.114.17`, Cloudflare, and Proton;
 - Proton DKIM: validated;
+- direct infrastructure-mail DKIM: validated with selector `infra2026`;
 - DMARC: validated in commissioning mode with `p=none`;
 - Proton-requested MX records: intentionally not installed because Cloudflare must remain the split-routing MX boundary;
-- Vultr outbound TCP/25 approval for direct infrastructure-monitoring mail: pending, not commissioned.
+- direct infrastructure-monitoring mail: commissioned 2026-10-01 through Postfix/OpenDKIM after Vultr TCP/25 approval and end-to-end acceptance.
 
 ## 1. Architecture
 
@@ -71,16 +72,30 @@ Human/business mail is intentionally separate:
 
 Cloudflare therefore remains the inbound MX/front-door even though Proton hosts the human mailbox. Proton's setup UI will show its requested MX records as unconfigured/red under this design; that status is expected and must not be treated as an outage.
 
-Infrastructure-monitoring mail is a third, separate boundary. The intended path, only after Vultr explicitly approves and connectivity is validated, is:
+Infrastructure-monitoring mail is a third, separate boundary. It was commissioned on 2026-10-01:
 
     observability/report job
+      -> /usr/local/sbin/dacqua-observability-send-report
       -> local Postfix/sendmail
+      -> OpenDKIM
       -> recipient MX
       -> administrative mailbox
 
-That direct path requires outbound TCP/25. It is intended to keep routine infrastructure/status traffic separate from the limited Postmark application-email allowance. It is not commissioned yet.
+The direct path uses outbound TCP/25 and keeps routine infrastructure/status traffic separate from the limited Postmark application-email allowance.
 
-Opening TCP/25 is necessary but not sufficient for reliable direct Internet mail. Before commissioning this path, explicitly choose the visible `From`/envelope-sender domain and Postfix HELO identity; verify forward DNS and provider-controlled PTR/reverse DNS as applicable; determine whether the selected sender is authorized by SPF; decide whether DKIM signing is required for that sender; and inspect a received test message for SPF/DKIM/DMARC alignment. Do not add the production host to SPF or tighten DMARC merely because port 25 becomes reachable—those are separate, reviewed mail-authentication changes.
+Commissioned identity/authentication:
+
+- visible/envelope sender: `monitoring@dacquadolce.com`;
+- Postfix HELO/hostname: `mailout.dacquadolce.com`;
+- forward A: `mailout.dacquadolce.com -> 144.202.114.17`;
+- PTR: `144.202.114.17 -> mailout.dacquadolce.com`;
+- Postfix inbound listener: loopback-only (`127.0.0.1:25`);
+- OpenDKIM local milter: `127.0.0.1:8891`;
+- DKIM selector: `infra2026`;
+- SPF includes `ip4:144.202.114.17`;
+- DMARC remains `p=none`.
+
+A controlled daily report was received successfully before `dacqua-observability-daily-report.timer` and `dacqua-observability-weekly-report.timer` were enabled.
 
 Employee customer-service replies use approved company sender roles:
 `sales@dacquadolce.com`, `contact@dacquadolce.com`,
@@ -108,7 +123,7 @@ returns to the same archived conversation.
 
 Cloudflare is authoritative for DNS, but the production web `A`/`CNAME` records are intentionally **DNS only**. Cloudflare is therefore providing authoritative DNS and inbound Email Routing without acting as the HTTP reverse proxy for the site at this checkpoint.
 
-The production server does not need a public general-purpose SMTP/IMAP mailbox stack for application/customer mail. Postmark uses HTTPS and does not require TCP/25. Vultr's outbound TCP/25 restriction is separately under review for the optional direct Postfix infrastructure-monitoring path; do not describe that path as commissioned until Vultr approves it and acceptance testing passes.
+The production server does not expose a public general-purpose SMTP/IMAP mailbox stack. Postmark uses HTTPS and does not require TCP/25 for application/customer mail. The separate direct Postfix infrastructure-monitoring path is commissioned for outbound delivery only; Postfix listens on loopback and Cloudflare remains the public inbound MX boundary.
 
 ### Email/DNS terminology
 
@@ -122,7 +137,7 @@ The production server does not need a public general-purpose SMTP/IMAP mailbox s
 - **Return-Path:** the envelope/bounce address used for delivery-status handling; it is distinct from the human-visible `From` address.
 - **TTL (Time To Live):** how long recursive DNS resolvers may cache a record before asking again.
 - **SMTP (Simple Mail Transfer Protocol):** the standard protocol used between mail systems. D'Acqua Dolce does not expose a public SMTP server.
-- **MTA (Mail Transfer Agent):** software that transfers email between systems. Postfix may act as the production host's local MTA for infrastructure reports only after outbound TCP/25 is approved and validated.
+- **MTA (Mail Transfer Agent):** software that transfers email between systems. Postfix is the production host's local outbound MTA for infrastructure reports; it is loopback-only for local submission and is not the domain's public inbound MX.
 - **IMAP (Internet Message Access Protocol):** a mailbox-access protocol. D'Acqua Dolce does not need an IMAP server for the application Customer Inbox.
 - **Webhook:** an HTTPS callback sent by one service to another when an event occurs; Postmark uses the inbound webhook to deliver normalized inbound message data to FastAPI.
 
@@ -405,6 +420,8 @@ Preserve/recreate at minimum:
 - apex web `A` and `www` records;
 - Postmark custom Return-Path CNAME;
 - current Postmark DKIM selector/value;
+- direct-mail A record `mailout.dacquadolce.com -> 144.202.114.17`;
+- direct-mail DKIM TXT selector `infra2026._domainkey`;
 - Cloudflare Email Routing records;
 - Proton domain-verification record when still required by Proton;
 - Proton DKIM CNAME selectors:
@@ -419,7 +436,7 @@ The three Proton DKIM targets are provider-generated. Retrieve the current value
 
 Current root SPF policy:
 
-    v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+    v=spf1 ip4:144.202.114.17 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
 
 There must be only one root-domain SPF policy. If another legitimate sender is introduced later, reconcile it into the single policy rather than adding a second root SPF TXT record.
 
@@ -470,7 +487,7 @@ Avoid repeating live provider mail for unrelated releases.
     web apex A: 144.202.114.17 (DNS only at this checkpoint)
     www: CNAME -> dacquadolce.com (DNS only)
     Cloudflare MX: route1/route2/route3.mx.cloudflare.net
-    root SPF: v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+    root SPF: v=spf1 ip4:144.202.114.17 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
     DMARC: _dmarc TXT "v=DMARC1; p=none"
     Proton DKIM selectors: protonmail / protonmail2 / protonmail3
     Proton MX: intentionally not installed
@@ -478,6 +495,9 @@ Avoid repeating live provider mail for unrelated releases.
     Postmark DKIM selector: use the current Postmark-generated value
     human route: jamie@dacquadolce.com -> dacquadolce@proton.me -> Proton
     customer route: support@dacquadolce.com -> private Postmark inbound destination
+    infrastructure route: monitoring@dacquadolce.com -> dacquadolce@proton.me
+    direct SMTP identity: mailout.dacquadolce.com -> 144.202.114.17; PTR matches
+    direct DKIM selector: infra2026
     catch-all: disabled
 
 During any rebuild, prefer current provider-generated validation/authentication values over assuming an old selector or verification value can never change.
@@ -583,10 +603,11 @@ This proves that an employee reply sent from Customer Inbox can be answered with
 
 ## 11.1 Mail-authentication status
 
-As of 2026-09-30:
+As of 2026-10-01:
 
-- the single combined root SPF policy is valid and Proton reports SPF green;
+- the single combined root SPF policy authorizes `144.202.114.17`, Cloudflare, and Proton;
 - Proton DKIM is valid/green for all three configured selectors;
+- direct infrastructure-mail DKIM selector `infra2026` is published and validated;
 - `_dmarc` exists and Proton reports DMARC green;
 - DMARC policy remains deliberately `p=none` during commissioning;
 - Proton MX remains red/unconfigured by design because Cloudflare owns the root MX/front-door.
@@ -661,8 +682,7 @@ Not yet commissioned:
 - additional Postmark delivery/bounce event ingestion if required;
 - additional named human custom-domain identities beyond the commissioned `jamie@dacquadolce.com` route/mail identity; approved application sender roles such as `info@` are not evidence that a hosted human mailbox exists;
 - DMARC enforcement hardening from `p=none` to `quarantine`/`reject` after all legitimate senders are validated;
-- Vultr outbound TCP/25 approval and acceptance testing for direct Postfix infrastructure-monitoring mail;
-- observability-report delivery/timers and Better Stack report heartbeats;
+- Better Stack report-delivery heartbeat integration (direct Postfix/OpenDKIM report delivery and timers are already commissioned);
 - payment-provider checkout.
 
 ## 15. Vendor references

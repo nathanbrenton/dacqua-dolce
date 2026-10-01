@@ -13,7 +13,7 @@ Use the current production documentation instead:
 - `docs/production/OPERATIONS_REFERENCE.md`
 - `docs/production/PENDING_INTEGRATIONS.md`
 
-Current validated production application checkpoint represented by the documentation set: 2026-09-29 / PT18. Email/DNS/vendor-routing state is reconciled through 2026-09-30.
+Current validated production application checkpoint represented by the documentation set: 2026-09-29 / PT18. Email/DNS/vendor-routing and direct observability-mail state are reconciled through 2026-10-01.
 
 Key changes since the original foundation planning include:
 
@@ -24,7 +24,7 @@ Key changes since the original foundation planning include:
 - hardened FastAPI systemd service;
 - full local observability stack and repo-managed Grafana dashboards;
 - local PostgreSQL backup + real restore validation;
-- Cloudflare split inbound routing, Proton human/business mail, live Postmark application/customer email, and PostgreSQL Customer Inbox archive;
+- Cloudflare split inbound routing, Proton human/business mail, live Postmark application/customer email, PostgreSQL Customer Inbox archive, and commissioned direct Postfix/OpenDKIM observability mail;
 - production customer registration/email verification/MFA/account administration;
 - AWS S3/restic off-host disaster recovery still pending.
 

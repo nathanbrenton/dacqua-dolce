@@ -290,7 +290,7 @@ Better Stack provides independent public checks for:
 
 `/readiness` is deliberately not externally monitored because it is an internal-only endpoint.
 
-Daily and weekly Better Stack heartbeat resources have been created, but heartbeat submission remains tied to completion of the observability report-delivery workflow.
+Daily and weekly Better Stack heartbeat resources have been created. Direct observability report delivery is commissioned; heartbeat submission remains a separate pending step and must be tied only to confirmed successful report delivery.
 
 ## 10. Reporting
 
@@ -298,14 +298,22 @@ The production observability report generator is:
 
     /usr/local/sbin/dacqua-observability-report.py
 
-Dry-run report generation has been validated. Earlier commissioning documentation recorded report timers as disabled; current timer/service state should be verified before diagnosing missing mail, and recurring delivery should not be newly enabled/re-enabled until real report delivery is validated.
+Direct observability-mail delivery is commissioned as of 2026-10-01. Vultr outbound TCP/25 was approved and connectivity validated, forward/reverse DNS was aligned at `mailout.dacquadolce.com`, Postfix/OpenDKIM was configured for outbound-only local submission, and a controlled daily report was received before timers were enabled.
 
-Desired schedule after commissioning:
+Commissioned schedule:
 
-- daily — 09:00 `America/Los_Angeles` to `nathan@nathanbrenton.com`;
-- weekly — Saturday 11:00 `America/Los_Angeles` to `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
+- daily — `dacqua-observability-daily-report.timer`, 09:00 `America/Los_Angeles` to `nathan@nathanbrenton.com`;
+- weekly — `dacqua-observability-weekly-report.timer`, Saturday 11:00 `America/Los_Angeles` to `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
 
-The intended monitoring transport is local Postfix/sendmail -> recipient MX, separate from Postmark application mail, so routine status traffic does not consume the limited Postmark allowance. Vultr outbound TCP/25 approval and delivery acceptance remain pending. Recipient declarations should remain obvious in protected report configuration, and timers/Better Stack heartbeats must remain disabled until actual delivery succeeds.
+The monitoring transport is:
+
+    report generator
+      -> local send wrapper
+      -> Postfix (127.0.0.1:25 only)
+      -> OpenDKIM (127.0.0.1:8891)
+      -> recipient MX
+
+This remains separate from Postmark application mail so routine status traffic does not consume the limited Postmark allowance. Better Stack report-delivery heartbeat submission remains pending.
 
 ## 11. Backup and recovery model
 
@@ -360,7 +368,7 @@ Cloudflare remains the root-domain MX/front-door. Current inbound MX hosts are `
 
 The current single root SPF policy is:
 
-    v=spf1 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
+    v=spf1 ip4:144.202.114.17 include:_spf.mx.cloudflare.net include:_spf.protonmail.ch ~all
 
 Proton DKIM uses the three selectors `protonmail`, `protonmail2`, and `protonmail3`; their provider-generated CNAME targets must be retrieved from Proton during rebuild rather than hard-coded. DMARC is published as:
 
@@ -369,6 +377,15 @@ Proton DKIM uses the three selectors `protonmail`, `protonmail2`, and `protonmai
 `p=none` is deliberate monitoring/commissioning mode. Hardening to `quarantine` or `reject` is a future explicit security change after every legitimate sender is validated.
 
 Postmark retains its independent sending-domain DKIM and custom Return-Path CNAME at `pm-bounces.dacquadolce.com`.
+
+Direct infrastructure mail uses:
+
+- `mailout.dacquadolce.com` A -> `144.202.114.17` (DNS only);
+- PTR `144.202.114.17` -> `mailout.dacquadolce.com`;
+- DKIM selector `infra2026._domainkey.dacquadolce.com`;
+- visible/envelope sender `monitoring@dacquadolce.com`;
+- Cloudflare route `monitoring@dacquadolce.com -> dacquadolce@proton.me` for inbound replies/bounces.
+
 
 ### Human/business email — commissioned
 
@@ -443,9 +460,11 @@ Current commissioned application sender roles:
 
 The visible delivery display name is `D'Acqua Dolce`; the PostgreSQL archive retains the canonical bare sender address. The private thread-aware Postmark inbound alias is used only as `Reply-To`.
 
-### Observability reports — pending delivery
+### Observability reports — commissioned direct delivery
 
-The application Postmark path being live does not commission the separate `/usr/local/sbin/dacqua-observability-report.py` workflow. The intended infrastructure-report path is local Postfix/sendmail -> recipient MX, contingent on Vultr outbound TCP/25 approval. Delivery, recipients, timers, failure handling, and Better Stack heartbeats remain uncommissioned until a real controlled report is received successfully.
+The application Postmark path remains separate from `/usr/local/sbin/dacqua-observability-report.py`. The infrastructure-report path was commissioned on 2026-10-01 using direct local Postfix/OpenDKIM delivery after Vultr TCP/25 approval, aligned forward/PTR DNS, SPF authorization, DKIM publication, and a successful controlled daily report.
+
+The wrapper is `/usr/local/sbin/dacqua-observability-send-report`. Daily and weekly systemd timers are enabled and active at the documented PT schedules. Better Stack report-delivery heartbeat submission remains uncommissioned until it is explicitly connected to successful delivery.
 
 ## 13. Production boundaries at PT18
 
@@ -473,7 +492,7 @@ Commissioned:
 Not yet commissioned:
 
 - off-host AWS S3/restic repository and off-host restore rehearsal;
-- observability report email delivery/timers and corresponding Better Stack report heartbeats;
+- Better Stack report-delivery heartbeat submission (direct report email/timers are already commissioned);
 - explicit communications retention/purge policy, including attachment and backup lifecycle;
 - remaining observability service systemd hardening beyond the already hardened FastAPI service;
 - payment-provider checkout;

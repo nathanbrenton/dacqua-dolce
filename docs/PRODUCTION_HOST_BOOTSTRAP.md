@@ -20,7 +20,7 @@ Current production host:
 
     dacqua-platform-prod-01
 
-Current validated application checkpoint: 2026-09-29 / PT18. Email/DNS/vendor-routing documentation is reconciled through 2026-09-30.
+Current validated application checkpoint: 2026-09-29 / PT18. Email/DNS/vendor-routing and direct observability-mail documentation is reconciled through 2026-10-01.
 
 Important present-day boundaries include:
 
@@ -29,7 +29,7 @@ Important present-day boundaries include:
 - Nginx public edge;
 - FastAPI/PostgreSQL/observability listeners private/loopback-only;
 - PostgreSQL `dacqua_dolce_migrator` vs `dacqua_dolce_app` privilege separation;
-- Cloudflare split routing + Proton human/business mail + Postmark application/customer mail;
+- Cloudflare split routing + Proton human/business mail + Postmark application/customer mail + direct Postfix/OpenDKIM observability mail;
 - local PostgreSQL backup/restore commissioned;
 - AWS S3/restic off-host repository not yet commissioned.
 
