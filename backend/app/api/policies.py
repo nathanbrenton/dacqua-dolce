@@ -31,6 +31,11 @@ def policy_document_read(row: PolicyDocument) -> PolicyDocumentRead:
         version=row.version,
         title=row.title,
         body=row.body,
+        refund_terms=(
+            row.structured_terms
+            if row.kind == PolicyKind.refund
+            else None
+        ),
         status=row.status,
         effective_at=row.effective_at,
         approved_at=row.approved_at,
@@ -102,6 +107,11 @@ def create_operations_policy(
         title=payload.title,
         body=payload.body,
         actor_user=current_user,
+        structured_terms=(
+            payload.refund_terms.model_dump()
+            if payload.refund_terms is not None
+            else None
+        ),
     )
     db.commit()
     db.refresh(row)

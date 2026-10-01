@@ -5,6 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
+    JSON,
     DateTime,
     Enum,
     ForeignKey,
@@ -81,6 +82,10 @@ class PolicyDocument(Base):
     body: Mapped[str] = mapped_column(
         Text,
         nullable=False,
+    )
+
+    structured_terms: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
     )
 
     status: Mapped[PolicyDocumentStatus] = mapped_column(
@@ -186,6 +191,14 @@ class FormalQuotePolicySnapshot(Base):
     body_snapshot: Mapped[str] = mapped_column(
         Text,
         nullable=False,
+    )
+
+    structured_terms_snapshot: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+    )
+
+    structured_terms_sha256: Mapped[str | None] = mapped_column(
+        String(64),
     )
 
     content_sha256: Mapped[str] = mapped_column(

@@ -535,6 +535,11 @@ def approve_formal_quote(
                     "kind": snapshot.kind.value,
                     "version": snapshot.version_snapshot,
                     "content_sha256": snapshot.content_sha256,
+                    "structured_terms_sha256": getattr(
+                        snapshot,
+                        "structured_terms_sha256",
+                        None,
+                    ),
                 }
                 for snapshot in formal_quote.policy_snapshots
             ],

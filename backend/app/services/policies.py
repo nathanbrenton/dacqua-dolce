@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
@@ -55,6 +56,7 @@ def create_policy_draft(
     title: str,
     body: str,
     actor_user: User,
+    structured_terms: dict[str, object] | None = None,
 ) -> PolicyDocument:
     version = version.strip()
     title = title.strip()
@@ -82,6 +84,11 @@ def create_policy_draft(
         version=version,
         title=title,
         body=body,
+        structured_terms=(
+            dict(structured_terms)
+            if structured_terms is not None
+            else None
+        ),
         status=PolicyDocumentStatus.draft,
         created_by_user_id=actor_user.id,
     )
@@ -173,6 +180,23 @@ def snapshot_quote_policies(
     snapshots: list[FormalQuotePolicySnapshot] = []
     for sort_order, policy in enumerate(documents):
         digest = hashlib.sha256(policy.body.encode("utf-8")).hexdigest()
+        structured_terms = getattr(policy, "structured_terms", None)
+        structured_terms_snapshot = (
+            dict(structured_terms)
+            if structured_terms is not None
+            else None
+        )
+        structured_terms_sha256 = None
+        if structured_terms_snapshot is not None:
+            canonical_terms = json.dumps(
+                structured_terms_snapshot,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            structured_terms_sha256 = hashlib.sha256(
+                canonical_terms.encode("utf-8")
+            ).hexdigest()
+
         snapshot = FormalQuotePolicySnapshot(
             formal_quote_id=formal_quote.id,
             policy_document_id=policy.id,
@@ -180,6 +204,8 @@ def snapshot_quote_policies(
             version_snapshot=policy.version,
             title_snapshot=policy.title,
             body_snapshot=policy.body,
+            structured_terms_snapshot=structured_terms_snapshot,
+            structured_terms_sha256=structured_terms_sha256,
             content_sha256=digest,
             effective_at_snapshot=policy.effective_at,
             sort_order=sort_order,

@@ -173,7 +173,13 @@ def operations_formal_quote_read(
                 "version": snapshot.version_snapshot,
                 "title": snapshot.title_snapshot,
                 "body": snapshot.body_snapshot,
+                "refund_terms": (
+                    snapshot.structured_terms_snapshot
+                    if snapshot.kind.value == "refund"
+                    else None
+                ),
                 "content_sha256": snapshot.content_sha256,
+                "structured_terms_sha256": snapshot.structured_terms_sha256,
                 "effective_at": snapshot.effective_at_snapshot,
             }
             for snapshot in formal_quote.policy_snapshots

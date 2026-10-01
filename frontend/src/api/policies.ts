@@ -16,13 +16,32 @@ export type PolicyDocumentStatus =
   | "approved"
   | "retired";
 
+export type RefundPolicyTerms = {
+  eligibility_mode:
+    | "fixed_window"
+    | "case_by_case"
+    | "fixed_window_with_exception";
+  return_window_days: number | null;
+  restocking_mode:
+    | "fixed_percentage"
+    | "case_by_case";
+  restocking_fee_basis_points: number | null;
+  merchandise_condition: "new_uninstalled";
+  customer_pays_return_shipping_by_default: boolean;
+  outbound_shipping_refund_rule:
+    "nonrefundable_with_error_defect_or_discretion_exception";
+  acknowledgement_required: boolean;
+};
+
 export type PolicySnapshot = {
   id: string;
   kind: PolicyKind;
   version: string;
   title: string;
   body: string;
+  refund_terms: RefundPolicyTerms | null;
   content_sha256: string;
+  structured_terms_sha256: string | null;
   effective_at: string | null;
 };
 
@@ -41,6 +60,7 @@ export type PolicyDocument = {
   version: string;
   title: string;
   body: string;
+  refund_terms: RefundPolicyTerms | null;
   status: PolicyDocumentStatus;
   effective_at: string | null;
   approved_at: string | null;
@@ -88,6 +108,7 @@ export async function createPolicyDraft(payload: {
   version: string;
   title: string;
   body: string;
+  refund_terms?: RefundPolicyTerms | null;
 }): Promise<PolicyDocument> {
   const csrfToken = await getCsrfToken();
   const response = await fetch(

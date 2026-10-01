@@ -10,6 +10,7 @@ import {
   getOperationsPolicies,
   type PolicyDocument,
   type PolicyKind,
+  type RefundPolicyTerms,
 } from "../../api/policies";
 
 const POLICY_OPTIONS: Array<{
@@ -24,6 +25,20 @@ const POLICY_OPTIONS: Array<{
   { kind: "warranty", label: "Warranty" },
   { kind: "installation", label: "Installation Terms" },
 ];
+
+function refundTermsSummary(terms: RefundPolicyTerms): string {
+  const eligibility = terms.eligibility_mode === "case_by_case"
+    ? "case-by-case eligibility"
+    : terms.eligibility_mode === "fixed_window"
+      ? `${terms.return_window_days ?? "?"}-day window`
+      : `${terms.return_window_days ?? "?"}-day window + case-by-case exception`;
+
+  const restocking = terms.restocking_mode === "case_by_case"
+    ? "case-by-case restocking"
+    : `${((terms.restocking_fee_basis_points ?? 0) / 100).toFixed(2)}% restocking`;
+
+  return `${eligibility}; ${restocking}`;
+}
 
 type PolicyManagementPanelProps = {
   roles: string[];
@@ -44,6 +59,16 @@ export function PolicyManagementPanel({
   const [title, setTitle] =
     useState("");
   const [body, setBody] =
+    useState("");
+  const [configureRefundTerms, setConfigureRefundTerms] =
+    useState(false);
+  const [refundEligibilityMode, setRefundEligibilityMode] =
+    useState<RefundPolicyTerms["eligibility_mode"] | "">("");
+  const [returnWindowDays, setReturnWindowDays] =
+    useState("");
+  const [restockingMode, setRestockingMode] =
+    useState<RefundPolicyTerms["restocking_mode"] | "">("");
+  const [restockingPercent, setRestockingPercent] =
     useState("");
   const [busy, setBusy] =
     useState(false);
@@ -90,6 +115,74 @@ export function PolicyManagementPanel({
     return result;
   }, [policies]);
 
+  const refundTerms = useMemo<RefundPolicyTerms | null>(() => {
+    if (kind !== "refund" || !configureRefundTerms) {
+      return null;
+    }
+
+    if (refundEligibilityMode === "" || restockingMode === "") {
+      return null;
+    }
+
+    const requiresWindow = refundEligibilityMode !== "case_by_case";
+    const parsedWindow = requiresWindow
+      ? Number.parseInt(returnWindowDays, 10)
+      : null;
+    if (
+      requiresWindow
+      && (
+        parsedWindow === null
+        || Number.isNaN(parsedWindow)
+        || parsedWindow < 1
+        || parsedWindow > 365
+      )
+    ) {
+      return null;
+    }
+
+    const requiresPercentage = restockingMode === "fixed_percentage";
+    const parsedPercent = requiresPercentage
+      ? Number.parseFloat(restockingPercent)
+      : null;
+    if (
+      requiresPercentage
+      && (
+        parsedPercent === null
+        || Number.isNaN(parsedPercent)
+        || parsedPercent <= 0
+        || parsedPercent > 100
+      )
+    ) {
+      return null;
+    }
+
+    return {
+      eligibility_mode: refundEligibilityMode,
+      return_window_days: requiresWindow ? parsedWindow : null,
+      restocking_mode: restockingMode,
+      restocking_fee_basis_points: requiresPercentage
+        ? Math.round((parsedPercent ?? 0) * 100)
+        : null,
+      merchandise_condition: "new_uninstalled",
+      customer_pays_return_shipping_by_default: true,
+      outbound_shipping_refund_rule:
+        "nonrefundable_with_error_defect_or_discretion_exception",
+      acknowledgement_required: true,
+    };
+  }, [
+    configureRefundTerms,
+    kind,
+    refundEligibilityMode,
+    restockingMode,
+    restockingPercent,
+    returnWindowDays,
+  ]);
+
+  const refundTermsInvalid =
+    kind === "refund"
+    && configureRefundTerms
+    && refundTerms === null;
+
   async function createDraft(): Promise<void> {
     setBusy(true);
     setError(null);
@@ -101,11 +194,17 @@ export function PolicyManagementPanel({
         version,
         title,
         body,
+        refund_terms: refundTerms,
       });
       setPolicies((current) => [created, ...current]);
       setVersion("");
       setTitle("");
       setBody("");
+      setConfigureRefundTerms(false);
+      setRefundEligibilityMode("");
+      setReturnWindowDays("");
+      setRestockingMode("");
+      setRestockingPercent("");
       setMessage(
         `${created.title} version ${created.version} saved as draft.`,
       );
@@ -203,6 +302,11 @@ export function PolicyManagementPanel({
                         <span>{policy.status}</span>
                       </div>
                       <span>{policy.title}</span>
+                      {policy.kind === "refund" && policy.refund_terms !== null ? (
+                        <span>
+                          Structured terms: {refundTermsSummary(policy.refund_terms)}
+                        </span>
+                      ) : null}
                       {policy.status === "draft" && writable ? (
                         <button
                           type="button"
@@ -272,6 +376,111 @@ export function PolicyManagementPanel({
             />
           </label>
 
+          {kind === "refund" ? (
+            <div className="operations-policy-editor">
+              <label className="operations-field">
+                <span>Structured return settings</span>
+                <span>
+                  <input
+                    type="checkbox"
+                    checked={configureRefundTerms}
+                    onChange={(event) => {
+                      setConfigureRefundTerms(event.target.checked);
+                    }}
+                  />
+                  {" "}Attach machine-readable return/restocking terms to this version.
+                </span>
+              </label>
+
+              {configureRefundTerms ? (
+                <>
+                  <label className="operations-field">
+                    <span>Return eligibility</span>
+                    <select
+                      value={refundEligibilityMode}
+                      onChange={(event) => {
+                        setRefundEligibilityMode(
+                          event.target.value as RefundPolicyTerms["eligibility_mode"] | "",
+                        );
+                      }}
+                    >
+                      <option value="">Select a rule</option>
+                      <option value="fixed_window">Fixed return window</option>
+                      <option value="case_by_case">Case-by-case approval</option>
+                      <option value="fixed_window_with_exception">
+                        Fixed window with case-by-case exception
+                      </option>
+                    </select>
+                  </label>
+
+                  {refundEligibilityMode !== ""
+                    && refundEligibilityMode !== "case_by_case" ? (
+                      <label className="operations-field">
+                        <span>Return window (days)</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={returnWindowDays}
+                          onChange={(event) => {
+                            setReturnWindowDays(event.target.value);
+                          }}
+                          placeholder="Example: 60"
+                        />
+                      </label>
+                    ) : null}
+
+                  <label className="operations-field">
+                    <span>Restocking fee</span>
+                    <select
+                      value={restockingMode}
+                      onChange={(event) => {
+                        setRestockingMode(
+                          event.target.value as RefundPolicyTerms["restocking_mode"] | "",
+                        );
+                      }}
+                    >
+                      <option value="">Select a rule</option>
+                      <option value="fixed_percentage">Fixed percentage</option>
+                      <option value="case_by_case">Case-by-case decision</option>
+                    </select>
+                  </label>
+
+                  {restockingMode === "fixed_percentage" ? (
+                    <label className="operations-field">
+                      <span>Restocking percentage</span>
+                      <input
+                        type="number"
+                        min="0.01"
+                        max="100"
+                        step="0.01"
+                        value={restockingPercent}
+                        onChange={(event) => {
+                          setRestockingPercent(event.target.value);
+                        }}
+                        placeholder="Example: 25"
+                      />
+                    </label>
+                  ) : null}
+
+                  <p className="operations-request-empty">
+                    Structured terms are versioned with this Refund Policy.
+                    New/uninstalled merchandise, customer-paid return shipping,
+                    outbound-shipping exceptions, and acknowledgement requirements
+                    follow the recorded launch direction. Legal policy text remains
+                    authoritative and still requires approval before publication.
+                  </p>
+                </>
+              ) : (
+                <p className="operations-request-empty">
+                  Leave this off while return-window or restocking decisions remain
+                  unresolved. A draft can still store legal text without inventing
+                  structured values.
+                </p>
+              )}
+            </div>
+          ) : null}
+
           <button
             type="button"
             className="operations-action"
@@ -280,6 +489,7 @@ export function PolicyManagementPanel({
               || version.trim() === ""
               || title.trim() === ""
               || body.trim() === ""
+              || refundTermsInvalid
             }
             onClick={() => {
               void createDraft();
