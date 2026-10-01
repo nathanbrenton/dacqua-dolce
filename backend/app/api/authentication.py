@@ -627,7 +627,9 @@ def verify_email_address(
                 settings,
             )
         ),
-        settings=settings,
+        settings=(
+            get_email_runtime_settings()
+        ),
     )
 
     if not completed:

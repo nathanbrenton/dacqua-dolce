@@ -1,9 +1,11 @@
+from unittest.mock import patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.core.email_config import (
+    EmailRuntimeSettings,
     get_email_runtime_settings,
 )
 from app.db.session import SessionLocal
@@ -124,6 +126,97 @@ def test_registration_marks_email_unverified_and_issues_email() -> None:
         )
 
         assert delivery is not None
+        assert (
+            delivery.status
+            == EmailDeliveryStatus.suppressed
+        )
+
+        db.delete(user)
+        db.commit()
+
+
+def test_verification_complete_api_uses_email_runtime_settings() -> None:
+    email = (
+        f"verify-api-{uuid4()}"
+        "@example.test"
+    )
+
+    email_settings = EmailRuntimeSettings(
+        environment="test",
+        email_provider="disabled",
+        public_origin="http://127.0.0.1:15173",
+    )
+
+    with SessionLocal() as db:
+        user = User(
+            email=email,
+            email_verified_at=None,
+        )
+
+        user.roles.append(
+            UserRole(
+                role=RoleName.customer,
+            )
+        )
+
+        db.add(user)
+        db.flush()
+
+        raw_token = issue_email_verification(
+            db,
+            user=user,
+            settings=email_settings,
+            requested_ip_address=None,
+            requested_user_agent=None,
+        )
+
+        assert raw_token is not None
+
+        user_id = user.id
+
+        db.commit()
+
+    with patch(
+        "app.api.authentication.get_email_runtime_settings",
+        return_value=email_settings,
+    ):
+        response = client.post(
+            "/api/auth/email-verification/complete",
+            json={
+                "token": raw_token,
+            },
+            headers={
+                "X-CSRF-Token": csrf(),
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["message"] == (
+        "Email address verified."
+    )
+
+    with SessionLocal() as db:
+        user = db.get(
+            User,
+            user_id,
+        )
+
+        assert user is not None
+        assert user.email_verified_at is not None
+
+        delivery = db.scalar(
+            select(EmailDelivery).where(
+                EmailDelivery.category
+                == "customer_welcome",
+                EmailDelivery.related_entity_type
+                == "user",
+                EmailDelivery.related_entity_id
+                == str(user_id),
+            )
+        )
+
+        assert delivery is not None
+        assert delivery.recipient == email
         assert (
             delivery.status
             == EmailDeliveryStatus.suppressed
