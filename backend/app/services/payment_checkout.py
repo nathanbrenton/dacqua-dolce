@@ -11,6 +11,7 @@ from app.models.commerce import (
     PaymentReferenceStatus,
 )
 from app.services.audit import record_audit_event
+from app.services.cancellations import get_order_cancellation_request
 from app.services.payment_provider import (
     CheckoutSessionRequest,
     PaymentProviderAdapter,
@@ -56,6 +57,18 @@ def begin_hosted_checkout(
     if order.status != OrderStatus.awaiting_payment:
         raise PaymentCheckoutError(
             "Only an order awaiting payment can start hosted checkout."
+        )
+
+    cancellation = get_order_cancellation_request(
+        db,
+        order_id=order.id,
+    )
+    if (
+        cancellation is not None
+        and cancellation.status != "declined"
+    ):
+        raise PaymentCheckoutError(
+            "Hosted checkout is unavailable while a cancellation request is active."
         )
 
     result = provider.create_checkout_session(

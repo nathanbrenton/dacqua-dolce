@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.commercial import (
     CommercialAddressSnapshot,
@@ -54,11 +56,52 @@ class OrderShipmentRead(BaseModel):
     delivered_at: str | None
 
 
+class OrderCancellationRequestCreate(BaseModel):
+    reason: str | None = Field(
+        default=None,
+        max_length=2000,
+    )
+
+    @field_validator("reason")
+    @classmethod
+    def clean_reason(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+
+class OrderCancellationRead(BaseModel):
+    id: str
+    eligibility_mode: Literal[
+        "unrestricted",
+        "manual_review",
+    ]
+    status: Literal[
+        "requested",
+        "approved",
+        "declined",
+        "completed",
+    ]
+    reason: str | None
+    requested_at: str
+    reviewed_at: str | None
+    completed_at: str | None
+
+
 class OrderRead(BaseModel):
     id: str
     formal_quote_id: str | None
     status: str
     fulfillment_status: str
+    cancellation_mode: Literal[
+        "unrestricted",
+        "manual_review",
+    ]
+    cancellation: OrderCancellationRead | None = None
     subtotal_amount_minor: int
     charges_amount_minor: int
     total_amount_minor: int

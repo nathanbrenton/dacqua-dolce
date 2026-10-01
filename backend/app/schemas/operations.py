@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from typing import Literal
 
 from pydantic import (
     BaseModel,
@@ -438,10 +439,34 @@ class OperationsOrderShipmentRead(BaseModel):
     delivered_at: str | None
 
 
+class OperationsOrderCancellationRead(BaseModel):
+    id: str
+    eligibility_mode: Literal[
+        "unrestricted",
+        "manual_review",
+    ]
+    status: Literal[
+        "requested",
+        "approved",
+        "declined",
+        "completed",
+    ]
+    reason: str | None
+    review_note: str | None
+    requested_at: str
+    reviewed_at: str | None
+    completed_at: str | None
+
+
 class OperationsOrderRead(BaseModel):
     id: str
     status: str
     fulfillment_status: str
+    cancellation_mode: Literal[
+        "unrestricted",
+        "manual_review",
+    ]
+    cancellation: OperationsOrderCancellationRead | None = None
     supplier_order_reference: str | None
     supplier_ordered_at: str | None
     received_ready_at: str | None
@@ -460,6 +485,28 @@ class OperationsOrderRead(BaseModel):
         default_factory=list,
     )
     shipment: OperationsOrderShipmentRead | None = None
+
+
+class OrderCancellationReviewUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal[
+        "approve",
+        "decline",
+        "complete",
+    ]
+    note: str | None = Field(
+        default=None,
+        max_length=4000,
+    )
+
+    @field_validator("note")
+    @classmethod
+    def clean_note(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
 
 
 class OrderFulfillmentUpdate(BaseModel):

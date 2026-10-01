@@ -39,6 +39,7 @@ import {
 } from "../../api/cart";
 import {
   getOrders,
+  requestOrderCancellation,
   type Order,
 } from "../../api/orders";
 import {
@@ -540,6 +541,10 @@ export function AccountPage({
     useState<Cart | null>(null);
   const [orders, setOrders] =
     useState<Order[]>([]);
+  const [cancellationReasons, setCancellationReasons] =
+    useState<Record<string, string>>({});
+  const [cancellationBusyOrderId, setCancellationBusyOrderId] =
+    useState<string | null>(null);
   const [communicationPreferences, setCommunicationPreferences] =
     useState<CommunicationPreferences | null>(null);
   const [customerRequests, setCustomerRequests] =
@@ -915,6 +920,52 @@ export function AccountPage({
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+
+  async function submitOrderCancellation(
+    order: Order,
+  ): Promise<void> {
+    setCancellationBusyOrderId(order.id);
+    setError(null);
+    setSaveNotice(null);
+
+    try {
+      const reason = cancellationReasons[order.id]?.trim() || null;
+      const cancellation = await requestOrderCancellation(
+        order.id,
+        reason,
+      );
+
+      setOrders((current) =>
+        current.map((candidate) =>
+          candidate.id === order.id
+            ? {
+                ...candidate,
+                cancellation,
+              }
+            : candidate,
+        ),
+      );
+      setCancellationReasons((current) => {
+        const next = { ...current };
+        delete next[order.id];
+        return next;
+      });
+      setSaveNotice(
+        cancellation.status === "approved"
+          ? "Cancellation accepted. Our team will complete any required payment or administrative steps."
+          : "Cancellation review requested.",
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Cancellation request failed.",
+      );
+    } finally {
+      setCancellationBusyOrderId(null);
     }
   }
 
@@ -1925,6 +1976,65 @@ export function AccountPage({
                           </>
                         ) : null}
                       </p>
+                    ) : null}
+
+                    {order.cancellation !== null ? (
+                      <div className="account-order-cancellation">
+                        <strong>Cancellation</strong>
+                        <p className="account-muted">
+                          {order.cancellation.status === "requested"
+                            ? "Cancellation review requested. Our team will review the supplier/order status."
+                            : order.cancellation.status === "approved"
+                              ? "Cancellation accepted. Any required payment reversal or administrative completion is handled separately."
+                              : order.cancellation.status === "declined"
+                                ? "Cancellation was reviewed and not approved. Contact us if you need help."
+                                : "Cancellation workflow completed."}
+                        </p>
+                        {order.cancellation.reason !== null ? (
+                          <p className="account-muted">
+                            Reason: {order.cancellation.reason}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      order.status !== "cancelled"
+                      && order.status !== "refunded"
+                    ) ? (
+                      <div className="account-order-cancellation">
+                        <p className="account-muted">
+                          {order.cancellation_mode === "unrestricted"
+                            ? "Cancellation is available before the supplier order is confirmed."
+                            : "The supplier order has been confirmed, so cancellation requires employee review."}
+                        </p>
+                        <label className="account-order-cancellation-field">
+                          <span>Reason (optional)</span>
+                          <textarea
+                            rows={2}
+                            maxLength={2000}
+                            value={cancellationReasons[order.id] ?? ""}
+                            onChange={(event) => {
+                              setCancellationReasons((current) => ({
+                                ...current,
+                                [order.id]: event.target.value,
+                              }));
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          className="account-action"
+                          disabled={cancellationBusyOrderId === order.id}
+                          onClick={() => {
+                            void submitOrderCancellation(order);
+                          }}
+                        >
+                          {cancellationBusyOrderId === order.id
+                            ? "Submitting…"
+                            : order.cancellation_mode === "unrestricted"
+                              ? "Cancel order"
+                              : "Request cancellation review"}
+                        </button>
+                      </div>
                     ) : null}
 
                     {order.charges.length > 0 ? (

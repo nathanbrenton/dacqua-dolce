@@ -19,6 +19,7 @@ from app.models.catalog import (
 )
 from app.models.commerce import (
     Order,
+    OrderCancellationRequest,
     OrderCharge,
     OrderItem,
     OrderShipment,
@@ -69,6 +70,7 @@ from app.schemas.operations import (
     OperationsFormalQuoteRead,
     OperationsInsightBucketRead,
     OperationsInventoryRead,
+    OperationsOrderCancellationRead,
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
     OperationsOrderRead,
@@ -80,6 +82,7 @@ from app.schemas.operations import (
     OperationsQuoteRead,
     OperationsSalesInsightsRead,
     OperationsSummaryRead,
+    OrderCancellationReviewUpdate,
     OrderFulfillmentUpdate,
     PricingUpdateRequest,
     ProductRelationshipCreateRequest,
@@ -88,6 +91,12 @@ from app.schemas.operations import (
     QuoteStatusUpdate,
 )
 from app.services.audit import record_audit_event
+from app.services.cancellations import (
+    CancellationError,
+    cancellation_mode_for_order,
+    get_order_cancellation_request,
+    review_order_cancellation,
+)
 from app.services.commerce import (
     active_reserved_quantity,
 )
@@ -1737,6 +1746,29 @@ def update_customer_equipment(
     return operations_customer_read(db, user=customer)
 
 
+def operations_cancellation_read(
+    cancellation: OrderCancellationRequest,
+) -> OperationsOrderCancellationRead:
+    return OperationsOrderCancellationRead(
+        id=str(cancellation.id),
+        eligibility_mode=cancellation.eligibility_mode,
+        status=cancellation.status,
+        reason=cancellation.reason,
+        review_note=cancellation.review_note,
+        requested_at=cancellation.created_at.isoformat(),
+        reviewed_at=(
+            cancellation.reviewed_at.isoformat()
+            if cancellation.reviewed_at is not None
+            else None
+        ),
+        completed_at=(
+            cancellation.completed_at.isoformat()
+            if cancellation.completed_at is not None
+            else None
+        ),
+    )
+
+
 def operations_order_read(
     db: DatabaseSession,
     *,
@@ -1767,11 +1799,21 @@ def operations_order_read(
         .where(OrderCharge.order_id == order.id)
         .order_by(OrderCharge.sort_order, OrderCharge.created_at)
     ).all()
+    cancellation = get_order_cancellation_request(
+        db,
+        order_id=order.id,
+    )
 
     return OperationsOrderRead(
         id=str(order.id),
         status=order.status.value,
         fulfillment_status=order.fulfillment_status.value,
+        cancellation_mode=cancellation_mode_for_order(order),
+        cancellation=(
+            operations_cancellation_read(cancellation)
+            if cancellation is not None
+            else None
+        ),
         supplier_order_reference=order.supplier_order_reference,
         supplier_ordered_at=(
             order.supplier_ordered_at.isoformat()
@@ -1962,6 +2004,67 @@ def update_order_fulfillment(
             tracking_url=payload.tracking_url,
         )
     except FulfillmentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(
+        db,
+        order=order,
+        customer=customer,
+    )
+
+
+@router.post(
+    "/orders/{order_id}/cancellation",
+    response_model=OperationsOrderRead,
+)
+def review_order_cancellation_request(
+    order_id: uuid.UUID,
+    payload: OrderCancellationReviewUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    cancellation = get_order_cancellation_request(
+        db,
+        order_id=order.id,
+    )
+    if cancellation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cancellation request not found.",
+        )
+
+    try:
+        review_order_cancellation(
+            db,
+            cancellation=cancellation,
+            actor_user_id=current_user.id,
+            action=payload.action,
+            note=payload.note,
+        )
+    except CancellationError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),

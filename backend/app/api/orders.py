@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+import uuid
+
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
 from app.api.dependencies.auth import (
@@ -7,20 +9,51 @@ from app.api.dependencies.auth import (
 )
 from app.models.commerce import (
     Order,
+    OrderCancellationRequest,
     OrderCharge,
     OrderItem,
     OrderShipment,
 )
 from app.schemas.commerce import (
+    OrderCancellationRead,
+    OrderCancellationRequestCreate,
     OrderItemRead,
     OrderRead,
     OrderShipmentRead,
+)
+from app.services.cancellations import (
+    CancellationError,
+    cancellation_mode_for_order,
+    get_order_cancellation_request,
+    request_order_cancellation,
 )
 
 router = APIRouter(
     prefix="/orders",
     tags=["orders"],
 )
+
+
+def customer_cancellation_read(
+    cancellation: OrderCancellationRequest,
+) -> OrderCancellationRead:
+    return OrderCancellationRead(
+        id=str(cancellation.id),
+        eligibility_mode=cancellation.eligibility_mode,
+        status=cancellation.status,
+        reason=cancellation.reason,
+        requested_at=cancellation.created_at.isoformat(),
+        reviewed_at=(
+            cancellation.reviewed_at.isoformat()
+            if cancellation.reviewed_at is not None
+            else None
+        ),
+        completed_at=(
+            cancellation.completed_at.isoformat()
+            if cancellation.completed_at is not None
+            else None
+        ),
+    )
 
 
 @router.get(
@@ -54,6 +87,10 @@ def list_orders(
             .where(OrderCharge.order_id == order.id)
             .order_by(OrderCharge.sort_order, OrderCharge.created_at)
         ).all()
+        cancellation = get_order_cancellation_request(
+            db,
+            order_id=order.id,
+        )
 
         result.append(
             OrderRead(
@@ -65,6 +102,12 @@ def list_orders(
                 ),
                 status=order.status.value,
                 fulfillment_status=order.fulfillment_status.value,
+                cancellation_mode=cancellation_mode_for_order(order),
+                cancellation=(
+                    customer_cancellation_read(cancellation)
+                    if cancellation is not None
+                    else None
+                ),
                 subtotal_amount_minor=order.subtotal_amount_minor,
                 charges_amount_minor=order.charges_amount_minor,
                 total_amount_minor=(order.total_amount_minor),
@@ -117,3 +160,43 @@ def list_orders(
         )
 
     return result
+
+
+@router.post(
+    "/{order_id}/cancellation",
+    response_model=OrderCancellationRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def request_cancellation(
+    order_id: uuid.UUID,
+    payload: OrderCancellationRequestCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OrderCancellationRead:
+    order = db.scalar(
+        select(Order).where(
+            Order.id == order_id,
+            Order.user_id == current_user.id,
+        )
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    try:
+        cancellation = request_order_cancellation(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            reason=payload.reason,
+        )
+    except CancellationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return customer_cancellation_read(cancellation)

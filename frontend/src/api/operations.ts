@@ -290,10 +290,24 @@ export type OperationsOrderShipment = {
   delivered_at: string | null;
 };
 
+export type OperationsOrderCancellation = {
+  id: string;
+  eligibility_mode: "unrestricted" | "manual_review";
+  status: "requested" | "approved" | "declined" | "completed";
+  reason: string | null;
+  review_note: string | null;
+  requested_at: string;
+  reviewed_at: string | null;
+  completed_at: string | null;
+};
+
+
 export type OperationsOrder = {
   id: string;
   status: string;
   fulfillment_status: string;
+  cancellation_mode: "unrestricted" | "manual_review";
+  cancellation: OperationsOrderCancellation | null;
   supplier_order_reference: string | null;
   supplier_ordered_at: string | null;
   received_ready_at: string | null;
@@ -642,6 +656,21 @@ export function updateOrderFulfillment(
     payload,
   );
 }
+
+export function reviewOrderCancellation(
+  orderId: string,
+  payload: {
+    action: "approve" | "decline" | "complete";
+    note?: string | null;
+  },
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/cancellation`,
+    "POST",
+    payload,
+  );
+}
+
 
 export function getOperationsCatalog(): Promise<OperationsProduct[]> {
   return getJson(

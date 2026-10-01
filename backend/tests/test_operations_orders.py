@@ -39,6 +39,14 @@ class OrderHistoryDatabase:
         self.profile = profile
         self.statements: list[str] = []
 
+    def scalar(self, statement: object):
+        query = str(statement)
+        if "FROM order_cancellation_requests" in query:
+            return None
+        raise AssertionError(
+            f"Unexpected scalar query: {query}"
+        )
+
     def scalars(
         self,
         statement: object,
@@ -171,6 +179,8 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         "id": str(order_id),
         "status": "paid",
         "fulfillment_status": "supplier_ordered",
+        "cancellation_mode": "manual_review",
+        "cancellation": None,
         "supplier_order_reference": "PO-12345",
         "supplier_ordered_at": order.supplier_ordered_at.isoformat(),
         "received_ready_at": None,

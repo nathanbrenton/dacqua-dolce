@@ -12,6 +12,7 @@ from app.models.commerce import (
     OrderStatus,
 )
 from app.services.audit import record_audit_event
+from app.services.cancellations import get_order_cancellation_request
 
 ALLOWED_FULFILLMENT_TRANSITIONS: dict[
     FulfillmentStatus,
@@ -111,6 +112,17 @@ def transition_order_fulfillment(
     shipment = get_order_shipment(db, order_id=order.id)
 
     if new_status == FulfillmentStatus.supplier_ordered:
+        cancellation = get_order_cancellation_request(
+            db,
+            order_id=order.id,
+        )
+        if (
+            cancellation is not None
+            and cancellation.status != "declined"
+        ):
+            raise FulfillmentError(
+                "Supplier ordering is blocked while a cancellation request is active."
+            )
         order.supplier_order_reference = _clean_optional(
             supplier_order_reference,
             max_length=160,

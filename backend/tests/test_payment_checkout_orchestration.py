@@ -2,7 +2,12 @@ import uuid
 
 import pytest
 
-from app.models.commerce import Order, OrderStatus, PaymentProviderReference
+from app.models.commerce import (
+    Order,
+    OrderCancellationRequest,
+    OrderStatus,
+    PaymentProviderReference,
+)
 from app.services.payment_checkout import PaymentCheckoutError, begin_hosted_checkout
 from app.services.payment_provider import CheckoutSessionResult
 
@@ -21,11 +26,17 @@ class FakeProvider:
 
 
 class CheckoutDatabase:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        cancellation: OrderCancellationRequest | None = None,
+    ) -> None:
         self.added: list[object] = []
+        self.cancellation = cancellation
 
     def scalar(self, statement: object):
         query = str(statement)
+        if "FROM order_cancellation_requests" in query:
+            return self.cancellation
         if "FROM payment_provider_references" in query:
             return None
         raise AssertionError(query)
@@ -91,3 +102,35 @@ def test_hosted_checkout_rejects_non_payment_order() -> None:
             cancel_url="https://dacquadolce.com/account",
             provider=FakeProvider(),
         )
+
+
+def test_hosted_checkout_is_blocked_by_active_cancellation() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+    )
+    cancellation = OrderCancellationRequest(
+        id=uuid.uuid4(),
+        order_id=order.id,
+        requested_by_user_id=order.user_id,
+        eligibility_mode="unrestricted",
+        status="approved",
+    )
+    provider = FakeProvider()
+
+    with pytest.raises(PaymentCheckoutError, match="cancellation"):
+        begin_hosted_checkout(
+            CheckoutDatabase(cancellation),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+        )
+
+    assert provider.request is None

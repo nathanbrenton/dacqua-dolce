@@ -21,10 +21,18 @@ class CustomerOrdersDatabase:
         order: object,
         item: object,
         shipment: object,
+        cancellation: object | None = None,
     ) -> None:
         self.order = order
         self.item = item
         self.shipment = shipment
+        self.cancellation = cancellation
+
+    def scalar(self, statement: object):
+        query = str(statement)
+        if "FROM order_cancellation_requests" in query:
+            return self.cancellation
+        raise AssertionError(query)
 
     def scalars(self, statement: object) -> ScalarResult:
         query = str(statement)
@@ -53,6 +61,7 @@ def test_customer_order_exposes_fulfillment_and_tracking_without_supplier_refere
         status=OrderStatus.paid,
         fulfillment_status=FulfillmentStatus.shipped,
         supplier_order_reference="INTERNAL-PO-123",
+        supplier_ordered_at=shipped_at,
         shipped_at=shipped_at,
         delivered_at=None,
         subtotal_amount_minor=249900,
@@ -94,6 +103,8 @@ def test_customer_order_exposes_fulfillment_and_tracking_without_supplier_refere
 
     assert payload["status"] == "paid"
     assert payload["fulfillment_status"] == "shipped"
+    assert payload["cancellation_mode"] == "manual_review"
+    assert payload["cancellation"] is None
     assert payload["items"][0]["estimated_lead_time"] == "2–3 weeks"
     assert payload["shipment"] == {
         "carrier": "UPS",

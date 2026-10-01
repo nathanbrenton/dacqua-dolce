@@ -12,6 +12,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -312,6 +313,107 @@ class Order(Base):
         String(3),
         nullable=False,
         default="USD",
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+class OrderCancellationRequest(Base):
+    __tablename__ = "order_cancellation_requests"
+    __table_args__ = (
+        UniqueConstraint(
+            "order_id",
+            name="uq_order_cancellation_requests_order_id",
+        ),
+        CheckConstraint(
+            "eligibility_mode IN ('unrestricted', 'manual_review')",
+            name="cancellation_mode_valid",
+        ),
+        CheckConstraint(
+            "status IN ('requested', 'approved', 'declined', 'completed')",
+            name="cancellation_status_valid",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "orders.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+    )
+
+    requested_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+
+    eligibility_mode: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    reason: Mapped[str | None] = mapped_column(
+        Text,
+    )
+
+    supplier_ordered_at_snapshot: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="SET NULL",
+        ),
+    )
+
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    review_note: Mapped[str | None] = mapped_column(
+        Text,
+    )
+
+    completed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="SET NULL",
+        ),
+    )
+
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
     )
 
     created_at: Mapped[datetime] = mapped_column(

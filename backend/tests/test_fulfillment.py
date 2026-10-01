@@ -7,6 +7,7 @@ from app.models.audit import AuditEvent
 from app.models.commerce import (
     FulfillmentStatus,
     Order,
+    OrderCancellationRequest,
     OrderShipment,
     OrderStatus,
 )
@@ -17,14 +18,20 @@ from app.services.fulfillment import (
 
 
 class FulfillmentDatabase:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        cancellation: OrderCancellationRequest | None = None,
+    ) -> None:
         self.shipment: OrderShipment | None = None
+        self.cancellation = cancellation
         self.added: list[object] = []
 
     def scalar(self, statement: object):
         query = str(statement)
         if "FROM order_shipments" in query:
             return self.shipment
+        if "FROM order_cancellation_requests" in query:
+            return self.cancellation
         raise AssertionError(query)
 
     def add(self, value: object) -> None:
@@ -76,6 +83,28 @@ def test_paid_order_advances_to_supplier_ordered() -> None:
     assert order.supplier_ordered_at == now
     assert order.fulfillment_updated_at == now
     assert any(isinstance(value, AuditEvent) for value in db.added)
+
+
+def test_active_cancellation_blocks_supplier_ordering() -> None:
+    order = make_order()
+    cancellation = OrderCancellationRequest(
+        id=uuid.uuid4(),
+        order_id=order.id,
+        requested_by_user_id=order.user_id,
+        eligibility_mode="unrestricted",
+        status="approved",
+    )
+    db = FulfillmentDatabase(cancellation)
+
+    with pytest.raises(FulfillmentError, match="cancellation"):
+        transition_order_fulfillment(
+            db,  # type: ignore[arg-type]
+            order=order,
+            actor_user_id=uuid.uuid4(),
+            new_status=FulfillmentStatus.supplier_ordered,
+        )
+
+    assert order.fulfillment_status == FulfillmentStatus.not_started
 
 
 def test_unpaid_order_cannot_advance_fulfillment() -> None:

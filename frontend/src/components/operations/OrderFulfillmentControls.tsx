@@ -4,6 +4,7 @@ import {
 } from "react";
 
 import {
+  reviewOrderCancellation,
   type OperationsOrder,
   updateOrderFulfillment,
 } from "../../api/operations";
@@ -38,6 +39,10 @@ export function OrderFulfillmentControls({
   const [trackingUrl, setTrackingUrl] =
     useState(order.shipment?.tracking_url ?? "");
   const [saving, setSaving] = useState(false);
+  const [cancellationSaving, setCancellationSaving] =
+    useState(false);
+  const [reviewNote, setReviewNote] =
+    useState(order.cancellation?.review_note ?? "");
   const [error, setError] =
     useState<string | null>(null);
 
@@ -55,6 +60,38 @@ export function OrderFulfillmentControls({
         return null;
     }
   }, [order.fulfillment_status]);
+
+  const supplierOrderingBlocked =
+    order.fulfillment_status === "not_started"
+    && order.cancellation !== null
+    && order.cancellation.status !== "declined";
+
+  async function reviewCancellation(
+    action: "approve" | "decline" | "complete",
+  ): Promise<void> {
+    setCancellationSaving(true);
+    setError(null);
+
+    try {
+      const updated = await reviewOrderCancellation(
+        order.id,
+        {
+          action,
+          note: reviewNote.trim() || null,
+        },
+      );
+      onUpdated(updated);
+      setReviewNote(updated.cancellation?.review_note ?? "");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Cancellation update failed.",
+      );
+    } finally {
+      setCancellationSaving(false);
+    }
+  }
 
   async function advance(): Promise<void> {
     if (nextStatus === null) {
@@ -112,6 +149,101 @@ export function OrderFulfillmentControls({
         </span>
       </div>
 
+      <div className="order-cancellation-operations">
+        <div>
+          <strong>Cancellation</strong>
+          <span>
+            {order.cancellation === null
+              ? order.cancellation_mode === "unrestricted"
+                ? "No request · unrestricted before supplier confirmation"
+                : "No request · manual review after supplier confirmation"
+              : `${order.cancellation.status.replaceAll("_", " ")} · ${
+                  order.cancellation.eligibility_mode === "unrestricted"
+                    ? "pre-supplier"
+                    : "post-supplier review"
+                }`}
+          </span>
+        </div>
+
+        {order.cancellation?.reason ? (
+          <p className="account-muted">
+            Customer reason: {order.cancellation.reason}
+          </p>
+        ) : null}
+
+        {order.cancellation?.status === "requested" ? (
+          <>
+            <label className="operations-field">
+              <span>Cancellation review note (optional)</span>
+              <textarea
+                rows={3}
+                maxLength={4000}
+                value={reviewNote}
+                onChange={(event) => {
+                  setReviewNote(event.target.value);
+                }}
+              />
+            </label>
+            <div className="order-cancellation-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={cancellationSaving}
+                onClick={() => {
+                  void reviewCancellation("approve");
+                }}
+              >
+                Approve cancellation
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={cancellationSaving}
+                onClick={() => {
+                  void reviewCancellation("decline");
+                }}
+              >
+                Decline cancellation
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {order.cancellation?.status === "approved" ? (
+          <>
+            <p className="account-muted">
+              Cancellation is approved. Payment reversal/void is not automated;
+              complete any required payment or administrative action separately.
+            </p>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={cancellationSaving}
+              onClick={() => {
+                void reviewCancellation("complete");
+              }}
+            >
+              {cancellationSaving
+                ? "Saving…"
+                : "Mark cancellation complete"}
+            </button>
+          </>
+        ) : null}
+
+        {order.cancellation?.status === "declined" ? (
+          <p className="account-muted">
+            Cancellation was reviewed and declined.
+            Fulfillment may continue.
+          </p>
+        ) : null}
+
+        {order.cancellation?.status === "completed" ? (
+          <p className="account-muted">
+            Cancellation workflow is complete.
+          </p>
+        ) : null}
+      </div>
+
       {order.status !== "paid" ? (
         <p className="account-muted">
           Fulfillment advances after payment is confirmed.
@@ -119,7 +251,8 @@ export function OrderFulfillmentControls({
       ) : null}
 
       {order.status === "paid"
-        && order.fulfillment_status === "not_started" ? (
+        && order.fulfillment_status === "not_started"
+        && !supplierOrderingBlocked ? (
         <label className="operations-field">
           <span>Supplier order reference (optional)</span>
           <input
@@ -131,6 +264,12 @@ export function OrderFulfillmentControls({
             }}
           />
         </label>
+      ) : null}
+
+      {supplierOrderingBlocked ? (
+        <p className="operations-alert" role="status">
+          Supplier ordering is blocked while this cancellation is active.
+        </p>
       ) : null}
 
       {order.status === "paid"
@@ -205,7 +344,7 @@ export function OrderFulfillmentControls({
         <button
           type="button"
           className="secondary-button"
-          disabled={saving}
+          disabled={saving || supplierOrderingBlocked}
           onClick={() => {
             void advance();
           }}

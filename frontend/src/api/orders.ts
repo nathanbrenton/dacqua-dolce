@@ -1,3 +1,4 @@
+import { getCsrfToken } from "./authentication";
 import type { CommercialAddress, CommercialCharge } from "./commercial";
 
 export type OrderItem = {
@@ -18,11 +19,24 @@ export type OrderShipment = {
   delivered_at: string | null;
 };
 
+export type OrderCancellation = {
+  id: string;
+  eligibility_mode: "unrestricted" | "manual_review";
+  status: "requested" | "approved" | "declined" | "completed";
+  reason: string | null;
+  requested_at: string;
+  reviewed_at: string | null;
+  completed_at: string | null;
+};
+
+
 export type Order = {
   id: string;
   formal_quote_id: string | null;
   status: string;
   fulfillment_status: string;
+  cancellation_mode: "unrestricted" | "manual_review";
+  cancellation: OrderCancellation | null;
   subtotal_amount_minor: number;
   charges_amount_minor: number;
   total_amount_minor: number;
@@ -51,4 +65,39 @@ export async function getOrders(): Promise<Order[]> {
   }
 
   return response.json() as Promise<Order[]>;
+}
+
+async function readError(response: Response): Promise<string> {
+  try {
+    const payload = await response.json() as { detail?: string };
+    return payload.detail ?? `Request failed: ${response.status}`;
+  } catch {
+    return `Request failed: ${response.status}`;
+  }
+}
+
+export async function requestOrderCancellation(
+  orderId: string,
+  reason: string | null,
+): Promise<OrderCancellation> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/orders/${encodeURIComponent(orderId)}/cancellation`,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ reason }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<OrderCancellation>;
 }
