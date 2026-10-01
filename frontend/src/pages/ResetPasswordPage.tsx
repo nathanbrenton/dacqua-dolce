@@ -6,6 +6,9 @@ import {
 import {
   completePasswordReset,
 } from "../api/authentication";
+import {
+  PasswordInput,
+} from "../components/forms/PasswordInput";
 
 type ResetPasswordPageProps = {
   token: string;
@@ -106,45 +109,36 @@ export function ResetPasswordPage({
             void submit(event);
           }}
         >
-          <label>
-            <span>New password</span>
+          <PasswordInput
+            label="New password"
+            autoComplete="new-password"
+            required
+            minLength={12}
+            maxLength={256}
+            value={password}
+            onChange={(event) => {
+              setPassword(
+                event.target.value,
+              );
+            }}
+          />
 
-            <input
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={12}
-              maxLength={256}
-              value={password}
-              onChange={(event) => {
-                setPassword(
-                  event.target.value,
-                );
-              }}
-            />
-          </label>
-
-          <label>
-            <span>
-              Confirm new password
-            </span>
-
-            <input
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={12}
-              maxLength={256}
-              value={
-                passwordConfirmation
-              }
-              onChange={(event) => {
-                setPasswordConfirmation(
-                  event.target.value,
-                );
-              }}
-            />
-          </label>
+          <PasswordInput
+            label="Confirm new password"
+            visibilityLabel="password confirmation"
+            autoComplete="new-password"
+            required
+            minLength={12}
+            maxLength={256}
+            value={
+              passwordConfirmation
+            }
+            onChange={(event) => {
+              setPasswordConfirmation(
+                event.target.value,
+              );
+            }}
+          />
 
           {error !== null ? (
             <p

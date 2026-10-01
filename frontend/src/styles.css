@@ -644,6 +644,65 @@ h2 {
   border-color: var(--ink-muted);
 }
 
+.password-field {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.password-field > label {
+  color: var(--ink);
+  font-size: 0.90rem;
+  font-weight: 700;
+}
+
+.password-input-control {
+  position: relative;
+  min-width: 0;
+}
+
+.auth-form .password-input-control input,
+.account-form .password-input-control input {
+  padding-right: 54px;
+}
+
+.password-visibility-toggle {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-button);
+}
+
+.password-visibility-toggle:hover {
+  color: var(--ink);
+}
+
+.password-visibility-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.password-visibility-toggle:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 0;
+}
+
 .auth-helper,
 .auth-error,
 .auth-privacy-note {
@@ -1231,6 +1290,10 @@ textarea:focus-visible {
   color: var(--ink);
   font-size: 0.90rem;
   font-weight: 700;
+}
+
+.account-form .password-field {
+  gap: 7px;
 }
 
 .account-form input {

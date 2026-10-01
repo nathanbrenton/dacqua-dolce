@@ -18,6 +18,9 @@ import {
   type AuthenticationStatus,
   type MfaEnrollmentResponse,
 } from "../../api/authentication";
+import {
+  PasswordInput,
+} from "../forms/PasswordInput";
 
 type AuthMode = "login" | "register";
 
@@ -551,32 +554,29 @@ export function AuthDialog({
               />
             </label>
 
-            <label>
-              <span>Password</span>
-
-              <input
-                type="password"
-                name="password"
-                autoComplete={
-                  mode === "login"
-                    ? "current-password"
-                    : "new-password"
-                }
-                required
-                minLength={
-                  mode === "register"
-                    ? 12
-                    : 1
-                }
-                maxLength={256}
-                value={password}
-                onChange={(event) => {
-                  setPassword(
-                    event.target.value,
-                  );
-                }}
-              />
-            </label>
+            <PasswordInput
+              key={mode}
+              label="Password"
+              name="password"
+              autoComplete={
+                mode === "login"
+                  ? "current-password"
+                  : "new-password"
+              }
+              required
+              minLength={
+                mode === "register"
+                  ? 12
+                  : 1
+              }
+              maxLength={256}
+              value={password}
+              onChange={(event) => {
+                setPassword(
+                  event.target.value,
+                );
+              }}
+            />
 
             {mode === "register" ? (
               <p className="auth-helper">

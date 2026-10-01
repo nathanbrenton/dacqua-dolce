@@ -57,6 +57,9 @@ import {
   isCompleteUsPhone,
 } from "../../utils/phone";
 import {
+  PasswordInput,
+} from "../forms/PasswordInput";
+import {
   UsPhoneInput,
 } from "../forms/UsPhoneInput";
 
@@ -385,24 +388,18 @@ function SecurityPanel({
                 );
               }}
             >
-              <label>
-                <span>
-                  Current password
-                </span>
-
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  maxLength={256}
-                  value={password}
-                  onChange={(event) => {
-                    setPassword(
-                      event.target.value,
-                    );
-                  }}
-                />
-              </label>
+              <PasswordInput
+                label="Current password"
+                autoComplete="current-password"
+                required
+                maxLength={256}
+                value={password}
+                onChange={(event) => {
+                  setPassword(
+                    event.target.value,
+                  );
+                }}
+              />
 
               {securityError !== null ? (
                 <p
