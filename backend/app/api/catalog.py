@@ -118,10 +118,23 @@ def public_document_reads(
             path=document.storage_path,
             content_type=document.content_type,
             version=document.version,
+            verified_at=(
+                document.verified_at.isoformat()
+                if document.verified_at is not None
+                else None
+            ),
         )
         for document in documents
         if document.active
         and document.public
+        and (
+            document.document_type.value != "warranty"
+            or (
+                document.verified_at is not None
+                and document.checksum_sha256 is not None
+                and len(document.checksum_sha256) == 64
+            )
+        )
     ]
 
 

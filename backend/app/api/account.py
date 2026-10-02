@@ -14,7 +14,12 @@ from app.api.dependencies.auth import (
     DatabaseSession,
 )
 from app.core.email_config import get_email_runtime_settings
-from app.models.catalog import Product, ProductDocument, ProductRelationship
+from app.models.catalog import (
+    Product,
+    ProductDocument,
+    ProductDocumentType,
+    ProductRelationship,
+)
 from app.models.customer import (
     CustomerAddress,
     CustomerCommunicationPreferences,
@@ -425,8 +430,19 @@ def get_customer_equipment(
                         path=document.storage_path,
                         content_type=document.content_type,
                         version=document.version,
+                        verified_at=(
+                            document.verified_at.isoformat()
+                            if document.verified_at is not None
+                            else None
+                        ),
                     )
                     for document in documents
+                    if document.document_type != ProductDocumentType.warranty
+                    or (
+                        document.verified_at is not None
+                        and document.checksum_sha256 is not None
+                        and len(document.checksum_sha256) == 64
+                    )
                 ],
             )
         )
@@ -634,6 +650,22 @@ def customer_formal_quote_read(
             }
             for charge in formal_quote.charges
         ],
+        warranty_snapshots=[
+            {
+                "id": str(snapshot.id),
+                "sku": snapshot.sku_snapshot,
+                "product_name": snapshot.product_name_snapshot,
+                "manufacturer_name": snapshot.manufacturer_name_snapshot,
+                "title": snapshot.title_snapshot,
+                "version": snapshot.version_snapshot,
+                "path": snapshot.storage_path_snapshot,
+                "content_type": snapshot.content_type_snapshot,
+                "checksum_sha256": snapshot.checksum_sha256_snapshot,
+                "source_reference": snapshot.source_reference_snapshot,
+                "verified_at": snapshot.verified_at_snapshot.isoformat(),
+            }
+            for snapshot in formal_quote.warranty_snapshots
+        ],
         policy_snapshots=[
             {
                 "id": snapshot.id,
@@ -698,6 +730,7 @@ def get_customer_formal_quotes(
             selectinload(FormalQuote.items),
             selectinload(FormalQuote.charges),
             selectinload(FormalQuote.policy_snapshots),
+            selectinload(FormalQuote.warranty_snapshots),
         )
         .where(
             FormalQuote.customer_user_id == current_user.id,
@@ -735,6 +768,7 @@ def approve_customer_formal_quote(
             selectinload(FormalQuote.items),
             selectinload(FormalQuote.charges),
             selectinload(FormalQuote.policy_snapshots),
+            selectinload(FormalQuote.warranty_snapshots),
         )
         .where(FormalQuote.id == formal_quote_id)
     )

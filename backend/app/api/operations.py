@@ -12,6 +12,7 @@ from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
 from app.models.catalog import (
     Product,
+    ProductDocumentType,
     ProductInventory,
     ProductPrice,
     ProductRelationship,
@@ -174,6 +175,22 @@ def operations_formal_quote_read(
                 "amount_minor": charge.amount_minor,
             }
             for charge in formal_quote.charges
+        ],
+        warranty_snapshots=[
+            {
+                "id": str(snapshot.id),
+                "sku": snapshot.sku_snapshot,
+                "product_name": snapshot.product_name_snapshot,
+                "manufacturer_name": snapshot.manufacturer_name_snapshot,
+                "title": snapshot.title_snapshot,
+                "version": snapshot.version_snapshot,
+                "path": snapshot.storage_path_snapshot,
+                "content_type": snapshot.content_type_snapshot,
+                "checksum_sha256": snapshot.checksum_sha256_snapshot,
+                "source_reference": snapshot.source_reference_snapshot,
+                "verified_at": snapshot.verified_at_snapshot.isoformat(),
+            }
+            for snapshot in formal_quote.warranty_snapshots
         ],
         policy_snapshots=[
             {
@@ -1382,6 +1399,7 @@ def list_quotes(
             selectinload(QuoteRequest.formal_quotes).selectinload(
                 FormalQuote.policy_snapshots
             ),
+            selectinload(FormalQuote.warranty_snapshots),
         )
         .order_by(QuoteRequest.created_at.desc())
         .limit(200)
@@ -2159,6 +2177,26 @@ def operations_product_read(
         online_sale_approved=(
             product.online_sale_approved
         ),
+        warranty_documents=[
+            {
+                "id": str(document.id),
+                "title": document.title,
+                "version": document.version,
+                "path": document.storage_path,
+                "content_type": document.content_type,
+                "checksum_sha256": document.checksum_sha256,
+                "source_reference": document.source_reference,
+                "public": document.public,
+                "active": document.active,
+                "verified_at": (
+                    document.verified_at.isoformat()
+                    if document.verified_at is not None
+                    else None
+                ),
+            }
+            for document in product.documents
+            if document.document_type == ProductDocumentType.warranty
+        ],
         pricing=OperationsPricingRead(
             mode=(
                 current_price.pricing_policy_mode.value
@@ -2211,6 +2249,7 @@ def load_product_for_operations(
             selectinload(Product.manufacturer),
             selectinload(Product.prices),
             selectinload(Product.variants),
+            selectinload(Product.documents),
             selectinload(Product.related_options).selectinload(
                 ProductRelationship.related_product
             ),
@@ -2236,6 +2275,7 @@ def operations_catalog(
             selectinload(Product.manufacturer),
             selectinload(Product.prices),
             selectinload(Product.variants),
+            selectinload(Product.documents),
             selectinload(Product.related_options).selectinload(
                 ProductRelationship.related_product
             ),
@@ -2740,6 +2780,7 @@ def present_quote_to_customer(
             selectinload(FormalQuote.items),
             selectinload(FormalQuote.charges),
             selectinload(FormalQuote.policy_snapshots),
+            selectinload(FormalQuote.warranty_snapshots),
         )
         .where(FormalQuote.id == formal_quote_id)
     )

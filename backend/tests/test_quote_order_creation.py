@@ -105,7 +105,13 @@ def make_quote(
     return quote, customer_id
 
 
-def test_approved_quote_becomes_awaiting_payment_order() -> None:
+def test_approved_quote_becomes_awaiting_payment_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.services.audit.get_settings",
+        lambda: SimpleNamespace(environment="test"),
+    )
     quote, customer_id = make_quote()
     db = QuoteOrderDatabase(quote)
     user = SimpleNamespace(id=customer_id)

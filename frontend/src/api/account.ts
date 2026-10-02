@@ -50,6 +50,7 @@ export type CustomerEquipmentDocument = {
   path: string;
   content_type: string;
   version: string;
+  verified_at: string | null;
 };
 
 export type CustomerConsumable = {
@@ -102,6 +103,20 @@ export type CustomerFormalQuotePolicySnapshot = {
   effective_at: string | null;
 };
 
+export type CustomerWarrantySnapshot = {
+  id: string;
+  sku: string;
+  product_name: string;
+  manufacturer_name: string;
+  title: string;
+  version: string;
+  path: string;
+  content_type: string;
+  checksum_sha256: string;
+  source_reference: string | null;
+  verified_at: string;
+};
+
 export type CustomerFormalQuote = {
   id: string;
   request_id: string;
@@ -115,6 +130,7 @@ export type CustomerFormalQuote = {
   billing_address: CommercialAddress | null;
   charges: CommercialCharge[];
   policy_snapshots: CustomerFormalQuotePolicySnapshot[];
+  warranty_snapshots: CustomerWarrantySnapshot[];
   customer_note: string | null;
   presented_at: string | null;
   expires_at: string | null;

@@ -184,6 +184,20 @@ export type OperationsFormalQuoteItem = {
   estimated_lead_time: string | null;
 };
 
+export type OperationsWarrantySnapshot = {
+  id: string;
+  sku: string;
+  product_name: string;
+  manufacturer_name: string;
+  title: string;
+  version: string;
+  path: string;
+  content_type: string;
+  checksum_sha256: string;
+  source_reference: string | null;
+  verified_at: string;
+};
+
 export type OperationsFormalQuote = {
   id: string;
   revision_number: number;
@@ -198,6 +212,7 @@ export type OperationsFormalQuote = {
   billing_address: CommercialAddress | null;
   charges: CommercialCharge[];
   policy_snapshots: PolicySnapshot[];
+  warranty_snapshots: OperationsWarrantySnapshot[];
   customer_note: string | null;
   presented_at: string | null;
   expires_at: string | null;
@@ -374,6 +389,19 @@ export type OperationsProductRelationship = {
   sort_order: number;
 };
 
+export type OperationsWarrantyDocument = {
+  id: string;
+  title: string;
+  version: string;
+  path: string;
+  content_type: string;
+  checksum_sha256: string | null;
+  source_reference: string | null;
+  public: boolean;
+  active: boolean;
+  verified_at: string | null;
+};
+
 export type OperationsProduct = {
   id: string;
   sku: string;
@@ -389,6 +417,7 @@ export type OperationsProduct = {
   active: boolean;
   assisted_sale_required: boolean;
   online_sale_approved: boolean;
+  warranty_documents: OperationsWarrantyDocument[];
   pricing: OperationsPricing;
   inventory: OperationsInventory;
 };

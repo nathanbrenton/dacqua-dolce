@@ -29,7 +29,13 @@ class FakeDatabase:
         return ScalarRows(self.drafts)
 
 
-def test_customer_approval_locks_presented_revision() -> None:
+def test_customer_approval_locks_presented_revision(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.services.audit.get_settings",
+        lambda: SimpleNamespace(environment="test"),
+    )
     customer_id = uuid.uuid4()
     quote = SimpleNamespace(
         id=uuid.uuid4(),

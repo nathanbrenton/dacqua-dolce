@@ -56,6 +56,7 @@ export type CatalogDocument = {
   path: string;
   content_type: string;
   version: string;
+  verified_at: string | null;
 };
 
 export type CatalogProduct = {

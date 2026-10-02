@@ -77,6 +77,7 @@ from app.models.quote import (
     FormalQuoteCharge,
     FormalQuoteItem,
     FormalQuoteStatus,
+    FormalQuoteWarrantySnapshot,
     QuoteRequest,
     QuoteRequestStatus,
 )
@@ -139,6 +140,7 @@ __all__ = [
     "ReminderPreferenceKind",
     "StockNotificationSubscription",
     "FormalQuotePolicySnapshot",
+    "FormalQuoteWarrantySnapshot",
     "PolicyDocument",
     "PolicyDocumentStatus",
     "PolicyKind",

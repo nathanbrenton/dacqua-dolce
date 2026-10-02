@@ -293,6 +293,20 @@ class OperationsFormalQuoteItemRead(BaseModel):
     estimated_lead_time: str | None
 
 
+class OperationsWarrantySnapshotRead(BaseModel):
+    id: str
+    sku: str
+    product_name: str
+    manufacturer_name: str
+    title: str
+    version: str
+    path: str
+    content_type: str
+    checksum_sha256: str
+    source_reference: str | None = None
+    verified_at: str
+
+
 class OperationsFormalQuoteRead(BaseModel):
     id: str
     revision_number: int
@@ -307,6 +321,7 @@ class OperationsFormalQuoteRead(BaseModel):
     billing_address: CommercialAddressSnapshot | None
     charges: list[CommercialChargeRead] = Field(default_factory=list)
     policy_snapshots: list[FormalQuotePolicySnapshotRead] = Field(default_factory=list)
+    warranty_snapshots: list[OperationsWarrantySnapshotRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
     expires_at: str | None
@@ -623,6 +638,19 @@ class OperationsProductRelationshipRead(BaseModel):
     sort_order: int
 
 
+class OperationsWarrantyDocumentRead(BaseModel):
+    id: str
+    title: str
+    version: str
+    path: str
+    content_type: str
+    checksum_sha256: str | None
+    source_reference: str | None
+    public: bool
+    active: bool
+    verified_at: str | None
+
+
 class OperationsProductRead(BaseModel):
     id: str
     sku: str
@@ -640,6 +668,7 @@ class OperationsProductRead(BaseModel):
     active: bool
     assisted_sale_required: bool
     online_sale_approved: bool
+    warranty_documents: list[OperationsWarrantyDocumentRead] = Field(default_factory=list)
     pricing: OperationsPricingRead
     inventory: OperationsInventoryRead
 

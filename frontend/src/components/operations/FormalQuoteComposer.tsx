@@ -378,6 +378,17 @@ export function FormalQuoteComposer({
                       .join(" · ")}
                   </small>
                 ) : null}
+                {formalQuote.warranty_snapshots.length > 0 ? (
+                  <small>
+                    Manufacturer warranties: {formalQuote.warranty_snapshots
+                      .map((snapshot) => `${snapshot.product_name} · ${snapshot.version}`)
+                      .join(" · ")}
+                  </small>
+                ) : (
+                  <small>
+                    Manufacturer warranty documentation: no verified public document attached.
+                  </small>
+                )}
               </div>
               {formalQuote.status === "draft" ? (
                 <button

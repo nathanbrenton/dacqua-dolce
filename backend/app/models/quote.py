@@ -295,6 +295,13 @@ class FormalQuote(Base):
         order_by="FormalQuotePolicySnapshot.sort_order",
     )
 
+    warranty_snapshots = relationship(
+        "FormalQuoteWarrantySnapshot",
+        back_populates="formal_quote",
+        cascade="all, delete-orphan",
+        order_by="FormalQuoteWarrantySnapshot.sort_order",
+    )
+
 
 class FormalQuoteCharge(Base):
     __tablename__ = "formal_quote_charges"
@@ -460,4 +467,64 @@ class FormalQuoteItem(Base):
 
     formal_quote: Mapped[FormalQuote] = relationship(
         back_populates="items",
+    )
+
+
+class FormalQuoteWarrantySnapshot(Base):
+    __tablename__ = "formal_quote_warranty_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "formal_quote_item_id",
+            "product_document_id",
+            name="uq_formal_quote_warranty_snapshots_item_document",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    formal_quote_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("formal_quotes.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    formal_quote_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("formal_quote_items.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    product_document_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("product_documents.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    product_id_snapshot: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=False,
+    )
+    sku_snapshot: Mapped[str] = mapped_column(String(100), nullable=False)
+    product_name_snapshot: Mapped[str] = mapped_column(String(240), nullable=False)
+    manufacturer_name_snapshot: Mapped[str] = mapped_column(String(160), nullable=False)
+    title_snapshot: Mapped[str] = mapped_column(String(200), nullable=False)
+    version_snapshot: Mapped[str] = mapped_column(String(60), nullable=False)
+    storage_path_snapshot: Mapped[str] = mapped_column(String(500), nullable=False)
+    content_type_snapshot: Mapped[str] = mapped_column(String(120), nullable=False)
+    checksum_sha256_snapshot: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_reference_snapshot: Mapped[str | None] = mapped_column(String(500))
+    verified_at_snapshot: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    formal_quote = relationship(
+        "FormalQuote",
+        back_populates="warranty_snapshots",
     )

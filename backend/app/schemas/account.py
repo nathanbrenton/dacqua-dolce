@@ -168,6 +168,20 @@ class CustomerFormalQuoteItemRead(BaseModel):
     estimated_lead_time: str | None = None
 
 
+class CustomerWarrantySnapshotRead(BaseModel):
+    id: str
+    sku: str
+    product_name: str
+    manufacturer_name: str
+    title: str
+    version: str
+    path: str
+    content_type: str
+    checksum_sha256: str
+    source_reference: str | None = None
+    verified_at: str
+
+
 class CustomerFormalQuoteRead(BaseModel):
     id: str
     request_id: str
@@ -181,6 +195,7 @@ class CustomerFormalQuoteRead(BaseModel):
     billing_address: CommercialAddressSnapshot | None
     charges: list[CommercialChargeRead] = Field(default_factory=list)
     policy_snapshots: list[FormalQuotePolicySnapshotRead] = Field(default_factory=list)
+    warranty_snapshots: list[CustomerWarrantySnapshotRead] = Field(default_factory=list)
     customer_note: str | None
     presented_at: str | None
     expires_at: str | None
@@ -195,6 +210,7 @@ class CustomerEquipmentDocumentRead(BaseModel):
     path: str
     content_type: str
     version: str
+    verified_at: str | None = None
 
 
 class CustomerConsumableRead(BaseModel):

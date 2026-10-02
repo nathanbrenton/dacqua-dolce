@@ -31,6 +31,7 @@ from app.models.quote import (
 from app.services.audit import record_audit_event
 from app.services.policies import snapshot_quote_policies
 from app.services.pricing import select_effective_price
+from app.services.warranties import snapshot_quote_warranties
 
 FORMAL_QUOTE_VALIDITY_DAYS = 30
 
@@ -439,6 +440,10 @@ def present_formal_quote(
         db,
         formal_quote=formal_quote,
     )
+    warranty_snapshots = snapshot_quote_warranties(
+        db,
+        formal_quote=formal_quote,
+    )
 
     for previous in db.scalars(
         select(FormalQuote).where(
@@ -473,6 +478,7 @@ def present_formal_quote(
                 snapshot.kind.value: snapshot.version_snapshot
                 for snapshot in policy_snapshots
             },
+            "warranty_snapshot_count": len(warranty_snapshots),
         },
     )
     return formal_quote

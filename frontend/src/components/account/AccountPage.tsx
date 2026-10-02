@@ -1778,6 +1778,25 @@ export function AccountPage({
                     <p className="account-formal-quote-note">{quote.customer_note}</p>
                   ) : null}
 
+                  {quote.warranty_snapshots.length > 0 ? (
+                    <div className="account-formal-quote-policies">
+                      <strong>Manufacturer warranty documents attached to this quote</strong>
+                      {quote.warranty_snapshots.map((snapshot) => (
+                        <div key={snapshot.id} className="account-warranty-snapshot">
+                          <a href={snapshot.path}>
+                            {snapshot.product_name}: {snapshot.title}
+                          </a>
+                          <small>
+                            {snapshot.manufacturer_name} · version {snapshot.version} · verified {new Date(snapshot.verified_at).toLocaleDateString()}
+                          </small>
+                        </div>
+                      ))}
+                      <p className="account-muted">
+                        D’Acqua Dolce is your primary contact for warranty assistance.
+                      </p>
+                    </div>
+                  ) : null}
+
                   <div className="account-formal-quote-policies">
                     <strong>Policy versions attached to this quote</strong>
                     {quote.policy_snapshots.map((snapshot) => (

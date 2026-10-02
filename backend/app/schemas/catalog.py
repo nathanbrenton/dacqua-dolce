@@ -72,6 +72,7 @@ class CatalogDocumentRead(BaseModel):
     path: str
     content_type: str
     version: str
+    verified_at: str | None = None
 
 
 class CatalogProductRead(BaseModel):

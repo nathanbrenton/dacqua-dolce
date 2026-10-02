@@ -2796,6 +2796,9 @@ export function OperationsPage({
                     <span>
                       Online sale: {product.online_sale_approved ? "approved" : "blocked"}
                     </span>
+                    <span>
+                      Warranty docs: {product.warranty_documents.filter((document) => document.active && document.public && document.verified_at !== null && document.checksum_sha256 !== null).length} verified public
+                    </span>
                   </div>
 
                   {product.assisted_sale_required ? (
@@ -2809,6 +2812,33 @@ export function OperationsPage({
                       Online sale remains blocked pending applicable manufacturer/component policy verification.
                     </p>
                   ) : null}
+                  {product.warranty_documents.length > 0 ? (
+                    <details className="operations-product-relationships">
+                      <summary>Manufacturer warranty documents</summary>
+                      <div className="operations-product-relationship-list">
+                        {product.warranty_documents.map((document) => (
+                          <div key={document.id} className="operations-product-relationship">
+                            <div>
+                              <strong>{document.title}</strong>
+                              <code>v{document.version}</code>
+                              <span>
+                                {document.verified_at !== null ? "verified" : "review required"}
+                                {document.public ? " · public" : " · internal"}
+                                {document.active ? " · active" : " · retired"}
+                              </span>
+                              {document.source_reference !== null ? (
+                                <small>Source: {document.source_reference}</small>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  ) : (
+                    <p className="operations-note">
+                      No manufacturer warranty document has been recorded for this product.
+                    </p>
+                  )}
                 </header>
 
                 <details className="operations-product-relationships">
