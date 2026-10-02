@@ -71,6 +71,8 @@ from app.schemas.operations import (
     OperationsFormalQuoteRead,
     OperationsInsightBucketRead,
     OperationsInventoryRead,
+    OperationsLaunchReadinessCheckRead,
+    OperationsLaunchReadinessRead,
     OperationsOrderCancellationRead,
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
@@ -125,6 +127,7 @@ from app.services.inventory_observations import (
     InventoryObservation,
     apply_inventory_observation,
 )
+from app.services.launch_readiness import build_launch_readiness
 from app.services.operations_access import (
     require_audit_log_read,
     require_customer_equipment_write,
@@ -400,6 +403,36 @@ def operations_summary(
         recommendation_lab_testing=recommendation_lab_testing,
         active_products=int(active_products),
         failed_email_deliveries=int(failed_email_deliveries),
+    )
+
+
+@router.get(
+    "/launch-readiness",
+    response_model=OperationsLaunchReadinessRead,
+)
+def operations_launch_readiness(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsLaunchReadinessRead:
+    require_operations(db, user=current_user)
+    snapshot = build_launch_readiness(db)
+
+    return OperationsLaunchReadinessRead(
+        status=snapshot.status,
+        ready_count=snapshot.ready_count,
+        action_required_count=snapshot.action_required_count,
+        deferred_count=snapshot.deferred_count,
+        evaluated_at=datetime.now(UTC).isoformat(),
+        checks=[
+            OperationsLaunchReadinessCheckRead(
+                key=check.key,
+                label=check.label,
+                status=check.status,
+                detail=check.detail,
+                evidence=list(check.evidence),
+            )
+            for check in snapshot.checks
+        ],
     )
 
 

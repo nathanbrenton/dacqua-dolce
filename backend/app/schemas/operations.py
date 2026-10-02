@@ -43,6 +43,23 @@ class OperationsSummaryRead(BaseModel):
     failed_email_deliveries: int
 
 
+class OperationsLaunchReadinessCheckRead(BaseModel):
+    key: str
+    label: str
+    status: Literal["ready", "action_required", "deferred"]
+    detail: str
+    evidence: list[str] = Field(default_factory=list)
+
+
+class OperationsLaunchReadinessRead(BaseModel):
+    status: Literal["ready", "action_required", "deferred"]
+    ready_count: int
+    action_required_count: int
+    deferred_count: int
+    evaluated_at: str
+    checks: list[OperationsLaunchReadinessCheckRead] = Field(default_factory=list)
+
+
 class OperationsAuditEventRead(BaseModel):
     id: str
     actor_user_id: str | None

@@ -23,6 +23,7 @@ import {
   getOperationsCommunications,
   getOperationsCatalog,
   getOperationsCustomers,
+  getOperationsLaunchReadiness,
   getOperationsOrders,
   getOperationsQuotes,
   getOperationsSalesInsights,
@@ -42,6 +43,7 @@ import {
   type OperationsCustomer,
   type OperationsOrder,
   type OperationsFormalQuote,
+  type OperationsLaunchReadiness,
   type OperationsProduct,
   type OperationsQuote,
   type OperationsSalesInsights,
@@ -582,6 +584,8 @@ export function OperationsPage({
 
   const [summary, setSummary] =
     useState<OperationsSummary | null>(null);
+  const [launchReadiness, setLaunchReadiness] =
+    useState<OperationsLaunchReadiness | null>(null);
   const [salesInsights, setSalesInsights] =
     useState<OperationsSalesInsights | null>(null);
   const [quotes, setQuotes] =
@@ -684,6 +688,7 @@ export function OperationsPage({
 
     void Promise.all([
       getOperationsSummary(),
+      getOperationsLaunchReadiness(),
       getOperationsQuotes(),
       getOperationsCommunications(),
       getOperationsCustomers(),
@@ -693,6 +698,7 @@ export function OperationsPage({
     ])
       .then(([
         summaryResult,
+        launchReadinessResult,
         quoteResult,
         communicationResult,
         customerResult,
@@ -701,6 +707,7 @@ export function OperationsPage({
         salesInsightsResult,
       ]) => {
         setSummary(summaryResult);
+        setLaunchReadiness(launchReadinessResult);
         setSalesInsights(salesInsightsResult);
         setQuotes(quoteResult);
         setCommunications(communicationResult);
@@ -2050,6 +2057,65 @@ export function OperationsPage({
               <small>Open</small>
             </button>
           ))}
+        </section>
+      ) : null}
+
+      {launchReadiness !== null ? (
+        <section
+          className="operations-sales-insights"
+          aria-labelledby="launch-readiness-title"
+        >
+          <div className="operations-section-heading compact">
+            <p className="eyebrow">Commercial launch</p>
+            <h2 id="launch-readiness-title">Readiness snapshot</h2>
+            <p>
+              Read-only configuration audit. This view reports launch
+              dependencies and does not enable or disable checkout.
+            </p>
+          </div>
+
+          <div className="operations-insight-grid">
+            <div>
+              <strong>{launchReadiness.ready_count}</strong>
+              <span>Ready</span>
+              <small>Configured launch dependencies</small>
+            </div>
+            <div>
+              <strong>{launchReadiness.action_required_count}</strong>
+              <span>Action required</span>
+              <small>Configuration or business input still needed</small>
+            </div>
+            <div>
+              <strong>{launchReadiness.deferred_count}</strong>
+              <span>Deferred</span>
+              <small>Intentionally not commissioned yet</small>
+            </div>
+          </div>
+
+          <div className="operations-insight-lists">
+            {launchReadiness.checks.map((check) => (
+              <div key={check.key}>
+                <strong>{check.label}</strong>
+                <p>
+                  {check.status === "ready"
+                    ? "Ready"
+                    : check.status === "action_required"
+                      ? "Action required"
+                      : "Deferred"}
+                  {" · "}
+                  {check.detail}
+                </p>
+                <small>
+                  {check.evidence.join(" · ")}
+                </small>
+              </div>
+            ))}
+          </div>
+
+          <p>
+            Evaluated{" "}
+            {new Date(launchReadiness.evaluated_at).toLocaleString()}.
+          </p>
         </section>
       ) : null}
 

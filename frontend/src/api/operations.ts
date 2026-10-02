@@ -24,6 +24,28 @@ export type OperationsSummary = {
   failed_email_deliveries: number;
 };
 
+export type LaunchReadinessStatus =
+  | "ready"
+  | "action_required"
+  | "deferred";
+
+export type OperationsLaunchReadinessCheck = {
+  key: string;
+  label: string;
+  status: LaunchReadinessStatus;
+  detail: string;
+  evidence: string[];
+};
+
+export type OperationsLaunchReadiness = {
+  status: LaunchReadinessStatus;
+  ready_count: number;
+  action_required_count: number;
+  deferred_count: number;
+  evaluated_at: string;
+  checks: OperationsLaunchReadinessCheck[];
+};
+
 export type OperationsInsightBucket = {
   value: string;
   count: number;
@@ -514,6 +536,14 @@ async function writeJson<T>(
 export function getOperationsSummary(): Promise<OperationsSummary> {
   return getJson(
     "/api/operations/summary",
+  );
+}
+
+export function getOperationsLaunchReadiness(): Promise<
+  OperationsLaunchReadiness
+> {
+  return getJson(
+    "/api/operations/launch-readiness",
   );
 }
 
