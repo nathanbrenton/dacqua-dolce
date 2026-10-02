@@ -215,6 +215,10 @@ export type OperationsFormalQuote = {
   charges: CommercialCharge[];
   policy_snapshots: PolicySnapshot[];
   warranty_snapshots: OperationsWarrantySnapshot[];
+  shipping_insurance_offered: boolean;
+  shipping_insurance_decision: "accepted" | "declined" | null;
+  shipping_insurance_decided_at: string | null;
+  shipping_insurance_decided_by_user_id: string | null;
   customer_note: string | null;
   presented_at: string | null;
   expires_at: string | null;

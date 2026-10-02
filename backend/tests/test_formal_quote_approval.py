@@ -49,6 +49,10 @@ def test_customer_approval_locks_presented_revision(
         charges_amount_minor=0,
         total_amount_minor=249900,
         currency="USD",
+        charges=[],
+        shipping_insurance_decision=None,
+        shipping_insurance_decided_at=None,
+        shipping_insurance_decided_by_user_id=None,
     )
     policy_snapshot = SimpleNamespace(
         id=uuid.uuid4(),

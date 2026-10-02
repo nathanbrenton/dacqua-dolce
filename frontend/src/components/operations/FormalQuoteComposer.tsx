@@ -382,6 +382,19 @@ export function FormalQuoteComposer({
                     formalQuote.currency,
                   )}
                 </span>
+                {formalQuote.shipping_insurance_offered ? (
+                  <small>
+                    Customer insurance choice:{" "}
+                    {formalQuote.shipping_insurance_decision ?? "pending"}
+                    {formalQuote.shipping_insurance_decided_at !== null
+                      ? ` · recorded ${new Date(
+                          formalQuote.shipping_insurance_decided_at,
+                        ).toLocaleString()}`
+                      : ""}
+                  </small>
+                ) : (
+                  <small>Shipping insurance choice: not offered.</small>
+                )}
                 <span>
                   Tax{" "}
                   {money(formalQuote.cost_breakdown.tax_amount_minor, formalQuote.currency)}

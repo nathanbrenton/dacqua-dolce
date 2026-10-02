@@ -115,6 +115,7 @@ from app.services.formal_quotes import (
     FormalQuoteLineInput,
     create_formal_quote_revision,
     present_formal_quote,
+    shipping_insurance_amount_minor,
 )
 from app.services.fulfillment import (
     FulfillmentError,
@@ -182,6 +183,20 @@ def operations_formal_quote_read(
             }
             for charge in formal_quote.charges
         ],
+        shipping_insurance_offered=(
+            shipping_insurance_amount_minor(formal_quote) > 0
+        ),
+        shipping_insurance_decision=formal_quote.shipping_insurance_decision,
+        shipping_insurance_decided_at=(
+            formal_quote.shipping_insurance_decided_at.isoformat()
+            if formal_quote.shipping_insurance_decided_at is not None
+            else None
+        ),
+        shipping_insurance_decided_by_user_id=(
+            str(formal_quote.shipping_insurance_decided_by_user_id)
+            if formal_quote.shipping_insurance_decided_by_user_id is not None
+            else None
+        ),
         warranty_snapshots=[
             {
                 "id": str(snapshot.id),

@@ -136,6 +136,9 @@ export type CustomerFormalQuote = {
   charges: CommercialCharge[];
   policy_snapshots: CustomerFormalQuotePolicySnapshot[];
   warranty_snapshots: CustomerWarrantySnapshot[];
+  shipping_insurance_offered: boolean;
+  shipping_insurance_decision: "accepted" | "declined" | null;
+  shipping_insurance_decided_at: string | null;
   customer_note: string | null;
   presented_at: string | null;
   expires_at: string | null;
@@ -346,6 +349,31 @@ export async function getCustomerFormalQuotes(): Promise<CustomerFormalQuote[]> 
   }
   return response.json() as Promise<CustomerFormalQuote[]>;
 }
+
+export async function recordShippingInsuranceDecision(
+  quoteId: string,
+  decision: "accepted" | "declined",
+): Promise<CustomerFormalQuote> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/account/quotes/${encodeURIComponent(quoteId)}/shipping-insurance-decision`,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ decision }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json() as Promise<CustomerFormalQuote>;
+}
+
 
 export async function approveCustomerFormalQuote(
   quoteId: string,

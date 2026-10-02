@@ -17,7 +17,12 @@ from app.models.commerce import (
     OrderStatus,
 )
 from app.models.identity import User
-from app.models.quote import FormalQuote, FormalQuoteStatus
+from app.models.quote import (
+    CommercialChargeKind,
+    FormalQuote,
+    FormalQuoteStatus,
+    ShippingInsuranceDecision,
+)
 from app.services.audit import record_audit_event
 
 
@@ -79,6 +84,26 @@ def create_order_from_approved_quote(
             detail=(
                 "The approved quote is not bound to the current customer "
                 "approval identity."
+            ),
+        )
+
+    insurance_amount_minor = sum(
+        charge.amount_minor
+        for charge in formal_quote.charges
+        if charge.kind == CommercialChargeKind.shipping_insurance.value
+    )
+    if insurance_amount_minor > 0 and (
+        formal_quote.shipping_insurance_decision
+        != ShippingInsuranceDecision.accepted.value
+        or formal_quote.shipping_insurance_decided_by_user_id
+        != customer_user.id
+        or formal_quote.shipping_insurance_decided_at is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "The approved quote does not contain complete shipping "
+                "insurance acceptance evidence."
             ),
         )
 

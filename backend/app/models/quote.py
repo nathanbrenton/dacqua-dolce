@@ -37,6 +37,11 @@ class FormalQuoteStatus(StrEnum):
     superseded = "superseded"
 
 
+class ShippingInsuranceDecision(StrEnum):
+    accepted = "accepted"
+    declined = "declined"
+
+
 class CommercialChargeKind(StrEnum):
     shipping = "shipping"
     shipping_insurance = "shipping_insurance"
@@ -159,6 +164,20 @@ class FormalQuote(Base):
             "total_amount_minor = subtotal_amount_minor + charges_amount_minor",
             name="formal_quotes_total_matches_components",
         ),
+        CheckConstraint(
+            "shipping_insurance_decision IS NULL OR "
+            "shipping_insurance_decision IN ('accepted', 'declined')",
+            name="formal_quotes_shipping_insurance_decision_valid",
+        ),
+        CheckConstraint(
+            "((shipping_insurance_decision IS NULL "
+            "AND shipping_insurance_decided_at IS NULL "
+            "AND shipping_insurance_decided_by_user_id IS NULL) OR "
+            "(shipping_insurance_decision IS NOT NULL "
+            "AND shipping_insurance_decided_at IS NOT NULL "
+            "AND shipping_insurance_decided_by_user_id IS NOT NULL))",
+            name="formal_quotes_shipping_insurance_evidence_complete",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -258,6 +277,20 @@ class FormalQuote(Base):
             "users.id",
             ondelete="SET NULL",
         ),
+    )
+
+    shipping_insurance_decision: Mapped[str | None] = mapped_column(
+        String(16),
+    )
+
+    shipping_insurance_decided_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    # Intentionally stored as an immutable identity snapshot rather than a
+    # foreign key so evidence survives later account removal.
+    shipping_insurance_decided_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
     )
 
     created_at: Mapped[datetime] = mapped_column(

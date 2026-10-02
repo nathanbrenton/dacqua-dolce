@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from types import SimpleNamespace
 
 import pytest
@@ -62,6 +63,9 @@ def make_quote(
         status=status,
         customer_user_id=customer_id,
         approved_by_user_id=customer_id,
+        shipping_insurance_decision="accepted",
+        shipping_insurance_decided_at=datetime.now(UTC),
+        shipping_insurance_decided_by_user_id=customer_id,
         currency="USD",
         subtotal_amount_minor=250000,
         charges_amount_minor=18500,
@@ -154,6 +158,22 @@ def test_approved_quote_becomes_awaiting_payment_order(
         ("shipping_insurance", 3500),
         ("discount", -10000),
     ]
+
+
+def test_order_creation_requires_shipping_insurance_acceptance_evidence() -> None:
+    quote, customer_id = make_quote()
+    quote.shipping_insurance_decision = "declined"
+    db = QuoteOrderDatabase(quote)
+
+    with pytest.raises(HTTPException) as exc:
+        create_order_from_approved_quote(
+            db,  # type: ignore[arg-type]
+            formal_quote_id=quote.id,
+            customer_user=SimpleNamespace(id=customer_id),  # type: ignore[arg-type]
+        )
+
+    assert exc.value.status_code == 409
+    assert "insurance acceptance evidence" in str(exc.value.detail).lower()
 
 
 def test_quote_order_creation_is_idempotent() -> None:

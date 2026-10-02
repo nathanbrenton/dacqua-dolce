@@ -27,6 +27,7 @@ from app.models.quote import (
     FormalQuoteStatus,
     QuoteRequest,
     QuoteRequestStatus,
+    ShippingInsuranceDecision,
 )
 from app.services.audit import record_audit_event
 from app.services.policies import snapshot_quote_policies
@@ -485,6 +486,76 @@ def present_formal_quote(
     return formal_quote
 
 
+def shipping_insurance_amount_minor(
+    formal_quote: FormalQuote,
+) -> int:
+    return sum(
+        charge.amount_minor
+        for charge in formal_quote.charges
+        if charge.kind == CommercialChargeKind.shipping_insurance.value
+    )
+
+
+def record_shipping_insurance_decision(
+    db: Session,
+    *,
+    formal_quote: FormalQuote,
+    customer_user: User,
+    decision: ShippingInsuranceDecision,
+) -> FormalQuote:
+    if formal_quote.customer_user_id != customer_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote not found.",
+        )
+    if formal_quote.status != FormalQuoteStatus.presented:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Shipping insurance can only be accepted or declined "
+                "while the quote is currently presented."
+            ),
+        )
+
+    now = datetime.now(UTC)
+    expires_at = getattr(formal_quote, "expires_at", None)
+    if expires_at is not None and expires_at <= now:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "This formal quote has expired. "
+                "Request a current quote before making an insurance choice."
+            ),
+        )
+
+    amount_minor = shipping_insurance_amount_minor(formal_quote)
+    if amount_minor <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This quote does not include a shipping insurance offer.",
+        )
+
+    formal_quote.shipping_insurance_decision = decision.value
+    formal_quote.shipping_insurance_decided_at = now
+    formal_quote.shipping_insurance_decided_by_user_id = customer_user.id
+
+    record_audit_event(
+        db,
+        action="formal_quote.shipping_insurance_decision_recorded",
+        entity_type="formal_quote",
+        entity_id=str(formal_quote.id),
+        actor_user_id=customer_user.id,
+        metadata={
+            "quote_request_id": str(formal_quote.quote_request_id),
+            "revision_number": formal_quote.revision_number,
+            "decision": decision.value,
+            "shipping_insurance_amount_minor": amount_minor,
+            "currency": formal_quote.currency,
+        },
+    )
+    return formal_quote
+
+
 def approve_formal_quote(
     db: Session,
     *,
@@ -529,6 +600,36 @@ def approve_formal_quote(
             detail="Review and acknowledge every policy version attached to this quote.",
         )
 
+    insurance_amount_minor = shipping_insurance_amount_minor(formal_quote)
+    if insurance_amount_minor > 0:
+        if formal_quote.shipping_insurance_decision is None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Accept or decline shipping insurance before approving this quote.",
+            )
+        if (
+            formal_quote.shipping_insurance_decision
+            == ShippingInsuranceDecision.declined.value
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Shipping insurance was declined. "
+                    "Request a revised quote without the insurance charge before approval."
+                ),
+            )
+        if (
+            formal_quote.shipping_insurance_decision
+            != ShippingInsuranceDecision.accepted.value
+            or formal_quote.shipping_insurance_decided_by_user_id
+            != customer_user.id
+            or formal_quote.shipping_insurance_decided_at is None
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Shipping insurance acceptance evidence is incomplete.",
+            )
+
     for draft in db.scalars(
         select(FormalQuote).where(
             FormalQuote.quote_request_id == formal_quote.quote_request_id,
@@ -555,6 +656,13 @@ def approve_formal_quote(
             "charges_amount_minor": formal_quote.charges_amount_minor,
             "total_amount_minor": formal_quote.total_amount_minor,
             "currency": formal_quote.currency,
+            "shipping_insurance_decision": formal_quote.shipping_insurance_decision,
+            "shipping_insurance_decided_at": (
+                formal_quote.shipping_insurance_decided_at.isoformat()
+                if formal_quote.shipping_insurance_decided_at is not None
+                else None
+            ),
+            "shipping_insurance_amount_minor": insurance_amount_minor,
             "policy_acknowledgments": [
                 {
                     "kind": snapshot.kind.value,

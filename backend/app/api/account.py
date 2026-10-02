@@ -30,6 +30,7 @@ from app.models.quote import (
     FormalQuote,
     FormalQuoteStatus,
     QuoteRequest,
+    ShippingInsuranceDecision,
 )
 from app.schemas.account import (
     AddressCreate,
@@ -44,6 +45,7 @@ from app.schemas.account import (
     CustomerProfileRead,
     CustomerProfileUpdate,
     CustomerRequestRead,
+    ShippingInsuranceDecisionRequest,
 )
 from app.schemas.policies import FormalQuoteApprovalRequest
 from app.services.audit import (
@@ -51,7 +53,11 @@ from app.services.audit import (
 )
 from app.services.calendar_export import build_all_day_ics
 from app.services.commercial_costs import commercial_cost_breakdown
-from app.services.formal_quotes import approve_formal_quote
+from app.services.formal_quotes import (
+    approve_formal_quote,
+    record_shipping_insurance_decision,
+    shipping_insurance_amount_minor,
+)
 from app.services.post_purchase import next_replacement_due_on
 from app.services.pricing import resolve_pricing, select_effective_price
 from app.services.quote_orders import create_order_from_approved_quote
@@ -656,6 +662,15 @@ def customer_formal_quote_read(
             }
             for charge in formal_quote.charges
         ],
+        shipping_insurance_offered=(
+            shipping_insurance_amount_minor(formal_quote) > 0
+        ),
+        shipping_insurance_decision=formal_quote.shipping_insurance_decision,
+        shipping_insurance_decided_at=(
+            formal_quote.shipping_insurance_decided_at.isoformat()
+            if formal_quote.shipping_insurance_decided_at is not None
+            else None
+        ),
         warranty_snapshots=[
             {
                 "id": str(snapshot.id),
@@ -756,6 +771,43 @@ def get_customer_formal_quotes(
 
     # The relationship is loaded while the request-scoped session is open.
     return [customer_formal_quote_read(row) for row in rows]
+
+
+@router.post(
+    "/quotes/{formal_quote_id}/shipping-insurance-decision",
+    response_model=CustomerFormalQuoteRead,
+)
+def set_customer_shipping_insurance_decision(
+    formal_quote_id: uuid.UUID,
+    payload: ShippingInsuranceDecisionRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> CustomerFormalQuoteRead:
+    formal_quote = db.scalar(
+        select(FormalQuote)
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+            selectinload(FormalQuote.policy_snapshots),
+            selectinload(FormalQuote.warranty_snapshots),
+        )
+        .where(FormalQuote.id == formal_quote_id)
+    )
+    if formal_quote is None or formal_quote.customer_user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote not found.",
+        )
+
+    record_shipping_insurance_decision(
+        db,
+        formal_quote=formal_quote,
+        customer_user=current_user,
+        decision=ShippingInsuranceDecision(payload.decision),
+    )
+    db.commit()
+    db.refresh(formal_quote)
+    return customer_formal_quote_read(formal_quote)
 
 
 @router.post(

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import (
     BaseModel,
     Field,
@@ -183,6 +185,10 @@ class CustomerWarrantySnapshotRead(BaseModel):
     verified_at: str
 
 
+class ShippingInsuranceDecisionRequest(BaseModel):
+    decision: Literal["accepted", "declined"]
+
+
 class CustomerFormalQuoteRead(BaseModel):
     id: str
     request_id: str
@@ -198,6 +204,9 @@ class CustomerFormalQuoteRead(BaseModel):
     charges: list[CommercialChargeRead] = Field(default_factory=list)
     policy_snapshots: list[FormalQuotePolicySnapshotRead] = Field(default_factory=list)
     warranty_snapshots: list[CustomerWarrantySnapshotRead] = Field(default_factory=list)
+    shipping_insurance_offered: bool
+    shipping_insurance_decision: str | None
+    shipping_insurance_decided_at: str | None
     customer_note: str | None
     presented_at: str | None
     expires_at: str | None

@@ -16,6 +16,7 @@ import {
   getCustomerFormalQuotes,
   getCustomerRequests,
   getProfile,
+  recordShippingInsuranceDecision,
   updateCommunicationPreferences,
   updateProfile,
   type AddressCreate,
@@ -560,6 +561,8 @@ export function AccountPage({
     useState<SalesArea | null>(null);
   const [policyAcknowledgments, setPolicyAcknowledgments] =
     useState<Record<string, boolean>>({});
+  const [insuranceDecisionBusyQuoteId, setInsuranceDecisionBusyQuoteId] =
+    useState<string | null>(null);
   const [customerEquipment, setCustomerEquipment] =
     useState<CustomerEquipment[]>([]);
   const [error, setError] =
@@ -648,9 +651,52 @@ export function AccountPage({
     isCustomer,
   ]);
 
+  async function setShippingInsuranceDecision(
+    quote: CustomerFormalQuote,
+    decision: "accepted" | "declined",
+  ): Promise<void> {
+    setError(null);
+    setSaveNotice(null);
+    setInsuranceDecisionBusyQuoteId(quote.id);
+    try {
+      const updated = await recordShippingInsuranceDecision(
+        quote.id,
+        decision,
+      );
+      setFormalQuotes((current) => current.map((candidate) => (
+        candidate.id === updated.id ? updated : candidate
+      )));
+      setSaveNotice(
+        decision === "accepted"
+          ? "Shipping insurance accepted for this quote revision."
+          : "Shipping insurance declined. D’Acqua Dolce can prepare a revised quote without the insurance charge.",
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Shipping insurance choice could not be recorded.",
+      );
+    } finally {
+      setInsuranceDecisionBusyQuoteId(null);
+    }
+  }
+
   async function approveFormalQuote(quote: CustomerFormalQuote): Promise<void> {
     if (policyAcknowledgments[quote.id] !== true) {
       setError("Review and acknowledge the policy versions attached to this quote.");
+      return;
+    }
+
+    if (
+      quote.shipping_insurance_offered
+      && quote.shipping_insurance_decision !== "accepted"
+    ) {
+      setError(
+        quote.shipping_insurance_decision === "declined"
+          ? "Shipping insurance was declined. Contact D’Acqua Dolce for a revised quote without the insurance charge."
+          : "Accept or decline shipping insurance before approving this quote.",
+      );
       return;
     }
 
@@ -1848,6 +1894,50 @@ export function AccountPage({
 
                   {quote.status === "presented" ? (
                     <>
+                      {quote.shipping_insurance_offered ? (
+                        <fieldset className="account-policy-acknowledgment">
+                          <legend>Shipping insurance choice</legend>
+                          <label>
+                            <input
+                              type="radio"
+                              name={`shipping-insurance-${quote.id}`}
+                              value="accepted"
+                              checked={quote.shipping_insurance_decision === "accepted"}
+                              disabled={insuranceDecisionBusyQuoteId === quote.id}
+                              onChange={() => {
+                                void setShippingInsuranceDecision(quote, "accepted");
+                              }}
+                            />
+                            <span>
+                              Accept shipping insurance for this quote revision.
+                            </span>
+                          </label>
+                          <label>
+                            <input
+                              type="radio"
+                              name={`shipping-insurance-${quote.id}`}
+                              value="declined"
+                              checked={quote.shipping_insurance_decision === "declined"}
+                              disabled={insuranceDecisionBusyQuoteId === quote.id}
+                              onChange={() => {
+                                void setShippingInsuranceDecision(quote, "declined");
+                              }}
+                            />
+                            <span>
+                              Decline shipping insurance for this quote revision.
+                            </span>
+                          </label>
+                          {quote.shipping_insurance_decision === "declined" ? (
+                            <small className="account-muted">
+                              This quote includes a shipping insurance charge. D’Acqua Dolce must prepare a revised quote without that charge before approval.
+                            </small>
+                          ) : null}
+                        </fieldset>
+                      ) : (
+                        <p className="account-muted">
+                          Shipping insurance is not included in this quote revision.
+                        </p>
+                      )}
                       <label className="account-policy-acknowledgment">
                         <input
                           type="checkbox"
@@ -1883,6 +1973,10 @@ export function AccountPage({
                       disabled={
                         formalQuoteExpired(quote)
                         || (
+                          quote.shipping_insurance_offered
+                          && quote.shipping_insurance_decision !== "accepted"
+                        )
+                        || (
                           salesArea?.enforcement_enabled === true
                           && !salesAreaAllowsAddress(
                             salesArea,
@@ -1904,6 +1998,14 @@ export function AccountPage({
                           ? new Date(quote.approved_at).toLocaleString()
                           : ""}
                       </p>
+                      {quote.shipping_insurance_offered ? (
+                        <p className="account-muted">
+                          Shipping insurance: {quote.shipping_insurance_decision ?? "not recorded"}
+                          {quote.shipping_insurance_decided_at !== null
+                            ? ` · recorded ${new Date(quote.shipping_insurance_decided_at).toLocaleString()}`
+                            : ""}
+                        </p>
+                      ) : null}
                       {orders.find((order) => order.formal_quote_id === quote.id) !== undefined ? (
                         <p className="account-muted">
                           Order prepared · awaiting secure payment.
