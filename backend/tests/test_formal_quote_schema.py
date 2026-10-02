@@ -68,13 +68,18 @@ def test_commercial_adjustments_enforce_charge_and_credit_signs() -> None:
                 "amount_minor": 25000,
             },
             {
+                "kind": "shipping_insurance",
+                "label": "Shipping insurance",
+                "amount_minor": 3500,
+            },
+            {
                 "kind": "discount",
                 "label": "Referral discount",
                 "amount_minor": -10000,
             },
         ],
     )
-    assert [charge.amount_minor for charge in payload.charges] == [25000, -10000]
+    assert [charge.amount_minor for charge in payload.charges] == [25000, 3500, -10000]
 
     with pytest.raises(ValidationError):
         FormalQuoteCreate(

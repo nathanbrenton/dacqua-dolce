@@ -66,6 +66,7 @@ class CommercialChargeInput(BaseModel):
     def validate_sign(self) -> "CommercialChargeInput":
         positive_kinds = {
             CommercialChargeKind.shipping,
+            CommercialChargeKind.shipping_insurance,
             CommercialChargeKind.tax,
             CommercialChargeKind.installation,
             CommercialChargeKind.other_charge,
@@ -85,3 +86,10 @@ class CommercialChargeRead(BaseModel):
     kind: CommercialChargeKind
     label: str
     amount_minor: int
+
+class CommercialCostBreakdownRead(BaseModel):
+    product_other_amount_minor: int
+    shipping_delivery_amount_minor: int
+    shipping_insurance_amount_minor: int
+    tax_amount_minor: int
+    total_amount_minor: int

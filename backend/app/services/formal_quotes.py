@@ -290,6 +290,7 @@ def create_formal_quote_revision(
 
         positive_kinds = {
             CommercialChargeKind.shipping,
+            CommercialChargeKind.shipping_insurance,
             CommercialChargeKind.tax,
             CommercialChargeKind.installation,
             CommercialChargeKind.other_charge,

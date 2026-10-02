@@ -39,6 +39,7 @@ class FormalQuoteStatus(StrEnum):
 
 class CommercialChargeKind(StrEnum):
     shipping = "shipping"
+    shipping_insurance = "shipping_insurance"
     tax = "tax"
     installation = "installation"
     discount = "discount"
@@ -307,13 +308,13 @@ class FormalQuoteCharge(Base):
     __tablename__ = "formal_quote_charges"
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('shipping', 'tax', 'installation', 'discount', "
-            "'other_charge', 'other_credit')",
+            "kind IN ('shipping', 'shipping_insurance', 'tax', "
+            "'installation', 'discount', 'other_charge', 'other_credit')",
             name="formal_quote_charges_kind_valid",
         ),
         CheckConstraint(
-            "((kind IN ('shipping', 'tax', 'installation', 'other_charge') "
-            "AND amount_minor > 0) OR "
+            "((kind IN ('shipping', 'shipping_insurance', 'tax', "
+            "'installation', 'other_charge') AND amount_minor > 0) OR "
             "(kind IN ('discount', 'other_credit') AND amount_minor < 0))",
             name="formal_quote_charges_amount_sign_valid",
         ),

@@ -64,8 +64,8 @@ def make_quote(
         approved_by_user_id=customer_id,
         currency="USD",
         subtotal_amount_minor=250000,
-        charges_amount_minor=15000,
-        total_amount_minor=265000,
+        charges_amount_minor=18500,
+        total_amount_minor=268500,
         delivery_address_snapshot=address("Dory Tang"),
         billing_address_snapshot=address("Dory Tang"),
     )
@@ -96,10 +96,18 @@ def make_quote(
         FormalQuoteCharge(
             id=uuid.uuid4(),
             formal_quote_id=quote.id,
+            kind="shipping_insurance",
+            label="Shipping insurance",
+            amount_minor=3500,
+            sort_order=1,
+        ),
+        FormalQuoteCharge(
+            id=uuid.uuid4(),
+            formal_quote_id=quote.id,
             kind="discount",
             label="Referral discount",
             amount_minor=-10000,
-            sort_order=1,
+            sort_order=2,
         ),
     ]
     return quote, customer_id
@@ -126,8 +134,8 @@ def test_approved_quote_becomes_awaiting_payment_order(
     assert order.user_id == customer_id
     assert order.status == OrderStatus.awaiting_payment
     assert order.subtotal_amount_minor == 250000
-    assert order.charges_amount_minor == 15000
-    assert order.total_amount_minor == 265000
+    assert order.charges_amount_minor == 18500
+    assert order.total_amount_minor == 268500
     assert order.delivery_address_snapshot == quote.delivery_address_snapshot
     assert order.billing_address_snapshot == quote.billing_address_snapshot
     assert order.currency == "USD"
@@ -143,6 +151,7 @@ def test_approved_quote_becomes_awaiting_payment_order(
     order_charges = [value for value in db.added if isinstance(value, OrderCharge)]
     assert [(charge.kind, charge.amount_minor) for charge in order_charges] == [
         ("shipping", 25000),
+        ("shipping_insurance", 3500),
         ("discount", -10000),
     ]
 

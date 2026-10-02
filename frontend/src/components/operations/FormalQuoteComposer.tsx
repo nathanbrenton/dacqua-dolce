@@ -45,6 +45,7 @@ const CHARGE_OPTIONS: Array<{
   credit: boolean;
 }> = [
   { value: "shipping", label: "Shipping / delivery", credit: false },
+  { value: "shipping_insurance", label: "Shipping insurance", credit: false },
   { value: "tax", label: "Tax", credit: false },
   { value: "installation", label: "Installation", credit: false },
   { value: "discount", label: "Discount", credit: true },
@@ -361,16 +362,44 @@ export function FormalQuoteComposer({
               </div>
               <div className="operations-commercial-breakdown">
                 <span>
-                  Products {money(formalQuote.subtotal_amount_minor, formalQuote.currency)}
+                  Product / other costs{" "}
+                  {money(
+                    formalQuote.cost_breakdown.product_other_amount_minor,
+                    formalQuote.currency,
+                  )}
                 </span>
-                {formalQuote.charges.map((charge, index) => (
-                  <span key={`${formalQuote.id}-${charge.kind}-${index}`}>
-                    {charge.label} {money(charge.amount_minor, formalQuote.currency)}
-                  </span>
-                ))}
+                <span>
+                  Shipping / delivery{" "}
+                  {money(
+                    formalQuote.cost_breakdown.shipping_delivery_amount_minor,
+                    formalQuote.currency,
+                  )}
+                </span>
+                <span>
+                  Shipping insurance{" "}
+                  {money(
+                    formalQuote.cost_breakdown.shipping_insurance_amount_minor,
+                    formalQuote.currency,
+                  )}
+                </span>
+                <span>
+                  Tax{" "}
+                  {money(formalQuote.cost_breakdown.tax_amount_minor, formalQuote.currency)}
+                </span>
                 <strong>
-                  Final total {money(formalQuote.total_amount_minor, formalQuote.currency)}
+                  Final total{" "}
+                  {money(formalQuote.cost_breakdown.total_amount_minor, formalQuote.currency)}
                 </strong>
+                {formalQuote.charges.length > 0 ? (
+                  <small>
+                    Adjustments: {formalQuote.charges
+                      .map(
+                        (charge) =>
+                          `${charge.label} ${money(charge.amount_minor, formalQuote.currency)}`,
+                      )
+                      .join(" · ")}
+                  </small>
+                ) : null}
                 {formalQuote.policy_snapshots.length > 0 ? (
                   <small>
                     Policies: {formalQuote.policy_snapshots
@@ -418,8 +447,9 @@ export function FormalQuoteComposer({
           <p className="field-helper">
             Current catalog prices are used automatically when available. Leave the price blank to
             use that authoritative amount. Private/no-online-price products require a quoted price.
-            Shipping, tax, installation, discounts, and other adjustments are entered explicitly;
-            this workflow does not calculate them automatically.
+            Shipping / delivery, shipping insurance, tax, installation, discounts, and other
+            adjustments are entered explicitly. This workflow does not calculate carrier,
+            insurance-provider, or jurisdiction-specific tax amounts automatically.
           </p>
 
           {lines.map((line, index) => {

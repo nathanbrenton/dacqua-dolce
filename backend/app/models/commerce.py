@@ -523,13 +523,13 @@ class OrderCharge(Base):
     __tablename__ = "order_charges"
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('shipping', 'tax', 'installation', 'discount', "
-            "'other_charge', 'other_credit')",
+            "kind IN ('shipping', 'shipping_insurance', 'tax', "
+            "'installation', 'discount', 'other_charge', 'other_credit')",
             name="order_charges_kind_valid",
         ),
         CheckConstraint(
-            "((kind IN ('shipping', 'tax', 'installation', 'other_charge') "
-            "AND amount_minor > 0) OR "
+            "((kind IN ('shipping', 'shipping_insurance', 'tax', "
+            "'installation', 'other_charge') AND amount_minor > 0) OR "
             "(kind IN ('discount', 'other_credit') AND amount_minor < 0))",
             name="order_charges_amount_sign_valid",
         ),

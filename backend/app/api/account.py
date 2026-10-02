@@ -50,6 +50,7 @@ from app.services.audit import (
     record_audit_event,
 )
 from app.services.calendar_export import build_all_day_ics
+from app.services.commercial_costs import commercial_cost_breakdown
 from app.services.formal_quotes import approve_formal_quote
 from app.services.post_purchase import next_replacement_due_on
 from app.services.pricing import resolve_pricing, select_effective_price
@@ -640,6 +641,11 @@ def customer_formal_quote_read(
         subtotal_amount_minor=formal_quote.subtotal_amount_minor,
         charges_amount_minor=formal_quote.charges_amount_minor,
         total_amount_minor=formal_quote.total_amount_minor,
+        cost_breakdown=commercial_cost_breakdown(
+            subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+            charges=formal_quote.charges,
+            expected_total_amount_minor=formal_quote.total_amount_minor,
+        ).as_dict(),
         delivery_address=formal_quote.delivery_address_snapshot,
         billing_address=formal_quote.billing_address_snapshot,
         charges=[

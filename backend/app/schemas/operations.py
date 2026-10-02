@@ -29,6 +29,7 @@ from app.schemas.commercial import (
     CommercialAddressSnapshot,
     CommercialChargeInput,
     CommercialChargeRead,
+    CommercialCostBreakdownRead,
 )
 from app.schemas.policies import FormalQuotePolicySnapshotRead
 
@@ -317,6 +318,7 @@ class OperationsFormalQuoteRead(BaseModel):
     subtotal_amount_minor: int
     charges_amount_minor: int
     total_amount_minor: int
+    cost_breakdown: CommercialCostBreakdownRead
     delivery_address: CommercialAddressSnapshot | None
     billing_address: CommercialAddressSnapshot | None
     charges: list[CommercialChargeRead] = Field(default_factory=list)

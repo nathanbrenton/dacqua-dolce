@@ -6,6 +6,7 @@ import type {
   CommercialAddress,
   CommercialCharge,
   CommercialChargeKind,
+  CommercialCostBreakdown,
 } from "./commercial";
 import type {
   RecommendationDecision,
@@ -208,6 +209,7 @@ export type OperationsFormalQuote = {
   subtotal_amount_minor: number;
   charges_amount_minor: number;
   total_amount_minor: number;
+  cost_breakdown: CommercialCostBreakdown;
   delivery_address: CommercialAddress | null;
   billing_address: CommercialAddress | null;
   charges: CommercialCharge[];

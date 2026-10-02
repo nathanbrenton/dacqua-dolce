@@ -1,5 +1,6 @@
 export type CommercialChargeKind =
   | "shipping"
+  | "shipping_insurance"
   | "tax"
   | "installation"
   | "discount"
@@ -21,4 +22,12 @@ export type CommercialAddress = {
   postal_code: string;
   country_code: string;
   phone: string | null;
+};
+
+export type CommercialCostBreakdown = {
+  product_other_amount_minor: number;
+  shipping_delivery_amount_minor: number;
+  shipping_insurance_amount_minor: number;
+  tax_amount_minor: number;
+  total_amount_minor: number;
 };

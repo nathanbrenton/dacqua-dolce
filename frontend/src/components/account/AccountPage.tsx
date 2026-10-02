@@ -1726,19 +1726,54 @@ export function AccountPage({
                       </div>
                     ))}
                     <div>
-                      <span>Product subtotal</span>
-                      <strong>{money(quote.subtotal_amount_minor, quote.currency)}</strong>
+                      <span>Product / other costs</span>
+                      <strong>
+                        {money(
+                          quote.cost_breakdown.product_other_amount_minor,
+                          quote.currency,
+                        )}
+                      </strong>
                     </div>
-                    {quote.charges.map((charge, index) => (
-                      <div key={`${quote.id}-${charge.kind}-${index}`}>
-                        <span>{charge.label}</span>
-                        <strong>{money(charge.amount_minor, quote.currency)}</strong>
-                      </div>
-                    ))}
                     <div>
-                      <span>Final total</span>
-                      <strong>{money(quote.total_amount_minor, quote.currency)}</strong>
+                      <span>Shipping / delivery</span>
+                      <strong>
+                        {money(
+                          quote.cost_breakdown.shipping_delivery_amount_minor,
+                          quote.currency,
+                        )}
+                      </strong>
                     </div>
+                    <div>
+                      <span>Shipping insurance</span>
+                      <strong>
+                        {money(
+                          quote.cost_breakdown.shipping_insurance_amount_minor,
+                          quote.currency,
+                        )}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Tax</span>
+                      <strong>
+                        {money(quote.cost_breakdown.tax_amount_minor, quote.currency)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span>Total cost</span>
+                      <strong>
+                        {money(quote.cost_breakdown.total_amount_minor, quote.currency)}
+                      </strong>
+                    </div>
+                    {quote.charges.length > 0 ? (
+                      <small className="account-muted">
+                        Adjustments: {quote.charges
+                          .map(
+                            (charge) =>
+                              `${charge.label} ${money(charge.amount_minor, quote.currency)}`,
+                          )
+                          .join(" · ")}
+                      </small>
+                    ) : null}
                   </div>
 
                   <div className="account-formal-quote-addresses">

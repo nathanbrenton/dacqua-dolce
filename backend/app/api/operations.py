@@ -101,6 +101,7 @@ from app.services.cancellations import (
 from app.services.commerce import (
     active_reserved_quantity,
 )
+from app.services.commercial_costs import commercial_cost_breakdown
 from app.services.communications_reply import (
     CommunicationReplyConfigurationError,
     CommunicationReplyRecipientUnavailable,
@@ -166,6 +167,11 @@ def operations_formal_quote_read(
         subtotal_amount_minor=formal_quote.subtotal_amount_minor,
         charges_amount_minor=formal_quote.charges_amount_minor,
         total_amount_minor=formal_quote.total_amount_minor,
+        cost_breakdown=commercial_cost_breakdown(
+            subtotal_amount_minor=formal_quote.subtotal_amount_minor,
+            charges=formal_quote.charges,
+            expected_total_amount_minor=formal_quote.total_amount_minor,
+        ).as_dict(),
         delivery_address=formal_quote.delivery_address_snapshot,
         billing_address=formal_quote.billing_address_snapshot,
         charges=[
