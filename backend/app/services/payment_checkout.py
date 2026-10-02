@@ -4,6 +4,11 @@ from urllib.parse import urlparse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.sales_area import (
+    SalesAreaEligibilityError,
+    SalesAreaPolicy,
+    require_delivery_address_in_sales_area,
+)
 from app.models.commerce import (
     Order,
     OrderStatus,
@@ -46,6 +51,7 @@ def begin_hosted_checkout(
     success_url: str,
     cancel_url: str,
     provider: PaymentProviderAdapter,
+    sales_area_policy: SalesAreaPolicy | None = None,
 ) -> HostedCheckout:
     """Create a provider-hosted checkout without handling card data.
 
@@ -70,6 +76,14 @@ def begin_hosted_checkout(
         raise PaymentCheckoutError(
             "Hosted checkout is unavailable while a cancellation request is active."
         )
+
+    try:
+        require_delivery_address_in_sales_area(
+            order.delivery_address_snapshot,
+            policy=sales_area_policy,
+        )
+    except SalesAreaEligibilityError as exc:
+        raise PaymentCheckoutError(str(exc)) from exc
 
     result = provider.create_checkout_session(
         CheckoutSessionRequest(

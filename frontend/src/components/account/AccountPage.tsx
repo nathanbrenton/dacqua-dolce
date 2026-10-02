@@ -43,6 +43,11 @@ import {
   type Order,
 } from "../../api/orders";
 import {
+  getSalesArea,
+  salesAreaAllowsAddress,
+  type SalesArea,
+} from "../../api/salesArea";
+import {
   AppearanceToggle,
 } from "../theme/AppearanceToggle";
 import {
@@ -551,6 +556,8 @@ export function AccountPage({
     useState<CustomerRequestSummary[]>([]);
   const [formalQuotes, setFormalQuotes] =
     useState<CustomerFormalQuote[]>([]);
+  const [salesArea, setSalesArea] =
+    useState<SalesArea | null>(null);
   const [policyAcknowledgments, setPolicyAcknowledgments] =
     useState<Record<string, boolean>>({});
   const [customerEquipment, setCustomerEquipment] =
@@ -605,6 +612,7 @@ export function AccountPage({
       getCustomerRequests(),
       getCustomerFormalQuotes(),
       getCustomerEquipment(),
+      getSalesArea(),
     ])
       .then(
         ([
@@ -615,6 +623,7 @@ export function AccountPage({
           requestResult,
           formalQuoteResult,
           equipmentResult,
+          salesAreaResult,
         ]) => {
           setProfile(profileResult);
           setCart(cartResult);
@@ -623,6 +632,7 @@ export function AccountPage({
           setCustomerRequests(requestResult);
           setFormalQuotes(formalQuoteResult);
           setCustomerEquipment(equipmentResult);
+          setSalesArea(salesAreaResult);
           setError(null);
         },
       )
@@ -1740,6 +1750,16 @@ export function AccountPage({
                             <span key={line}>{line}<br /></span>
                           ))}
                         </address>
+                        {salesArea?.enforcement_enabled ? (
+                          <p className="account-muted">
+                            {salesAreaAllowsAddress(
+                              salesArea,
+                              quote.delivery_address,
+                            )
+                              ? `Delivery eligible within ${salesArea.label}.`
+                              : `This delivery address is outside ${salesArea.label}. Contact D’Acqua Dolce for assistance.`}
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
                     {quote.billing_address !== null ? (
@@ -1794,10 +1814,28 @@ export function AccountPage({
                         This quote has expired. Contact D’Acqua Dolce for a current revision.
                       </p>
                     ) : null}
+                    {salesArea?.enforcement_enabled
+                      && !salesAreaAllowsAddress(
+                        salesArea,
+                        quote.delivery_address,
+                      ) ? (
+                        <p className="account-muted">
+                          This quote cannot be approved for the current delivery address.
+                        </p>
+                      ) : null}
                     <button
                       type="button"
                       className="account-action"
-                      disabled={formalQuoteExpired(quote)}
+                      disabled={
+                        formalQuoteExpired(quote)
+                        || (
+                          salesArea?.enforcement_enabled === true
+                          && !salesAreaAllowsAddress(
+                            salesArea,
+                            quote.delivery_address,
+                          )
+                        )
+                      }
                       onClick={() => {
                         void approveFormalQuote(quote);
                       }}

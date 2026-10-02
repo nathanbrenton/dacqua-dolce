@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException
 
+from app.core.sales_area import SalesAreaPolicy
 from app.models.commerce import Order, OrderCharge, OrderStatus
 from app.models.quote import (
     FormalQuote,
@@ -203,3 +204,26 @@ def test_quote_with_inconsistent_commercial_total_is_rejected() -> None:
             formal_quote_id=quote.id,
             customer_user=SimpleNamespace(id=customer_id),  # type: ignore[arg-type]
         )
+
+
+def test_out_of_area_quote_cannot_become_order() -> None:
+    quote, customer_id = make_quote()
+    quote.delivery_address_snapshot = address("Dory Tang")
+    quote.delivery_address_snapshot["region_code"] = "NV"
+    db = QuoteOrderDatabase(quote)
+    policy = SalesAreaPolicy(
+        mode="allowlist",
+        country_code="US",
+        region_codes=frozenset({"CA"}),
+        label="Launch delivery area",
+    )
+
+    with pytest.raises(HTTPException, match="outside Launch delivery area"):
+        create_order_from_approved_quote(
+            db,  # type: ignore[arg-type]
+            formal_quote_id=quote.id,
+            customer_user=SimpleNamespace(id=customer_id),  # type: ignore[arg-type]
+            sales_area_policy=policy,
+        )
+
+    assert db.added == []

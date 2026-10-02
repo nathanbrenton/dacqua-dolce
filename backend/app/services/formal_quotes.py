@@ -6,6 +6,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.sales_area import (
+    SalesAreaEligibilityError,
+    SalesAreaPolicy,
+    require_delivery_address_in_sales_area,
+)
 from app.models.catalog import (
     PricingPolicyMode,
     Product,
@@ -365,6 +370,7 @@ def present_formal_quote(
     *,
     formal_quote: FormalQuote,
     actor_user: User,
+    sales_area_policy: SalesAreaPolicy | None = None,
 ) -> FormalQuote:
     if formal_quote.status != FormalQuoteStatus.draft:
         raise HTTPException(
@@ -411,6 +417,18 @@ def present_formal_quote(
             status_code=status.HTTP_409_CONFLICT,
             detail="A billing address snapshot is required before presentation.",
         )
+
+    try:
+        require_delivery_address_in_sales_area(
+            formal_quote.delivery_address_snapshot,
+            policy=sales_area_policy,
+        )
+    except SalesAreaEligibilityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
     if formal_quote.total_amount_minor <= 0:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

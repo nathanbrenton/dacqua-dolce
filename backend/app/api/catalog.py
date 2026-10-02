@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_settings
+from app.core.sales_area import get_sales_area_policy
 from app.db.session import SessionLocal
 from app.models.catalog import (
     PricingPolicyMode,
@@ -39,6 +40,7 @@ from app.schemas.catalog import (
     StockNotificationRead,
     StockNotificationRequest,
 )
+from app.schemas.sales_area import SalesAreaRead
 from app.services.commerce import active_reserved_quantity
 from app.services.pricing import (
     resolve_pricing,
@@ -212,6 +214,20 @@ def pricing_read(
         can_checkout_online=(decision.can_checkout_online),
         action=decision.action,
         action_label=decision.action_label,
+    )
+
+
+@router.get(
+    "/sales-area",
+    response_model=SalesAreaRead,
+)
+def get_public_sales_area() -> SalesAreaRead:
+    policy = get_sales_area_policy()
+    return SalesAreaRead(
+        enforcement_enabled=policy.enforcement_enabled,
+        country_code=policy.country_code,
+        region_codes=sorted(policy.region_codes),
+        label=policy.label,
     )
 
 

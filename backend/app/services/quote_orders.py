@@ -4,6 +4,11 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.sales_area import (
+    SalesAreaEligibilityError,
+    SalesAreaPolicy,
+    require_delivery_address_in_sales_area,
+)
 from app.models.commerce import (
     FulfillmentStatus,
     Order,
@@ -21,6 +26,7 @@ def create_order_from_approved_quote(
     *,
     formal_quote_id: uuid.UUID,
     customer_user: User,
+    sales_area_policy: SalesAreaPolicy | None = None,
 ) -> Order:
     """Materialize exactly one authoritative order from an approved quote.
 
@@ -92,6 +98,17 @@ def create_order_from_approved_quote(
             status_code=status.HTTP_409_CONFLICT,
             detail="The approved quote does not contain a billing address snapshot.",
         )
+
+    try:
+        require_delivery_address_in_sales_area(
+            formal_quote.delivery_address_snapshot,
+            policy=sales_area_policy,
+        )
+    except SalesAreaEligibilityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
 
     subtotal = 0
     order_items: list[OrderItem] = []

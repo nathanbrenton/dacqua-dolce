@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from app.core.sales_area import SalesAreaPolicy
 from app.models.commerce import (
     Order,
     OrderCancellationRequest,
@@ -131,6 +132,49 @@ def test_hosted_checkout_is_blocked_by_active_cancellation() -> None:
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
+        )
+
+    assert provider.request is None
+
+
+def test_hosted_checkout_rejects_out_of_area_delivery_address() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Desert Rd",
+            "city": "Las Vegas",
+            "region_code": "NV",
+            "postal_code": "89101",
+            "country_code": "US",
+        },
+    )
+    provider = FakeProvider()
+    policy = SalesAreaPolicy(
+        mode="allowlist",
+        country_code="US",
+        region_codes=frozenset({"CA"}),
+        label="Launch delivery area",
+    )
+
+    with pytest.raises(
+        PaymentCheckoutError,
+        match="outside Launch delivery area",
+    ):
+        begin_hosted_checkout(
+            CheckoutDatabase(),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+            sales_area_policy=policy,
         )
 
     assert provider.request is None
