@@ -1453,7 +1453,9 @@ def list_quotes(
             selectinload(QuoteRequest.formal_quotes).selectinload(
                 FormalQuote.policy_snapshots
             ),
-            selectinload(FormalQuote.warranty_snapshots),
+            selectinload(QuoteRequest.formal_quotes).selectinload(
+                FormalQuote.warranty_snapshots
+            ),
         )
         .order_by(QuoteRequest.created_at.desc())
         .limit(200)
