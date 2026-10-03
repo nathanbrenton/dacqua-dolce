@@ -6,6 +6,67 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Literal
 
+APPROVED_LAUNCH_COUNTRY_CODE = "US"
+APPROVED_LAUNCH_REGION_CODES = frozenset(
+    {
+        "AL",
+        "AZ",
+        "AR",
+        "CA",
+        "CO",
+        "CT",
+        "DE",
+        "FL",
+        "GA",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "KY",
+        "LA",
+        "ME",
+        "MD",
+        "MA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NH",
+        "NJ",
+        "NM",
+        "NY",
+        "NC",
+        "ND",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "RI",
+        "SC",
+        "SD",
+        "TN",
+        "TX",
+        "UT",
+        "VT",
+        "VA",
+        "WA",
+        "WV",
+        "WI",
+        "WY",
+        "DC",
+    }
+)
+APPROVED_LAUNCH_REGION_CODES_CSV = ",".join(
+    sorted(APPROVED_LAUNCH_REGION_CODES)
+)
+APPROVED_LAUNCH_SALES_AREA_LABEL = (
+    "the contiguous United States and Washington, DC"
+)
+
 
 class SalesAreaConfigurationError(ValueError):
     pass
@@ -49,7 +110,7 @@ def load_sales_area_policy(
 
     mode = values.get(
         "DACQUA_SALES_AREA_MODE",
-        "disabled",
+        "allowlist",
     ).strip().lower()
     if mode not in {"disabled", "allowlist"}:
         raise SalesAreaConfigurationError(
@@ -59,14 +120,14 @@ def load_sales_area_policy(
     country_code = _normalize_code(
         values.get(
             "DACQUA_SALES_AREA_COUNTRY_CODE",
-            "US",
+            APPROVED_LAUNCH_COUNTRY_CODE,
         ),
         field_name="DACQUA_SALES_AREA_COUNTRY_CODE",
     )
 
     raw_regions = values.get(
         "DACQUA_SALES_AREA_REGION_CODES",
-        "",
+        APPROVED_LAUNCH_REGION_CODES_CSV,
     )
     region_codes = frozenset(
         _normalize_code(
@@ -79,7 +140,7 @@ def load_sales_area_policy(
 
     label = values.get(
         "DACQUA_SALES_AREA_LABEL",
-        "D’Acqua Dolce’s configured sales area",
+        APPROVED_LAUNCH_SALES_AREA_LABEL,
     ).strip()
     if not label:
         raise SalesAreaConfigurationError(

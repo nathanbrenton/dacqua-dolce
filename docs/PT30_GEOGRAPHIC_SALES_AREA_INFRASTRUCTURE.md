@@ -2,9 +2,11 @@
 
 ## Purpose
 
-PT30 adds one centralized, explicit sales-area policy for commercial delivery
-addresses. It deliberately does not reinterpret the client’s phrase
-“Continental United States.”
+PT30 added one centralized, explicit sales-area policy for commercial delivery
+addresses. At the time, it deliberately did not reinterpret the client’s phrase
+“Continental United States.” PT35 later resolved that business decision as the
+48 contiguous states plus Washington, DC and activated that set as the canonical
+launch policy.
 
 Customer address-book storage remains unrestricted. A saved address may exist
 outside the active sales area. Commercial use of that address is what becomes
@@ -24,40 +26,43 @@ out-of-area delivery address when enforcement is enabled.
 
 ## Configuration
 
-PT30 is disabled by default so deployment does not silently choose a geographic
-interpretation or unexpectedly block existing production workflows.
+PT30 originally defaulted to disabled so deployment could not silently choose a
+geographic interpretation. PT35 supersedes that temporary default: the approved
+launch policy now defaults to `allowlist` for the 48 contiguous states plus
+Washington, DC. Operators may still set an explicit override, but PT34/PT35
+readiness reports any drift from the approved launch set as `Action required`.
 
 Environment variables:
 
 - `DACQUA_SALES_AREA_MODE`
-  - `disabled` (default)
-  - `allowlist`
+  - `allowlist` (PT35 default)
+  - `disabled` (explicit operator override)
 - `DACQUA_SALES_AREA_COUNTRY_CODE`
   - defaults to `US`
 - `DACQUA_SALES_AREA_REGION_CODES`
   - comma-separated two-letter region codes
-  - required when mode is `allowlist`
+  - defaults to the approved PT35 launch set
+  - required when mode is `allowlist` if explicitly overridden
 - `DACQUA_SALES_AREA_LABEL`
   - customer-facing label for the configured area
-  - defaults to `D’Acqua Dolce’s configured sales area`
+  - defaults to `the contiguous United States and Washington, DC`
 
-Example only — not an approved production configuration:
+Approved PT35 launch configuration:
 
 ```text
 DACQUA_SALES_AREA_MODE=allowlist
 DACQUA_SALES_AREA_COUNTRY_CODE=US
-DACQUA_SALES_AREA_REGION_CODES=CA,OR,WA
-DACQUA_SALES_AREA_LABEL=Launch delivery area
+DACQUA_SALES_AREA_REGION_CODES=AL,AR,AZ,CA,CO,CT,DC,DE,FL,GA,IA,ID,IL,IN,KS,KY,LA,MA,MD,ME,MI,MN,MO,MS,MT,NC,ND,NE,NH,NJ,NM,NV,NY,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VA,VT,WA,WI,WV,WY
+DACQUA_SALES_AREA_LABEL="the contiguous United States and Washington, DC"
 ```
-
-The example is for configuration mechanics only. It is not a business decision.
 
 ## Production commissioning gate
 
-Do not enable `allowlist` in production until the business owner explicitly
-approves the exact included region-code set. In particular, PT30 does not decide
-whether the phrase “Continental United States” includes or excludes Alaska,
-Washington D.C., or United States territories.
+The PT30 commissioning gate was resolved by PT35. The approved initial launch
+area is exactly the 48 contiguous states plus Washington, DC. Alaska, Hawaii,
+Puerto Rico, and other U.S. territories are excluded from the initial launch
+area. Production runtime configuration should explicitly match the approved set
+before PT35 is commissioned.
 
 ## Deferred
 

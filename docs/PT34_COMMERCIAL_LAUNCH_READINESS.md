@@ -15,11 +15,14 @@ authoritative.
 
 The audit reads the existing `DACQUA_SALES_AREA_*` configuration.
 
-- `Ready` means allowlist enforcement is enabled with explicit regions.
-- `Action required` means enforcement is disabled or the configuration is
-  invalid.
+- `Ready` means allowlist enforcement is enabled and exactly matches the
+  PT35-approved launch territory: the 48 contiguous states plus Washington, DC.
+- `Action required` means enforcement is disabled, configuration is invalid, or
+  the enabled country/region set drifts from that approved launch policy.
 
-PT34 does not choose the approved region set.
+PT34 itself did not choose the region set. PT35 supplied the business decision
+and tightened this readiness check so an arbitrary non-empty allowlist cannot
+be reported as ready.
 
 ### Required policies
 
@@ -88,9 +91,10 @@ The page explicitly states that the audit does not enable or disable checkout.
 
 ## Configuration documentation
 
-PT34 adds the existing sales-area variables to `backend/.env.example` with
-enforcement disabled by default. Production values remain an operator decision
-and are not changed by this milestone.
+PT34 originally added the sales-area variables to `backend/.env.example` with
+enforcement disabled by default. PT35 supersedes that temporary configuration
+with the approved contiguous-U.S.-plus-DC allowlist and documents the exact
+production values that must be commissioned.
 
 ## No database migration
 

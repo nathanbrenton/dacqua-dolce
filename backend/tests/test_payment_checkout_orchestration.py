@@ -60,6 +60,14 @@ def test_hosted_checkout_passes_only_safe_order_context() -> None:
         charges_amount_minor=10000,
         total_amount_minor=250000,
         currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Main St",
+            "city": "Irvine",
+            "region_code": "CA",
+            "postal_code": "92614",
+            "country_code": "US",
+        },
     )
     db = CheckoutDatabase()
     provider = FakeProvider()
@@ -81,6 +89,34 @@ def test_hosted_checkout_passes_only_safe_order_context() -> None:
     refs = [value for value in db.added if isinstance(value, PaymentProviderReference)]
     assert len(refs) == 1
     assert refs[0].provider_checkout_id == "checkout_123"
+
+
+def test_hosted_checkout_rejects_missing_delivery_address_when_enforced() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+    )
+    provider = FakeProvider()
+
+    with pytest.raises(
+        PaymentCheckoutError,
+        match="delivery address is required",
+    ):
+        begin_hosted_checkout(
+            CheckoutDatabase(),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+        )
+
+    assert provider.request is None
 
 
 def test_hosted_checkout_rejects_non_payment_order() -> None:

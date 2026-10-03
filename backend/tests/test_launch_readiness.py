@@ -1,7 +1,11 @@
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
-from app.core.sales_area import SalesAreaPolicy
+from app.core.sales_area import (
+    APPROVED_LAUNCH_COUNTRY_CODE,
+    APPROVED_LAUNCH_REGION_CODES,
+    SalesAreaPolicy,
+)
 from app.models.catalog import (
     InventorySourceKind,
     InventoryStatus,
@@ -40,8 +44,8 @@ def test_launch_readiness_reports_dynamic_checks_ready(
         "load_sales_area_policy",
         lambda: SalesAreaPolicy(
             mode="allowlist",
-            country_code="US",
-            region_codes=frozenset({"CA", "OR"}),
+            country_code=APPROVED_LAUNCH_COUNTRY_CODE,
+            region_codes=APPROVED_LAUNCH_REGION_CODES,
             label="Launch area",
         ),
     )
@@ -123,6 +127,54 @@ def test_launch_readiness_surfaces_configuration_action_items(
     assert "Shipping Policy" in " ".join(checks["policies"].evidence)
     assert checks["warranties"].status == "action_required"
     assert checks["catalog_inventory"].status == "action_required"
+
+
+def test_launch_readiness_rejects_allowlist_drift_from_approved_pt35_area(
+    monkeypatch,
+) -> None:
+    drifted_regions = (
+        APPROVED_LAUNCH_REGION_CODES - {"DC"}
+    ) | {"AK"}
+    monkeypatch.setattr(
+        launch_readiness,
+        "load_sales_area_policy",
+        lambda: SalesAreaPolicy(
+            mode="allowlist",
+            country_code=APPROVED_LAUNCH_COUNTRY_CODE,
+            region_codes=frozenset(drifted_regions),
+            label="Launch area",
+        ),
+    )
+
+    check = launch_readiness._sales_area_check()
+
+    assert check.status == "action_required"
+    assert "approved PT35 launch territory" in check.detail
+    assert "Missing approved regions: DC" in check.evidence
+    assert "Unexpected regions: AK" in check.evidence
+
+
+def test_launch_readiness_rejects_wrong_launch_country(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        launch_readiness,
+        "load_sales_area_policy",
+        lambda: SalesAreaPolicy(
+            mode="allowlist",
+            country_code="CA",
+            region_codes=APPROVED_LAUNCH_REGION_CODES,
+            label="Launch area",
+        ),
+    )
+
+    check = launch_readiness._sales_area_check()
+
+    assert check.status == "action_required"
+    assert (
+        "Configured country does not match the approved launch country."
+        in check.evidence
+    )
 
 
 def test_launch_readiness_has_no_global_feature_toggle() -> None:

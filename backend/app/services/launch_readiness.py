@@ -7,6 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.sales_area import (
+    APPROVED_LAUNCH_COUNTRY_CODE,
+    APPROVED_LAUNCH_REGION_CODES,
     SalesAreaConfigurationError,
     load_sales_area_policy,
 )
@@ -114,17 +116,57 @@ def _sales_area_check() -> LaunchReadinessCheck:
             label="Sales area",
             status="action_required",
             detail=(
-                "Geographic enforcement is disabled. Configure the approved "
+                "Geographic enforcement is disabled. Enable the approved "
                 "launch allowlist before relying on geographic sales controls."
             ),
             evidence=evidence,
+        )
+
+    missing_regions = sorted(
+        APPROVED_LAUNCH_REGION_CODES - policy.region_codes
+    )
+    unexpected_regions = sorted(
+        policy.region_codes - APPROVED_LAUNCH_REGION_CODES
+    )
+    country_matches = (
+        policy.country_code == APPROVED_LAUNCH_COUNTRY_CODE
+    )
+    if not country_matches or missing_regions or unexpected_regions:
+        drift_evidence = list(evidence)
+        drift_evidence.append(
+            f"Approved launch country: {APPROVED_LAUNCH_COUNTRY_CODE}"
+        )
+        if not country_matches:
+            drift_evidence.append(
+                "Configured country does not match the approved launch country."
+            )
+        if missing_regions:
+            drift_evidence.append(
+                "Missing approved regions: " + ", ".join(missing_regions)
+            )
+        if unexpected_regions:
+            drift_evidence.append(
+                "Unexpected regions: " + ", ".join(unexpected_regions)
+            )
+        return LaunchReadinessCheck(
+            key="sales_area",
+            label="Sales area",
+            status="action_required",
+            detail=(
+                "Enabled sales-area configuration does not match the "
+                "approved PT35 launch territory."
+            ),
+            evidence=tuple(drift_evidence),
         )
 
     return LaunchReadinessCheck(
         key="sales_area",
         label="Sales area",
         status="ready",
-        detail="Geographic sales-area enforcement is enabled with an explicit allowlist.",
+        detail=(
+            "Geographic sales-area enforcement matches the approved "
+            "contiguous-U.S.-plus-DC launch territory."
+        ),
         evidence=evidence,
     )
 
