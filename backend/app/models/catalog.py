@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Enum,
     ForeignKey,
@@ -40,6 +41,12 @@ class InventoryStatus(StrEnum):
     backordered = "backordered"
     unavailable = "unavailable"
     not_tracked = "not_tracked"
+
+
+class ProductLifecycleStatus(StrEnum):
+    active = "active"
+    soon_discontinued = "soon_discontinued"
+    discontinued = "discontinued"
 
 
 class InventorySourceKind(StrEnum):
@@ -216,6 +223,24 @@ class Product(Base):
         default=True,
     )
     online_sale_approved: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    lifecycle_status: Mapped[ProductLifecycleStatus] = mapped_column(
+        Enum(
+            ProductLifecycleStatus,
+            name="product_lifecycle_status",
+        ),
+        nullable=False,
+        default=ProductLifecycleStatus.active,
+    )
+    allow_inquiry_when_unavailable: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+    )
+    allow_formal_quote_when_unavailable: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
         default=False,
@@ -543,6 +568,7 @@ class ProductInventory(Base):
         nullable=False,
         default=0,
     )
+    expected_available_on: Mapped[date | None] = mapped_column(Date)
     estimated_lead_time: Mapped[str | None] = mapped_column(String(120))
     source_kind: Mapped[InventorySourceKind] = mapped_column(
         Enum(InventorySourceKind, name="inventory_source_kind"),

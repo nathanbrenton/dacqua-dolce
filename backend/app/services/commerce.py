@@ -8,6 +8,7 @@ from app.models.catalog import (
     InventoryStatus,
     Product,
     ProductInventory,
+    ProductLifecycleStatus,
     ProductPrice,
     ProductVariant,
 )
@@ -245,6 +246,11 @@ def add_item_to_cart(
     if product is None:
         raise CommerceError(
             "System not found."
+        )
+
+    if product.lifecycle_status == ProductLifecycleStatus.discontinued:
+        raise CommerceError(
+            "This system has been discontinued and is not available for online purchase."
         )
 
     if product.assisted_sale_required:

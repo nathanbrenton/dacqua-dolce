@@ -19,8 +19,11 @@ class CatalogAvailabilityRead(BaseModel):
     available: bool | None
     action: str
     action_label: str
+    lifecycle_status: str
+    expected_available_on: str | None = None
     estimated_lead_time: str | None = None
     can_notify_when_in_stock: bool = False
+    can_inquire: bool = True
 
 
 class StockNotificationRequest(BaseModel):

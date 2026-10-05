@@ -150,7 +150,7 @@ export function QuoteDialog({
     && productName !== null;
 
   const dialogKicker = isProductInquiry
-    ? "Request a Quote"
+    ? "Product Inquiry"
     : inquiryContext === "recommendation"
       ? "System Guidance"
       : "Talk to an Expert";
@@ -308,7 +308,7 @@ export function QuoteDialog({
         <button
           className="auth-close"
           type="button"
-          aria-label={isProductInquiry ? "Close quote request" : "Close inquiry"}
+          aria-label="Close inquiry"
           onClick={onClose}
         >
           ×

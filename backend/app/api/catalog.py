@@ -169,6 +169,8 @@ def availability_read(
             product.online_sale_approved
             and not product.assisted_sale_required
         ),
+        lifecycle_status=product.lifecycle_status,
+        allow_inquiry_when_unavailable=product.allow_inquiry_when_unavailable,
     )
 
     return CatalogAvailabilityRead(
@@ -176,8 +178,11 @@ def availability_read(
         available=decision.available,
         action=decision.action,
         action_label=decision.action_label,
+        lifecycle_status=decision.lifecycle_status,
+        expected_available_on=decision.expected_available_on,
         estimated_lead_time=decision.estimated_lead_time,
         can_notify_when_in_stock=decision.can_notify_when_in_stock,
+        can_inquire=decision.can_inquire,
     )
 
 
@@ -490,6 +495,8 @@ def subscribe_stock_notification(
             inventory,
             reserved_quantity=reserved_quantity,
             online_sale_approved=product.online_sale_approved,
+            lifecycle_status=product.lifecycle_status,
+            allow_inquiry_when_unavailable=product.allow_inquiry_when_unavailable,
         )
 
         if not decision.can_notify_when_in_stock:

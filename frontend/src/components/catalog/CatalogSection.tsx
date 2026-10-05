@@ -197,13 +197,23 @@ export function CatalogSection({
                   {presentation.catalogSummary ?? product.description}
                 </p>
 
+                {product.availability.lifecycle_status === "soon_discontinued" ? (
+                  <p className="product-lifecycle-label">Soon to be discontinued</p>
+                ) : null}
+
                 <div className="product-commerce">
-                  {product.availability.status === "out_of_stock" ? (
+                  {product.availability.lifecycle_status === "discontinued" ? (
+                    <span className="product-policy product-stock-status">
+                      Discontinued
+                    </span>
+                  ) : product.availability.status === "out_of_stock" ? (
                     <span className="product-policy product-stock-status">
                       Out of stock
-                      {product.availability.estimated_lead_time !== null
-                        ? ` · ${product.availability.estimated_lead_time}`
-                        : ""}
+                      {product.availability.expected_available_on !== null
+                        ? ` · expected ${new Date(`${product.availability.expected_available_on}T00:00:00`).toLocaleDateString()}`
+                        : product.availability.estimated_lead_time !== null
+                          ? ` · ${product.availability.estimated_lead_time}`
+                          : ""}
                     </span>
                   ) : product.pricing
                     .display_price

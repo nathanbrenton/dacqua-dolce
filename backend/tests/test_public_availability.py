@@ -1,8 +1,9 @@
 """Tests for customer-safe inventory presentation."""
 
+from datetime import date
 from types import SimpleNamespace
 
-from app.models.catalog import InventoryStatus
+from app.models.catalog import InventoryStatus, ProductLifecycleStatus
 from app.services.public_availability import (
     resolve_public_availability,
 )
@@ -15,6 +16,7 @@ def inventory(
     return SimpleNamespace(
         inventory_status=status,
         quantity_on_hand=quantity,
+        expected_available_on=None,
         estimated_lead_time=None,
     )
 
@@ -108,4 +110,48 @@ def test_out_of_stock_remains_visible_for_quote_only_product() -> None:
     assert result.status == "out_of_stock"
     assert result.available is False
     assert result.estimated_lead_time == "2–3 weeks"
-    assert result.action == "NOTIFY_WHEN_IN_STOCK"
+    assert result.action == "INQUIRE"
+
+
+def test_expected_date_takes_structured_public_field() -> None:
+    item = inventory(InventoryStatus.backordered, 0)
+    item.expected_available_on = date(2026, 11, 15)
+
+    result = resolve_public_availability(item)
+
+    assert result.status == "out_of_stock"
+    assert result.expected_available_on == "2026-11-15"
+
+
+def test_discontinued_is_distinct_from_out_of_stock() -> None:
+    result = resolve_public_availability(
+        inventory(InventoryStatus.unavailable, 0),
+        lifecycle_status=ProductLifecycleStatus.discontinued,
+    )
+
+    assert result.status == "discontinued"
+    assert result.lifecycle_status == "discontinued"
+    assert result.can_notify_when_in_stock is False
+    assert result.can_inquire is True
+
+
+def test_soon_discontinued_can_remain_in_stock() -> None:
+    result = resolve_public_availability(
+        inventory(InventoryStatus.in_stock, 3),
+        lifecycle_status=ProductLifecycleStatus.soon_discontinued,
+    )
+
+    assert result.status == "in_stock"
+    assert result.lifecycle_status == "soon_discontinued"
+    assert result.available is True
+
+
+def test_unavailable_inquiry_can_be_disabled_per_product() -> None:
+    result = resolve_public_availability(
+        inventory(InventoryStatus.unavailable, 0),
+        allow_inquiry_when_unavailable=False,
+    )
+
+    assert result.status == "out_of_stock"
+    assert result.can_inquire is False
+    assert result.action == "UNAVAILABLE"

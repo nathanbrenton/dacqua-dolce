@@ -7,6 +7,8 @@ import pytest
 
 from app.models.catalog import (
     InventoryStatus,
+    Product,
+    ProductLifecycleStatus,
 )
 from app.services import commerce
 
@@ -157,3 +159,41 @@ def test_not_tracked_inventory_does_not_hold_stock() -> None:
     )
 
     assert item.reservation_expires_at is None
+
+
+class ProductDatabase:
+    def __init__(self, product: Product) -> None:
+        self.product = product
+
+    def scalar(self, statement: object) -> Product:
+        return self.product
+
+
+def test_discontinued_product_cannot_be_added_to_cart() -> None:
+    product = Product(
+        id=uuid.uuid4(),
+        manufacturer_id=uuid.uuid4(),
+        category_id=uuid.uuid4(),
+        name="Legacy system",
+        slug="legacy-system",
+        sku="LEGACY",
+        description="Discontinued test product",
+        public_path="/products/legacy-system",
+        active=True,
+        assisted_sale_required=False,
+        online_sale_approved=True,
+        lifecycle_status=ProductLifecycleStatus.discontinued,
+    )
+    database = ProductDatabase(product)
+
+    with pytest.raises(
+        commerce.CommerceError,
+        match="discontinued",
+    ):
+        commerce.add_item_to_cart(
+            database,  # type: ignore[arg-type]
+            user_id=uuid.uuid4(),
+            product_id=product.id,
+            variant_id=None,
+            quantity=1,
+        )

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 from app.models.catalog import (
     InventorySourceKind,
@@ -12,6 +12,7 @@ from app.models.catalog import (
 class InventoryObservation:
     status: InventoryStatus
     quantity_on_hand: int
+    expected_available_on: date | None
     estimated_lead_time: str | None
     source_kind: InventorySourceKind
     source_reference: str | None
@@ -31,6 +32,7 @@ def apply_inventory_observation(
 
     inventory.inventory_status = observation.status
     inventory.quantity_on_hand = observation.quantity_on_hand
+    inventory.expected_available_on = observation.expected_available_on
     inventory.estimated_lead_time = observation.estimated_lead_time
     inventory.source_kind = observation.source_kind
     inventory.source_reference = observation.source_reference

@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from pydantic import ValidationError
 
@@ -5,11 +7,13 @@ from app.models.catalog import (
     InventorySourceKind,
     InventoryStatus,
     PricingPolicyMode,
+    ProductLifecycleStatus,
     ProductRelationshipType,
     ReminderPreferenceKind,
 )
 from app.models.commerce import FulfillmentStatus
 from app.schemas.operations import (
+    AvailabilityPolicyUpdateRequest,
     InventoryUpdateRequest,
     OperationsInventoryRead,
     OperationsPricingRead,
@@ -120,6 +124,7 @@ def test_operations_product_exposes_catalog_architecture_context() -> None:
         active=True,
         assisted_sale_required=True,
         online_sale_approved=False,
+        lifecycle_status=ProductLifecycleStatus.active,
         pricing=OperationsPricingRead(
             mode="NO_ONLINE_SALE",
             amount_minor=None,
@@ -309,3 +314,22 @@ def test_inventory_source_defaults_to_operator_entry() -> None:
     )
 
     assert payload.source_kind == InventorySourceKind.operator_entry
+
+
+def test_inventory_expected_date_and_range_are_mutually_exclusive() -> None:
+    with pytest.raises(ValidationError):
+        InventoryUpdateRequest(
+            status=InventoryStatus.backordered,
+            quantity_on_hand=0,
+            expected_available_on=date(2026, 11, 15),
+            estimated_lead_time="2–3 weeks",
+        )
+
+
+def test_availability_policy_defaults_to_inquiry_without_formal_quote() -> None:
+    payload = AvailabilityPolicyUpdateRequest(
+        lifecycle_status=ProductLifecycleStatus.soon_discontinued,
+    )
+
+    assert payload.allow_inquiry_when_unavailable is True
+    assert payload.allow_formal_quote_when_unavailable is False

@@ -408,6 +408,7 @@ export type OperationsInventory = {
   status: string;
   quantity_on_hand: number;
   quantity_reserved: number;
+  expected_available_on: string | null;
   estimated_lead_time: string | null;
   source_kind:
     | "unspecified"
@@ -485,6 +486,9 @@ export type OperationsProduct = {
   active: boolean;
   assisted_sale_required: boolean;
   online_sale_approved: boolean;
+  lifecycle_status: "active" | "soon_discontinued" | "discontinued";
+  allow_inquiry_when_unavailable: boolean;
+  allow_formal_quote_when_unavailable: boolean;
   warranty_documents: OperationsWarrantyDocument[];
   pricing: OperationsPricing;
   standard_pricing: OperationsPricing;
@@ -865,11 +869,27 @@ export async function cancelProductPromotion(
   return response.json() as Promise<OperationsProduct>;
 }
 
+export function updateProductAvailabilityPolicy(
+  productId: string,
+  payload: {
+    lifecycle_status: OperationsProduct["lifecycle_status"];
+    allow_inquiry_when_unavailable: boolean;
+    allow_formal_quote_when_unavailable: boolean;
+  },
+): Promise<OperationsProduct> {
+  return writeJson(
+    `/api/operations/products/${encodeURIComponent(productId)}/availability-policy`,
+    "PUT",
+    payload,
+  );
+}
+
 export function updateProductInventory(
   productId: string,
   payload: {
     status: string;
     quantity_on_hand: number;
+    expected_available_on: string | null;
     estimated_lead_time: string | null;
     source_kind: OperationsInventory["source_kind"];
     source_reference: string | null;

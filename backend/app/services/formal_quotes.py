@@ -15,6 +15,7 @@ from app.models.catalog import (
     PricingPolicyMode,
     Product,
     ProductInventory,
+    ProductLifecycleStatus,
     ProductPrice,
     ProductVariant,
 )
@@ -30,6 +31,7 @@ from app.models.quote import (
     ShippingInsuranceDecision,
 )
 from app.services.audit import record_audit_event
+from app.services.commerce import active_reserved_quantity
 from app.services.policies import snapshot_quote_policies
 from app.services.pricing import select_effective_price
 from app.services.warranties import snapshot_quote_warranties
@@ -122,6 +124,44 @@ def _line_snapshot(
                 detail="Quote line variant is unavailable for that product.",
             )
 
+    inventory = _inventory_for_line(
+        db,
+        product_id=product.id,
+        variant_id=(variant.id if variant is not None else None),
+    )
+    reserved_quantity = (
+        active_reserved_quantity(
+            db,
+            product_id=product.id,
+            variant_id=(variant.id if variant is not None else None),
+        )
+        if inventory is not None
+        else 0
+    )
+    inventory_unavailable = (
+        inventory is not None
+        and inventory.inventory_status.value != "not_tracked"
+        and (
+            inventory.inventory_status.value in {"unavailable", "backordered"}
+            or inventory.quantity_on_hand - reserved_quantity <= 0
+        )
+    )
+    lifecycle_unavailable = (
+        product.lifecycle_status == ProductLifecycleStatus.discontinued
+    )
+    if (
+        (inventory_unavailable or lifecycle_unavailable)
+        and not bool(product.allow_formal_quote_when_unavailable)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "This product is unavailable for a formal quote under its "
+                "current availability policy. An administrator can explicitly "
+                "allow formal quoting while unavailable when appropriate."
+            ),
+        )
+
     prices = list(
         db.scalars(
             select(ProductPrice).where(
@@ -182,12 +222,6 @@ def _line_snapshot(
         if effective_price is not None
         else PricingPolicyMode.NO_ONLINE_PRICE.value
     )
-    inventory = _inventory_for_line(
-        db,
-        product_id=product.id,
-        variant_id=(variant.id if variant is not None else None),
-    )
-
     name_snapshot = product.name
     sku_snapshot = product.sku
     if variant is not None:
@@ -205,9 +239,13 @@ def _line_snapshot(
         currency=currency,
         pricing_policy_mode_snapshot=pricing_mode,
         estimated_lead_time_snapshot=(
-            inventory.estimated_lead_time
-            if inventory is not None
-            else None
+            inventory.expected_available_on.isoformat()
+            if inventory is not None and inventory.expected_available_on is not None
+            else (
+                inventory.estimated_lead_time
+                if inventory is not None
+                else None
+            )
         ),
     )
     return item, currency

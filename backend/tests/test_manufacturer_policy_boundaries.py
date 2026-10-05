@@ -12,6 +12,7 @@ from app.models.catalog import (
     PricingPolicyMode,
     ProductDocument,
     ProductDocumentType,
+    ProductLifecycleStatus,
     ProductPrice,
 )
 from app.schemas.catalog import CatalogProductRead
@@ -145,6 +146,7 @@ class ProductOnlyDatabase:
 
         return SimpleNamespace(
             id=uuid.uuid4(),
+            lifecycle_status=ProductLifecycleStatus.active,
             online_sale_approved=self.online_sale_approved,
             assisted_sale_required=self.assisted_sale_required,
         )

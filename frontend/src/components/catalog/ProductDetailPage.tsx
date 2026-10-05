@@ -182,6 +182,18 @@ export function ProductDetailPage({
     setCommerceError(null);
 
     if (
+      availability.status === "out_of_stock"
+      || availability.status === "discontinued"
+    ) {
+      if (availability.can_inquire) {
+        setQuoteOpen(true);
+      } else {
+        setCommerceError("This system is not accepting inquiries while unavailable.");
+      }
+      return;
+    }
+
+    if (
       pricing.action === "SIGN_IN"
     ) {
       onRequestSignIn();
@@ -412,6 +424,20 @@ export function ProductDetailPage({
             ) : null}
 
 
+            {availability.lifecycle_status === "soon_discontinued" ? (
+              <aside className="product-availability product-lifecycle-notice">
+                <p className="eyebrow">Product lifecycle</p>
+                <h2 className="product-detail-section-title">Soon to be discontinued</h2>
+                <p>Availability may be limited as this system approaches end of sale.</p>
+              </aside>
+            ) : availability.lifecycle_status === "discontinued" ? (
+              <aside className="product-availability product-lifecycle-notice">
+                <p className="eyebrow">Product lifecycle</p>
+                <h2 className="product-detail-section-title">Discontinued</h2>
+                <p>This system is no longer offered for normal purchase or formal quoting.</p>
+              </aside>
+            ) : null}
+
             {availability?.status === "out_of_stock" ? (
               <aside
                 className="product-availability product-availability-out"
@@ -425,9 +451,13 @@ export function ProductDetailPage({
                   Out of stock
                 </h2>
 
-                {availability.estimated_lead_time !== null ? (
+                {availability.expected_available_on !== null ? (
                   <p>
-                    Estimated lead time: {availability.estimated_lead_time}
+                    Expected availability: {new Date(`${availability.expected_available_on}T00:00:00`).toLocaleDateString()}
+                  </p>
+                ) : availability.estimated_lead_time !== null ? (
+                  <p>
+                    Estimated availability: {availability.estimated_lead_time}
                   </p>
                 ) : (
                   <p>
@@ -506,14 +536,20 @@ export function ProductDetailPage({
               <button
                 type="button"
                 className="detail-primary-action"
-                disabled={addingToCart}
+                disabled={
+                  addingToCart
+                  || ((availability.status === "out_of_stock" || availability.status === "discontinued")
+                    && !availability.can_inquire)
+                }
                 onClick={() => {
                   void handlePrimaryAction();
                 }}
               >
                 {addingToCart
                   ? "Adding…"
-                  : pricing.action_label}
+                  : (availability.status === "out_of_stock" || availability.status === "discontinued")
+                    ? (availability.can_inquire ? "Send inquiry" : "Unavailable")
+                    : pricing.action_label}
               </button>
             </div>
 

@@ -50,6 +50,7 @@ from app.models.quote import (
     QuoteRequestStatus,
 )
 from app.schemas.operations import (
+    AvailabilityPolicyUpdateRequest,
     CustomerEquipmentCreateRequest,
     CustomerEquipmentUpdateRequest,
     FormalQuoteCreate,
@@ -82,9 +83,9 @@ from app.schemas.operations import (
     OperationsOrderShipmentRead,
     OperationsPricingRead,
     OperationsProductRead,
-    OperationsPromotionRead,
     OperationsProductRelationshipRead,
     OperationsProductVariantRead,
+    OperationsPromotionRead,
     OperationsQuoteRead,
     OperationsReturnPolicyExceptionRead,
     OperationsSalesInsightsRead,
@@ -94,9 +95,9 @@ from app.schemas.operations import (
     OrderFulfillmentUpdate,
     OrderReturnPolicyExceptionCreate,
     PricingUpdateRequest,
-    PromotionCreateRequest,
     ProductRelationshipCreateRequest,
     ProductRelationshipUpdateRequest,
+    PromotionCreateRequest,
     QuoteNotesUpdate,
     QuoteStatusUpdate,
 )
@@ -2425,6 +2426,9 @@ def operations_product_read(
         online_sale_approved=(
             product.online_sale_approved
         ),
+        lifecycle_status=product.lifecycle_status,
+        allow_inquiry_when_unavailable=product.allow_inquiry_when_unavailable,
+        allow_formal_quote_when_unavailable=product.allow_formal_quote_when_unavailable,
         warranty_documents=[
             {
                 "id": str(document.id),
@@ -2492,6 +2496,11 @@ def operations_product_read(
             status=(inventory.inventory_status.value if inventory is not None else "not_tracked"),
             quantity_on_hand=(inventory.quantity_on_hand if inventory is not None else 0),
             quantity_reserved=reserved_quantity,
+            expected_available_on=(
+                inventory.expected_available_on
+                if inventory is not None
+                else None
+            ),
             estimated_lead_time=(
                 inventory.estimated_lead_time
                 if inventory is not None
@@ -3123,6 +3132,57 @@ def cancel_product_promotion(
 
 
 @router.put(
+    "/products/{product_id}/availability-policy",
+    response_model=OperationsProductRead,
+)
+def update_product_availability_policy(
+    product_id: uuid.UUID,
+    payload: AvailabilityPolicyUpdateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_pricing_inventory_write(db, user=current_user)
+
+    product = load_product_for_operations(db, product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found.",
+        )
+
+    product.lifecycle_status = payload.lifecycle_status
+    product.allow_inquiry_when_unavailable = payload.allow_inquiry_when_unavailable
+    product.allow_formal_quote_when_unavailable = (
+        payload.allow_formal_quote_when_unavailable
+    )
+
+    record_audit_event(
+        db,
+        action="catalog.availability_policy_changed",
+        entity_type="product",
+        entity_id=str(product.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "sku": product.sku,
+            "lifecycle_status": payload.lifecycle_status.value,
+            "allow_inquiry_when_unavailable": payload.allow_inquiry_when_unavailable,
+            "allow_formal_quote_when_unavailable": (
+                payload.allow_formal_quote_when_unavailable
+            ),
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
+    return operations_product_read(db, product=refreshed)
+
+
+@router.put(
     "/products/{product_id}/inventory",
     response_model=OperationsProductRead,
 )
@@ -3186,6 +3246,7 @@ def update_product_inventory(
         InventoryObservation(
             status=payload.status,
             quantity_on_hand=payload.quantity_on_hand,
+            expected_available_on=payload.expected_available_on,
             estimated_lead_time=payload.estimated_lead_time,
             source_kind=payload.source_kind,
             source_reference=payload.source_reference,
@@ -3209,6 +3270,11 @@ def update_product_inventory(
             ),
             "quantity_reserved": (
                 reserved_quantity
+            ),
+            "expected_available_on": (
+                payload.expected_available_on.isoformat()
+                if payload.expected_available_on is not None
+                else None
             ),
             "estimated_lead_time": (
                 payload.estimated_lead_time

@@ -15,6 +15,7 @@ from app.models.catalog import (
     InventorySourceKind,
     InventoryStatus,
     PricingPolicyMode,
+    ProductLifecycleStatus,
     ProductRelationshipType,
     ReminderPreferenceKind,
 )
@@ -688,6 +689,7 @@ class OperationsInventoryRead(BaseModel):
     status: str
     quantity_on_hand: int
     quantity_reserved: int
+    expected_available_on: date | None = None
     estimated_lead_time: str | None = None
     source_kind: InventorySourceKind = InventorySourceKind.unspecified
     source_reference: str | None = None
@@ -774,6 +776,9 @@ class OperationsProductRead(BaseModel):
     active: bool
     assisted_sale_required: bool
     online_sale_approved: bool
+    lifecycle_status: ProductLifecycleStatus = ProductLifecycleStatus.active
+    allow_inquiry_when_unavailable: bool = True
+    allow_formal_quote_when_unavailable: bool = False
     warranty_documents: list[OperationsWarrantyDocumentRead] = Field(default_factory=list)
     pricing: OperationsPricingRead
     standard_pricing: OperationsPricingRead
@@ -902,6 +907,14 @@ class PromotionCreateRequest(BaseModel):
         return self
 
 
+class AvailabilityPolicyUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    lifecycle_status: ProductLifecycleStatus
+    allow_inquiry_when_unavailable: bool = True
+    allow_formal_quote_when_unavailable: bool = False
+
+
 class InventoryUpdateRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -912,6 +925,7 @@ class InventoryUpdateRequest(BaseModel):
         ge=0,
         le=1_000_000,
     )
+    expected_available_on: date | None = None
     estimated_lead_time: str | None = Field(
         default=None,
         max_length=120,
@@ -932,3 +946,12 @@ class InventoryUpdateRequest(BaseModel):
             return None
         stripped = value.strip()
         return stripped or None
+
+    @model_validator(mode="after")
+    def prefer_expected_date_over_range(self) -> "InventoryUpdateRequest":
+        if self.expected_available_on is not None and self.estimated_lead_time is not None:
+            raise ValueError(
+                "Use an expected availability date when known; otherwise enter "
+                "a lead-time range, not both."
+            )
+        return self

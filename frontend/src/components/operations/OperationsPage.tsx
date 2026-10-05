@@ -34,6 +34,7 @@ import {
   createCustomerEquipment,
   cancelProductPromotion,
   deleteProductRelationship,
+  updateProductAvailabilityPolicy,
   updateProductInventory,
   updateCustomerEquipment,
   updateProductRelationship,
@@ -109,6 +110,18 @@ const WRITE_ROLES = new Set([
   "administrator",
   "developer",
 ]);
+
+const PRODUCT_LIFECYCLE_LABELS: Record<string, string> = {
+  active: "Active",
+  soon_discontinued: "Soon to be discontinued",
+  discontinued: "Discontinued",
+};
+
+const PRODUCT_LIFECYCLE_STATUSES = [
+  "active",
+  "soon_discontinued",
+  "discontinued",
+] as const;
 
 const AUDIT_LOG_ROLES = new Set([
   "developer",
@@ -464,9 +477,16 @@ type PromotionDraft = {
 type InventoryDraft = {
   status: string;
   quantityOnHand: string;
+  expectedAvailableOn: string;
   estimatedLeadTime: string;
   sourceKind: OperationsProduct["inventory"]["source_kind"];
   sourceReference: string;
+};
+
+type AvailabilityPolicyDraft = {
+  lifecycleStatus: OperationsProduct["lifecycle_status"];
+  allowInquiryWhenUnavailable: boolean;
+  allowFormalQuoteWhenUnavailable: boolean;
 };
 
 
@@ -694,6 +714,8 @@ export function OperationsPage({
     useState<Record<string, PromotionDraft>>({});
   const [inventoryDrafts, setInventoryDrafts] =
     useState<Record<string, InventoryDraft>>({});
+  const [availabilityPolicyDrafts, setAvailabilityPolicyDrafts] =
+    useState<Record<string, AvailabilityPolicyDraft>>({});
   const [quoteNoteDrafts, setQuoteNoteDrafts] =
     useState<Record<string, string>>({});
   const [error, setError] =
@@ -713,6 +735,10 @@ export function OperationsPage({
   const [
     inventorySaveStates,
     setInventorySaveStates,
+  ] = useState<Record<string, SaveState>>({});
+  const [
+    availabilityPolicySaveStates,
+    setAvailabilityPolicySaveStates,
   ] = useState<Record<string, SaveState>>({});
   const [
     quoteNoteSaveStates,
@@ -769,6 +795,7 @@ export function OperationsPage({
         const nextPricing: Record<string, PricingDraft> = {};
         const nextPromotions: Record<string, PromotionDraft> = {};
         const nextInventory: Record<string, InventoryDraft> = {};
+        const nextAvailabilityPolicies: Record<string, AvailabilityPolicyDraft> = {};
 
         for (const product of productResult) {
           nextPricing[product.id] = {
@@ -787,17 +814,24 @@ export function OperationsPage({
             quantityOnHand: String(
               product.inventory.quantity_on_hand,
             ),
+            expectedAvailableOn: product.inventory.expected_available_on ?? "",
             estimatedLeadTime: (
               product.inventory.estimated_lead_time ?? ""
             ),
             sourceKind: product.inventory.source_kind,
             sourceReference: product.inventory.source_reference ?? "",
           };
+          nextAvailabilityPolicies[product.id] = {
+            lifecycleStatus: product.lifecycle_status,
+            allowInquiryWhenUnavailable: product.allow_inquiry_when_unavailable,
+            allowFormalQuoteWhenUnavailable: product.allow_formal_quote_when_unavailable,
+          };
         }
 
         setPricingDrafts(nextPricing);
         setPromotionDrafts(nextPromotions);
         setInventoryDrafts(nextInventory);
+        setAvailabilityPolicyDrafts(nextAvailabilityPolicies);
         setError(null);
       })
       .catch((caught) => {
@@ -1843,6 +1877,64 @@ export function OperationsPage({
     }
   }
 
+  async function saveAvailabilityPolicy(product: OperationsProduct) {
+    const draft = availabilityPolicyDrafts[product.id];
+
+    if (draft === undefined) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setAvailabilityPolicySaveStates((current) => ({
+      ...current,
+      [product.id]: "saving",
+    }));
+
+    try {
+      const updated = await updateProductAvailabilityPolicy(
+        product.id,
+        {
+          lifecycle_status: draft.lifecycleStatus,
+          allow_inquiry_when_unavailable: draft.allowInquiryWhenUnavailable,
+          allow_formal_quote_when_unavailable: draft.allowFormalQuoteWhenUnavailable,
+        },
+      );
+
+      setProducts((current) => replaceProduct(current, updated));
+      setAvailabilityPolicyDrafts((current) => ({
+        ...current,
+        [updated.id]: {
+          lifecycleStatus: updated.lifecycle_status,
+          allowInquiryWhenUnavailable: updated.allow_inquiry_when_unavailable,
+          allowFormalQuoteWhenUnavailable: updated.allow_formal_quote_when_unavailable,
+        },
+      }));
+      setMessage(`Availability policy saved for ${updated.sku}.`);
+      setAvailabilityPolicySaveStates((current) => ({
+        ...current,
+        [product.id]: "saved",
+      }));
+
+      window.setTimeout(() => {
+        setAvailabilityPolicySaveStates((current) => ({
+          ...current,
+          [product.id]: "idle",
+        }));
+      }, 1800);
+    } catch (caught) {
+      setAvailabilityPolicySaveStates((current) => ({
+        ...current,
+        [product.id]: "idle",
+      }));
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Availability policy update failed.",
+      );
+    }
+  }
+
   async function saveInventory(product: OperationsProduct) {
     const draft = inventoryDrafts[product.id];
 
@@ -1879,6 +1971,7 @@ export function OperationsPage({
         {
           status: draft.status,
           quantity_on_hand: quantityOnHand,
+          expected_available_on: draft.expectedAvailableOn || null,
           estimated_lead_time: (
             draft.estimatedLeadTime.trim() || null
           ),
@@ -1895,6 +1988,7 @@ export function OperationsPage({
           quantityOnHand: String(
             updated.inventory.quantity_on_hand,
           ),
+          expectedAvailableOn: updated.inventory.expected_available_on ?? "",
           estimatedLeadTime: (
             updated.inventory.estimated_lead_time ?? ""
           ),
@@ -1944,6 +2038,27 @@ export function OperationsPage({
         [productId]: {
           ...existing,
           [field]: value,
+        },
+      };
+    });
+  }
+
+  function updateAvailabilityPolicyDraft(
+    productId: string,
+    patch: Partial<AvailabilityPolicyDraft>,
+  ) {
+    setAvailabilityPolicyDrafts((current) => {
+      const existing = current[productId];
+
+      if (existing === undefined) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [productId]: {
+          ...existing,
+          ...patch,
         },
       };
     });
@@ -3128,8 +3243,14 @@ export function OperationsPage({
             const pricing = pricingDrafts[product.id];
             const promotion = promotionDrafts[product.id];
             const inventory = inventoryDrafts[product.id];
+            const availabilityPolicy = availabilityPolicyDrafts[product.id];
 
-            if (pricing === undefined || promotion === undefined || inventory === undefined) {
+            if (
+              pricing === undefined
+              || promotion === undefined
+              || inventory === undefined
+              || availabilityPolicy === undefined
+            ) {
               return null;
             }
 
@@ -3145,6 +3266,9 @@ export function OperationsPage({
               && product.standard_pricing.amount_minor !== null;
             const inventorySaveState =
               inventorySaveStates[product.id]
+              ?? "idle";
+            const availabilityPolicySaveState =
+              availabilityPolicySaveStates[product.id]
               ?? "idle";
 
             return (
@@ -3180,6 +3304,9 @@ export function OperationsPage({
                   <div className="operations-governance-badges">
                     <span>
                       Pricing: {PRICING_MODE_LABELS[product.pricing.mode] ?? product.pricing.mode}
+                    </span>
+                    <span>
+                      Lifecycle: {PRODUCT_LIFECYCLE_LABELS[product.lifecycle_status] ?? product.lifecycle_status}
                     </span>
                     <span>
                       Inventory: {INVENTORY_STATUS_LABELS[product.inventory.status] ?? product.inventory.status}
@@ -3692,7 +3819,77 @@ export function OperationsPage({
                   </fieldset>
 
                   <fieldset>
-                    <legend>Inventory</legend>
+                    <legend>Availability lifecycle &amp; inventory</legend>
+
+                    <div className="operations-availability-policy">
+                      <label className="operations-field">
+                        <span>Product lifecycle</span>
+                        <select
+                          value={availabilityPolicy.lifecycleStatus}
+                          disabled={!privileged}
+                          onChange={(event: ChangeEvent<HTMLSelectElement>) => {
+                            updateAvailabilityPolicyDraft(product.id, {
+                              lifecycleStatus: event.target.value as OperationsProduct["lifecycle_status"],
+                            });
+                          }}
+                        >
+                          {PRODUCT_LIFECYCLE_STATUSES.map((lifecycleStatus) => (
+                            <option key={lifecycleStatus} value={lifecycleStatus}>
+                              {PRODUCT_LIFECYCLE_LABELS[lifecycleStatus]}
+                            </option>
+                          ))}
+                        </select>
+                        <small>Discontinued is distinct from a temporary stock shortage.</small>
+                      </label>
+
+                      <label className="operations-checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={availabilityPolicy.allowInquiryWhenUnavailable}
+                          disabled={!privileged}
+                          onChange={(event) => {
+                            updateAvailabilityPolicyDraft(product.id, {
+                              allowInquiryWhenUnavailable: event.target.checked,
+                            });
+                          }}
+                        />
+                        <span>Allow customer inquiry while unavailable</span>
+                      </label>
+
+                      <label className="operations-checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={availabilityPolicy.allowFormalQuoteWhenUnavailable}
+                          disabled={!privileged}
+                          onChange={(event) => {
+                            updateAvailabilityPolicyDraft(product.id, {
+                              allowFormalQuoteWhenUnavailable: event.target.checked,
+                            });
+                          }}
+                        />
+                        <span>Allow staff to create a formal quote while unavailable</span>
+                      </label>
+
+                      <p className="operations-note">
+                        Default launch behavior keeps inquiries available but blocks formal quotes when a product is out of stock or discontinued. Enable the formal-quote exception only when staff has confirmed the product can still be fulfilled.
+                      </p>
+
+                      <button
+                        type="button"
+                        className={
+                          "operations-action secondary "
+                          + (availabilityPolicySaveState === "saved" ? "is-saved" : "")
+                        }
+                        disabled={!privileged || availabilityPolicySaveState === "saving"}
+                        onClick={() => void saveAvailabilityPolicy(product)}
+                      >
+                        {availabilityPolicySaveState === "saving"
+                          ? "Saving…"
+                          : availabilityPolicySaveState === "saved"
+                            ? "Saved ✓"
+                            : "Save Availability Policy"}
+                      </button>
+                    </div>
 
                     <label className="operations-field">
                       <span>Status</span>
@@ -3756,13 +3953,36 @@ export function OperationsPage({
                     </div>
 
                     <label className="operations-field">
-                      <span>Estimated lead time · customer-facing when out of stock</span>
+                      <span>Expected availability date · use when known</span>
+                      <input
+                        type="date"
+                        value={inventory.expectedAvailableOn}
+                        disabled={!privileged}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          updateInventoryDraft(
+                            product.id,
+                            "expectedAvailableOn",
+                            event.target.value,
+                          );
+                          if (event.target.value !== "") {
+                            updateInventoryDraft(
+                              product.id,
+                              "estimatedLeadTime",
+                              "",
+                            );
+                          }
+                        }}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Estimated availability range · use when date is unknown</span>
                       <input
                         type="text"
                         maxLength={120}
                         placeholder="Example: 2–3 weeks"
                         value={inventory.estimatedLeadTime}
-                        disabled={!privileged}
+                        disabled={!privileged || inventory.expectedAvailableOn !== ""}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => {
                           updateInventoryDraft(
                             product.id,
@@ -3772,7 +3992,7 @@ export function OperationsPage({
                         }}
                       />
                       <small>
-                        Leave blank until fulfillment timing is reliable.
+                        The customer sees the expected date when known; otherwise this range. Leave both blank until timing is reliable.
                       </small>
                     </label>
 

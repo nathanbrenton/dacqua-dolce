@@ -20,6 +20,7 @@ def test_inventory_observation_updates_authoritative_fields() -> None:
         InventoryObservation(
             status=InventoryStatus.backordered,
             quantity_on_hand=0,
+            expected_available_on=None,
             estimated_lead_time="2–3 weeks",
             source_kind=InventorySourceKind.supplier_report,
             source_reference="Supplier portal",

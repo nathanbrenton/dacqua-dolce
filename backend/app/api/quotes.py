@@ -21,7 +21,7 @@ from app.db.session import SessionLocal
 from app.integrations.email import (
     EmailMessage,
 )
-from app.models.catalog import Product
+from app.models.catalog import Product, ProductInventory
 from app.models.identity import (
     User,
     UserSession,
@@ -40,9 +40,11 @@ from app.services.audit import (
 from app.services.auth_rate_limit import (
     AuthenticationRateLimiter,
 )
+from app.services.commerce import active_reserved_quantity
 from app.services.email_delivery import (
     deliver_email,
 )
+from app.services.public_availability import resolve_public_availability
 from app.services.recommendations import (
     RECOMMENDATION_POLICY_VERSION,
     evaluate_recommendation,
@@ -288,6 +290,39 @@ def create_quote_request(
                 raise HTTPException(
                     status_code=(status.HTTP_404_NOT_FOUND),
                     detail=("System not found."),
+                )
+
+            inventory = db.scalar(
+                select(ProductInventory)
+                .where(
+                    ProductInventory.product_id == product.id,
+                    ProductInventory.variant_id.is_(None),
+                )
+                .order_by(ProductInventory.updated_at.desc())
+            )
+            reserved_quantity = (
+                active_reserved_quantity(
+                    db,
+                    product_id=product.id,
+                    variant_id=None,
+                )
+                if inventory is not None
+                else 0
+            )
+            availability = resolve_public_availability(
+                inventory,
+                reserved_quantity=reserved_quantity,
+                online_sale_approved=product.online_sale_approved,
+                lifecycle_status=product.lifecycle_status,
+                allow_inquiry_when_unavailable=product.allow_inquiry_when_unavailable,
+            )
+            if (
+                availability.status in {"out_of_stock", "discontinued"}
+                and not availability.can_inquire
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Customer inquiries are disabled for this product while unavailable.",
                 )
 
         recommendation_decision = (

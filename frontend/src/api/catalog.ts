@@ -17,8 +17,11 @@ export type CatalogAvailability = {
   available: boolean | null;
   action: string;
   action_label: string;
+  lifecycle_status: "active" | "soon_discontinued" | "discontinued" | string;
+  expected_available_on: string | null;
   estimated_lead_time: string | null;
   can_notify_when_in_stock: boolean;
+  can_inquire: boolean;
 };
 
 export type CatalogImage = {
