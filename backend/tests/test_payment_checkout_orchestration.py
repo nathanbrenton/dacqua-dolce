@@ -12,17 +12,43 @@ from app.models.commerce import (
     PaymentProviderReference,
 )
 from app.services.payment_checkout import PaymentCheckoutError, begin_hosted_checkout
-from app.services.payment_provider import CheckoutSessionResult
+from app.services.payment_provider import (
+    CheckoutSessionResult,
+    PaymentProviderCapabilities,
+    PaymentProviderDescriptor,
+)
 
 
 class FakeProvider:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        descriptor: PaymentProviderDescriptor | None = None,
+        response_provider: str = "sandbox-gateway",
+    ) -> None:
         self.request = None
+        self.response_provider = response_provider
+        self._descriptor = descriptor or PaymentProviderDescriptor(
+            gateway="sandbox-gateway",
+            environment="sandbox",
+            integration_mode="hosted",
+            source_reference="Sandbox gateway integration contract",
+            capabilities=PaymentProviderCapabilities(
+                hosted_checkout=True,
+                authenticated_webhooks=True,
+                durable_event_ids=True,
+                idempotent_checkout=True,
+            ),
+        )
+
+    @property
+    def descriptor(self) -> PaymentProviderDescriptor:
+        return self._descriptor
 
     def create_checkout_session(self, request):
         self.request = request
         return CheckoutSessionResult(
-            provider="sandbox-gateway",
+            provider=self.response_provider,
             checkout_session_id="checkout_123",
             redirect_url="https://payments.example.test/checkout_123",
         )
@@ -267,3 +293,135 @@ def test_hosted_checkout_requires_authoritative_tax_calculation() -> None:
         )
 
     assert provider.request is None
+
+
+def test_hosted_checkout_rejects_uncommissioned_production_provider() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Main St",
+            "city": "Irvine",
+            "region_code": "CA",
+            "postal_code": "92614",
+            "country_code": "US",
+        },
+    )
+    provider = FakeProvider(
+        descriptor=PaymentProviderDescriptor(
+            gateway="future-production-gateway",
+            environment="production",
+            integration_mode="hosted",
+            source_reference="Authoritative provider contract",
+            capabilities=PaymentProviderCapabilities(
+                hosted_checkout=True,
+                authenticated_webhooks=True,
+                durable_event_ids=True,
+                idempotent_checkout=True,
+            ),
+            production_commissioned=False,
+        )
+    )
+
+    with pytest.raises(
+        PaymentCheckoutError,
+        match="explicit production commissioning",
+    ):
+        begin_hosted_checkout(
+            CheckoutDatabase(),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+        )
+
+    assert provider.request is None
+
+
+def test_hosted_checkout_requires_authenticated_webhook_contract() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Main St",
+            "city": "Irvine",
+            "region_code": "CA",
+            "postal_code": "92614",
+            "country_code": "US",
+        },
+    )
+    provider = FakeProvider(
+        descriptor=PaymentProviderDescriptor(
+            gateway="sandbox-gateway",
+            environment="sandbox",
+            integration_mode="hosted",
+            source_reference="Incomplete sandbox contract",
+            capabilities=PaymentProviderCapabilities(
+                hosted_checkout=True,
+                durable_event_ids=True,
+                idempotent_checkout=True,
+            ),
+        )
+    )
+
+    with pytest.raises(
+        PaymentCheckoutError,
+        match="authenticated webhook contract",
+    ):
+        begin_hosted_checkout(
+            CheckoutDatabase(),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+        )
+
+    assert provider.request is None
+
+
+def test_hosted_checkout_rejects_provider_identity_mismatch() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Main St",
+            "city": "Irvine",
+            "region_code": "CA",
+            "postal_code": "92614",
+            "country_code": "US",
+        },
+    )
+    provider = FakeProvider(response_provider="different-gateway")
+
+    with pytest.raises(
+        PaymentCheckoutError,
+        match="commissioned gateway",
+    ):
+        begin_hosted_checkout(
+            CheckoutDatabase(),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+        )

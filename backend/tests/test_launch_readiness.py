@@ -96,8 +96,8 @@ def test_launch_readiness_reports_dynamic_checks_ready(
 
     assert snapshot.status == "action_required"
     assert snapshot.ready_count == 4
-    assert snapshot.action_required_count == 1
-    assert snapshot.deferred_count == 2
+    assert snapshot.action_required_count == 2
+    assert snapshot.deferred_count == 1
     assert [check.key for check in snapshot.checks] == [
         "sales_area",
         "policies",
@@ -145,8 +145,8 @@ def test_launch_readiness_surfaces_configuration_action_items(
     )
 
     assert snapshot.status == "action_required"
-    assert snapshot.action_required_count == 5
-    assert snapshot.deferred_count == 2
+    assert snapshot.action_required_count == 6
+    assert snapshot.deferred_count == 1
     assert snapshot.ready_count == 0
 
     checks = {check.key: check for check in snapshot.checks}
@@ -261,15 +261,14 @@ def test_launch_readiness_accepts_future_refund_policy_values_without_code_chang
 
 
 def test_launch_readiness_has_no_global_feature_toggle() -> None:
-    deferred = {
-        launch_readiness._payment_check().key,
-        launch_readiness._shipping_insurance_check().key,
-    }
+    payment = launch_readiness._payment_check()
+    shipping = launch_readiness._shipping_insurance_check()
     tax = launch_readiness._tax_check([sale_ready_product()])
 
-    assert deferred == {
-        "payment_checkout",
-        "shipping_insurance",
-    }
+    assert payment.key == "payment_checkout"
+    assert payment.status == "action_required"
+    assert "Authorize.Net" in " ".join(payment.evidence)
+    assert shipping.key == "shipping_insurance"
+    assert shipping.status == "deferred"
     assert tax.key == "tax"
     assert tax.status == "action_required"

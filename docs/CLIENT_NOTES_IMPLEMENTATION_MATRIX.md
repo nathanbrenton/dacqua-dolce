@@ -417,3 +417,13 @@ generic code. Formal-quote calculations are historical snapshots, while orders
 must be recalculated before checkout. Live registrations, credentials,
 Affinity24 payment coordination, refunds/reversals, and unresolved adjustment
 taxability remain follow-up commissioning work.
+
+## PT45 — Payment provider foundation (2026-10-05)
+
+| Client direction | Classification | Implementation |
+| --- | --- | --- |
+| Affinity24 remains the intended payment provider | Preserved | PT45 does not replace Affinity24 or select a gateway behind the client's back. |
+| Choose the safest supported integration method once technical details are known | Implemented as commissioning guardrail | Future adapters must declare the exact gateway, authoritative source, hosted/tokenized card-entry mode, authenticated webhook support, durable event IDs, and idempotent checkout behavior before checkout may run. |
+| Do not expose raw card data to D'Acqua Dolce | Preserved / strengthened | The existing hosted/tokenized PCI boundary remains unchanged; new provider descriptors and future refund/void command contracts contain no raw card data. |
+| Exact Affinity24 integration method is delegated technically | External answer still required | Affinity24 publicly lists multiple gateway options, so D'Acqua Dolce still needs the gateway actually provisioned for this merchant account plus sandbox/API/webhook credentials and documentation. |
+| Refund/void support will be needed safely | Foundation only | Provider-neutral refund and void request/result interfaces now exist, but no customer/staff action is commissioned until gateway semantics and business policy are reconciled. |

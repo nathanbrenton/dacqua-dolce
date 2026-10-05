@@ -188,3 +188,27 @@ D’Acqua Dolce still needs:
 
 Stripe Tax is used only as the tax engine in this design. It does not replace
 Affinity24 as the intended payment provider.
+
+## Payment provider — PT45 gateway-contract foundation
+
+**Status:** Provider-neutral commissioning boundary implemented; exact Affinity24
+gateway still required.
+
+PT45 requires every future concrete payment adapter to declare its exact gateway
+identity, sandbox/production environment, hosted/tokenized integration mode,
+authoritative contract source, and documented capabilities. Hosted checkout is
+rejected unless the adapter establishes authenticated webhooks, durable provider
+event IDs, idempotent checkout creation, and the required hosted/tokenized
+card-entry capability. Production adapters require explicit commissioning.
+
+Affinity24's public solutions page currently lists multiple gateway options
+(Authorize.Net, iPOS, FluidPay, and NMI), so the application intentionally does
+not select one based on marketing material. Obtain the gateway actually
+provisioned for D'Acqua Dolce plus its sandbox/API/webhook/refund/void contract
+before implementing the concrete adapter.
+
+PT45 also defines card-data-free provider-neutral refund and void command
+interfaces. They are not wired to public/customer/Operations actions and do not
+change refund policy or payment state. Commission those commands only after the
+provisioned gateway semantics and D'Acqua Dolce refund/cancellation workflow are
+reconciled.

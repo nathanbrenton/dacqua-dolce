@@ -324,14 +324,24 @@ def _payment_check() -> LaunchReadinessCheck:
     return LaunchReadinessCheck(
         key="payment_checkout",
         label="Payment & checkout",
-        status="deferred",
+        status="action_required",
         detail=(
-            "Hosted-checkout orchestration is provider-neutral, but production "
-            "Affinity24 gateway wiring and credentials remain intentionally unconfigured."
+            "Affinity24 is the selected payment-processor direction, but the exact "
+            "provisioned gateway and its authoritative sandbox/API/webhook contract "
+            "must be confirmed before production checkout can be commissioned."
         ),
         evidence=(
-            "PCI-sensitive card entry remains outside D’Acqua Dolce.",
-            "No production payment-provider adapter is selected in application settings.",
+            "PT45 adds an explicit gateway descriptor/capability contract before "
+            "hosted checkout may run.",
+            "Affinity24's public solutions page lists multiple gateway options, "
+            "including Authorize.Net, iPOS, FluidPay, and NMI; the application "
+            "does not guess which one D’Acqua Dolce will receive.",
+            "PCI-sensitive card entry must remain on a hosted or tokenized "
+            "provider surface.",
+            "Authenticated webhooks, durable event IDs, and idempotent checkout "
+            "creation are required gateway facts.",
+            "Refund and void command interfaces exist only as provider-neutral "
+            "boundaries; no customer/staff refund or void action is commissioned.",
         ),
     )
 

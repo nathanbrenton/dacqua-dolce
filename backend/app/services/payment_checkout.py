@@ -17,6 +17,10 @@ from app.models.commerce import (
 )
 from app.services.audit import record_audit_event
 from app.services.cancellations import get_order_cancellation_request
+from app.services.payment_commissioning import (
+    PaymentProviderCommissioningError,
+    require_payment_provider_ready_for_checkout,
+)
 from app.services.payment_provider import (
     CheckoutSessionRequest,
     PaymentProviderAdapter,
@@ -97,6 +101,11 @@ def begin_hosted_checkout(
     except TaxCheckoutReadinessError as exc:
         raise PaymentCheckoutError(str(exc)) from exc
 
+    try:
+        require_payment_provider_ready_for_checkout(provider.descriptor)
+    except PaymentProviderCommissioningError as exc:
+        raise PaymentCheckoutError(str(exc)) from exc
+
     result = provider.create_checkout_session(
         CheckoutSessionRequest(
             order_id=order.id,
@@ -111,6 +120,11 @@ def begin_hosted_checkout(
 
     provider_name = result.provider.strip()
     checkout_id = result.checkout_session_id.strip()
+    expected_provider = provider.descriptor.gateway.strip()
+    if provider_name != expected_provider:
+        raise PaymentCheckoutError(
+            "Payment provider response does not match the commissioned gateway."
+        )
     if not provider_name or not checkout_id:
         raise PaymentCheckoutError(
             "Payment provider did not return a durable checkout reference."
@@ -146,6 +160,9 @@ def begin_hosted_checkout(
         actor_user_id=order.user_id,
         metadata={
             "provider": provider_name,
+            "provider_environment": provider.descriptor.environment,
+            "provider_integration_mode": provider.descriptor.integration_mode,
+            "provider_contract_source": provider.descriptor.source_reference,
             "provider_checkout_id": checkout_id,
             "payment_reference_id": str(payment_reference.id),
         },

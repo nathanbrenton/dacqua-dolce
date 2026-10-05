@@ -64,3 +64,26 @@ When provider documentation is available, implement and validate in this order:
 8. controlled sandbox end-to-end payment;
 9. production credentials and endpoint commissioning;
 10. one controlled production acceptance transaction before general availability.
+
+## PT45 gateway-contract enforcement
+
+PT45 converts several checklist items above into executable adapter
+requirements. A concrete payment adapter must expose a non-secret descriptor
+containing its exact gateway identity, environment, integration mode,
+authoritative source reference, documented capabilities, and explicit
+production-commissioning state.
+
+Before checkout orchestration will call the provider, that descriptor must
+establish hosted/tokenized card entry, authenticated webhooks, durable event
+identifiers, and idempotent checkout creation. A production descriptor is also
+rejected unless it has been explicitly commissioned.
+
+The checkout result must identify the same gateway as the descriptor. Refund
+and void request/result interfaces now exist as provider-neutral boundaries but
+are intentionally not callable by customers or staff until the exact provisioned
+gateway contract and business refund workflow are reconciled.
+
+Affinity24's public solutions page currently lists Authorize.Net, iPOS,
+FluidPay, and NMI as gateway/omni-channel options. That public list is evidence
+that the exact provisioned gateway must be obtained from merchant onboarding;
+it is not permission to choose one in code.

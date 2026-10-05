@@ -94,3 +94,21 @@ This core is **not** a public webhook endpoint and does not authenticate any
 Affinity24/gateway request by itself. Production payment remains disabled until
 the provisioned gateway's authoritative webhook verification contract is known
 and implemented.
+
+## PT45 provider identity and capability contract
+
+PT45 adds a provider descriptor ahead of hosted checkout. The descriptor is
+non-secret metadata and may contain only gateway identity, sandbox/production
+environment, hosted/tokenized integration mode, authoritative source reference,
+documented capability flags, and explicit production commissioning state.
+
+The payment orchestration layer now rejects an adapter that lacks authenticated
+webhooks, durable event IDs, idempotent checkout creation, or the card-entry
+capability required by its declared hosted/tokenized integration mode. A
+production adapter must also be explicitly commissioned. Provider response
+identity must match the commissioned gateway.
+
+Provider-neutral refund and void command dataclasses remain inside the same P0
+boundary: they contain provider-issued payment references, amount/currency where
+applicable, and idempotency keys only. They do not create a refund/void endpoint
+or authorize any gateway operation by themselves.

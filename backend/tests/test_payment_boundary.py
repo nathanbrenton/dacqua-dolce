@@ -8,6 +8,11 @@ from app.services.payment_events import VerifiedPaymentEvent
 from app.services.payment_provider import (
     CheckoutSessionRequest,
     PaymentMethodDisplay,
+    PaymentOperationResult,
+    PaymentProviderCapabilities,
+    PaymentProviderDescriptor,
+    PaymentRefundRequest,
+    PaymentVoidRequest,
 )
 
 FORBIDDEN_PAYMENT_FIELDS = {
@@ -62,3 +67,21 @@ def test_payment_event_table_has_no_forbidden_fields() -> None:
     column_names = {column.name for column in PaymentProviderEvent.__table__.columns}
 
     assert column_names.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+
+
+def test_payment_provider_descriptor_has_no_card_data_fields() -> None:
+    descriptor_fields = {field.name for field in fields(PaymentProviderDescriptor)}
+    capability_fields = {field.name for field in fields(PaymentProviderCapabilities)}
+
+    assert descriptor_fields.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+    assert capability_fields.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+
+
+def test_refund_void_command_contracts_have_no_card_data_fields() -> None:
+    refund_fields = {field.name for field in fields(PaymentRefundRequest)}
+    void_fields = {field.name for field in fields(PaymentVoidRequest)}
+    result_fields = {field.name for field in fields(PaymentOperationResult)}
+
+    assert refund_fields.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+    assert void_fields.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
+    assert result_fields.isdisjoint(FORBIDDEN_PAYMENT_FIELDS)
