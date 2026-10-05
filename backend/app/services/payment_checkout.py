@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.launch_config import LaunchPhase
 from app.core.sales_area import (
     SalesAreaEligibilityError,
     SalesAreaPolicy,
@@ -17,6 +18,10 @@ from app.models.commerce import (
 )
 from app.services.audit import record_audit_event
 from app.services.cancellations import get_order_cancellation_request
+from app.services.launch_gate import (
+    CommerceLaunchGateError,
+    require_commerce_phase_allows_checkout,
+)
 from app.services.payment_commissioning import (
     PaymentProviderCommissioningError,
     require_payment_provider_ready_for_checkout,
@@ -60,6 +65,7 @@ def begin_hosted_checkout(
     cancel_url: str,
     provider: PaymentProviderAdapter,
     sales_area_policy: SalesAreaPolicy | None = None,
+    launch_phase: LaunchPhase | None = None,
 ) -> HostedCheckout:
     """Create a provider-hosted checkout without handling card data.
 
@@ -84,6 +90,13 @@ def begin_hosted_checkout(
         raise PaymentCheckoutError(
             "Hosted checkout is unavailable while a cancellation request is active."
         )
+
+    try:
+        launch_gate = require_commerce_phase_allows_checkout(
+            phase=launch_phase,
+        )
+    except CommerceLaunchGateError as exc:
+        raise PaymentCheckoutError(str(exc)) from exc
 
     try:
         require_delivery_address_in_sales_area(
@@ -160,6 +173,7 @@ def begin_hosted_checkout(
         actor_user_id=order.user_id,
         metadata={
             "provider": provider_name,
+            "launch_phase": launch_gate.phase,
             "provider_environment": provider.descriptor.environment,
             "provider_integration_mode": provider.descriptor.integration_mode,
             "provider_contract_source": provider.descriptor.source_reference,

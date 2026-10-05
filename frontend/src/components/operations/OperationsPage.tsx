@@ -2468,9 +2468,27 @@ export function OperationsPage({
             <p className="eyebrow">Commercial launch</p>
             <h2 id="launch-readiness-title">Readiness snapshot</h2>
             <p>
-              Read-only configuration audit. This view reports launch
-              dependencies and does not enable or disable checkout.
+              Read-only launch audit plus an enforced commerce phase gate.
+              Changing launch phase is a deployment configuration action; this
+              screen never bypasses tax, payment, or other checkout guards.
             </p>
+          </div>
+
+          <div className="operations-insight-lists">
+            <div>
+              <strong>Commerce launch gate</strong>
+              <p>
+                {launchReadiness.commerce_checkout_allowed ? "Open" : "Closed"}
+                {" · "}
+                {launchReadiness.launch_phase_label}
+              </p>
+              <small>
+                {launchReadiness.commerce_gate_detail}
+                {launchReadiness.commerce_blockers.length > 0
+                  ? ` Blockers: ${launchReadiness.commerce_blockers.join(" · ")}`
+                  : ""}
+              </small>
+            </div>
           </div>
 
           <div className="operations-insight-grid">

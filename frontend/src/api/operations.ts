@@ -42,6 +42,15 @@ export type OperationsLaunchReadiness = {
   ready_count: number;
   action_required_count: number;
   deferred_count: number;
+  launch_phase:
+    | "prelaunch"
+    | "soft_launch"
+    | "public_launch"
+    | "invalid";
+  launch_phase_label: string;
+  commerce_checkout_allowed: boolean;
+  commerce_gate_detail: string;
+  commerce_blockers: string[];
   evaluated_at: string;
   checks: OperationsLaunchReadinessCheck[];
 };

@@ -57,9 +57,11 @@ availability or purchasing permissions.
 
 ### Payment & checkout
 
-Status remains `Deferred`. Provider-neutral hosted-checkout orchestration
-exists, but the production Affinity24 gateway/adapter and credentials are not
-commissioned in the application.
+PT45 supersedes PT34's original `Deferred` status. Payment & checkout is now
+an `Action required` launch dependency. The provider-neutral commissioning
+contract is implemented, while the exact Affinity24-provisioned gateway,
+authoritative integration contract, credentials, authenticated webhook details,
+and explicit production commissioning remain unresolved.
 
 ### Tax handling
 
@@ -96,7 +98,10 @@ data and displays:
 - per-check detail and evidence;
 - evaluation timestamp.
 
-The page explicitly states that the audit does not enable or disable checkout.
+PT46 adds the Commerce Launch Gate to this view. The page now reports the
+deployment launch phase and aggregate blocker state. Checkout itself remains
+enforced by service-level guards; the Operations readiness view cannot bypass
+those guards.
 
 ## Configuration documentation
 
@@ -114,3 +119,12 @@ adds no tables, columns, constraints, or data migration.
 ## PT36 refinement
 
 The Required policies check now also requires the approved Refund Policy to contain valid structured return/restocking terms. The check reports the configured values but does not hard-code the initial 60-day / 15% business decision, so later approved policy versions can change those values without a software release.
+
+## PT46 refinement
+
+Launch posture is now explicit through `DACQUA_LAUNCH_PHASE`, which defaults to
+`prelaunch`. `soft_launch` supports invited/test validation while keeping
+transactional checkout closed. Only `public_launch` permits checkout to proceed
+to the independent sales-area, tax, payment-provider, order, and cancellation
+guards. The readiness response surfaces this Commerce Launch Gate and its
+current blockers.

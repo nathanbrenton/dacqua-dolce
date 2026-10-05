@@ -98,6 +98,13 @@ def test_launch_readiness_reports_dynamic_checks_ready(
     assert snapshot.ready_count == 4
     assert snapshot.action_required_count == 2
     assert snapshot.deferred_count == 1
+    assert snapshot.launch_phase == "prelaunch"
+    assert snapshot.launch_phase_label == "Prelaunch"
+    assert snapshot.commerce_checkout_allowed is False
+    assert snapshot.commerce_blockers == (
+        "Payment & checkout",
+        "Automated sales tax",
+    )
     assert [check.key for check in snapshot.checks] == [
         "sales_area",
         "policies",
@@ -155,6 +162,40 @@ def test_launch_readiness_surfaces_configuration_action_items(
     assert "Shipping Policy" in " ".join(checks["policies"].evidence)
     assert checks["warranties"].status == "action_required"
     assert checks["catalog_inventory"].status == "action_required"
+
+
+def test_public_launch_phase_stays_closed_while_readiness_blockers_remain(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        launch_readiness,
+        "load_launch_runtime_settings",
+        lambda: SimpleNamespace(phase="public_launch"),
+    )
+    checks = (
+        launch_readiness.LaunchReadinessCheck(
+            key="payment_checkout",
+            label="Payment & checkout",
+            status="action_required",
+            detail="Provider not commissioned.",
+        ),
+        launch_readiness.LaunchReadinessCheck(
+            key="sales_area",
+            label="Sales area",
+            status="ready",
+            detail="Ready.",
+        ),
+    )
+
+    phase, label, allowed, detail, blockers = (
+        launch_readiness._commerce_gate_snapshot(checks)
+    )
+
+    assert phase == "public_launch"
+    assert label == "Public launch"
+    assert allowed is False
+    assert "blockers remain" in detail
+    assert blockers == ("Payment & checkout",)
 
 
 def test_launch_readiness_rejects_allowlist_drift_from_approved_pt35_area(

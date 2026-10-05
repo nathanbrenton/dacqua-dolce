@@ -57,6 +57,16 @@ class OperationsLaunchReadinessRead(BaseModel):
     ready_count: int
     action_required_count: int
     deferred_count: int
+    launch_phase: Literal[
+        "prelaunch",
+        "soft_launch",
+        "public_launch",
+        "invalid",
+    ]
+    launch_phase_label: str
+    commerce_checkout_allowed: bool
+    commerce_gate_detail: str
+    commerce_blockers: list[str] = Field(default_factory=list)
     evaluated_at: str
     checks: list[OperationsLaunchReadinessCheckRead] = Field(default_factory=list)
 

@@ -6,6 +6,10 @@ from typing import Literal
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.launch_config import (
+    LaunchConfigurationError,
+    load_launch_runtime_settings,
+)
 from app.core.sales_area import (
     APPROVED_LAUNCH_COUNTRY_CODE,
     APPROVED_LAUNCH_REGION_CODES,
@@ -49,6 +53,11 @@ class LaunchReadinessSnapshot:
     ready_count: int
     action_required_count: int
     deferred_count: int
+    launch_phase: str
+    launch_phase_label: str
+    commerce_checkout_allowed: bool
+    commerce_gate_detail: str
+    commerce_blockers: tuple[str, ...]
     checks: tuple[LaunchReadinessCheck, ...]
 
 
@@ -408,6 +417,60 @@ def _shipping_insurance_check() -> LaunchReadinessCheck:
     )
 
 
+def _commerce_gate_snapshot(
+    checks: tuple[LaunchReadinessCheck, ...],
+) -> tuple[str, str, bool, str, tuple[str, ...]]:
+    try:
+        phase = load_launch_runtime_settings().phase
+    except LaunchConfigurationError as exc:
+        return (
+            "invalid",
+            "Invalid launch configuration",
+            False,
+            "Commerce checkout is closed because DACQUA_LAUNCH_PHASE is invalid.",
+            (str(exc),),
+        )
+
+    phase_labels = {
+        "prelaunch": "Prelaunch",
+        "soft_launch": "Invited/test soft launch",
+        "public_launch": "Public launch",
+    }
+    blockers = tuple(
+        check.label
+        for check in checks
+        if check.status == "action_required"
+    )
+
+    if phase != "public_launch":
+        detail = (
+            "Commerce checkout is closed by launch phase. "
+            "Soft launch may exercise account, inquiry, quote, support, and "
+            "operations workflows, but it does not bypass transaction blockers."
+        )
+        return phase, phase_labels[phase], False, detail, blockers
+
+    if blockers:
+        return (
+            phase,
+            phase_labels[phase],
+            False,
+            "Public-launch phase is selected, but launch-readiness blockers remain.",
+            blockers,
+        )
+
+    return (
+        phase,
+        phase_labels[phase],
+        True,
+        (
+            "Public-launch phase is selected and the readiness snapshot has no "
+            "Action Required checks. Service-level checkout guards remain authoritative."
+        ),
+        (),
+    )
+
+
 def build_launch_readiness(db: Session) -> LaunchReadinessSnapshot:
     products = _load_commercial_products(db)
     checks = (
@@ -434,10 +497,23 @@ def build_launch_readiness(db: Session) -> LaunchReadinessSnapshot:
     else:
         status = "ready"
 
+    (
+        launch_phase,
+        launch_phase_label,
+        commerce_checkout_allowed,
+        commerce_gate_detail,
+        commerce_blockers,
+    ) = _commerce_gate_snapshot(checks)
+
     return LaunchReadinessSnapshot(
         status=status,
         ready_count=ready_count,
         action_required_count=action_required_count,
         deferred_count=deferred_count,
+        launch_phase=launch_phase,
+        launch_phase_label=launch_phase_label,
+        commerce_checkout_allowed=commerce_checkout_allowed,
+        commerce_gate_detail=commerce_gate_detail,
+        commerce_blockers=commerce_blockers,
         checks=checks,
     )

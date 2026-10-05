@@ -94,6 +94,41 @@ class CheckoutDatabase:
                 value.id = uuid.uuid4()
 
 
+@pytest.mark.parametrize("launch_phase", ["prelaunch", "soft_launch"])
+def test_hosted_checkout_rejects_nonpublic_launch_phase(launch_phase) -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Main St",
+            "city": "Irvine",
+            "region_code": "CA",
+            "postal_code": "92614",
+            "country_code": "US",
+        },
+    )
+    provider = FakeProvider()
+
+    with pytest.raises(PaymentCheckoutError, match="launch phase"):
+        begin_hosted_checkout(
+            CheckoutDatabase(),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            launch_phase=launch_phase,
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
+        )
+
+    assert provider.request is None
+
+
 def test_hosted_checkout_passes_only_safe_order_context() -> None:
     order = Order(
         id=uuid.uuid4(),
@@ -119,6 +154,7 @@ def test_hosted_checkout_passes_only_safe_order_context() -> None:
         db,  # type: ignore[arg-type]
         order=order,
         customer_email="customer@example.com",
+        launch_phase="public_launch",
         success_url="https://dacquadolce.com/account?payment=success",
         cancel_url="https://dacquadolce.com/account?payment=cancelled",
         provider=provider,
@@ -154,6 +190,7 @@ def test_hosted_checkout_rejects_missing_delivery_address_when_enforced() -> Non
             CheckoutDatabase(),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
@@ -178,6 +215,7 @@ def test_hosted_checkout_rejects_non_payment_order() -> None:
             CheckoutDatabase(),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=FakeProvider(),
@@ -208,6 +246,7 @@ def test_hosted_checkout_is_blocked_by_active_cancellation() -> None:
             CheckoutDatabase(cancellation),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
@@ -250,6 +289,7 @@ def test_hosted_checkout_rejects_out_of_area_delivery_address() -> None:
             CheckoutDatabase(),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
@@ -287,6 +327,7 @@ def test_hosted_checkout_requires_authoritative_tax_calculation() -> None:
             CheckoutDatabase(tax_calculation=None),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
@@ -337,6 +378,7 @@ def test_hosted_checkout_rejects_uncommissioned_production_provider() -> None:
             CheckoutDatabase(),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
@@ -385,6 +427,7 @@ def test_hosted_checkout_requires_authenticated_webhook_contract() -> None:
             CheckoutDatabase(),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
@@ -421,6 +464,7 @@ def test_hosted_checkout_rejects_provider_identity_mismatch() -> None:
             CheckoutDatabase(),  # type: ignore[arg-type]
             order=order,
             customer_email="customer@example.com",
+            launch_phase="public_launch",
             success_url="https://dacquadolce.com/account",
             cancel_url="https://dacquadolce.com/account",
             provider=provider,

@@ -500,6 +500,11 @@ def operations_launch_readiness(
         ready_count=snapshot.ready_count,
         action_required_count=snapshot.action_required_count,
         deferred_count=snapshot.deferred_count,
+        launch_phase=snapshot.launch_phase,
+        launch_phase_label=snapshot.launch_phase_label,
+        commerce_checkout_allowed=snapshot.commerce_checkout_allowed,
+        commerce_gate_detail=snapshot.commerce_gate_detail,
+        commerce_blockers=list(snapshot.commerce_blockers),
         evaluated_at=datetime.now(UTC).isoformat(),
         checks=[
             OperationsLaunchReadinessCheckRead(

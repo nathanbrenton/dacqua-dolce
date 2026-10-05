@@ -427,3 +427,15 @@ taxability remain follow-up commissioning work.
 | Do not expose raw card data to D'Acqua Dolce | Preserved / strengthened | The existing hosted/tokenized PCI boundary remains unchanged; new provider descriptors and future refund/void command contracts contain no raw card data. |
 | Exact Affinity24 integration method is delegated technically | External answer still required | Affinity24 publicly lists multiple gateway options, so D'Acqua Dolce still needs the gateway actually provisioned for this merchant account plus sandbox/API/webhook credentials and documentation. |
 | Refund/void support will be needed safely | Foundation only | Provider-neutral refund and void request/result interfaces now exist, but no customer/staff action is commissioned until gateway semantics and business policy are reconciled. |
+
+## PT46 — launch posture enforcement
+
+- Launch phase is explicit deployment configuration: `prelaunch`,
+  `soft_launch`, or `public_launch`.
+- Default is `prelaunch`; missing configuration cannot open checkout.
+- Soft launch is a validation posture only and does not bypass automated-tax or
+  payment-provider commissioning.
+- Public launch must be selected explicitly and still passes through all
+  independent checkout guards.
+- PT46 does not invent an invite-list system; any future invite-only access
+  control is separate from the commerce phase gate.

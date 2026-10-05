@@ -212,3 +212,15 @@ interfaces. They are not wired to public/customer/Operations actions and do not
 change refund policy or payment state. Commission those commands only after the
 provisioned gateway semantics and D'Acqua Dolce refund/cancellation workflow are
 reconciled.
+
+## PT46 commerce launch gate
+
+`DACQUA_LAUNCH_PHASE` now defaults to `prelaunch`.
+
+Use `soft_launch` only for invited/test validation while commerce checkout
+remains closed. Do not set `public_launch` until automated tax and the concrete
+Affinity24 gateway are production-commissioned and the remaining launch
+readiness blockers have been reviewed.
+
+Changing the phase does not override PT44 tax guards or PT45 payment-provider
+commissioning.
