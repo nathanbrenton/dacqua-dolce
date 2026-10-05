@@ -103,7 +103,11 @@ def test_customer_order_exposes_fulfillment_and_tracking_without_supplier_refere
 
     assert payload["status"] == "paid"
     assert payload["fulfillment_status"] == "shipped"
-    assert payload["cancellation_mode"] == "manual_review"
+    assert payload["customer_status"] == "shipped"
+    assert (
+        payload["cancellation_mode"]
+        == "closed_after_supplier_confirmation"
+    )
     assert payload["cancellation"] is None
     assert payload["items"][0]["estimated_lead_time"] == "2–3 weeks"
     assert payload["shipment"] == {

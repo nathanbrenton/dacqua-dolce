@@ -27,6 +27,7 @@ from app.services.cancellations import (
     get_order_cancellation_request,
     request_order_cancellation,
 )
+from app.services.order_lifecycle import customer_order_stage
 
 router = APIRouter(
     prefix="/orders",
@@ -102,6 +103,7 @@ def list_orders(
                 ),
                 status=order.status.value,
                 fulfillment_status=order.fulfillment_status.value,
+                customer_status=customer_order_stage(order).value,
                 cancellation_mode=cancellation_mode_for_order(order),
                 cancellation=(
                     customer_cancellation_read(cancellation)

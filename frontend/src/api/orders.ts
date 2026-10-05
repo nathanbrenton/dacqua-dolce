@@ -35,7 +35,18 @@ export type Order = {
   formal_quote_id: string | null;
   status: string;
   fulfillment_status: string;
-  cancellation_mode: "unrestricted" | "manual_review";
+  customer_status:
+    | "received"
+    | "processing"
+    | "supplier_confirmed"
+    | "awaiting_shipment"
+    | "shipped"
+    | "completed"
+    | "cancelled"
+    | "refunded";
+  cancellation_mode:
+    | "unrestricted"
+    | "closed_after_supplier_confirmation";
   cancellation: OrderCancellation | null;
   subtotal_amount_minor: number;
   charges_amount_minor: number;

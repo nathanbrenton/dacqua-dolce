@@ -91,6 +91,7 @@ from app.schemas.operations import (
     OperationsSalesInsightsRead,
     OperationsStockNotificationRead,
     OperationsSummaryRead,
+    OrderCancellationExceptionCreate,
     OrderCancellationReviewUpdate,
     OrderFulfillmentUpdate,
     OrderReturnPolicyExceptionCreate,
@@ -103,9 +104,11 @@ from app.schemas.operations import (
 )
 from app.services.audit import record_audit_event
 from app.services.cancellations import (
+    CLOSED_AFTER_SUPPLIER_CONFIRMATION,
     CancellationError,
     cancellation_mode_for_order,
     get_order_cancellation_request,
+    request_order_cancellation,
     review_order_cancellation,
 )
 from app.services.commerce import (
@@ -138,11 +141,13 @@ from app.services.inventory_observations import (
 from app.services.launch_readiness import build_launch_readiness
 from app.services.operations_access import (
     require_audit_log_read,
+    require_cancellation_exception_write,
     require_customer_equipment_write,
     require_operations,
     require_pricing_inventory_write,
     require_return_policy_exception_write,
 )
+from app.services.order_lifecycle import customer_order_stage
 from app.services.pricing import (
     promotion_mode_supported,
     promotion_windows_overlap,
@@ -1979,6 +1984,7 @@ def operations_order_read(
         id=str(order.id),
         status=order.status.value,
         fulfillment_status=order.fulfillment_status.value,
+        customer_status=customer_order_stage(order).value,
         cancellation_mode=cancellation_mode_for_order(order),
         cancellation=(
             operations_cancellation_read(cancellation)
@@ -2210,6 +2216,66 @@ def update_order_fulfillment(
 
 
 @router.post(
+    "/orders/{order_id}/cancellation-exception",
+    response_model=OperationsOrderRead,
+)
+def start_order_cancellation_exception_review(
+    order_id: uuid.UUID,
+    payload: OrderCancellationExceptionCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_cancellation_exception_write(
+        db,
+        user=current_user,
+    )
+
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    if cancellation_mode_for_order(order) != CLOSED_AFTER_SUPPLIER_CONFIRMATION:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Exceptional cancellation review is only available after "
+                "Supplier Confirmed."
+            ),
+        )
+
+    try:
+        request_order_cancellation(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            reason=payload.reason,
+            allow_post_confirmation_exception=True,
+        )
+    except CancellationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(
+        db,
+        order=order,
+        customer=customer,
+    )
+
+
+@router.post(
     "/orders/{order_id}/cancellation",
     response_model=OperationsOrderRead,
 )
@@ -2219,7 +2285,7 @@ def review_order_cancellation_request(
     db: DatabaseSession,
     current_user: CurrentUser,
 ) -> OperationsOrderRead:
-    require_operations(
+    require_cancellation_exception_write(
         db,
         user=current_user,
     )

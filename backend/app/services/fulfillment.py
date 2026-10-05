@@ -182,16 +182,25 @@ def transition_order_fulfillment(
     order.fulfillment_status = new_status
     order.fulfillment_updated_at = effective_now
 
+    metadata: dict[str, object] = {
+        "previous_status": previous.value,
+        "new_status": new_status.value,
+    }
+    if new_status == FulfillmentStatus.supplier_ordered:
+        metadata.update(
+            {
+                "customer_status": "supplier_confirmed",
+                "cancellation_boundary_closed": True,
+            }
+        )
+
     record_audit_event(
         db,
         action="order.fulfillment_status_changed",
         entity_type="order",
         entity_id=str(order.id),
         actor_user_id=actor_user_id,
-        metadata={
-            "previous_status": previous.value,
-            "new_status": new_status.value,
-        },
+        metadata=metadata,
     )
 
     db.flush()

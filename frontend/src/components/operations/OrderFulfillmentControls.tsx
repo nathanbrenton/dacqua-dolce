@@ -6,6 +6,7 @@ import {
 import {
   authorizeReturnPolicyException,
   reviewOrderCancellation,
+  startOrderCancellationException,
   type OperationsOrder,
   updateOrderFulfillment,
 } from "../../api/operations";
@@ -17,15 +18,30 @@ type Props = {
 };
 
 const FULFILLMENT_LABELS: Record<string, string> = {
-  not_started: "Not started",
-  supplier_ordered: "Equipment ordered from supplier",
-  received_ready: "Equipment received / ready",
+  not_started: "Processing",
+  supplier_ordered: "Supplier Confirmed",
+  received_ready: "Awaiting Shipment",
   shipped: "Shipped",
-  delivered: "Delivered",
+  delivered: "Completed",
+};
+
+const CUSTOMER_STATUS_LABELS: Record<string, string> = {
+  received: "Received",
+  processing: "Processing",
+  supplier_confirmed: "Supplier Confirmed",
+  awaiting_shipment: "Awaiting Shipment",
+  shipped: "Shipped",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  refunded: "Refunded",
 };
 
 function label(value: string): string {
   return FULFILLMENT_LABELS[value] ?? value.replaceAll("_", " ");
+}
+
+function customerStatusLabel(value: string): string {
+  return CUSTOMER_STATUS_LABELS[value] ?? value.replaceAll("_", " ");
 }
 
 export function OrderFulfillmentControls({
@@ -46,6 +62,10 @@ export function OrderFulfillmentControls({
     useState(false);
   const [reviewNote, setReviewNote] =
     useState(order.cancellation?.review_note ?? "");
+  const [exceptionalCancellationReason, setExceptionalCancellationReason] =
+    useState("");
+  const [exceptionalCancellationSaving, setExceptionalCancellationSaving] =
+    useState(false);
   const [error, setError] =
     useState<string | null>(null);
   const [exceptionSaving, setExceptionSaving] =
@@ -68,6 +88,7 @@ export function OrderFulfillmentControls({
       || role === "developer"
     ),
   );
+  const canManageCancellationExceptions = canAuthorizeReturnException;
 
   const nextStatus = useMemo(() => {
     switch (order.fulfillment_status) {
@@ -88,6 +109,35 @@ export function OrderFulfillmentControls({
     order.fulfillment_status === "not_started"
     && order.cancellation !== null
     && order.cancellation.status !== "declined";
+
+  async function startExceptionalCancellationReview(): Promise<void> {
+    const reason = exceptionalCancellationReason.trim();
+    if (reason === "") {
+      setError("A reason is required for exceptional cancellation review.");
+      return;
+    }
+
+    setExceptionalCancellationSaving(true);
+    setError(null);
+
+    try {
+      const updated = await startOrderCancellationException(
+        order.id,
+        reason,
+      );
+      onUpdated(updated);
+      setExceptionalCancellationReason("");
+      setReviewNote(updated.cancellation?.review_note ?? "");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Exceptional cancellation review could not be started.",
+      );
+    } finally {
+      setExceptionalCancellationSaving(false);
+    }
+  }
 
   async function reviewCancellation(
     action: "approve" | "decline" | "complete",
@@ -253,8 +303,8 @@ export function OrderFulfillmentControls({
           {order.status.replaceAll("_", " ")}
         </span>
         <span>
-          <strong>Fulfillment:</strong>{" "}
-          {label(order.fulfillment_status)}
+          <strong>Customer status:</strong>{" "}
+          {customerStatusLabel(order.customer_status)}
         </span>
       </div>
 
@@ -264,8 +314,8 @@ export function OrderFulfillmentControls({
           <span>
             {order.cancellation === null
               ? order.cancellation_mode === "unrestricted"
-                ? "No request · unrestricted before supplier confirmation"
-                : "No request · manual review after supplier confirmation"
+                ? "No request · online cancellation open until Supplier Confirmed"
+                : "No request · online cancellation closed after Supplier Confirmed"
               : `${order.cancellation.status.replaceAll("_", " ")} · ${
                   order.cancellation.eligibility_mode === "unrestricted"
                     ? "pre-supplier"
@@ -280,7 +330,43 @@ export function OrderFulfillmentControls({
           </p>
         ) : null}
 
-        {order.cancellation?.status === "requested" ? (
+        {order.cancellation === null
+          && order.cancellation_mode === "closed_after_supplier_confirmation"
+          && canManageCancellationExceptions ? (
+          <details className="operations-policy-exception">
+            <summary>Start exceptional cancellation review</summary>
+            <p className="account-muted">
+              Supplier Confirmed closes the normal customer cancellation path.
+              Use this only to record an authorized case-by-case exception for review.
+            </p>
+            <label className="operations-field">
+              <span>Exception reason</span>
+              <textarea
+                rows={3}
+                maxLength={4000}
+                value={exceptionalCancellationReason}
+                onChange={(event) => {
+                  setExceptionalCancellationReason(event.target.value);
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={exceptionalCancellationSaving}
+              onClick={() => {
+                void startExceptionalCancellationReview();
+              }}
+            >
+              {exceptionalCancellationSaving
+                ? "Saving…"
+                : "Start review"}
+            </button>
+          </details>
+        ) : null}
+
+        {order.cancellation?.status === "requested"
+          && canManageCancellationExceptions ? (
           <>
             <label className="operations-field">
               <span>Cancellation review note (optional)</span>
@@ -519,7 +605,7 @@ export function OrderFulfillmentControls({
         && order.fulfillment_status === "not_started"
         && !supplierOrderingBlocked ? (
         <label className="operations-field">
-          <span>Supplier order reference (optional)</span>
+          <span>Supplier reference (optional)</span>
           <input
             type="text"
             value={supplierReference}
@@ -529,6 +615,15 @@ export function OrderFulfillmentControls({
             }}
           />
         </label>
+      ) : null}
+
+      {order.status === "paid"
+        && order.fulfillment_status === "not_started"
+        && !supplierOrderingBlocked ? (
+        <p className="account-muted">
+          Marking Supplier Confirmed is the customer-facing confirmation boundary
+          and closes normal online cancellation requests for this order.
+        </p>
       ) : null}
 
       {supplierOrderingBlocked ? (
@@ -616,7 +711,9 @@ export function OrderFulfillmentControls({
         >
           {saving
             ? "Saving…"
-            : `Mark ${label(nextStatus)}`}
+            : nextStatus === "supplier_ordered"
+              ? "Mark Supplier Confirmed"
+              : `Mark ${label(nextStatus)}`}
         </button>
       ) : null}
     </div>

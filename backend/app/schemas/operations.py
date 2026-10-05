@@ -557,9 +557,19 @@ class OperationsOrderRead(BaseModel):
     id: str
     status: str
     fulfillment_status: str
+    customer_status: Literal[
+        "received",
+        "processing",
+        "supplier_confirmed",
+        "awaiting_shipment",
+        "shipped",
+        "completed",
+        "cancelled",
+        "refunded",
+    ]
     cancellation_mode: Literal[
         "unrestricted",
-        "manual_review",
+        "closed_after_supplier_confirmation",
     ]
     cancellation: OperationsOrderCancellationRead | None = None
     refund_policy_snapshot: FormalQuotePolicySnapshotRead | None = None
@@ -584,6 +594,23 @@ class OperationsOrderRead(BaseModel):
         default_factory=list,
     )
     shipment: OperationsOrderShipmentRead | None = None
+
+
+class OrderCancellationExceptionCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(
+        min_length=1,
+        max_length=4000,
+    )
+
+    @field_validator("reason")
+    @classmethod
+    def clean_reason(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Exception reason is required.")
+        return cleaned
 
 
 class OrderCancellationReviewUpdate(BaseModel):

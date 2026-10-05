@@ -127,16 +127,19 @@ function commercialAddressLines(address: CommercialAddress): string[] {
 }
 
 
-const FULFILLMENT_LABELS: Record<string, string> = {
-  not_started: "Preparing fulfillment",
-  supplier_ordered: "Equipment ordered from supplier",
-  received_ready: "Equipment received / ready",
+const ORDER_STAGE_LABELS: Record<string, string> = {
+  received: "Received",
+  processing: "Processing",
+  supplier_confirmed: "Supplier Confirmed",
+  awaiting_shipment: "Awaiting Shipment",
   shipped: "Shipped",
-  delivered: "Delivered",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  refunded: "Refunded",
 };
 
-function fulfillmentLabel(value: string): string {
-  return FULFILLMENT_LABELS[value] ?? value.replaceAll("_", " ");
+function orderStageLabel(value: string): string {
+  return ORDER_STAGE_LABELS[value] ?? value.replaceAll("_", " ");
 }
 
 
@@ -2114,10 +2117,7 @@ export function AccountPage({
                 >
                   <div>
                     <strong>
-                      {order.status.replaceAll(
-                        "_",
-                        " ",
-                      )}
+                      {orderStageLabel(order.customer_status)}
                     </strong>
                     <p>
                       {new Date(
@@ -2125,13 +2125,21 @@ export function AccountPage({
                       ).toLocaleDateString()}
                     </p>
 
-                    {order.status === "paid" ? (
-                      <p className="account-muted">
-                        {fulfillmentLabel(
-                          order.fulfillment_status,
-                        )}
-                      </p>
-                    ) : null}
+                    <p className="account-muted">
+                      {order.customer_status === "received"
+                        ? "Your order has been received."
+                        : order.customer_status === "processing"
+                          ? "We are preparing the order and confirming supplier availability."
+                          : order.customer_status === "supplier_confirmed"
+                            ? "D’Acqua Dolce has confirmed the supplier stage for this order."
+                            : order.customer_status === "awaiting_shipment"
+                              ? "Your order is being prepared for shipment."
+                              : order.customer_status === "shipped"
+                                ? "Your order is on the way."
+                                : order.customer_status === "completed"
+                                  ? "This order is complete."
+                                  : null}
+                    </p>
 
                     {order.items.some(
                       (item) =>
@@ -2197,37 +2205,39 @@ export function AccountPage({
                       <div className="account-order-cancellation">
                         <p className="account-muted">
                           {order.cancellation_mode === "unrestricted"
-                            ? "Cancellation is available before the supplier order is confirmed."
-                            : "The supplier order has been confirmed, so cancellation requires employee review."}
+                            ? "Online cancellation is available until D’Acqua Dolce marks the order Supplier Confirmed."
+                            : "Online cancellation is closed after Supplier Confirmed. Contact D’Acqua Dolce if exceptional review is needed."}
                         </p>
-                        <label className="account-order-cancellation-field">
-                          <span>Reason (optional)</span>
-                          <textarea
-                            rows={2}
-                            maxLength={2000}
-                            value={cancellationReasons[order.id] ?? ""}
-                            onChange={(event) => {
-                              setCancellationReasons((current) => ({
-                                ...current,
-                                [order.id]: event.target.value,
-                              }));
-                            }}
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          className="account-action"
-                          disabled={cancellationBusyOrderId === order.id}
-                          onClick={() => {
-                            void submitOrderCancellation(order);
-                          }}
-                        >
-                          {cancellationBusyOrderId === order.id
-                            ? "Submitting…"
-                            : order.cancellation_mode === "unrestricted"
-                              ? "Cancel order"
-                              : "Request cancellation review"}
-                        </button>
+                        {order.cancellation_mode === "unrestricted" ? (
+                          <>
+                            <label className="account-order-cancellation-field">
+                              <span>Reason (optional)</span>
+                              <textarea
+                                rows={2}
+                                maxLength={2000}
+                                value={cancellationReasons[order.id] ?? ""}
+                                onChange={(event) => {
+                                  setCancellationReasons((current) => ({
+                                    ...current,
+                                    [order.id]: event.target.value,
+                                  }));
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              className="account-action"
+                              disabled={cancellationBusyOrderId === order.id}
+                              onClick={() => {
+                                void submitOrderCancellation(order);
+                              }}
+                            >
+                              {cancellationBusyOrderId === order.id
+                                ? "Submitting…"
+                                : "Cancel order"}
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     ) : null}
 

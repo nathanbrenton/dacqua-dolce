@@ -5,11 +5,12 @@
 PT29 implements the confirmed launch cancellation boundary without inventing
 post-confirmation fees, refund behavior, or payment-provider capabilities.
 
-Confirmed business direction:
+Confirmed business direction at PT29 was later refined by PT41:
 
-- A customer cancellation is unrestricted until the supplier confirms the order.
-- After supplier confirmation, cancellation requires employee review.
-- A more detailed post-confirmation cancellation matrix is still pending.
+- A customer cancellation is unrestricted until D'Acqua Dolce records Supplier Confirmed.
+- After Supplier Confirmed, the normal online customer cancellation path is closed.
+- An authorized privileged staff member may start a case-by-case exceptional review.
+- Final customer-facing legal wording still requires legal review.
 - Payment-provider refund/void automation remains deferred until the Affinity24
   gateway and authoritative integration contract are known.
 
@@ -23,7 +24,10 @@ PT29 uses that durable fulfillment state rather than UI text:
 - `fulfillment_status = not_started` and `supplier_ordered_at IS NULL`
   → cancellation mode `unrestricted`.
 - supplier confirmation or any later fulfillment state
-  → cancellation mode `manual_review`.
+  → customer cancellation mode `closed_after_supplier_confirmation`.
+
+The stored `manual_review` eligibility value remains available for auditable
+post-confirmation exceptions and for historical PT29 records.
 
 ## Cancellation workflow
 
@@ -31,7 +35,7 @@ PT29 adds one durable cancellation workflow record per order.
 
 Statuses:
 
-- `requested` — post-supplier cancellation is waiting for employee review.
+- `requested` — an authorized post-confirmation exception is waiting for review.
 - `approved` — cancellation has been accepted. Pre-supplier requests enter this
   state automatically because cancellation is unrestricted at that point.
 - `declined` — a post-supplier manual review did not approve cancellation.
@@ -80,8 +84,8 @@ Customer Account order history exposes:
 - current cancellation mode;
 - current cancellation-request state;
 - an optional cancellation reason;
-- a pre-supplier `Cancel order` action;
-- a post-supplier `Request cancellation review` action.
+- a pre-Supplier-Confirmed `Cancel order` action;
+- after Supplier Confirmed, a clear message that the online cancellation path is closed and the customer should contact D'Acqua Dolce for exceptional review.
 
 Internal supplier order references remain excluded from customer responses.
 
@@ -91,10 +95,11 @@ Operations order controls expose:
 
 - cancellation mode and request status;
 - customer-provided reason;
+- an authorized post-confirmation exceptional-review action for privileged staff;
 - optional review note;
-- Approve / Decline controls for manual-review requests;
+- Approve / Decline controls for exceptional manual-review requests;
 - Mark cancellation complete for approved requests;
-- a supplier-ordering block while a pre-supplier cancellation remains active.
+- a Supplier Confirmed block while a pre-confirmation cancellation remains active.
 
 All state changes are audited without storing the customer's free-text reason in
 audit metadata.

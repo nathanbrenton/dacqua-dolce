@@ -2,6 +2,7 @@ from app.models.identity import RoleName
 from app.services.operations_access import (
     ADMINISTRATION_ROLES,
     AUDIT_LOG_READ_ROLES,
+    CANCELLATION_EXCEPTION_WRITE_ROLES,
     CUSTOMER_EQUIPMENT_WRITE_ROLES,
     OPERATIONS_ROLES,
     PRICING_INVENTORY_WRITE_ROLES,
@@ -45,3 +46,12 @@ def test_administration_is_limited_to_admin_and_developer() -> None:
         RoleName.administrator,
         RoleName.developer,
     }
+
+
+def test_cancellation_exceptions_require_privileged_staff() -> None:
+    assert CANCELLATION_EXCEPTION_WRITE_ROLES == {
+        RoleName.manager,
+        RoleName.administrator,
+        RoleName.developer,
+    }
+    assert RoleName.employee not in CANCELLATION_EXCEPTION_WRITE_ROLES

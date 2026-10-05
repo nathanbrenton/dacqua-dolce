@@ -44,6 +44,14 @@ RETURN_POLICY_EXCEPTION_WRITE_ROLES = frozenset(
     }
 )
 
+CANCELLATION_EXCEPTION_WRITE_ROLES = frozenset(
+    {
+        RoleName.manager,
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
 AUDIT_LOG_READ_ROLES = frozenset(
     {
         RoleName.developer,
@@ -133,6 +141,18 @@ def require_return_policy_exception_write(
         db,
         user=user,
         allowed_roles=RETURN_POLICY_EXCEPTION_WRITE_ROLES,
+    )
+
+
+def require_cancellation_exception_write(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=CANCELLATION_EXCEPTION_WRITE_ROLES,
     )
 
 

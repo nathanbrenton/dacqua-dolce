@@ -3015,12 +3015,12 @@ export function OperationsPage({
                   <header>
                     <div>
                       <p className="product-meta">
-                        Order · payment {order.status}
-                        {" · "}
-                        fulfillment {order.fulfillment_status.replaceAll(
+                        Customer status · {order.customer_status.replaceAll(
                           "_",
                           " ",
                         )}
+                        {" · "}
+                        payment {order.status}
                       </p>
 
                       <h3>

@@ -97,9 +97,19 @@ class OrderRead(BaseModel):
     formal_quote_id: str | None
     status: str
     fulfillment_status: str
+    customer_status: Literal[
+        "received",
+        "processing",
+        "supplier_confirmed",
+        "awaiting_shipment",
+        "shipped",
+        "completed",
+        "cancelled",
+        "refunded",
+    ]
     cancellation_mode: Literal[
         "unrestricted",
-        "manual_review",
+        "closed_after_supplier_confirmation",
     ]
     cancellation: OrderCancellationRead | None = None
     subtotal_amount_minor: int

@@ -83,7 +83,28 @@ def test_pre_supplier_cancellation_is_automatically_approved() -> None:
     assert any(isinstance(value, AuditEvent) for value in db.added)
 
 
-def test_post_supplier_cancellation_enters_manual_review() -> None:
+def test_post_supplier_customer_cancellation_is_closed() -> None:
+    supplier_ordered_at = datetime(2026, 10, 1, 18, 0, tzinfo=UTC)
+    db = CancellationDatabase()
+    order = make_order(
+        fulfillment_status=FulfillmentStatus.supplier_ordered,
+        supplier_ordered_at=supplier_ordered_at,
+    )
+
+    assert (
+        cancellation_mode_for_order(order)
+        == "closed_after_supplier_confirmation"
+    )
+
+    with pytest.raises(CancellationError, match="Supplier Confirmed"):
+        request_order_cancellation(
+            db,  # type: ignore[arg-type]
+            order=order,
+            actor_user_id=order.user_id,
+        )
+
+
+def test_post_supplier_exception_can_enter_manual_review() -> None:
     supplier_ordered_at = datetime(2026, 10, 1, 18, 0, tzinfo=UTC)
     db = CancellationDatabase()
     order = make_order(
@@ -94,10 +115,11 @@ def test_post_supplier_cancellation_enters_manual_review() -> None:
     cancellation = request_order_cancellation(
         db,  # type: ignore[arg-type]
         order=order,
-        actor_user_id=order.user_id,
+        actor_user_id=uuid.uuid4(),
+        reason="Documented business exception",
+        allow_post_confirmation_exception=True,
     )
 
-    assert cancellation_mode_for_order(order) == "manual_review"
     assert cancellation.eligibility_mode == "manual_review"
     assert cancellation.status == "requested"
     assert cancellation.reviewed_at is None

@@ -7,15 +7,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.commerce import (
-    FulfillmentStatus,
     Order,
     OrderCancellationRequest,
     OrderStatus,
 )
 from app.services.audit import record_audit_event
+from app.services.order_lifecycle import supplier_confirmation_recorded
 
 UNRESTRICTED = "unrestricted"
 MANUAL_REVIEW = "manual_review"
+CLOSED_AFTER_SUPPLIER_CONFIRMATION = "closed_after_supplier_confirmation"
 
 REQUESTED = "requested"
 APPROVED = "approved"
@@ -28,12 +29,9 @@ class CancellationError(ValueError):
 
 
 def cancellation_mode_for_order(order: Order) -> str:
-    if (
-        order.supplier_ordered_at is None
-        and order.fulfillment_status == FulfillmentStatus.not_started
-    ):
+    if not supplier_confirmation_recorded(order):
         return UNRESTRICTED
-    return MANUAL_REVIEW
+    return CLOSED_AFTER_SUPPLIER_CONFIRMATION
 
 
 def get_order_cancellation_request(
@@ -71,6 +69,7 @@ def request_order_cancellation(
     order: Order,
     actor_user_id: uuid.UUID,
     reason: str | None = None,
+    allow_post_confirmation_exception: bool = False,
     now: datetime | None = None,
 ) -> OrderCancellationRequest:
     if order.status in {
@@ -91,13 +90,31 @@ def request_order_cancellation(
         )
 
     mode = cancellation_mode_for_order(order)
+    if (
+        mode == CLOSED_AFTER_SUPPLIER_CONFIRMATION
+        and not allow_post_confirmation_exception
+    ):
+        raise CancellationError(
+            "Online cancellation requests are closed after Supplier Confirmed. "
+            "Contact D'Acqua Dolce if exceptional review is needed."
+        )
+
+    eligibility_mode = (
+        UNRESTRICTED
+        if mode == UNRESTRICTED
+        else MANUAL_REVIEW
+    )
     effective_now = now or datetime.now(UTC)
-    initial_status = APPROVED if mode == UNRESTRICTED else REQUESTED
+    initial_status = (
+        APPROVED
+        if eligibility_mode == UNRESTRICTED
+        else REQUESTED
+    )
 
     row = OrderCancellationRequest(
         order_id=order.id,
         requested_by_user_id=actor_user_id,
-        eligibility_mode=mode,
+        eligibility_mode=eligibility_mode,
         status=initial_status,
         reason=_clean_optional_text(
             reason,
@@ -121,9 +138,12 @@ def request_order_cancellation(
         entity_id=str(order.id),
         actor_user_id=actor_user_id,
         metadata={
-            "eligibility_mode": mode,
+            "eligibility_mode": eligibility_mode,
             "status": initial_status,
-            "supplier_confirmed": mode == MANUAL_REVIEW,
+            "supplier_confirmed": mode == CLOSED_AFTER_SUPPLIER_CONFIRMATION,
+            "exceptional_review": (
+                mode == CLOSED_AFTER_SUPPLIER_CONFIRMATION
+            ),
         },
     )
     db.flush()

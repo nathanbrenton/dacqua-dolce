@@ -364,7 +364,18 @@ export type OperationsOrder = {
   id: string;
   status: string;
   fulfillment_status: string;
-  cancellation_mode: "unrestricted" | "manual_review";
+  customer_status:
+    | "received"
+    | "processing"
+    | "supplier_confirmed"
+    | "awaiting_shipment"
+    | "shipped"
+    | "completed"
+    | "cancelled"
+    | "refunded";
+  cancellation_mode:
+    | "unrestricted"
+    | "closed_after_supplier_confirmation";
   cancellation: OperationsOrderCancellation | null;
   refund_policy_snapshot: PolicySnapshot | null;
   return_policy_exceptions: OperationsReturnPolicyException[];
@@ -779,6 +790,18 @@ export function reviewOrderCancellation(
     `/api/operations/orders/${encodeURIComponent(orderId)}/cancellation`,
     "POST",
     payload,
+  );
+}
+
+
+export function startOrderCancellationException(
+  orderId: string,
+  reason: string,
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/cancellation-exception`,
+    "POST",
+    { reason },
   );
 }
 
