@@ -17,6 +17,7 @@ from app.models.catalog import (
     ProductPrice,
     ProductRelationship,
     ProductVariant,
+    StockNotificationSubscription,
 )
 from app.models.commerce import (
     Order,
@@ -85,6 +86,7 @@ from app.schemas.operations import (
     OperationsQuoteRead,
     OperationsReturnPolicyExceptionRead,
     OperationsSalesInsightsRead,
+    OperationsStockNotificationRead,
     OperationsSummaryRead,
     OrderCancellationReviewUpdate,
     OrderFulfillmentUpdate,
@@ -2441,6 +2443,57 @@ def load_product_for_operations(
         )
         .where(Product.id == product_id)
     )
+
+
+@router.get(
+    "/stock-notifications",
+    response_model=list[OperationsStockNotificationRead],
+)
+def list_stock_notifications(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+    active_only: bool = Query(default=True),
+) -> list[OperationsStockNotificationRead]:
+    require_operations(db, user=current_user)
+
+    statement = (
+        select(StockNotificationSubscription, Product)
+        .join(
+            Product,
+            Product.id == StockNotificationSubscription.product_id,
+        )
+        .order_by(
+            StockNotificationSubscription.created_at.desc(),
+            Product.name,
+            StockNotificationSubscription.email,
+        )
+    )
+
+    if active_only:
+        statement = statement.where(
+            StockNotificationSubscription.active.is_(True)
+        )
+
+    rows = db.execute(statement).all()
+
+    return [
+        OperationsStockNotificationRead(
+            id=str(subscription.id),
+            product_id=str(product.id),
+            product_sku=product.sku,
+            product_name=product.name,
+            email=subscription.email,
+            active=subscription.active,
+            notified_at=(
+                subscription.notified_at.isoformat()
+                if subscription.notified_at is not None
+                else None
+            ),
+            created_at=subscription.created_at.isoformat(),
+            updated_at=subscription.updated_at.isoformat(),
+        )
+        for subscription, product in rows
+    ]
 
 
 @router.get("/catalog", response_model=list[OperationsProductRead])

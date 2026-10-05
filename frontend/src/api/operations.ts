@@ -407,6 +407,18 @@ export type OperationsInventory = {
   source_observed_at: string | null;
 };
 
+export type OperationsStockNotification = {
+  id: string;
+  product_id: string;
+  product_sku: string;
+  product_name: string;
+  email: string;
+  active: boolean;
+  notified_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type OperationsProductVariant = {
   id: string;
   sku: string;
@@ -774,6 +786,14 @@ export function authorizeReturnPolicyException(
 export function getOperationsCatalog(): Promise<OperationsProduct[]> {
   return getJson(
     "/api/operations/catalog",
+  );
+}
+
+export function getOperationsStockNotifications(): Promise<
+  OperationsStockNotification[]
+> {
+  return getJson(
+    "/api/operations/stock-notifications",
   );
 }
 

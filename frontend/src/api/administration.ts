@@ -98,3 +98,34 @@ export async function updateAdministrationRoles(
     AdministrationAccount
   >;
 }
+
+export async function updateAdministrationStatus(
+  userId: string,
+  status: "active" | "disabled",
+): Promise<AdministrationAccount> {
+  const csrfToken = await getCsrfToken();
+
+  const response = await fetch(
+    `/api/administration/accounts/${encodeURIComponent(userId)}/status`,
+    {
+      method: "PUT",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ status }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readError(response),
+    );
+  }
+
+  return response.json() as Promise<
+    AdministrationAccount
+  >;
+}

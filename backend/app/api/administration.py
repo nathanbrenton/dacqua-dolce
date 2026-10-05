@@ -11,14 +11,17 @@ from app.api.dependencies.auth import (
 from app.models.identity import (
     User,
     UserMfa,
+    UserStatus,
 )
 from app.schemas.administration import (
     AdministrationAccountRead,
     AdministrationRolesUpdate,
+    AdministrationStatusUpdate,
 )
 from app.services.account_administration import (
     load_user_with_roles,
     replace_web_managed_roles,
+    set_web_managed_account_status,
 )
 from app.services.mfa import user_requires_mfa
 from app.services.operations_access import (
@@ -158,6 +161,56 @@ def replace_account_roles(
             detail=(
                 "Account refresh failed."
             ),
+        )
+
+    return administration_account_read(
+        db,
+        user=refreshed,
+    )
+
+
+@router.put(
+    "/accounts/{user_id}/status",
+    response_model=AdministrationAccountRead,
+)
+def update_account_status(
+    user_id: uuid.UUID,
+    payload: AdministrationStatusUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> AdministrationAccountRead:
+    require_administration(
+        db,
+        user=current_user,
+    )
+
+    target = load_user_with_roles(
+        db,
+        user_id=user_id,
+    )
+
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Account not found.",
+        )
+
+    set_web_managed_account_status(
+        db,
+        actor=current_user,
+        target=target,
+        desired_status=UserStatus(payload.status),
+    )
+
+    refreshed = load_user_with_roles(
+        db,
+        user_id=user_id,
+    )
+
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Account refresh failed.",
         )
 
     return administration_account_read(

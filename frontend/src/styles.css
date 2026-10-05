@@ -5933,3 +5933,150 @@ summary {
     width: 100%;
   }
 }
+
+/* PT37 — Operations hierarchy, availability demand, and account retirement. */
+.operations-shell .operations-section-heading .eyebrow {
+  margin-bottom: 0.25rem;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  font-weight: 750;
+  letter-spacing: 0.025em;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.operations-shell .operations-section-heading h2 {
+  color: var(--ink);
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.02;
+}
+
+.operations-shell .operations-disclosure > summary,
+.operations-shell .operations-audit-disclosure > summary {
+  padding-block: 26px;
+}
+
+.operations-shell .operations-disclosure > summary strong,
+.operations-shell .operations-audit-disclosure > summary strong {
+  color: var(--ink);
+  font-size: clamp(1.28rem, 2vw, 1.55rem);
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+.operations-shell .operations-disclosure > summary small,
+.operations-shell .operations-audit-disclosure > summary small {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.operations-availability-demand {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0 0 1.4rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.operations-availability-demand > header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.operations-availability-demand > header > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.operations-availability-demand h3,
+.operations-availability-demand p {
+  margin: 0;
+}
+
+.operations-availability-demand h3 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.45rem, 2.5vw, 2rem);
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--tracking-heading);
+}
+
+.operations-subsection-label {
+  color: var(--ink);
+  font-size: var(--type-small);
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.operations-availability-demand > header > strong {
+  flex: 0 0 auto;
+  font-size: 0.95rem;
+}
+
+.operations-availability-demand > p {
+  max-width: 760px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+
+.operations-availability-demand-list {
+  display: grid;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-availability-demand-list article {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.operations-availability-demand-list article > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.operations-availability-demand-list span,
+.operations-availability-demand-list small {
+  color: var(--ink-muted);
+}
+
+.operations-availability-demand-list a {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.operations-account-status-actions {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-account-status-actions .operations-action {
+  justify-self: start;
+}
+
+.operations-customer[data-account-status="disabled"] {
+  border-left: 3px solid var(--status-neutral);
+}
+
+@media (max-width: 760px) {
+  .operations-availability-demand > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .operations-availability-demand-list article {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+}

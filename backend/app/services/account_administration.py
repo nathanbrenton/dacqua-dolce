@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -8,6 +9,7 @@ from app.models.identity import (
     RoleName,
     User,
     UserRole,
+    UserSession,
     UserStatus,
 )
 from app.schemas.administration import (
@@ -182,3 +184,116 @@ def load_user_with_roles(
             User.id == user_id
         )
     )
+
+
+def set_web_managed_account_status(
+    db: Session,
+    *,
+    actor: User,
+    target: User,
+    desired_status: UserStatus,
+) -> None:
+    if desired_status not in {
+        UserStatus.active,
+        UserStatus.disabled,
+    }:
+        raise ValueError(
+            "Web administration may only activate or disable accounts."
+        )
+
+    target_roles = {
+        assignment.role
+        for assignment in target.roles
+    }
+
+    if RoleName.developer in target_roles:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Developer account status is managed locally and cannot "
+                "be changed in the web console."
+            ),
+        )
+
+    if desired_status == UserStatus.disabled and actor.id == target.id:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot disable your own account.",
+        )
+
+    if target.status not in {
+        UserStatus.active,
+        UserStatus.disabled,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Locked accounts are managed by the authentication "
+                "lockout workflow and cannot be changed here."
+            ),
+        )
+
+    if target.status == desired_status:
+        return
+
+    if (
+        desired_status == UserStatus.disabled
+        and RoleName.administrator in target_roles
+    ):
+        other_administrators = (
+            db.scalar(
+                select(func.count())
+                .select_from(UserRole)
+                .join(
+                    User,
+                    User.id == UserRole.user_id,
+                )
+                .where(
+                    UserRole.role == RoleName.administrator,
+                    UserRole.user_id != target.id,
+                    User.status == UserStatus.active,
+                )
+            )
+            or 0
+        )
+
+        if other_administrators == 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The final active administrator cannot be disabled.",
+            )
+
+    previous_status = target.status
+    target.status = desired_status
+
+    revoked_count = 0
+    if desired_status == UserStatus.disabled:
+        now = datetime.now(UTC)
+        sessions = db.scalars(
+            select(UserSession).where(
+                UserSession.user_id == target.id,
+                UserSession.revoked_at.is_(None),
+            )
+        ).all()
+
+        for session_record in sessions:
+            session_record.revoked_at = now
+
+        revoked_count = len(sessions)
+
+    record_audit_event(
+        db,
+        action="identity.account_status_changed",
+        entity_type="user",
+        entity_id=str(target.id),
+        actor_user_id=actor.id,
+        metadata={
+            "target_email": target.email,
+            "previous_status": previous_status.value,
+            "new_status": desired_status.value,
+            "revoked_session_count": revoked_count,
+            "source": "web_administration",
+        },
+    )
+
+    db.commit()

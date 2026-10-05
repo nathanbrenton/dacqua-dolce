@@ -682,6 +682,18 @@ class OperationsInventoryRead(BaseModel):
     source_observed_at: str | None = None
 
 
+class OperationsStockNotificationRead(BaseModel):
+    id: str
+    product_id: str
+    product_sku: str
+    product_name: str
+    email: str
+    active: bool
+    notified_at: str | None
+    created_at: str
+    updated_at: str
+
+
 class OperationsInsightBucketRead(BaseModel):
     value: str
     count: int

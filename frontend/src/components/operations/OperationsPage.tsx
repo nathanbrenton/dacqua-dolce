@@ -14,6 +14,7 @@ import type { CommercialAddress } from "../../api/commercial";
 import {
   getAdministrationAccounts,
   updateAdministrationRoles,
+  updateAdministrationStatus,
   type AdministrationAccount,
   type WebManagedRole,
 } from "../../api/administration";
@@ -27,6 +28,7 @@ import {
   getOperationsOrders,
   getOperationsQuotes,
   getOperationsSalesInsights,
+  getOperationsStockNotifications,
   getOperationsSummary,
   createProductRelationship,
   createCustomerEquipment,
@@ -47,6 +49,7 @@ import {
   type OperationsProduct,
   type OperationsQuote,
   type OperationsSalesInsights,
+  type OperationsStockNotification,
   type OperationsSummary,
 } from "../../api/operations";
 
@@ -633,6 +636,8 @@ export function OperationsPage({
     useState<Record<string, WebManagedRole[]>>({});
   const [administrationSaveStates, setAdministrationSaveStates] =
     useState<Record<string, SaveState>>({});
+  const [administrationStatusSaveStates, setAdministrationStatusSaveStates] =
+    useState<Record<string, SaveState>>({});
   const [customers, setCustomers] =
     useState<OperationsCustomer[]>([]);
   const [customerSearch, setCustomerSearch] =
@@ -649,6 +654,8 @@ export function OperationsPage({
     useState("");
   const [products, setProducts] =
     useState<OperationsProduct[]>([]);
+  const [stockNotifications, setStockNotifications] =
+    useState<OperationsStockNotification[]>([]);
   const [relationshipProductDrafts, setRelationshipProductDrafts] =
     useState<Record<string, string>>({});
   const [relationshipTypeDrafts, setRelationshipTypeDrafts] =
@@ -695,6 +702,7 @@ export function OperationsPage({
       getOperationsOrders(),
       getOperationsCatalog(),
       getOperationsSalesInsights(),
+      getOperationsStockNotifications(),
     ])
       .then(([
         summaryResult,
@@ -705,6 +713,7 @@ export function OperationsPage({
         orderResult,
         productResult,
         salesInsightsResult,
+        stockNotificationResult,
       ]) => {
         setSummary(summaryResult);
         setLaunchReadiness(launchReadinessResult);
@@ -714,6 +723,7 @@ export function OperationsPage({
         setCustomers(customerResult);
         setOrders(orderResult);
         setProducts(productResult);
+        setStockNotifications(stockNotificationResult);
 
         const nextQuoteNotes: Record<string, string> = {};
 
@@ -1468,6 +1478,60 @@ export function OperationsPage({
         caught instanceof Error
           ? caught.message
           : "Account role update failed.",
+      );
+    }
+  }
+
+  async function saveAdministrationStatus(
+    account: AdministrationAccount,
+    nextStatus: "active" | "disabled",
+  ): Promise<void> {
+    setAdministrationError(null);
+    setMessage(null);
+    setAdministrationStatusSaveStates((current) => ({
+      ...current,
+      [account.id]: "saving",
+    }));
+
+    try {
+      const updated = await updateAdministrationStatus(
+        account.id,
+        nextStatus,
+      );
+
+      setAdministrationAccounts((current) =>
+        current.map((candidate) =>
+          candidate.id === updated.id
+            ? updated
+            : candidate,
+        ),
+      );
+
+      setMessage(
+        nextStatus === "disabled"
+          ? `Account disabled for ${updated.email}. Existing sessions were revoked.`
+          : `Account re-enabled for ${updated.email}.`,
+      );
+      setAdministrationStatusSaveStates((current) => ({
+        ...current,
+        [account.id]: "saved",
+      }));
+
+      window.setTimeout(() => {
+        setAdministrationStatusSaveStates((current) => ({
+          ...current,
+          [account.id]: "idle",
+        }));
+      }, 1800);
+    } catch (caught) {
+      setAdministrationStatusSaveStates((current) => ({
+        ...current,
+        [account.id]: "idle",
+      }));
+      setAdministrationError(
+        caught instanceof Error
+          ? caught.message
+          : "Account status update failed.",
       );
     }
   }
@@ -2802,6 +2866,54 @@ export function OperationsPage({
           </p>
         </div>
 
+        <section
+          className="operations-availability-demand"
+          aria-labelledby="operations-availability-demand-heading"
+        >
+          <header>
+            <div>
+              <p className="operations-subsection-label">Availability demand</p>
+              <h3 id="operations-availability-demand-heading">
+                Notify When in Stock requests
+              </h3>
+            </div>
+            <strong>
+              {stockNotifications.length}{" "}
+              {stockNotifications.length === 1
+                ? "active request"
+                : "active requests"}
+            </strong>
+          </header>
+
+          <p>
+            These requests are customer demand evidence captured while a
+            product is unavailable. Automated stock-notification email is not
+            commissioned yet, so this list does not imply that a notice has
+            been sent.
+          </p>
+
+          {stockNotifications.length === 0 ? (
+            <p className="operations-request-empty">
+              No active Notify When in Stock requests.
+            </p>
+          ) : (
+            <div className="operations-availability-demand-list">
+              {stockNotifications.map((request) => (
+                <article key={request.id}>
+                  <div>
+                    <strong>{request.product_name}</strong>
+                    <span>{request.product_sku}</span>
+                  </div>
+                  <a href={`mailto:${request.email}`}>{request.email}</a>
+                  <small>
+                    Requested {new Date(request.created_at).toLocaleString()}
+                  </small>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
         <div className="operations-product-list">
           {products.map((product) => {
             const pricing = pricingDrafts[product.id];
@@ -3791,11 +3903,15 @@ export function OperationsPage({
                       const saveState =
                         administrationSaveStates[account.id]
                         ?? "idle";
+                      const statusSaveState =
+                        administrationStatusSaveStates[account.id]
+                        ?? "idle";
 
                       return (
                         <article
                           key={account.id}
                           className="operations-customer"
+                          data-account-status={account.status}
                         >
                           <header>
                             <div>
@@ -3854,6 +3970,60 @@ export function OperationsPage({
                                   ? account.roles.join(", ")
                                   : "none"}
                               </small>
+
+                              <div className="operations-account-status-actions">
+                                {account.roles.includes("developer") ? (
+                                  <small>
+                                    Developer account status is managed locally.
+                                  </small>
+                                ) : ownAccount ? (
+                                  <small>
+                                    Your current account cannot disable itself.
+                                  </small>
+                                ) : account.status === "locked" ? (
+                                  <small>
+                                    This account is temporarily controlled by the
+                                    login lockout workflow.
+                                  </small>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="operations-action secondary"
+                                      disabled={
+                                        statusSaveState === "saving"
+                                        || saveState === "saving"
+                                      }
+                                      onClick={() => {
+                                        const nextStatus = account.status === "disabled"
+                                          ? "active"
+                                          : "disabled";
+                                        const confirmed = nextStatus === "active"
+                                          || window.confirm(
+                                            `Disable ${account.email}? Sign-in will be blocked and active sessions will be revoked. Historical records and roles will be preserved.`,
+                                          );
+
+                                        if (confirmed) {
+                                          void saveAdministrationStatus(
+                                            account,
+                                            nextStatus,
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      {statusSaveState === "saving"
+                                        ? "Saving…"
+                                        : account.status === "disabled"
+                                          ? "Re-enable account"
+                                          : "Disable account"}
+                                    </button>
+                                    <small>
+                                      Disabling preserves history and role assignments
+                                      while blocking sign-in.
+                                    </small>
+                                  </>
+                                )}
+                              </div>
                             </div>
 
                             <div className="operations-address">
@@ -3875,6 +4045,7 @@ export function OperationsPage({
                                         developerManaged
                                         || lockedSelfAdmin
                                         || saveState === "saving"
+                                        || statusSaveState === "saving"
                                       }
                                       onChange={(event) => {
                                         toggleAdministrationRole(
@@ -3902,6 +4073,7 @@ export function OperationsPage({
                                 disabled={
                                   developerManaged
                                   || saveState === "saving"
+                                  || statusSaveState === "saving"
                                 }
                                 onClick={() => {
                                   void saveAdministrationRoles(account);

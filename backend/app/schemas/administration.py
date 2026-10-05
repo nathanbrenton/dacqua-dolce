@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.identity import RoleName
@@ -23,6 +25,10 @@ class AdministrationAccountRead(BaseModel):
     mfa_enrolled: bool
     created_at: str
     last_login_at: str | None
+
+
+class AdministrationStatusUpdate(BaseModel):
+    status: Literal["active", "disabled"]
 
 
 class AdministrationRolesUpdate(BaseModel):
