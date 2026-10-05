@@ -6345,3 +6345,128 @@ summary {
   font-weight: 700;
   letter-spacing: 0.04em;
 }
+
+/* PT43 — manufacturer provenance and warranty/support */
+.product-manufacturer-claims,
+.product-support {
+  margin-top: 48px;
+  padding-top: 26px;
+  border-top: 1px solid var(--hairline);
+}
+
+.product-claims-intro,
+.product-support > p {
+  max-width: 680px;
+  color: var(--ink-muted);
+}
+
+.product-claim-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.product-claim-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: var(--surface-elevated);
+}
+
+.product-claim-card p,
+.product-claim-card small {
+  margin: 0;
+}
+
+.product-claim-card small,
+.operations-product-relationship small {
+  overflow-wrap: anywhere;
+}
+
+.product-claim-provenance {
+  width: fit-content;
+  padding: 4px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.product-support-request {
+  margin-top: 22px;
+  padding: 16px 18px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+}
+
+.product-support-request > summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.product-support-email {
+  margin-top: 18px;
+}
+
+.support-page-shell {
+  min-height: 100vh;
+  padding: clamp(24px, 5vw, 72px);
+}
+
+.support-page-heading {
+  max-width: 760px;
+  margin-top: 36px;
+}
+
+.support-page-heading h1 {
+  margin: 8px 0 18px;
+  font-size: var(--type-display-detail);
+}
+
+.support-page-form-panel {
+  max-width: 760px;
+  margin-top: 38px;
+  padding: clamp(22px, 4vw, 38px);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: var(--surface-elevated);
+}
+
+.support-page-form-panel h2 {
+  margin-top: 0;
+}
+
+.support-request-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.support-request-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.support-request-form input,
+.support-request-form select,
+.support-request-form textarea {
+  width: 100%;
+}
+
+.support-request-product,
+.support-request-error,
+.support-request-notice {
+  margin: 0;
+}
+
+.support-request-error {
+  color: var(--danger);
+}
+
+.support-request-notice {
+  color: var(--ink);
+}

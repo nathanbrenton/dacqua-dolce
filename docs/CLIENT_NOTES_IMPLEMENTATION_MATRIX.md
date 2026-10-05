@@ -9,7 +9,7 @@ This matrix is the durable boundary between client-supported requirements and im
 | --- | --- | --- |
 | Harmony pass-through naming | Implemented | Harmony / Water Conditioner / Featuring CLEAR Technology. |
 | Harmony pass-through installation & ownership | Implemented / updated | Product detail retains verified non-backwashing/no-power/no-drain facts. The superseded always-included carbon-block prefilter claim is removed; preferred pairing is now Duo cartridge filtration with replaceable sediment + carbon filters. |
-| CLEAR customer explanation | Implemented | Describes restructuring hardness minerals into microscopic crystalline forms that are less likely to adhere as scale; does not claim hardness removal. |
+| CLEAR customer explanation | Implemented / PT43 updated | Public Harmony education now keeps CLEAR at the branded anti-scale terminology level. Manufacturer performance/capacity statements are shown only through approved claim records with an explicit `Manufacturer-stated` label and recorded source. |
 | CAM terminology | Implemented | Crystal Aggregate Matrix is approved customer-facing terminology. |
 | Customer Requests | Implemented | Active, Closed, All; persisted status changes and private internal notes; no inferred account relationship. |
 | Accounts & Address Book | Implemented | Persisted customer identity/contact/address/order-count information. |
@@ -123,7 +123,7 @@ Implementation rules:
 - Product-to-product option/accessory relationships are explicit and default to non-public until verified. This allows future filtration and UV options to retain their own SKU, pricing, inventory, documentation, and lifecycle rather than being flattened into free-form text.
 - Do not populate unresolved names or option availability merely because the architecture can represent them.
 - Essence and Refine are now confirmed family names. Clarity, Silken, and Serene remain uncommitted/reserved candidates pending further client discussion.
-- Public performance claims require manufacturer confirmation.
+- Public manufacturer performance/capacity claims require an approved source record and are presented explicitly as `Manufacturer-stated`; unsupported claims remain suppressed.
 
 
 ## PT15.10 — Product configuration presentation
@@ -394,3 +394,12 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Shipping, cancellation, refund, and warranty policy are required before first assisted sale | Implemented as configuration requirement | Quote presentation is blocked until approved Terms, Shipping, Cancellation, Refund, and Warranty versions exist. |
 | Installation model remains undecided | Preserved | Installation Terms are required only when an installation charge is included; no installation policy or business model is invented. |
 | Privacy policy remains a separate public-launch requirement | Preserved | Public Privacy exposes only an explicitly approved version; absence remains visible as pre-launch status. |
+
+## PT43 — Manufacturer claims provenance + warranty support
+
+| Client direction | Classification | Implementation |
+| --- | --- | --- |
+| Unverified manufacturer performance/capacity claims may publish only with explicit manufacturer attribution and source | Implemented | Public `ApprovedProductClaim` records require current approval, active status, a non-empty source reference, and no expiration. Public presentation labels them `Manufacturer-stated` and shows the recorded source. |
+| Unsupported manufacturer claims remain unpublished | Implemented guardrail | Unapproved, source-less, expired, retired, or blank claims are suppressed. Harmony presentation copy no longer independently states the superseded microscopic-crystal performance mechanism. |
+| Warranty/support help should be available from the website, Customer Inbox workflow, email, and phone | Partially implemented / phone pending authoritative number | Website warranty/product/general support requests now enter the existing durable Operations Customer Inbox communication archive. `support@dacquadolce.com` remains the public email channel. No public phone number is invented; publication waits for an authoritative business number. |
+| Do not invent manufacturer warranty terms | Preserved guardrail | PT31 active/public/verified/SHA-256 warranty-document provenance remains authoritative and customer-visible warranty language is not expanded beyond sourced documents. |

@@ -30,7 +30,7 @@ export function getProductPresentation(
       catalogSummary:
         "Non-backwashing whole-home water conditioning featuring CLEAR Technology, with no electrical power or backwash drain required.",
       education:
-        "CLEAR restructures hardness minerals into microscopic crystalline forms so they are less likely to adhere as scale.",
+        "CLEAR is D'Acqua Dolce's branded terminology for its anti-scale water-conditioning approach. Manufacturer performance statements are presented separately only when an approved source is recorded.",
       technologyFacts: [
         {
           label: "CLEAR",

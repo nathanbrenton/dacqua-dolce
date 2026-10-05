@@ -19,6 +19,7 @@ from app.api.policies import (
     public_router as policy_public_router,
 )
 from app.api.quotes import router as quotes_router
+from app.api.support import router as support_router
 from app.api.webhooks import router as webhooks_router
 from app.core.config import get_settings
 from app.core.request_context import reset_request_id, set_request_id
@@ -129,6 +130,10 @@ def create_app(
     )
     application.include_router(
         quotes_router,
+        prefix=resolved_settings.api_prefix,
+    )
+    application.include_router(
+        support_router,
         prefix=resolved_settings.api_prefix,
     )
     application.include_router(

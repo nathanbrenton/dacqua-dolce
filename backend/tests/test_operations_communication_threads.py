@@ -12,6 +12,7 @@ from app.db.session import SessionLocal
 from app.models.communications import (
     CommunicationAttachment,
     CommunicationDirection,
+    CommunicationEvent,
     CommunicationMessage,
     CommunicationMessageStatus,
     CommunicationRecipient,
@@ -212,6 +213,81 @@ def test_communication_thread_mailbox_kind_uses_delivery_category(
             assert rows_by_id[str(thread_id)].mailbox_kind == mailbox_kind
 
         db.rollback()
+
+
+def test_support_request_origin_is_exposed_in_customer_inbox(
+    monkeypatch: Any,
+) -> None:
+    _allow_operations(monkeypatch)
+    now = datetime.now(UTC)
+
+    with SessionLocal() as db:
+        thread = CommunicationThread(
+            subject="Warranty support — Origin RO",
+            related_entity_type="support_request",
+            status=CommunicationThreadStatus.open,
+            last_message_at=now,
+        )
+        db.add(thread)
+        db.flush()
+        thread.related_entity_id = str(thread.id)
+
+        inbound = CommunicationMessage(
+            thread_id=thread.id,
+            direction=CommunicationDirection.inbound,
+            status=CommunicationMessageStatus.received,
+            provider="web",
+            sender_address="customer@example.test",
+            sender_name="Customer Example",
+            subject="Warranty support — Origin RO",
+            body_text="Please help with my warranty document.",
+            content_redacted=False,
+            received_at=now,
+            created_at=now,
+        )
+        db.add(inbound)
+        db.flush()
+
+        db.add(
+            CommunicationEvent(
+                message_id=inbound.id,
+                provider="web",
+                event_type="support_request_submitted",
+                provider_event_id=f"support:{inbound.id}",
+                occurred_at=now,
+                details={
+                    "kind": "warranty",
+                    "name": "Customer Example",
+                    "email": "customer@example.test",
+                    "phone": "+19495551234",
+                    "product_name": "Origin RO",
+                },
+            )
+        )
+        db.flush()
+
+        detail = operations.get_communication_thread(
+            thread.id,
+            db,  # type: ignore[arg-type]
+            _current_user(),  # type: ignore[arg-type]
+        )
+
+        assert detail.originating_request is not None
+        assert (
+            detail.originating_request.request_type
+            == "website_warranty_support_request"
+        )
+        assert detail.originating_request.name == "Customer Example"
+        assert detail.originating_request.email == "customer@example.test"
+        assert detail.originating_request.phone == "+19495551234"
+        assert detail.originating_request.product_name == "Origin RO"
+        assert (
+            detail.originating_request.message
+            == "Please help with my warranty document."
+        )
+
+        db.rollback()
+
 
 def test_communication_thread_detail_requires_operations_access(
     monkeypatch: Any,

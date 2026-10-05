@@ -36,6 +36,12 @@ export type CatalogSpecification = {
   unit: string | null;
 };
 
+export type CatalogManufacturerClaim = {
+  claim_text: string;
+  source_reference: string;
+  provenance_label: string;
+};
+
 export type CatalogOption = {
   id: string;
   relationship_type: "option" | "accessory" | string;
@@ -84,6 +90,7 @@ export type CatalogProductDetail =
     options_accessories: CatalogOption[];
     documents: CatalogDocument[];
     specifications: CatalogSpecification[];
+    manufacturer_claims: CatalogManufacturerClaim[];
   };
 
 type ProductListPayload = {

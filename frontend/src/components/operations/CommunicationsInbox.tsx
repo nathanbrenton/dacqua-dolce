@@ -938,7 +938,9 @@ export function CommunicationsInbox() {
                   <header>
                     <div>
                       <span className="operations-inbox-direction">
-                        Original website request
+                        {threadDetail.originating_request.request_type.includes("support_request")
+                          ? "Original support request"
+                          : "Original website request"}
                       </span>
                       <strong>
                         {threadDetail.originating_request.name}
@@ -960,7 +962,9 @@ export function CommunicationsInbox() {
 
                   <h4>
                     {threadDetail.originating_request.product_name
-                      ?? "General consultation"}
+                      ?? (threadDetail.originating_request.request_type.includes("support_request")
+                        ? "General support"
+                        : "General consultation")}
                   </h4>
 
                   <div className="operations-inbox-body">

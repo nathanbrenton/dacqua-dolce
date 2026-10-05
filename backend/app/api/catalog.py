@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.core.sales_area import get_sales_area_policy
 from app.db.session import SessionLocal
 from app.models.catalog import (
+    ApprovedProductClaim,
     PricingPolicyMode,
     Product,
     ProductDocument,
@@ -30,6 +31,7 @@ from app.schemas.catalog import (
     CatalogAvailabilityRead,
     CatalogDocumentRead,
     CatalogImageRead,
+    CatalogManufacturerClaimRead,
     CatalogOptionRead,
     CatalogPricingRead,
     CatalogProductDetailRead,
@@ -49,6 +51,7 @@ from app.services.pricing import (
 )
 from app.services.public_availability import resolve_public_availability
 from app.services.sessions import hash_session_token
+from app.services.warranties import warranty_document_is_sale_ready
 
 router = APIRouter(
     prefix="/catalog",
@@ -109,6 +112,37 @@ def public_specification_reads(
     ]
 
 
+def public_manufacturer_claim_reads(
+    claims: list[ApprovedProductClaim],
+) -> list[CatalogManufacturerClaimRead]:
+    now = datetime.now(UTC)
+    publishable = [
+        claim
+        for claim in claims
+        if claim.active
+        and claim.approved_at is not None
+        and claim.approved_at <= now
+        and bool(claim.claim_text.strip())
+        and bool(claim.source_reference.strip())
+        and (claim.expires_at is None or claim.expires_at > now)
+    ]
+
+    publishable.sort(
+        key=lambda claim: (
+            claim.approved_at,
+            str(claim.id or ""),
+        )
+    )
+
+    return [
+        CatalogManufacturerClaimRead(
+            claim_text=claim.claim_text.strip(),
+            source_reference=claim.source_reference.strip(),
+        )
+        for claim in publishable
+    ]
+
+
 def public_document_reads(
     documents: list[ProductDocument],
 ) -> list[CatalogDocumentRead]:
@@ -130,11 +164,7 @@ def public_document_reads(
         and document.public
         and (
             document.document_type.value != "warranty"
-            or (
-                document.verified_at is not None
-                and document.checksum_sha256 is not None
-                and len(document.checksum_sha256) == 64
-            )
+            or warranty_document_is_sale_ready(document)
         )
     ]
 
@@ -331,6 +361,7 @@ def get_public_product(
                 selectinload(Product.variants),
                 selectinload(Product.documents),
                 selectinload(Product.specifications),
+                selectinload(Product.approved_claims),
                 selectinload(Product.related_options).selectinload(
                     ProductRelationship.related_product
                 ),
@@ -409,6 +440,9 @@ def get_public_product(
             ),
             specifications=public_specification_reads(
                 product.specifications,
+            ),
+            manufacturer_claims=public_manufacturer_claim_reads(
+                product.approved_claims,
             ),
         )
 

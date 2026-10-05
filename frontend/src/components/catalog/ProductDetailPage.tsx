@@ -15,6 +15,7 @@ import {
   addCartItem,
 } from "../../api/cart";
 import { QuoteDialog } from "../quotes/QuoteDialog";
+import { SupportRequestForm } from "../support/SupportRequestForm";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
 import { getProductPresentation } from "./productPresentation";
 
@@ -696,6 +697,34 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
+            {product.manufacturer_claims.length > 0 ? (
+              <section
+                className="product-manufacturer-claims"
+                aria-labelledby="product-manufacturer-claims-heading"
+              >
+                <p className="eyebrow">Manufacturer provenance</p>
+                <h2
+                  id="product-manufacturer-claims-heading"
+                  className="product-detail-section-title"
+                >
+                  Manufacturer-stated claims
+                </h2>
+                <p className="product-claims-intro">
+                  These statements are presented as manufacturer-stated information,
+                  with the recorded source shown alongside each claim.
+                </p>
+                <div className="product-claim-list">
+                  {product.manufacturer_claims.map((claim) => (
+                    <article className="product-claim-card" key={`${claim.claim_text}-${claim.source_reference}`}>
+                      <span className="product-claim-provenance">{claim.provenance_label}</span>
+                      <p>{claim.claim_text}</p>
+                      <small>Source: {claim.source_reference}</small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             {product.specifications.length > 0 ? (
               <section
                 className="product-specifications"
@@ -771,6 +800,37 @@ export function ProductDetailPage({
                 </ul>
               </section>
             ) : null}
+
+            <section
+              className="product-support"
+              aria-labelledby="product-support-heading"
+            >
+              <p className="eyebrow">Warranty &amp; support</p>
+              <h2
+                id="product-support-heading"
+                className="product-detail-section-title"
+              >
+                Support for your system.
+              </h2>
+              <p>
+                Product-specific warranty documents are shown only when the recorded
+                manufacturer document has passed the existing verification boundary.
+                D&apos;Acqua Dolce can help route warranty and product-support questions
+                without adding or changing manufacturer warranty terms.
+              </p>
+              <details className="product-support-request">
+                <summary>Start a warranty or support request</summary>
+                <SupportRequestForm
+                  account={account}
+                  productId={product.id}
+                  productName={product.name}
+                  defaultKind="warranty"
+                />
+              </details>
+              <p className="product-support-email">
+                Prefer email? <a href="mailto:support@dacquadolce.com">support@dacquadolce.com</a>
+              </p>
+            </section>
           </div>
         </section>
       </main>

@@ -482,6 +482,29 @@ export type OperationsWarrantyDocument = {
   verified_at: string | null;
 };
 
+export type OperationsProductSpecification = {
+  id: string;
+  spec_key: string;
+  label: string;
+  value_text: string;
+  unit: string | null;
+  source_reference: string;
+  public: boolean;
+  active: boolean;
+  verified_at: string | null;
+};
+
+export type OperationsManufacturerClaim = {
+  id: string;
+  claim_text: string;
+  source_reference: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  expires_at: string | null;
+  active: boolean;
+  public_ready: boolean;
+};
+
 export type OperationsProduct = {
   id: string;
   sku: string;
@@ -501,6 +524,8 @@ export type OperationsProduct = {
   allow_inquiry_when_unavailable: boolean;
   allow_formal_quote_when_unavailable: boolean;
   warranty_documents: OperationsWarrantyDocument[];
+  specifications: OperationsProductSpecification[];
+  manufacturer_claims: OperationsManufacturerClaim[];
   pricing: OperationsPricing;
   standard_pricing: OperationsPricing;
   promotions: OperationsPromotion[];

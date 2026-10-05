@@ -786,6 +786,29 @@ class OperationsWarrantyDocumentRead(BaseModel):
     verified_at: str | None
 
 
+class OperationsProductSpecificationRead(BaseModel):
+    id: str
+    spec_key: str
+    label: str
+    value_text: str
+    unit: str | None
+    source_reference: str
+    public: bool
+    active: bool
+    verified_at: str | None
+
+
+class OperationsManufacturerClaimRead(BaseModel):
+    id: str
+    claim_text: str
+    source_reference: str
+    approved_by: str | None
+    approved_at: str | None
+    expires_at: str | None
+    active: bool
+    public_ready: bool
+
+
 class OperationsProductRead(BaseModel):
     id: str
     sku: str
@@ -807,6 +830,8 @@ class OperationsProductRead(BaseModel):
     allow_inquiry_when_unavailable: bool = True
     allow_formal_quote_when_unavailable: bool = False
     warranty_documents: list[OperationsWarrantyDocumentRead] = Field(default_factory=list)
+    specifications: list[OperationsProductSpecificationRead] = Field(default_factory=list)
+    manufacturer_claims: list[OperationsManufacturerClaimRead] = Field(default_factory=list)
     pricing: OperationsPricingRead
     standard_pricing: OperationsPricingRead
     promotions: list[OperationsPromotionRead] = Field(default_factory=list)

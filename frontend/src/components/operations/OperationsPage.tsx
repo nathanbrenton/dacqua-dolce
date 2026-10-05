@@ -3325,6 +3325,12 @@ export function OperationsPage({
                     <span>
                       Warranty docs: {product.warranty_documents.filter((document) => document.active && document.public && document.verified_at !== null && document.checksum_sha256 !== null).length} verified public
                     </span>
+                    <span>
+                      Specifications: {product.specifications.filter((specification) => specification.active && specification.public && specification.verified_at !== null).length} verified public
+                    </span>
+                    <span>
+                      Manufacturer claims: {product.manufacturer_claims.filter((claim) => claim.public_ready).length} publishable
+                    </span>
                   </div>
 
                   {product.assisted_sale_required ? (
@@ -3363,6 +3369,61 @@ export function OperationsPage({
                   ) : (
                     <p className="operations-note">
                       No manufacturer warranty document has been recorded for this product.
+                    </p>
+                  )}
+
+                  {product.specifications.length > 0 ? (
+                    <details className="operations-product-relationships">
+                      <summary>Specification provenance</summary>
+                      <div className="operations-product-relationship-list">
+                        {product.specifications.map((specification) => (
+                          <div key={specification.id} className="operations-product-relationship">
+                            <div>
+                              <strong>{specification.label}</strong>
+                              <span>
+                                {specification.value_text}
+                                {specification.unit !== null ? ` ${specification.unit}` : ""}
+                              </span>
+                              <span>
+                                {specification.verified_at !== null ? "verified" : "review required"}
+                                {specification.public ? " · public" : " · internal"}
+                                {specification.active ? " · active" : " · retired"}
+                              </span>
+                              <small>Source: {specification.source_reference}</small>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  ) : null}
+
+                  {product.manufacturer_claims.length > 0 ? (
+                    <details className="operations-product-relationships">
+                      <summary>Manufacturer-stated claims</summary>
+                      <div className="operations-product-relationship-list">
+                        {product.manufacturer_claims.map((claim) => (
+                          <div key={claim.id} className="operations-product-relationship">
+                            <div>
+                              <strong>{claim.claim_text}</strong>
+                              <span>
+                                {claim.public_ready ? "publishable as Manufacturer-stated" : "not publishable"}
+                                {claim.active ? " · active" : " · retired"}
+                              </span>
+                              <small>Source: {claim.source_reference}</small>
+                              {claim.approved_at !== null ? (
+                                <small>Approved: {new Date(claim.approved_at).toLocaleString()}</small>
+                              ) : null}
+                              {claim.expires_at !== null ? (
+                                <small>Expires: {new Date(claim.expires_at).toLocaleString()}</small>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  ) : (
+                    <p className="operations-note">
+                      No manufacturer-stated claims are recorded for this product. Unsupported performance or capacity claims remain suppressed.
                     </p>
                   )}
                 </header>

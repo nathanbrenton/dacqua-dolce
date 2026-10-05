@@ -52,6 +52,12 @@ class CatalogSpecificationRead(BaseModel):
     unit: str | None = None
 
 
+class CatalogManufacturerClaimRead(BaseModel):
+    claim_text: str
+    source_reference: str
+    provenance_label: str = "Manufacturer-stated"
+
+
 class CatalogOptionRead(BaseModel):
     id: str
     relationship_type: str
@@ -99,6 +105,9 @@ class CatalogProductDetailRead(CatalogProductRead):
     options_accessories: list[CatalogOptionRead] = Field(default_factory=list)
     documents: list[CatalogDocumentRead] = Field(default_factory=list)
     specifications: list[CatalogSpecificationRead] = Field(
+        default_factory=list,
+    )
+    manufacturer_claims: list[CatalogManufacturerClaimRead] = Field(
         default_factory=list,
     )
 

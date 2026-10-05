@@ -61,6 +61,7 @@ from app.services.formal_quotes import (
 from app.services.post_purchase import next_replacement_due_on
 from app.services.pricing import resolve_pricing, select_effective_price
 from app.services.quote_orders import create_order_from_approved_quote
+from app.services.warranties import warranty_document_is_sale_ready
 
 router = APIRouter(
     prefix="/account",
@@ -445,11 +446,7 @@ def get_customer_equipment(
                     )
                     for document in documents
                     if document.document_type != ProductDocumentType.warranty
-                    or (
-                        document.verified_at is not None
-                        and document.checksum_sha256 is not None
-                        and len(document.checksum_sha256) == 64
-                    )
+                    or warranty_document_is_sale_ready(document)
                 ],
             )
         )

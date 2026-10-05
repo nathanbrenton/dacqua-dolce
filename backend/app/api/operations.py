@@ -28,6 +28,8 @@ from app.models.commerce import (
 )
 from app.models.communications import (
     CommunicationAttachment,
+    CommunicationDirection,
+    CommunicationEvent,
     CommunicationMessage,
     CommunicationRecipient,
     CommunicationThread,
@@ -76,6 +78,7 @@ from app.schemas.operations import (
     OperationsInventoryRead,
     OperationsLaunchReadinessCheckRead,
     OperationsLaunchReadinessRead,
+    OperationsManufacturerClaimRead,
     OperationsOrderCancellationRead,
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
@@ -84,6 +87,7 @@ from app.schemas.operations import (
     OperationsPricingRead,
     OperationsProductRead,
     OperationsProductRelationshipRead,
+    OperationsProductSpecificationRead,
     OperationsProductVariantRead,
     OperationsPromotionRead,
     OperationsQuoteRead,
@@ -1271,36 +1275,96 @@ def _communication_originating_request_read(
     *,
     thread: CommunicationThread,
 ) -> OperationsCommunicationOriginatingRequestRead | None:
-    if (
-        thread.related_entity_type != "quote_request"
-        or thread.related_entity_id is None
-    ):
+    if thread.related_entity_type == "quote_request":
+        if thread.related_entity_id is None:
+            return None
+
+        try:
+            quote_id = uuid.UUID(thread.related_entity_id)
+        except ValueError:
+            return None
+
+        quote = db.get(
+            QuoteRequest,
+            quote_id,
+        )
+        if quote is None:
+            return None
+
+        return OperationsCommunicationOriginatingRequestRead(
+            request_type="website_quote_request",
+            name=quote.name,
+            email=quote.email,
+            phone=quote.phone,
+            product_name=product_name_for_quote(
+                db,
+                quote.product_id,
+            ),
+            message=quote.message,
+            created_at=quote.created_at.isoformat(),
+        )
+
+    if thread.related_entity_type != "support_request":
         return None
 
-    try:
-        quote_id = uuid.UUID(thread.related_entity_id)
-    except ValueError:
-        return None
-
-    quote = db.get(
-        QuoteRequest,
-        quote_id,
+    message = db.scalar(
+        select(CommunicationMessage)
+        .where(
+            CommunicationMessage.thread_id == thread.id,
+            CommunicationMessage.direction == CommunicationDirection.inbound,
+        )
+        .order_by(
+            CommunicationMessage.created_at,
+            CommunicationMessage.id,
+        )
     )
-
-    if quote is None:
+    if message is None:
         return None
 
+    event = db.scalar(
+        select(CommunicationEvent)
+        .where(
+            CommunicationEvent.message_id == message.id,
+            CommunicationEvent.event_type == "support_request_submitted",
+        )
+        .order_by(CommunicationEvent.occurred_at)
+    )
+    details = event.details if event is not None and event.details is not None else {}
+
+    kind_value = details.get("kind")
+    kind = kind_value if isinstance(kind_value, str) else "general_support"
+    request_type = {
+        "warranty": "website_warranty_support_request",
+        "product_support": "website_product_support_request",
+        "general_support": "website_general_support_request",
+    }.get(kind, "website_general_support_request")
+
+    name_value = details.get("name")
+    email_value = details.get("email")
+    phone_value = details.get("phone")
+    product_name_value = details.get("product_name")
+
+    created_at = message.received_at or message.created_at
     return OperationsCommunicationOriginatingRequestRead(
-        request_type="website_quote_request",
-        name=quote.name,
-        email=quote.email,
-        phone=quote.phone,
-        product_name=product_name_for_quote(
-            db,
-            quote.product_id,
+        request_type=request_type,
+        name=(
+            name_value
+            if isinstance(name_value, str) and name_value.strip()
+            else message.sender_name or "Customer"
         ),
-        message=quote.message,
-        created_at=quote.created_at.isoformat(),
+        email=(
+            email_value
+            if isinstance(email_value, str) and email_value.strip()
+            else message.sender_address
+        ),
+        phone=(phone_value if isinstance(phone_value, str) else None),
+        product_name=(
+            product_name_value
+            if isinstance(product_name_value, str) and product_name_value.strip()
+            else None
+        ),
+        message=message.body_text,
+        created_at=created_at.isoformat(),
     )
 
 
@@ -2519,6 +2583,52 @@ def operations_product_read(
             for document in product.documents
             if document.document_type == ProductDocumentType.warranty
         ],
+        specifications=[
+            OperationsProductSpecificationRead(
+                id=str(specification.id),
+                spec_key=specification.spec_key,
+                label=specification.label,
+                value_text=specification.value_text,
+                unit=specification.unit,
+                source_reference=specification.source_reference,
+                public=specification.public,
+                active=specification.active,
+                verified_at=(
+                    specification.verified_at.isoformat()
+                    if specification.verified_at is not None
+                    else None
+                ),
+            )
+            for specification in product.specifications
+        ],
+        manufacturer_claims=[
+            OperationsManufacturerClaimRead(
+                id=str(claim.id),
+                claim_text=claim.claim_text,
+                source_reference=claim.source_reference,
+                approved_by=claim.approved_by,
+                approved_at=(
+                    claim.approved_at.isoformat()
+                    if claim.approved_at is not None
+                    else None
+                ),
+                expires_at=(
+                    claim.expires_at.isoformat()
+                    if claim.expires_at is not None
+                    else None
+                ),
+                active=claim.active,
+                public_ready=(
+                    claim.active
+                    and claim.approved_at is not None
+                    and claim.approved_at <= now
+                    and bool(claim.claim_text.strip())
+                    and bool(claim.source_reference.strip())
+                    and (claim.expires_at is None or claim.expires_at > now)
+                ),
+            )
+            for claim in product.approved_claims
+        ],
         pricing=OperationsPricingRead(
             mode=(
                 current_price.pricing_policy_mode.value
@@ -2608,6 +2718,8 @@ def load_product_for_operations(
             selectinload(Product.prices),
             selectinload(Product.variants),
             selectinload(Product.documents),
+            selectinload(Product.specifications),
+            selectinload(Product.approved_claims),
             selectinload(Product.related_options).selectinload(
                 ProductRelationship.related_product
             ),

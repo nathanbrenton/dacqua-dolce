@@ -58,6 +58,9 @@ import {
   PolicyStatusPage,
 } from "./pages/PolicyStatusPage";
 import {
+  SupportPage,
+} from "./pages/SupportPage";
+import {
   VerifyEmailPage,
 } from "./pages/VerifyEmailPage";
 import {
@@ -554,7 +557,12 @@ export function App() {
         }}
       />
 
-      {path === "/privacy" ? (
+      {path === "/support" ? (
+        <SupportPage
+          account={account}
+          onNavigate={navigate}
+        />
+      ) : path === "/privacy" ? (
         <PolicyStatusPage
           kind="privacy"
           onNavigate={navigate}
@@ -683,6 +691,16 @@ export function App() {
 
               <a href="#service">
                 Service
+              </a>
+
+              <a
+                href="/support"
+                onClick={(event) => {
+                  event.preventDefault();
+                  navigate("/support");
+                }}
+              >
+                Support
               </a>
 
               <a href="#about">
@@ -828,9 +846,18 @@ export function App() {
               the foundation for service,
               maintenance, documents,
               warranty, and equipment
-              lifecycle features as those
-              workflows come online.
+              lifecycle features.
             </p>
+
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => {
+                navigate("/support");
+              }}
+            >
+              Warranty &amp; support
+            </button>
           </section>
 
           <section
