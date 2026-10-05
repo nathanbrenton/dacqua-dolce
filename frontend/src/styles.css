@@ -6080,3 +6080,141 @@ summary {
     gap: 0.35rem;
   }
 }
+
+/* PT38 — Account-role polish and equipment-only launch boundary. */
+.operations-shell .operations-access-grid {
+  grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 12px;
+}
+
+.operations-shell .operations-role-editor {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.operations-shell .operations-role-editor > strong {
+  margin-bottom: 0;
+}
+
+.operations-shell .operations-role-options {
+  display: grid;
+  gap: 8px;
+}
+
+.operations-shell .operations-role-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+  line-height: 1.35;
+}
+
+.operations-shell .operations-role-option input {
+  margin: 0;
+}
+
+.operations-shell .operations-role-option-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.operations-shell .operations-role-option-copy > strong {
+  font-size: var(--type-ui-base);
+  line-height: 1.25;
+}
+
+.operations-shell .operations-role-option-copy > small {
+  color: var(--ink-muted);
+  line-height: 1.45;
+}
+
+.operations-shell .operations-role-managed-note,
+.operations-shell .operations-role-legacy-note {
+  display: grid;
+  gap: 5px;
+  padding: 10px 11px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.operations-shell .operations-role-managed-note p {
+  margin: 0;
+}
+
+.operations-shell .operations-role-managed-note small,
+.operations-shell .operations-role-legacy-note small {
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
+.operations-shell .operations-role-legacy-note {
+  border-left: 3px solid var(--status-neutral);
+}
+
+.operations-shell .operations-role-save {
+  justify-self: start;
+  margin-top: 2px;
+}
+
+.operations-shell .operations-role-helper {
+  display: block;
+  max-width: 52ch;
+  line-height: 1.5;
+}
+
+.catalog-purchase-boundary,
+.quote-purchase-boundary {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 28px;
+  padding: 14px 16px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.catalog-purchase-boundary strong,
+.quote-purchase-boundary strong {
+  font-family: var(--font-ui);
+  font-size: var(--type-ui-base);
+}
+
+.catalog-purchase-boundary p,
+.quote-purchase-boundary p,
+.detail-purchase-boundary {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--type-small);
+  line-height: 1.55;
+}
+
+.catalog-purchase-boundary {
+  max-width: 760px;
+}
+
+.quote-purchase-boundary {
+  margin-bottom: 0;
+  border-radius: var(--radius-field);
+}
+
+.detail-purchase-boundary {
+  padding: 12px 14px;
+  border-left: 3px solid var(--control-highlight);
+  background: var(--surface-1);
+}
+
+@media (max-width: 760px) {
+  .operations-shell .operations-access-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-shell .operations-role-save {
+    width: 100%;
+    justify-content: center;
+  }
+}

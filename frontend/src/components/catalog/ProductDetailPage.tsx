@@ -488,6 +488,12 @@ export function ProductDetailPage({
                 </p>
               )}
 
+              <p className="detail-purchase-boundary">
+                Equipment only at launch. Installation is arranged separately from
+                D&apos;Acqua Dolce&apos;s equipment sale and is not included in this
+                purchase or quote request.
+              </p>
+
               {commerceError !== null ? (
                 <p
                   className="commerce-error"

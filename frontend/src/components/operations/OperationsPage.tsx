@@ -123,6 +123,18 @@ const WEB_MANAGED_ROLES: WebManagedRole[] = [
   "administrator",
 ];
 
+type AssignableWebRole = Exclude<WebManagedRole, "manager">;
+
+const WEB_ASSIGNABLE_ROLES: AssignableWebRole[] = [
+  "employee",
+  "administrator",
+];
+
+const STAFF_ACCESS_DESCRIPTIONS: Record<AssignableWebRole, string> = {
+  employee: "Operations access for day-to-day staff work.",
+  administrator: "Privileged Operations access, including user administration.",
+};
+
 function CopyEmailButton({ email }: { email: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -1197,7 +1209,9 @@ export function OperationsPage({
   }), [lifecycleQuotes]);
 
   const failedDeliveries = useMemo(
-    () => communications.filter((item) => item.status === "failed"),
+    () => communications.filter(
+      (item) => item.status === "failed" && item.requires_review,
+    ),
     [communications],
   );
 
@@ -1401,24 +1415,14 @@ export function OperationsPage({
     }
   }
 
-  function toggleAdministrationRole(
+  function selectAdministrationRole(
     accountId: string,
-    role: WebManagedRole,
-    checked: boolean,
+    role: AssignableWebRole | null,
   ): void {
-    setAdministrationRoleDrafts((current) => {
-      const existing = current[accountId] ?? [];
-      const next = checked
-        ? Array.from(new Set([...existing, role]))
-        : existing.filter((value) => value !== role);
-
-      return {
-        ...current,
-        [accountId]: WEB_MANAGED_ROLES.filter(
-          (candidate) => next.includes(candidate),
-        ),
-      };
-    });
+    setAdministrationRoleDrafts((current) => ({
+      ...current,
+      [accountId]: role === null ? [] : [role],
+    }));
   }
 
   async function saveAdministrationRoles(
@@ -3950,7 +3954,7 @@ export function OperationsPage({
                             </span>
                           </div>
 
-                          <div className="operations-address-list">
+                          <div className="operations-address-list operations-access-grid">
                             <div className="operations-address">
                               <strong>Identity</strong>
                               <address>
@@ -4026,74 +4030,147 @@ export function OperationsPage({
                               </div>
                             </div>
 
-                            <div className="operations-address">
-                              <strong>Operations roles</strong>
+                            <div className="operations-address operations-role-editor">
+                              <strong>Staff access level</strong>
 
-                              {WEB_MANAGED_ROLES.map((role) => {
-                                const lockedSelfAdmin = (
-                                  ownAccount
-                                  && role === "administrator"
-                                  && roleDraft.includes(role)
-                                );
+                              {developerManaged ? (
+                                <div className="operations-role-managed-note">
+                                  <strong>Developer</strong>
+                                  <p>
+                                    Highest-privilege application access.
+                                  </p>
+                                  <small>
+                                    Developer access is provisioned and revoked through
+                                    local administrative tooling, not the web console.
+                                    Administrators and developers can assign Employee or
+                                    Administrator access to ordinary accounts here.
+                                  </small>
+                                </div>
+                              ) : (
+                                <>
+                                  {roleDraft.includes("manager") ? (
+                                    <div className="operations-role-legacy-note">
+                                      <strong>Manager · legacy assignment</strong>
+                                      <small>
+                                        Manager cannot be newly assigned. Choose Employee,
+                                        Administrator, or No staff access to replace this
+                                        legacy role.
+                                      </small>
+                                    </div>
+                                  ) : null}
 
-                                return (
-                                  <label key={role}>
-                                    <input
-                                      type="checkbox"
-                                      checked={roleDraft.includes(role)}
-                                      disabled={
-                                        developerManaged
-                                        || lockedSelfAdmin
-                                        || saveState === "saving"
-                                        || statusSaveState === "saving"
-                                      }
-                                      onChange={(event) => {
-                                        toggleAdministrationRole(
-                                          account.id,
-                                          role,
-                                          event.target.checked,
-                                        );
-                                      }}
-                                    />{" "}
-                                    {roleLabel(role)}
-                                  </label>
-                                );
-                              })}
+                                  <div
+                                    className="operations-role-options"
+                                    role="radiogroup"
+                                    aria-label={`Staff access level for ${account.email}`}
+                                  >
+                                    <label className="operations-role-option">
+                                      <input
+                                        type="radio"
+                                        name={`staff-access-${account.id}`}
+                                        checked={roleDraft.length === 0}
+                                        disabled={
+                                          (
+                                            ownAccount
+                                            && account.roles.includes("administrator")
+                                          )
+                                          || saveState === "saving"
+                                          || statusSaveState === "saving"
+                                        }
+                                        onChange={() => {
+                                          selectAdministrationRole(
+                                            account.id,
+                                            null,
+                                          );
+                                        }}
+                                      />
+                                      <span className="operations-role-option-copy">
+                                        <strong>No staff access</strong>
+                                        <small>
+                                          Customer access is retained without Operations
+                                          permissions.
+                                        </small>
+                                      </span>
+                                    </label>
 
-                              <button
-                                type="button"
-                                className={
-                                  "operations-action secondary "
-                                  + (
-                                    saveState === "saved"
-                                      ? "is-saved"
-                                      : ""
-                                  )
-                                }
-                                disabled={
-                                  developerManaged
-                                  || saveState === "saving"
-                                  || statusSaveState === "saving"
-                                }
-                                onClick={() => {
-                                  void saveAdministrationRoles(account);
-                                }}
-                              >
-                                {saveState === "saving"
-                                  ? "Saving…"
-                                  : saveState === "saved"
-                                    ? "Saved ✓"
-                                    : "Save Roles"}
-                              </button>
+                                    {WEB_ASSIGNABLE_ROLES.map((role) => {
+                                      const lockedSelfAdmin = (
+                                        ownAccount
+                                        && account.roles.includes("administrator")
+                                        && role !== "administrator"
+                                      );
 
-                              <small>
-                                {developerManaged
-                                  ? "Developer roles are managed locally, not from the web console."
-                                  : lockedSelfAdminText(
-                                      ownAccount,
-                                      roleDraft,
-                                    )}
-                              </small>
+                                      return (
+                                        <label
+                                          key={role}
+                                          className="operations-role-option"
+                                        >
+                                          <input
+                                            type="radio"
+                                            name={`staff-access-${account.id}`}
+                                            checked={roleDraft.includes(role)}
+                                            disabled={
+                                              lockedSelfAdmin
+                                              || saveState === "saving"
+                                              || statusSaveState === "saving"
+                                            }
+                                            onChange={() => {
+                                              selectAdministrationRole(
+                                                account.id,
+                                                role,
+                                              );
+                                            }}
+                                          />
+                                          <span className="operations-role-option-copy">
+                                            <strong>{roleLabel(role)}</strong>
+                                            <small>
+                                              {STAFF_ACCESS_DESCRIPTIONS[role]}
+                                            </small>
+                                          </span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    className={
+                                      "operations-action secondary operations-role-save "
+                                      + (
+                                        saveState === "saved"
+                                          ? "is-saved"
+                                          : ""
+                                      )
+                                    }
+                                    disabled={
+                                      roleDraft.includes("manager")
+                                      || saveState === "saving"
+                                      || statusSaveState === "saving"
+                                    }
+                                    onClick={() => {
+                                      void saveAdministrationRoles(account);
+                                    }}
+                                  >
+                                    {saveState === "saving"
+                                      ? "Saving…"
+                                      : saveState === "saved"
+                                        ? "Saved ✓"
+                                        : "Save access level"}
+                                  </button>
+
+                                  <small className="operations-role-helper">
+                                    {roleDraft.includes("manager")
+                                      ? (
+                                          "Select a replacement level before saving. "
+                                          + "The legacy Manager role cannot be re-saved."
+                                        )
+                                      : lockedSelfAdminText(
+                                          ownAccount,
+                                          roleDraft,
+                                        )}
+                                  </small>
+                                </>
+                              )}
                             </div>
                           </div>
                         </article>

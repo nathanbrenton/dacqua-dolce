@@ -10,6 +10,7 @@ from app.api import operations
 from app.models.email import (
     EmailDeliveryStatus,
 )
+from app.models.identity import UserStatus
 
 
 class ScalarResult:
@@ -165,6 +166,7 @@ def test_communications_response_is_bounded(
             "We received your request"
         ),
         "status": "sent",
+        "requires_review": False,
         "created_at": (
             created_at.isoformat()
         ),
@@ -182,3 +184,86 @@ def test_communications_response_is_bounded(
     assert "body" not in payload
     assert "body_text" not in payload
     assert "body_html" not in payload
+
+class DeliveryReviewDatabase:
+    def __init__(self, user: object | None) -> None:
+        self.user = user
+
+    def get(
+        self,
+        model: object,
+        entity_id: object,
+    ) -> object | None:
+        return self.user
+
+
+def verification_failure(
+    *,
+    user_id: uuid.UUID,
+) -> SimpleNamespace:
+    return SimpleNamespace(
+        category="email_verification",
+        related_entity_type="user",
+        related_entity_id=str(user_id),
+        status=EmailDeliveryStatus.failed,
+    )
+
+
+def test_verified_user_email_failure_no_longer_requires_review() -> None:
+    user_id = uuid.uuid4()
+    database = DeliveryReviewDatabase(
+        SimpleNamespace(
+            status=UserStatus.active,
+            email_verified_at=datetime.now(UTC),
+        )
+    )
+
+    assert operations.email_delivery_requires_review(
+        database,  # type: ignore[arg-type]
+        delivery=verification_failure(user_id=user_id),
+    ) is False
+
+
+def test_disabled_user_email_failure_no_longer_requires_review() -> None:
+    user_id = uuid.uuid4()
+    database = DeliveryReviewDatabase(
+        SimpleNamespace(
+            status=UserStatus.disabled,
+            email_verified_at=None,
+        )
+    )
+
+    assert operations.email_delivery_requires_review(
+        database,  # type: ignore[arg-type]
+        delivery=verification_failure(user_id=user_id),
+    ) is False
+
+
+def test_unverified_active_user_email_failure_still_requires_review() -> None:
+    user_id = uuid.uuid4()
+    database = DeliveryReviewDatabase(
+        SimpleNamespace(
+            status=UserStatus.active,
+            email_verified_at=None,
+        )
+    )
+
+    assert operations.email_delivery_requires_review(
+        database,  # type: ignore[arg-type]
+        delivery=verification_failure(user_id=user_id),
+    ) is True
+
+
+def test_non_verification_failure_remains_reviewable() -> None:
+    database = DeliveryReviewDatabase(None)
+    delivery = SimpleNamespace(
+        category="quote_customer_receipt",
+        related_entity_type="quote_request",
+        related_entity_id=str(uuid.uuid4()),
+        status=EmailDeliveryStatus.failed,
+    )
+
+    assert operations.email_delivery_requires_review(
+        database,  # type: ignore[arg-type]
+        delivery=delivery,
+    ) is True

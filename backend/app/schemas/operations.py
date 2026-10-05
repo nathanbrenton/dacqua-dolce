@@ -92,6 +92,7 @@ class OperationsCommunicationRead(BaseModel):
     recipient: str
     subject: str
     status: str
+    requires_review: bool
     created_at: str
     sent_at: str | None
 

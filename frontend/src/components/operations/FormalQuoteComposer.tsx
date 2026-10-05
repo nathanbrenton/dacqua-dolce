@@ -47,7 +47,6 @@ const CHARGE_OPTIONS: Array<{
   { value: "shipping", label: "Shipping / delivery", credit: false },
   { value: "shipping_insurance", label: "Shipping insurance", credit: false },
   { value: "tax", label: "Tax", credit: false },
-  { value: "installation", label: "Installation", credit: false },
   { value: "discount", label: "Discount", credit: true },
   { value: "other_charge", label: "Other charge", credit: false },
   { value: "other_credit", label: "Other credit", credit: true },
@@ -460,8 +459,9 @@ export function FormalQuoteComposer({
           <p className="field-helper">
             Current catalog prices are used automatically when available. Leave the price blank to
             use that authoritative amount. Private/no-online-price products require a quoted price.
-            Shipping / delivery, shipping insurance, tax, installation, discounts, and other
-            adjustments are entered explicitly. This workflow does not calculate carrier,
+            Shipping / delivery, shipping insurance, tax, discounts, and other adjustments are
+            entered explicitly. Initial launch is equipment-only, so installation is intentionally
+            not offered as a new quote adjustment. This workflow does not calculate carrier,
             insurance-provider, or jurisdiction-specific tax amounts automatically.
           </p>
 

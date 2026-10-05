@@ -42,6 +42,7 @@ from app.models.identity import (
     RoleName,
     User,
     UserRole,
+    UserStatus,
 )
 from app.models.quote import (
     FormalQuote,
@@ -399,13 +400,18 @@ def operations_summary(
         db.scalar(select(func.count()).select_from(Product).where(Product.active.is_(True))) or 0
     )
 
-    failed_email_deliveries = (
-        db.scalar(
-            select(func.count())
-            .select_from(EmailDelivery)
-            .where(EmailDelivery.status == EmailDeliveryStatus.failed)
+    failed_deliveries = db.scalars(
+        select(EmailDelivery).where(
+            EmailDelivery.status == EmailDeliveryStatus.failed
         )
-        or 0
+    ).all()
+    failed_email_deliveries = sum(
+        1
+        for delivery in failed_deliveries
+        if email_delivery_requires_review(
+            db,
+            delivery=delivery,
+        )
     )
 
     return OperationsSummaryRead(
@@ -832,7 +838,40 @@ def list_audit_events(
     )
 
 
+def email_delivery_requires_review(
+    db: DatabaseSession,
+    *,
+    delivery: EmailDelivery,
+) -> bool:
+    if delivery.status != EmailDeliveryStatus.failed:
+        return False
+
+    if delivery.category != "email_verification":
+        return True
+
+    if (
+        delivery.related_entity_type != "user"
+        or not delivery.related_entity_id
+    ):
+        return True
+
+    try:
+        user_id = uuid.UUID(delivery.related_entity_id)
+    except ValueError:
+        return True
+
+    user = db.get(User, user_id)
+    if user is None:
+        return False
+
+    if user.email_verified_at is not None:
+        return False
+
+    return user.status != UserStatus.disabled
+
+
 def operations_communication_read(
+    db: DatabaseSession,
     *,
     delivery: EmailDelivery,
 ) -> OperationsCommunicationRead:
@@ -849,6 +888,10 @@ def operations_communication_read(
         recipient=delivery.recipient,
         subject=delivery.subject,
         status=delivery.status.value,
+        requires_review=email_delivery_requires_review(
+            db,
+            delivery=delivery,
+        ),
         created_at=(
             delivery.created_at.isoformat()
         ),
@@ -886,6 +929,7 @@ def list_communications(
 
     return [
         operations_communication_read(
+            db,
             delivery=delivery,
         )
         for delivery in deliveries

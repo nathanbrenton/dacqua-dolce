@@ -111,6 +111,7 @@ export type OperationsCommunication = {
   recipient: string;
   subject: string;
   status: string;
+  requires_review: boolean;
   created_at: string;
   sent_at: string | null;
 };

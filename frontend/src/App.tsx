@@ -820,7 +820,7 @@ export function App() {
             </p>
 
             <h2>
-              Support beyond installation.
+              Support throughout ownership.
             </h2>
 
             <p>

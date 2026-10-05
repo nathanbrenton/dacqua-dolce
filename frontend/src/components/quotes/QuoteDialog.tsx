@@ -408,13 +408,23 @@ export function QuoteDialog({
             </small>
           </label>
 
+          <aside className="quote-purchase-boundary">
+            <strong>Equipment-only launch</strong>
+            <p>
+              Installation is arranged separately from D&apos;Acqua Dolce&apos;s
+              equipment sale. We ask about installation constraints only to help
+              confirm product fit; this request does not include installation
+              services.
+            </p>
+          </aside>
+
           <fieldset className="quote-qualification">
             <legend>Property basics</legend>
 
             <p className="field-helper">
-              For the early assisted-sales phase, a D'Acqua Dolce employee
-              reviews each system request before purchase. These basics help
-              make that conversation useful.
+              Requests that require assisted sales are reviewed by a D'Acqua
+              Dolce employee before purchase. These basics help make that
+              conversation useful.
             </p>
 
             <label>

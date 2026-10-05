@@ -89,6 +89,18 @@ export function CatalogSection({
         </p>
       </div>
 
+      <aside
+        className="catalog-purchase-boundary"
+        aria-label="Purchase and installation boundary"
+      >
+        <strong>Equipment-only launch</strong>
+        <p>
+          Initial sales cover equipment only. Installation is arranged separately;
+          installation services and installer referrals are not currently offered
+          through the site.
+        </p>
+      </aside>
+
       {loading ? (
         <p
           className="catalog-status"
