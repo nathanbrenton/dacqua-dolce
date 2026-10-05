@@ -1997,6 +1997,9 @@ export function OperationsPage({
         },
       }));
       setMessage(`Inventory saved for ${updated.sku}.`);
+      void getOperationsStockNotifications()
+        .then(setStockNotifications)
+        .catch(() => undefined);
       setInventorySaveStates((current) => ({
         ...current,
         [product.id]: "saved",
@@ -3210,10 +3213,11 @@ export function OperationsPage({
           </header>
 
           <p>
-            These requests are customer demand evidence captured while a
-            product is unavailable. Automated stock-notification email is not
-            commissioned yet, so this list does not imply that a notice has
-            been sent.
+            These requests are waiting for a one-time transactional availability
+            notice. When authorized staff saves inventory as available, the app
+            sends the notice automatically. Successful deliveries leave this
+            active queue; failed or suppressed deliveries remain available for a
+            later staff-confirmed retry.
           </p>
 
           {stockNotifications.length === 0 ? (

@@ -41,6 +41,7 @@ from app.schemas.catalog import (
     StockNotificationRequest,
 )
 from app.schemas.sales_area import SalesAreaRead
+from app.services.audit import record_audit_event
 from app.services.commerce import active_reserved_quantity
 from app.services.pricing import (
     resolve_pricing,
@@ -522,16 +523,87 @@ def subscribe_stock_notification(
                 active=True,
             )
             db.add(subscription)
+            db.flush()
         else:
             subscription.active = True
             subscription.notified_at = None
+
+        record_audit_event(
+            db,
+            action="catalog.stock_notification_subscribed",
+            entity_type="stock_notification_subscription",
+            entity_id=str(subscription.id),
+            metadata={
+                "product_id": str(product.id),
+                "sku": product.sku,
+            },
+        )
 
         db.commit()
 
         return StockNotificationRead(
             status="subscribed",
             message=(
-                "We’ll keep this address on the availability list for "
-                f"{product.name}."
+                "We’ll send one availability notice after staff confirms "
+                f"{product.name} is available. You can cancel this request "
+                "from this product page."
             ),
         )
+
+
+@router.post(
+    "/products/{slug}/stock-notifications/cancel",
+    response_model=StockNotificationRead,
+)
+def cancel_stock_notification(
+    slug: str,
+    payload: StockNotificationRequest,
+) -> StockNotificationRead:
+    """Cancel an existing one-time availability notice without enumeration."""
+
+    with SessionLocal() as db:
+        product = db.scalar(
+            select(Product).where(
+                Product.slug == slug,
+                Product.active.is_(True),
+            )
+        )
+
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="System not found.",
+            )
+
+        subscription = db.scalar(
+            select(StockNotificationSubscription)
+            .where(
+                StockNotificationSubscription.product_id == product.id,
+                StockNotificationSubscription.email == payload.email,
+            )
+            .with_for_update()
+        )
+
+        if subscription is not None and subscription.active:
+            subscription.active = False
+
+            record_audit_event(
+                db,
+                action="catalog.stock_notification_cancelled",
+                entity_type="stock_notification_subscription",
+                entity_id=str(subscription.id),
+                metadata={
+                    "product_id": str(product.id),
+                    "sku": product.sku,
+                },
+            )
+
+        db.commit()
+
+    return StockNotificationRead(
+        status="cancelled",
+        message=(
+            "If an active availability notice existed for this email "
+            "address, it has been cancelled."
+        ),
+    )

@@ -162,6 +162,10 @@ from app.services.return_policy_exceptions import (
     refund_policy_snapshot_for_order,
 )
 from app.services.sales_insights import summarize_assisted_sales
+from app.services.stock_notifications import (
+    dispatch_back_in_stock_notifications,
+    inventory_is_staff_confirmed_available,
+)
 
 router = APIRouter(prefix="/operations", tags=["operations"])
 
@@ -3322,6 +3326,21 @@ def update_product_inventory(
 
     db.flush()
 
+    notification_summary = None
+
+    if inventory_is_staff_confirmed_available(
+        status=payload.status,
+        quantity_on_hand=payload.quantity_on_hand,
+        quantity_reserved=reserved_quantity,
+        lifecycle_status=product.lifecycle_status,
+    ):
+        notification_summary = dispatch_back_in_stock_notifications(
+            db,
+            product=product,
+            settings=get_email_runtime_settings(),
+            actor_user_id=current_user.id,
+        )
+
     record_audit_event(
         db,
         action="catalog.inventory_changed",
@@ -3347,6 +3366,16 @@ def update_product_inventory(
             ),
             "source_kind": payload.source_kind.value,
             "source_reference": payload.source_reference,
+            "stock_notifications": (
+                {
+                    "attempted": notification_summary.attempted,
+                    "sent": notification_summary.sent,
+                    "failed": notification_summary.failed,
+                    "suppressed": notification_summary.suppressed,
+                }
+                if notification_summary is not None
+                else None
+            ),
         },
     )
 

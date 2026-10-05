@@ -200,3 +200,29 @@ export async function subscribeStockNotification(
 
   return response.json() as Promise<{ status: string; message: string }>;
 }
+
+export async function cancelStockNotification(
+  slug: string,
+  email: string,
+): Promise<{ status: string; message: string }> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/catalog/products/${encodeURIComponent(slug)}/stock-notifications/cancel`,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ email }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<{ status: string; message: string }>;
+}

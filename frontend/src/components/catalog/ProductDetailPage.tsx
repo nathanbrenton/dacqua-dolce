@@ -5,6 +5,7 @@ import {
 } from "react";
 
 import {
+  cancelStockNotification,
   getCatalogProduct,
   subscribeStockNotification,
   type CatalogProductDetail,
@@ -72,7 +73,7 @@ export function ProductDetailPage({
   const [notificationEmail, setNotificationEmail] =
     useState(account?.email ?? "");
   const [notificationState, setNotificationState] =
-    useState<"idle" | "saving" | "saved">("idle");
+    useState<"idle" | "saving" | "saved" | "cancelling" | "cancelled">("idle");
   const [notificationMessage, setNotificationMessage] =
     useState<string | null>(null);
 
@@ -174,6 +175,32 @@ export function ProductDetailPage({
         caught instanceof Error
           ? caught.message
           : "The availability request could not be saved.",
+      );
+    }
+  }
+
+  async function handleStockNotificationCancellation() {
+    if (notificationEmail.trim() === "") {
+      setNotificationMessage("Enter the email address used for the availability notice.");
+      return;
+    }
+
+    setNotificationState("cancelling");
+    setNotificationMessage(null);
+
+    try {
+      const result = await cancelStockNotification(
+        slug,
+        notificationEmail,
+      );
+      setNotificationState("cancelled");
+      setNotificationMessage(result.message);
+    } catch (caught) {
+      setNotificationState("idle");
+      setNotificationMessage(
+        caught instanceof Error
+          ? caught.message
+          : "The availability request could not be cancelled.",
       );
     }
   }
@@ -480,18 +507,42 @@ export function ProductDetailPage({
                         }}
                       />
                     </label>
-                    <button
-                      type="button"
-                      className="primary-button"
-                      disabled={notificationState === "saving"}
-                      onClick={() => void handleStockNotification()}
-                    >
-                      {notificationState === "saving"
-                        ? "Saving…"
-                        : notificationState === "saved"
-                          ? "Notification requested ✓"
-                          : "Notify When in Stock"}
-                    </button>
+                    <div className="stock-notification-actions">
+                      <button
+                        type="button"
+                        className="primary-button"
+                        disabled={
+                          notificationState === "saving"
+                          || notificationState === "cancelling"
+                        }
+                        onClick={() => void handleStockNotification()}
+                      >
+                        {notificationState === "saving"
+                          ? "Saving…"
+                          : notificationState === "saved"
+                            ? "Notification requested ✓"
+                            : "Notify When in Stock"}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-button compact"
+                        disabled={
+                          notificationState === "saving"
+                          || notificationState === "cancelling"
+                        }
+                        onClick={() => void handleStockNotificationCancellation()}
+                      >
+                        {notificationState === "cancelling"
+                          ? "Cancelling…"
+                          : notificationState === "cancelled"
+                            ? "Request cancelled"
+                            : "Cancel availability notice"}
+                      </button>
+                    </div>
+                    <small>
+                      Availability notices are one-time transactional messages,
+                      sent only after staff confirms the system is available.
+                    </small>
                     {notificationMessage !== null ? (
                       <p role="status">{notificationMessage}</p>
                     ) : null}
