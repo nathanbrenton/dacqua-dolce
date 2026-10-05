@@ -403,3 +403,17 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Unsupported manufacturer claims remain unpublished | Implemented guardrail | Unapproved, source-less, expired, retired, or blank claims are suppressed. Harmony presentation copy no longer independently states the superseded microscopic-crystal performance mechanism. |
 | Warranty/support help should be available from the website, Customer Inbox workflow, email, and phone | Partially implemented / phone pending authoritative number | Website warranty/product/general support requests now enter the existing durable Operations Customer Inbox communication archive. `support@dacquadolce.com` remains the public email channel. No public phone number is invented; publication waits for an authoritative business number. |
 | Do not invent manufacturer warranty terms | Preserved guardrail | PT31 active/public/verified/SHA-256 warranty-document provenance remains authoritative and customer-visible warranty language is not expanded beyond sourced documents. |
+
+
+## PT44 — Automated tax foundation (2026-10-05)
+
+Client direction that automated sales tax is required before online checkout is
+now represented as a hard launch-readiness dependency.
+
+PT44 adds the provider-neutral tax evidence boundary and Stripe Tax sandbox
+adapter while deliberately keeping live collection disabled. Product tax codes
+must be explicitly reviewed and source-backed; the application does not guess a
+generic code. Formal-quote calculations are historical snapshots, while orders
+must be recalculated before checkout. Live registrations, credentials,
+Affinity24 payment coordination, refunds/reversals, and unresolved adjustment
+taxability remain follow-up commissioning work.

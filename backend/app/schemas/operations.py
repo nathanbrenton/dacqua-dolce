@@ -809,6 +809,55 @@ class OperationsManufacturerClaimRead(BaseModel):
     public_ready: bool
 
 
+class OperationsTaxClassificationRead(BaseModel):
+    provider: str
+    tax_code: str
+    source_reference: str
+    verified_at: str
+    verified_by_user_id: str | None
+    active: bool
+
+
+class TaxClassificationUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tax_code: str = Field(min_length=1, max_length=80)
+    source_reference: str = Field(min_length=1, max_length=500)
+
+    @field_validator("tax_code")
+    @classmethod
+    def validate_tax_code(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned.startswith("txcd_"):
+            raise ValueError(
+                "Use an exact Stripe Tax product tax code beginning with txcd_."
+            )
+        return cleaned
+
+    @field_validator("source_reference")
+    @classmethod
+    def clean_source_reference(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Tax classification source is required.")
+        return cleaned
+
+
+class OperationsTaxCalculationRead(BaseModel):
+    id: str
+    provider: str
+    provider_calculation_id: str
+    context_type: Literal["formal_quote", "order"]
+    currency: str
+    line_items_amount_minor: int
+    shipping_amount_minor: int
+    tax_amount_minor: int
+    amount_total_minor: int
+    livemode: bool
+    expires_at: str | None
+    created_at: str
+
+
 class OperationsProductRead(BaseModel):
     id: str
     sku: str
@@ -832,6 +881,7 @@ class OperationsProductRead(BaseModel):
     warranty_documents: list[OperationsWarrantyDocumentRead] = Field(default_factory=list)
     specifications: list[OperationsProductSpecificationRead] = Field(default_factory=list)
     manufacturer_claims: list[OperationsManufacturerClaimRead] = Field(default_factory=list)
+    tax_classification: OperationsTaxClassificationRead | None = None
     pricing: OperationsPricingRead
     standard_pricing: OperationsPricingRead
     promotions: list[OperationsPromotionRead] = Field(default_factory=list)

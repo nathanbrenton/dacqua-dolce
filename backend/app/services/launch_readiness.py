@@ -59,6 +59,7 @@ def _load_commercial_products(db: Session) -> list[Product]:
             .options(
                 selectinload(Product.documents),
                 selectinload(Product.inventory),
+                selectinload(Product.tax_classifications),
             )
             .where(
                 Product.active.is_(True),
@@ -335,19 +336,49 @@ def _payment_check() -> LaunchReadinessCheck:
     )
 
 
-def _tax_check() -> LaunchReadinessCheck:
+def _tax_check(products: list[Product]) -> LaunchReadinessCheck:
+    missing = [
+        product.name
+        for product in products
+        if not any(
+            classification.active
+            and classification.provider == "stripe_tax"
+            and bool(classification.tax_code.strip())
+            and bool(classification.source_reference.strip())
+            for classification in product.tax_classifications
+        )
+    ]
+    ready_count = len(products) - len(missing)
+    evidence = [
+        (
+            "Stripe Tax classifications recorded: "
+            f"{ready_count}/{len(products)} online-sale products"
+        ),
+        (
+            "PT44 supports Stripe Tax test-mode calculation only; "
+            "live credentials are rejected by design."
+        ),
+        (
+            "Hosted payment remains blocked unless the order has a current "
+            "authoritative automated tax calculation."
+        ),
+    ]
+    if missing:
+        evidence.append(
+            "Missing tax classification: " + ", ".join(missing)
+        )
+
     return LaunchReadinessCheck(
         key="tax",
-        label="Tax handling",
-        status="deferred",
+        label="Automated sales tax",
+        status="action_required",
         detail=(
-            "Formal quotes support an explicit tax charge, but jurisdiction, "
-            "nexus, taxability classification, and rate calculation are not automated."
+            "Automated tax is a launch requirement. The provider-neutral "
+            "evidence model and Stripe Tax sandbox adapter are implemented, "
+            "but product classification, tax registrations, live credentials, "
+            "and production commissioning must all be completed before checkout."
         ),
-        evidence=(
-            "Tax remains a separately presented quote amount.",
-            "No tax engine or hard-coded taxability rule is enabled.",
-        ),
+        evidence=tuple(evidence),
     )
 
 
@@ -375,7 +406,7 @@ def build_launch_readiness(db: Session) -> LaunchReadinessSnapshot:
         _warranty_check(products),
         _inventory_check(products),
         _payment_check(),
-        _tax_check(),
+        _tax_check(products),
         _shipping_insurance_check(),
     )
 

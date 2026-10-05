@@ -84,6 +84,11 @@ from app.models.quote import (
 from app.models.recovery import (
     PasswordResetToken,
 )
+from app.models.tax import (
+    ProductTaxClassification,
+    TaxCalculation,
+    TaxTransaction,
+)
 
 __all__ = [
     "ApprovedProductClaim",
@@ -131,6 +136,7 @@ __all__ = [
     "PricingPolicyMode",
     "Product",
     "ProductCategory",
+    "ProductTaxClassification",
     "ProductDocument",
     "ProductDocumentType",
     "ProductImage",
@@ -139,6 +145,8 @@ __all__ = [
     "ProductVariant",
     "ReminderPreferenceKind",
     "StockNotificationSubscription",
+    "TaxCalculation",
+    "TaxTransaction",
     "FormalQuotePolicySnapshot",
     "FormalQuoteWarrantySnapshot",
     "PolicyDocument",

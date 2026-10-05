@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -23,6 +24,9 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.tax import ProductTaxClassification
 
 
 class PricingPolicyMode(StrEnum):
@@ -296,6 +300,11 @@ class Product(Base):
         order_by="ProductSpecification.sort_order",
     )
     approved_claims: Mapped[list[ApprovedProductClaim]] = relationship(
+        back_populates="product",
+        cascade="all, delete-orphan",
+    )
+    tax_classifications: Mapped[list[ProductTaxClassification]] = relationship(
+        "ProductTaxClassification",
         back_populates="product",
         cascade="all, delete-orphan",
     )

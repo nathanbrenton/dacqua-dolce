@@ -505,6 +505,15 @@ export type OperationsManufacturerClaim = {
   public_ready: boolean;
 };
 
+export type OperationsTaxClassification = {
+  provider: string;
+  tax_code: string;
+  source_reference: string;
+  verified_at: string;
+  verified_by_user_id: string | null;
+  active: boolean;
+};
+
 export type OperationsProduct = {
   id: string;
   sku: string;
@@ -526,6 +535,7 @@ export type OperationsProduct = {
   warranty_documents: OperationsWarrantyDocument[];
   specifications: OperationsProductSpecification[];
   manufacturer_claims: OperationsManufacturerClaim[];
+  tax_classification: OperationsTaxClassification | null;
   pricing: OperationsPricing;
   standard_pricing: OperationsPricing;
   promotions: OperationsPromotion[];
@@ -860,6 +870,20 @@ export function getOperationsStockNotifications(): Promise<
 > {
   return getJson(
     "/api/operations/stock-notifications",
+  );
+}
+
+export function updateProductTaxClassification(
+  productId: string,
+  payload: {
+    tax_code: string;
+    source_reference: string;
+  },
+): Promise<OperationsProduct> {
+  return writeJson(
+    `/api/operations/products/${encodeURIComponent(productId)}/tax-classification`,
+    "PUT",
+    payload,
   );
 }
 

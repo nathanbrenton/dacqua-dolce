@@ -1,4 +1,6 @@
 import uuid
+from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 
@@ -30,14 +32,29 @@ class CheckoutDatabase:
     def __init__(
         self,
         cancellation: OrderCancellationRequest | None = None,
+        *,
+        tax_calculation: object | None = ...,
     ) -> None:
         self.added: list[object] = []
         self.cancellation = cancellation
+        self.tax_calculation = (
+            SimpleNamespace(
+                livemode=False,
+                expires_at=datetime.now(UTC) + timedelta(hours=1),
+                committed_at=None,
+                amount_total_minor=250000,
+                currency="USD",
+            )
+            if tax_calculation is ...
+            else tax_calculation
+        )
 
     def scalar(self, statement: object):
         query = str(statement)
         if "FROM order_cancellation_requests" in query:
             return self.cancellation
+        if "FROM tax_calculations" in query:
+            return self.tax_calculation
         if "FROM payment_provider_references" in query:
             return None
         raise AssertionError(query)
@@ -211,6 +228,42 @@ def test_hosted_checkout_rejects_out_of_area_delivery_address() -> None:
             cancel_url="https://dacquadolce.com/account",
             provider=provider,
             sales_area_policy=policy,
+        )
+
+    assert provider.request is None
+
+
+def test_hosted_checkout_requires_authoritative_tax_calculation() -> None:
+    order = Order(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        status=OrderStatus.awaiting_payment,
+        subtotal_amount_minor=250000,
+        charges_amount_minor=0,
+        total_amount_minor=250000,
+        currency="USD",
+        delivery_address_snapshot={
+            "recipient_name": "Customer",
+            "line1": "123 Main St",
+            "city": "Irvine",
+            "region_code": "CA",
+            "postal_code": "92614",
+            "country_code": "US",
+        },
+    )
+    provider = FakeProvider()
+
+    with pytest.raises(
+        PaymentCheckoutError,
+        match="automated tax must be recalculated",
+    ):
+        begin_hosted_checkout(
+            CheckoutDatabase(tax_calculation=None),  # type: ignore[arg-type]
+            order=order,
+            customer_email="customer@example.com",
+            success_url="https://dacquadolce.com/account",
+            cancel_url="https://dacquadolce.com/account",
+            provider=provider,
         )
 
     assert provider.request is None

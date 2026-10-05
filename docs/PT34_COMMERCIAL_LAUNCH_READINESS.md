@@ -63,9 +63,18 @@ commissioned in the application.
 
 ### Tax handling
 
-Status remains `Deferred`. Formal quotes support a separate tax charge, but
-PT34 does not encode nexus, jurisdiction, item taxability, rates, or a tax
-engine.
+PT44 supersedes PT34's original `Deferred` tax status. Automated tax is now an
+`Action required` launch dependency.
+
+The application has a provider-neutral evidence model and a Stripe Tax
+**test-mode-only** adapter. Every commercial product must have an explicitly
+reviewed, sourced provider tax classification before it can participate in an
+automated calculation. Live credentials are rejected by design in PT44.
+
+Hosted checkout fails closed without a current authoritative order tax
+calculation. Production tax registrations, live credentials, filing/account
+commissioning, and Affinity24 post-payment coordination remain incomplete, so
+the tax check cannot report `Ready` under PT44.
 
 ### Shipping insurance terms
 

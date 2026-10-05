@@ -21,6 +21,10 @@ from app.services.payment_provider import (
     CheckoutSessionRequest,
     PaymentProviderAdapter,
 )
+from app.services.tax_automation import (
+    TaxCheckoutReadinessError,
+    require_order_tax_ready,
+)
 
 
 class PaymentCheckoutError(ValueError):
@@ -83,6 +87,14 @@ def begin_hosted_checkout(
             policy=sales_area_policy,
         )
     except SalesAreaEligibilityError as exc:
+        raise PaymentCheckoutError(str(exc)) from exc
+
+    try:
+        require_order_tax_ready(
+            db,
+            order=order,
+        )
+    except TaxCheckoutReadinessError as exc:
         raise PaymentCheckoutError(str(exc)) from exc
 
     result = provider.create_checkout_session(

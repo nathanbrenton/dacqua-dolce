@@ -160,3 +160,31 @@ Still required before customer-facing payment can be enabled:
 
 Do not create an unauthenticated generic payment webhook merely to exercise the
 new event core. The public endpoint belongs with the concrete verified adapter.
+
+
+## Automated sales tax — PT44 foundation
+
+**Status:** Foundation implemented; production commissioning still required.
+
+PT44 introduces a provider-neutral automated-tax domain and a Stripe Tax
+test-mode adapter. Product tax classifications require an exact provider code
+and a recorded authoritative source; no default code is inferred. Draft quotes
+and awaiting-payment orders can hold sanitized provider calculation evidence,
+and hosted checkout fails closed without current authoritative order tax
+evidence.
+
+PT44 intentionally rejects live Stripe credentials. Before production checkout,
+D’Acqua Dolce still needs:
+
+- authoritative product tax-code review and completion;
+- required tax registrations/compliance setup in the tax provider;
+- live account/credential commissioning;
+- confirmation of filing/reporting operations for externally processed
+  Affinity24 payments;
+- concrete Affinity24 payment-success/refund integration so Stripe Tax
+  transactions and reversals can be committed idempotently;
+- explicit taxability rules for currently blocked adjustment types such as
+  shipping insurance, discounts, installation, and custom charges.
+
+Stripe Tax is used only as the tax engine in this design. It does not replace
+Affinity24 as the intended payment provider.

@@ -39,6 +39,7 @@ import {
   updateCustomerEquipment,
   updateProductRelationship,
   updateProductPricing,
+  updateProductTaxClassification,
   scheduleProductPromotion,
   updateQuoteNotes,
   updateQuoteStatus,
@@ -468,6 +469,11 @@ type PricingDraft = {
   currency: string;
 };
 
+type TaxClassificationDraft = {
+  taxCode: string;
+  sourceReference: string;
+};
+
 type PromotionDraft = {
   amount: string;
   startLocal: string;
@@ -712,6 +718,8 @@ export function OperationsPage({
     useState<Record<string, PricingDraft>>({});
   const [promotionDrafts, setPromotionDrafts] =
     useState<Record<string, PromotionDraft>>({});
+  const [taxClassificationDrafts, setTaxClassificationDrafts] =
+    useState<Record<string, TaxClassificationDraft>>({});
   const [inventoryDrafts, setInventoryDrafts] =
     useState<Record<string, InventoryDraft>>({});
   const [availabilityPolicyDrafts, setAvailabilityPolicyDrafts] =
@@ -731,6 +739,10 @@ export function OperationsPage({
   const [
     promotionSaveStates,
     setPromotionSaveStates,
+  ] = useState<Record<string, SaveState>>({});
+  const [
+    taxClassificationSaveStates,
+    setTaxClassificationSaveStates,
   ] = useState<Record<string, SaveState>>({});
   const [
     inventorySaveStates,
@@ -794,6 +806,7 @@ export function OperationsPage({
 
         const nextPricing: Record<string, PricingDraft> = {};
         const nextPromotions: Record<string, PromotionDraft> = {};
+        const nextTaxClassifications: Record<string, TaxClassificationDraft> = {};
         const nextInventory: Record<string, InventoryDraft> = {};
         const nextAvailabilityPolicies: Record<string, AvailabilityPolicyDraft> = {};
 
@@ -807,6 +820,10 @@ export function OperationsPage({
             amount: "",
             startLocal: "",
             endLocal: "",
+          };
+          nextTaxClassifications[product.id] = {
+            taxCode: product.tax_classification?.tax_code ?? "",
+            sourceReference: product.tax_classification?.source_reference ?? "",
           };
 
           nextInventory[product.id] = {
@@ -830,6 +847,7 @@ export function OperationsPage({
 
         setPricingDrafts(nextPricing);
         setPromotionDrafts(nextPromotions);
+        setTaxClassificationDrafts(nextTaxClassifications);
         setInventoryDrafts(nextInventory);
         setAvailabilityPolicyDrafts(nextAvailabilityPolicies);
         setError(null);
@@ -1719,6 +1737,67 @@ export function OperationsPage({
         caught instanceof Error
           ? caught.message
           : "Product relationship removal failed.",
+      );
+    }
+  }
+
+  async function saveTaxClassification(product: OperationsProduct) {
+    const draft = taxClassificationDrafts[product.id];
+    if (draft === undefined) {
+      return;
+    }
+
+    const taxCode = draft.taxCode.trim();
+    const sourceReference = draft.sourceReference.trim();
+    if (!taxCode.startsWith("txcd_")) {
+      setError("Enter an exact Stripe Tax product tax code beginning with txcd_.");
+      return;
+    }
+    if (sourceReference.length === 0) {
+      setError("Record the authoritative source used for this tax classification.");
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setTaxClassificationSaveStates((current) => ({
+      ...current,
+      [product.id]: "saving",
+    }));
+
+    try {
+      const updated = await updateProductTaxClassification(product.id, {
+        tax_code: taxCode,
+        source_reference: sourceReference,
+      });
+      setProducts((current) => replaceProduct(current, updated));
+      setTaxClassificationDrafts((current) => ({
+        ...current,
+        [updated.id]: {
+          taxCode: updated.tax_classification?.tax_code ?? "",
+          sourceReference: updated.tax_classification?.source_reference ?? "",
+        },
+      }));
+      setMessage(`Tax classification saved for ${updated.sku}.`);
+      setTaxClassificationSaveStates((current) => ({
+        ...current,
+        [product.id]: "saved",
+      }));
+      window.setTimeout(() => {
+        setTaxClassificationSaveStates((current) => ({
+          ...current,
+          [product.id]: "idle",
+        }));
+      }, 1800);
+    } catch (caught) {
+      setTaxClassificationSaveStates((current) => ({
+        ...current,
+        [product.id]: "idle",
+      }));
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Tax classification update failed.",
       );
     }
   }
@@ -3246,12 +3325,14 @@ export function OperationsPage({
           {products.map((product) => {
             const pricing = pricingDrafts[product.id];
             const promotion = promotionDrafts[product.id];
+            const taxClassification = taxClassificationDrafts[product.id];
             const inventory = inventoryDrafts[product.id];
             const availabilityPolicy = availabilityPolicyDrafts[product.id];
 
             if (
               pricing === undefined
               || promotion === undefined
+              || taxClassification === undefined
               || inventory === undefined
               || availabilityPolicy === undefined
             ) {
@@ -3264,6 +3345,9 @@ export function OperationsPage({
               ?? "idle";
             const promotionSaveState =
               promotionSaveStates[product.id]
+              ?? "idle";
+            const taxClassificationSaveState =
+              taxClassificationSaveStates[product.id]
               ?? "idle";
             const promotionSupported =
               PROMOTION_SUPPORTED_MODES.has(product.standard_pricing.mode)
@@ -3881,6 +3965,87 @@ export function OperationsPage({
                         </p>
                       )}
                     </div>
+                  </fieldset>
+
+                  <fieldset>
+                    <legend>Automated tax classification</legend>
+
+                    <p className="operations-note">
+                      Record an exact Stripe Tax product tax code and the authoritative
+                      source used to classify this product. D’Acqua Dolce does not infer
+                      a product tax code. PT44 remains sandbox-only; live tax collection
+                      stays blocked until registrations and production commissioning are complete.
+                    </p>
+
+                    <label className="operations-field">
+                      <span>Stripe Tax code</span>
+                      <input
+                        placeholder="txcd_…"
+                        value={taxClassification.taxCode}
+                        disabled={!privileged}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          setTaxClassificationDrafts((current) => ({
+                            ...current,
+                            [product.id]: {
+                              ...taxClassification,
+                              taxCode: event.target.value,
+                            },
+                          }));
+                        }}
+                      />
+                    </label>
+
+                    <label className="operations-field">
+                      <span>Classification source</span>
+                      <input
+                        placeholder="Stripe tax-code catalog / reviewed source"
+                        value={taxClassification.sourceReference}
+                        disabled={!privileged}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          setTaxClassificationDrafts((current) => ({
+                            ...current,
+                            [product.id]: {
+                              ...taxClassification,
+                              sourceReference: event.target.value,
+                            },
+                          }));
+                        }}
+                      />
+                    </label>
+
+                    {product.tax_classification !== null ? (
+                      <p className="operations-governance-context">
+                        Verified {new Date(product.tax_classification.verified_at).toLocaleString()}
+                        {" · "}
+                        {product.tax_classification.provider}
+                      </p>
+                    ) : (
+                      <p className="operations-governance-context">
+                        No authoritative automated-tax classification recorded.
+                      </p>
+                    )}
+
+                    <button
+                      type="button"
+                      className={
+                        "operations-action "
+                        + (taxClassificationSaveState === "saved" ? "is-saved" : "")
+                      }
+                      disabled={!privileged || taxClassificationSaveState === "saving"}
+                      onClick={() => void saveTaxClassification(product)}
+                    >
+                      {taxClassificationSaveState === "saving"
+                        ? "Saving…"
+                        : taxClassificationSaveState === "saved"
+                          ? "Saved ✓"
+                          : "Save tax classification"}
+                    </button>
+
+                    {!privileged ? (
+                      <p className="operations-note">
+                        Administrator or developer role required to change tax classification.
+                      </p>
+                    ) : null}
                   </fieldset>
 
                   <fieldset>

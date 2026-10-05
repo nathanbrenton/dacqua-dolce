@@ -33,6 +33,14 @@ def sale_ready_product(name: str = "Harmony") -> SimpleNamespace:
                 inventory_status=InventoryStatus.in_stock,
             )
         ],
+        tax_classifications=[
+            SimpleNamespace(
+                provider="stripe_tax",
+                tax_code="txcd_reviewed_test",
+                source_reference="Reviewed Stripe Tax code catalog",
+                active=True,
+            )
+        ],
     )
 
 
@@ -86,10 +94,10 @@ def test_launch_readiness_reports_dynamic_checks_ready(
         object(),  # type: ignore[arg-type]
     )
 
-    assert snapshot.status == "deferred"
+    assert snapshot.status == "action_required"
     assert snapshot.ready_count == 4
-    assert snapshot.action_required_count == 0
-    assert snapshot.deferred_count == 3
+    assert snapshot.action_required_count == 1
+    assert snapshot.deferred_count == 2
     assert [check.key for check in snapshot.checks] == [
         "sales_area",
         "policies",
@@ -137,8 +145,8 @@ def test_launch_readiness_surfaces_configuration_action_items(
     )
 
     assert snapshot.status == "action_required"
-    assert snapshot.action_required_count == 4
-    assert snapshot.deferred_count == 3
+    assert snapshot.action_required_count == 5
+    assert snapshot.deferred_count == 2
     assert snapshot.ready_count == 0
 
     checks = {check.key: check for check in snapshot.checks}
@@ -255,12 +263,13 @@ def test_launch_readiness_accepts_future_refund_policy_values_without_code_chang
 def test_launch_readiness_has_no_global_feature_toggle() -> None:
     deferred = {
         launch_readiness._payment_check().key,
-        launch_readiness._tax_check().key,
         launch_readiness._shipping_insurance_check().key,
     }
+    tax = launch_readiness._tax_check([sale_ready_product()])
 
     assert deferred == {
         "payment_checkout",
-        "tax",
         "shipping_insurance",
     }
+    assert tax.key == "tax"
+    assert tax.status == "action_required"

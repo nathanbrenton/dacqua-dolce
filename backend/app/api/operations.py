@@ -51,6 +51,10 @@ from app.models.quote import (
     QuoteRequest,
     QuoteRequestStatus,
 )
+from app.models.tax import (
+    ProductTaxClassification,
+    TaxCalculation,
+)
 from app.schemas.operations import (
     AvailabilityPolicyUpdateRequest,
     CustomerEquipmentCreateRequest,
@@ -95,6 +99,8 @@ from app.schemas.operations import (
     OperationsSalesInsightsRead,
     OperationsStockNotificationRead,
     OperationsSummaryRead,
+    OperationsTaxCalculationRead,
+    OperationsTaxClassificationRead,
     OrderCancellationExceptionCreate,
     OrderCancellationReviewUpdate,
     OrderFulfillmentUpdate,
@@ -105,6 +111,7 @@ from app.schemas.operations import (
     PromotionCreateRequest,
     QuoteNotesUpdate,
     QuoteStatusUpdate,
+    TaxClassificationUpdateRequest,
 )
 from app.services.audit import record_audit_event
 from app.services.cancellations import (
@@ -169,6 +176,11 @@ from app.services.sales_insights import summarize_assisted_sales
 from app.services.stock_notifications import (
     dispatch_back_in_stock_notifications,
     inventory_is_staff_confirmed_available,
+)
+from app.services.tax_automation import (
+    TaxAutomationError,
+    calculate_formal_quote_tax,
+    calculate_order_tax,
 )
 
 router = APIRouter(prefix="/operations", tags=["operations"])
@@ -309,6 +321,33 @@ def operations_formal_quote_read(
             )
             for item in formal_quote.items
         ],
+    )
+
+
+def operations_tax_calculation_read(
+    calculation: TaxCalculation,
+) -> OperationsTaxCalculationRead:
+    return OperationsTaxCalculationRead(
+        id=str(calculation.id),
+        provider=calculation.provider,
+        provider_calculation_id=calculation.provider_calculation_id,
+        context_type=(
+            "formal_quote"
+            if calculation.formal_quote_id is not None
+            else "order"
+        ),
+        currency=calculation.currency,
+        line_items_amount_minor=calculation.line_items_amount_minor,
+        shipping_amount_minor=calculation.shipping_amount_minor,
+        tax_amount_minor=calculation.tax_amount_minor,
+        amount_total_minor=calculation.amount_total_minor,
+        livemode=calculation.livemode,
+        expires_at=(
+            calculation.expires_at.isoformat()
+            if calculation.expires_at is not None
+            else None
+        ),
+        created_at=calculation.created_at.isoformat(),
     )
 
 
@@ -2230,6 +2269,42 @@ def list_orders(
 
 
 @router.post(
+    "/orders/{order_id}/tax-calculation",
+    response_model=OperationsTaxCalculationRead,
+)
+def calculate_awaiting_payment_order_tax(
+    order_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsTaxCalculationRead:
+    require_pricing_inventory_write(db, user=current_user)
+
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    try:
+        calculation = calculate_order_tax(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+        )
+    except TaxAutomationError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    db.refresh(calculation)
+    return operations_tax_calculation_read(calculation)
+
+
+@router.post(
     "/orders/{order_id}/fulfillment",
     response_model=OperationsOrderRead,
 )
@@ -2509,6 +2584,14 @@ def operations_product_read(
         else 0
     )
 
+    tax_classification = db.scalar(
+        select(ProductTaxClassification).where(
+            ProductTaxClassification.product_id == product.id,
+            ProductTaxClassification.provider == "stripe_tax",
+            ProductTaxClassification.active.is_(True),
+        )
+    )
+
     return OperationsProductRead(
         id=str(product.id),
         sku=product.sku,
@@ -2629,6 +2712,22 @@ def operations_product_read(
             )
             for claim in product.approved_claims
         ],
+        tax_classification=(
+            OperationsTaxClassificationRead(
+                provider=tax_classification.provider,
+                tax_code=tax_classification.tax_code,
+                source_reference=tax_classification.source_reference,
+                verified_at=tax_classification.verified_at.isoformat(),
+                verified_by_user_id=(
+                    str(tax_classification.verified_by_user_id)
+                    if tax_classification.verified_by_user_id is not None
+                    else None
+                ),
+                active=tax_classification.active,
+            )
+            if tax_classification is not None
+            else None
+        ),
         pricing=OperationsPricingRead(
             mode=(
                 current_price.pricing_policy_mode.value
@@ -3041,6 +3140,75 @@ def delete_product_relationship(
             "product_sku": product.sku if product is not None else None,
             "related_sku": related_sku,
             "relationship_type": relationship_type,
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
+    return operations_product_read(db, product=refreshed)
+
+
+@router.put(
+    "/products/{product_id}/tax-classification",
+    response_model=OperationsProductRead,
+)
+def update_product_tax_classification(
+    product_id: uuid.UUID,
+    payload: TaxClassificationUpdateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_pricing_inventory_write(db, user=current_user)
+
+    product = load_product_for_operations(db, product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found.",
+        )
+
+    now = datetime.now(UTC)
+    classification = db.scalar(
+        select(ProductTaxClassification).where(
+            ProductTaxClassification.product_id == product.id,
+            ProductTaxClassification.provider == "stripe_tax",
+        )
+    )
+    if classification is None:
+        classification = ProductTaxClassification(
+            product_id=product.id,
+            provider="stripe_tax",
+            tax_code=payload.tax_code,
+            source_reference=payload.source_reference,
+            verified_by_user_id=current_user.id,
+            verified_at=now,
+            active=True,
+        )
+        db.add(classification)
+    else:
+        classification.tax_code = payload.tax_code
+        classification.source_reference = payload.source_reference
+        classification.verified_by_user_id = current_user.id
+        classification.verified_at = now
+        classification.active = True
+
+    db.flush()
+    record_audit_event(
+        db,
+        action="catalog.tax_classification_changed",
+        entity_type="product",
+        entity_id=str(product.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "sku": product.sku,
+            "provider": "stripe_tax",
+            "tax_code": payload.tax_code,
+            "source_reference": payload.source_reference,
         },
     )
     db.commit()
@@ -3551,6 +3719,48 @@ def create_formal_quote(
     db.commit()
     db.refresh(formal_quote)
     return operations_formal_quote_read(formal_quote)
+
+
+@router.post(
+    "/formal-quotes/{formal_quote_id}/tax-calculation",
+    response_model=OperationsTaxCalculationRead,
+)
+def calculate_draft_formal_quote_tax(
+    formal_quote_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsTaxCalculationRead:
+    require_pricing_inventory_write(db, user=current_user)
+    formal_quote = db.scalar(
+        select(FormalQuote)
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+        )
+        .where(FormalQuote.id == formal_quote_id)
+    )
+    if formal_quote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Formal quote not found.",
+        )
+
+    try:
+        calculation = calculate_formal_quote_tax(
+            db,
+            formal_quote=formal_quote,
+            actor_user_id=current_user.id,
+        )
+    except TaxAutomationError as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    db.refresh(calculation)
+    return operations_tax_calculation_read(calculation)
 
 
 @router.post(
