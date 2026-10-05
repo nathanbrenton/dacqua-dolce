@@ -391,6 +391,17 @@ export type OperationsPricing = {
   amount_minor: number | null;
   currency: string | null;
   effective_from: string | null;
+  effective_until: string | null;
+};
+
+export type OperationsPromotion = {
+  id: string;
+  mode: string;
+  amount_minor: number;
+  currency: string;
+  effective_from: string;
+  effective_until: string;
+  state: "scheduled" | "active";
 };
 
 export type OperationsInventory = {
@@ -476,6 +487,8 @@ export type OperationsProduct = {
   online_sale_approved: boolean;
   warranty_documents: OperationsWarrantyDocument[];
   pricing: OperationsPricing;
+  standard_pricing: OperationsPricing;
+  promotions: OperationsPromotion[];
   inventory: OperationsInventory;
 };
 
@@ -811,6 +824,45 @@ export function updateProductPricing(
     "PUT",
     payload,
   );
+}
+
+export function scheduleProductPromotion(
+  productId: string,
+  payload: {
+    amount_minor: number;
+    effective_from: string;
+    effective_until: string;
+  },
+): Promise<OperationsProduct> {
+  return writeJson(
+    `/api/operations/products/${encodeURIComponent(productId)}/promotions`,
+    "POST",
+    payload,
+  );
+}
+
+export async function cancelProductPromotion(
+  productId: string,
+  promotionId: string,
+): Promise<OperationsProduct> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/operations/products/${encodeURIComponent(productId)}/promotions/${encodeURIComponent(promotionId)}`,
+    {
+      method: "DELETE",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "X-CSRF-Token": csrfToken,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+
+  return response.json() as Promise<OperationsProduct>;
 }
 
 export function updateProductInventory(

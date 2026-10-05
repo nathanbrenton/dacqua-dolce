@@ -6218,3 +6218,99 @@ summary {
     justify-content: center;
   }
 }
+
+.operations-shell .operations-promotion-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-shell .operations-promotion-panel > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.operations-shell .operations-promotion-panel > div:first-child > strong {
+  font-family: var(--font-ui);
+  font-size: var(--type-ui-base);
+}
+
+.operations-shell .operations-promotion-list {
+  display: grid;
+  gap: 8px;
+}
+
+.operations-shell .operations-promotion-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 11px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-1);
+}
+
+.operations-shell .operations-promotion-row > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.operations-shell .operations-promotion-row span {
+  color: var(--ink-muted);
+  font-size: var(--type-small);
+  line-height: 1.45;
+}
+
+.operations-shell .operations-promotion-create {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) repeat(2, minmax(180px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.operations-shell .operations-effective-promotion {
+  border-left: 3px solid var(--control-highlight);
+  padding-left: 9px;
+}
+
+@media (max-width: 980px) {
+  .operations-shell .operations-promotion-create {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 660px) {
+  .operations-shell .operations-promotion-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .operations-shell .operations-promotion-create {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* PT39.2 — compact Operations disclosure navigation. */
+.operations-shell details.operations-section.operations-disclosure {
+  padding-block: 0;
+}
+
+.operations-shell .operations-audit-section {
+  margin-top: 0;
+}
+
+.operations-shell > details.operations-section.operations-disclosure + details.operations-section.operations-disclosure,
+.operations-shell > details.operations-section.operations-disclosure + .operations-audit-section {
+  margin-top: 0;
+}
+
+.operations-shell details.operations-section.operations-disclosure > .operations-disclosure-content {
+  padding-top: 18px;
+}
+
+.operations-shell details.operations-section.operations-disclosure:not([open]) > summary {
+  border-bottom: 0;
+}

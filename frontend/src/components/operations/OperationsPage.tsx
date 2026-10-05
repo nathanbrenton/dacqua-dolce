@@ -32,11 +32,13 @@ import {
   getOperationsSummary,
   createProductRelationship,
   createCustomerEquipment,
+  cancelProductPromotion,
   deleteProductRelationship,
   updateProductInventory,
   updateCustomerEquipment,
   updateProductRelationship,
   updateProductPricing,
+  scheduleProductPromotion,
   updateQuoteNotes,
   updateQuoteStatus,
   type OperationsAuditEvent,
@@ -230,6 +232,12 @@ const PRICING_MODES = [
 const AMOUNT_REQUIRED = new Set<string>([
   "PUBLIC",
   "MAP_LIMITED",
+  "CART_ONLY",
+  "LOGIN_REQUIRED",
+]);
+
+const PROMOTION_SUPPORTED_MODES = new Set<string>([
+  "PUBLIC",
   "CART_ONLY",
   "LOGIN_REQUIRED",
 ]);
@@ -445,6 +453,12 @@ type PricingDraft = {
   mode: string;
   amount: string;
   currency: string;
+};
+
+type PromotionDraft = {
+  amount: string;
+  startLocal: string;
+  endLocal: string;
 };
 
 type InventoryDraft = {
@@ -676,6 +690,8 @@ export function OperationsPage({
     useState<Record<string, SaveState>>({});
   const [pricingDrafts, setPricingDrafts] =
     useState<Record<string, PricingDraft>>({});
+  const [promotionDrafts, setPromotionDrafts] =
+    useState<Record<string, PromotionDraft>>({});
   const [inventoryDrafts, setInventoryDrafts] =
     useState<Record<string, InventoryDraft>>({});
   const [quoteNoteDrafts, setQuoteNoteDrafts] =
@@ -689,6 +705,10 @@ export function OperationsPage({
   const [
     pricingSaveStates,
     setPricingSaveStates,
+  ] = useState<Record<string, SaveState>>({});
+  const [
+    promotionSaveStates,
+    setPromotionSaveStates,
   ] = useState<Record<string, SaveState>>({});
   const [
     inventorySaveStates,
@@ -747,13 +767,19 @@ export function OperationsPage({
         setQuoteNoteDrafts(nextQuoteNotes);
 
         const nextPricing: Record<string, PricingDraft> = {};
+        const nextPromotions: Record<string, PromotionDraft> = {};
         const nextInventory: Record<string, InventoryDraft> = {};
 
         for (const product of productResult) {
           nextPricing[product.id] = {
-            mode: product.pricing.mode,
-            amount: minorToDollars(product.pricing.amount_minor),
-            currency: product.pricing.currency ?? "USD",
+            mode: product.standard_pricing.mode,
+            amount: minorToDollars(product.standard_pricing.amount_minor),
+            currency: product.standard_pricing.currency ?? "USD",
+          };
+          nextPromotions[product.id] = {
+            amount: "",
+            startLocal: "",
+            endLocal: "",
           };
 
           nextInventory[product.id] = {
@@ -770,6 +796,7 @@ export function OperationsPage({
         }
 
         setPricingDrafts(nextPricing);
+        setPromotionDrafts(nextPromotions);
         setInventoryDrafts(nextInventory);
         setError(null);
       })
@@ -1698,9 +1725,9 @@ export function OperationsPage({
       setPricingDrafts((current) => ({
         ...current,
         [updated.id]: {
-          mode: updated.pricing.mode,
-          amount: minorToDollars(updated.pricing.amount_minor),
-          currency: updated.pricing.currency ?? "USD",
+          mode: updated.standard_pricing.mode,
+          amount: minorToDollars(updated.standard_pricing.amount_minor),
+          currency: updated.standard_pricing.currency ?? "USD",
         },
       }));
       setMessage(`Pricing policy saved for ${updated.sku}.`);
@@ -1724,6 +1751,94 @@ export function OperationsPage({
         caught instanceof Error
           ? caught.message
           : "Pricing update failed.",
+      );
+    }
+  }
+
+  async function schedulePromotion(product: OperationsProduct) {
+    const draft = promotionDrafts[product.id];
+    if (draft === undefined) {
+      return;
+    }
+
+    setError(null);
+    setMessage(null);
+    setPromotionSaveStates((current) => ({
+      ...current,
+      [product.id]: "saving",
+    }));
+
+    try {
+      const amountMinor = dollarsToMinor(draft.amount);
+      if (amountMinor === null) {
+        throw new Error("Enter a promotional price.");
+      }
+      if (!draft.startLocal || !draft.endLocal) {
+        throw new Error("Enter both promotion start and end times.");
+      }
+
+      const updated = await scheduleProductPromotion(product.id, {
+        amount_minor: amountMinor,
+        effective_from: new Date(draft.startLocal).toISOString(),
+        effective_until: new Date(draft.endLocal).toISOString(),
+      });
+
+      setProducts((current) => replaceProduct(current, updated));
+      setPricingDrafts((current) => ({
+        ...current,
+        [updated.id]: {
+          mode: updated.standard_pricing.mode,
+          amount: minorToDollars(updated.standard_pricing.amount_minor),
+          currency: updated.standard_pricing.currency ?? "USD",
+        },
+      }));
+      setPromotionDrafts((current) => ({
+        ...current,
+        [product.id]: {
+          amount: "",
+          startLocal: "",
+          endLocal: "",
+        },
+      }));
+      setPromotionSaveStates((current) => ({
+        ...current,
+        [product.id]: "saved",
+      }));
+      setMessage(`Promotion scheduled for ${updated.sku}.`);
+      window.setTimeout(() => {
+        setPromotionSaveStates((current) => ({
+          ...current,
+          [product.id]: "idle",
+        }));
+      }, 1800);
+    } catch (caught) {
+      setPromotionSaveStates((current) => ({
+        ...current,
+        [product.id]: "idle",
+      }));
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Promotion scheduling failed.",
+      );
+    }
+  }
+
+  async function cancelPromotion(
+    product: OperationsProduct,
+    promotionId: string,
+  ) {
+    setError(null);
+    setMessage(null);
+    try {
+      const updated = await cancelProductPromotion(product.id, promotionId);
+      setProducts((current) => replaceProduct(current, updated));
+      setMessage(`Promotion cancelled for ${updated.sku}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Promotion cancellation failed.",
       );
     }
   }
@@ -1948,12 +2063,20 @@ export function OperationsPage({
     selector?: string,
   ) {
     window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        const target = selector
-          ? document.querySelector(selector)
-          : document.getElementById(targetId);
+      const fallback = document.getElementById(targetId);
+      const target = selector
+        ? document.querySelector(selector)
+        : fallback;
+      const scrollTarget = target ?? fallback;
 
-        (target ?? document.getElementById(targetId))?.scrollIntoView({
+      let disclosure = scrollTarget?.closest("details") ?? null;
+      while (disclosure instanceof HTMLDetailsElement) {
+        disclosure.open = true;
+        disclosure = disclosure.parentElement?.closest("details") ?? null;
+      }
+
+      window.requestAnimationFrame(() => {
+        scrollTarget?.scrollIntoView({
           behavior: "smooth",
           block: "start",
         });
@@ -2129,10 +2252,21 @@ export function OperationsPage({
       ) : null}
 
       {launchReadiness !== null ? (
-        <section
-          className="operations-sales-insights"
-          aria-labelledby="launch-readiness-title"
+        <details
+          id="launch-readiness"
+          className="operations-section operations-disclosure"
         >
+          <summary className="operations-disclosure-summary">
+            <span>
+              <strong>Commercial launch</strong>
+              <small>Readiness snapshot</small>
+            </span>
+          </summary>
+          <div className="operations-disclosure-content">
+            <section
+              className="operations-sales-insights"
+              aria-labelledby="launch-readiness-title"
+            >
           <div className="operations-section-heading compact">
             <p className="eyebrow">Commercial launch</p>
             <h2 id="launch-readiness-title">Readiness snapshot</h2>
@@ -2184,14 +2318,27 @@ export function OperationsPage({
             Evaluated{" "}
             {new Date(launchReadiness.evaluated_at).toLocaleString()}.
           </p>
-        </section>
+            </section>
+          </div>
+        </details>
       ) : null}
 
       {salesInsights !== null ? (
-        <section
-          className="operations-sales-insights"
-          aria-labelledby="assisted-sales-insights-title"
+        <details
+          id="assisted-sales-insights"
+          className="operations-section operations-disclosure"
         >
+          <summary className="operations-disclosure-summary">
+            <span>
+              <strong>Assisted sales</strong>
+              <small>Observed request patterns</small>
+            </span>
+          </summary>
+          <div className="operations-disclosure-content">
+            <section
+              className="operations-sales-insights"
+              aria-labelledby="assisted-sales-insights-title"
+            >
           <div className="operations-section-heading compact">
             <p className="eyebrow">Assisted sales</p>
             <h2 id="assisted-sales-insights-title">Observed request patterns</h2>
@@ -2242,10 +2389,25 @@ export function OperationsPage({
               <p>{salesInsights.service_postal_codes.map((item) => `${item.value}: ${item.count}`).join(" · ") || "No ZIP data yet"}</p>
             </div>
           </div>
-        </section>
+            </section>
+          </div>
+        </details>
       ) : null}
 
-      <PolicyManagementPanel roles={roles} />
+      <details
+        id="launch-policies"
+        className="operations-section operations-disclosure"
+      >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Launch policies</strong>
+            <small>Approved customer terms and policy versions</small>
+          </span>
+        </summary>
+        <div className="operations-disclosure-content">
+          <PolicyManagementPanel roles={roles} />
+        </div>
+      </details>
 
       {nextAction !== null ? (
         <section
@@ -2262,7 +2424,13 @@ export function OperationsPage({
           </div>
 
           {nextAction.href !== null ? (
-            <a href={nextAction.href}>
+            <a
+              href={nextAction.href}
+              onClick={(event) => {
+                event.preventDefault();
+                scrollToOperationsTarget(nextAction.href.slice(1));
+              }}
+            >
               Open queue
             </a>
           ) : null}
@@ -2270,11 +2438,21 @@ export function OperationsPage({
       ) : null}
 
       {failedDeliveries.length > 0 ? (
-        <section
+        <details
           id="email-delivery-issues"
-          className="operations-delivery-issues"
-          aria-labelledby="email-delivery-issues-title"
+          className="operations-section operations-disclosure"
         >
+          <summary className="operations-disclosure-summary">
+            <span>
+              <strong>Delivery issues</strong>
+              <small>Failed email deliveries</small>
+            </span>
+          </summary>
+          <div className="operations-disclosure-content">
+            <section
+              className="operations-delivery-issues"
+              aria-labelledby="email-delivery-issues-title"
+            >
           <div>
             <p className="eyebrow">Delivery Issues</p>
             <h2 id="email-delivery-issues-title">Failed email deliveries</h2>
@@ -2295,20 +2473,37 @@ export function OperationsPage({
               </article>
             ))}
           </div>
-        </section>
+            </section>
+          </div>
+        </details>
       ) : null}
 
-      <section
+      <details
         id="communications-history"
-        className="operations-section operations-customer-inbox-section"
+        className="operations-section operations-disclosure operations-customer-inbox-section"
       >
-        <CommunicationsInbox />
-      </section>
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Customer communications</strong>
+            <small>Customer inbox</small>
+          </span>
+        </summary>
+        <div className="operations-disclosure-content">
+          <CommunicationsInbox />
+        </div>
+      </details>
 
-      <section
+      <details
         id="quote-queue"
-        className="operations-section"
+        className="operations-section operations-disclosure"
       >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Customer requests</strong>
+            <small>Quote queue</small>
+          </span>
+        </summary>
+        <div className="operations-disclosure-content">
         <div className="operations-section-heading">
           <p className="eyebrow">Quote Queue</p>
           <h2>Customer requests</h2>
@@ -2529,6 +2724,7 @@ export function OperationsPage({
                   <FormalQuoteComposer
                     quote={quote}
                     products={products}
+                    canOverrideCatalogPricing={privileged}
                     onChanged={mergeFormalQuote}
                   />
 
@@ -2633,12 +2829,20 @@ export function OperationsPage({
             ))}
           </div>
         )}
-      </section>
+        </div>
+      </details>
 
-      <section
+      <details
         id="order-history"
-        className="operations-section"
+        className="operations-section operations-disclosure"
       >
+        <summary className="operations-disclosure-summary">
+          <span>
+            <strong>Customer orders</strong>
+            <small>Order history</small>
+          </span>
+        </summary>
+        <div className="operations-disclosure-content">
         <div className="operations-section-heading">
           <p className="eyebrow">Order History</p>
           <h2>Customer orders</h2>
@@ -2845,7 +3049,8 @@ export function OperationsPage({
             })}
           </div>
         )}
-      </section>
+        </div>
+      </details>
 
       <details
         id="catalog-governance"
@@ -2921,9 +3126,10 @@ export function OperationsPage({
         <div className="operations-product-list">
           {products.map((product) => {
             const pricing = pricingDrafts[product.id];
+            const promotion = promotionDrafts[product.id];
             const inventory = inventoryDrafts[product.id];
 
-            if (pricing === undefined || inventory === undefined) {
+            if (pricing === undefined || promotion === undefined || inventory === undefined) {
               return null;
             }
 
@@ -2931,6 +3137,12 @@ export function OperationsPage({
             const pricingSaveState =
               pricingSaveStates[product.id]
               ?? "idle";
+            const promotionSaveState =
+              promotionSaveStates[product.id]
+              ?? "idle";
+            const promotionSupported =
+              PROMOTION_SUPPORTED_MODES.has(product.standard_pricing.mode)
+              && product.standard_pricing.amount_minor !== null;
             const inventorySaveState =
               inventorySaveStates[product.id]
               ?? "idle";
@@ -3312,11 +3524,20 @@ export function OperationsPage({
                     </div>
 
                     <p className="operations-governance-context">
-                      Current authoritative policy: {PRICING_MODE_LABELS[product.pricing.mode] ?? product.pricing.mode}
-                      {product.pricing.amount_minor !== null
-                        ? ` · ${formatMoney(product.pricing.amount_minor, product.pricing.currency ?? "USD")}`
+                      Standard pricing: {PRICING_MODE_LABELS[product.standard_pricing.mode] ?? product.standard_pricing.mode}
+                      {product.standard_pricing.amount_minor !== null
+                        ? ` · ${formatMoney(product.standard_pricing.amount_minor, product.standard_pricing.currency ?? "USD")}`
                         : " · amount withheld"}
                     </p>
+
+                    {product.pricing.effective_until !== null ? (
+                      <p className="operations-governance-context operations-effective-promotion">
+                        Effective now: {formatMoney(
+                          product.pricing.amount_minor ?? 0,
+                          product.pricing.currency ?? "USD",
+                        )} promotional price through {new Date(product.pricing.effective_until).toLocaleString()}.
+                      </p>
+                    ) : null}
 
                     <button
                       type="button"
@@ -3347,6 +3568,127 @@ export function OperationsPage({
                         to change pricing.
                       </p>
                     ) : null}
+
+                    <div className="operations-promotion-panel">
+                      <div>
+                        <strong>Temporary promotional pricing</strong>
+                        <p className="operations-note">
+                          Promotions are manual, time-bounded overrides of the standard price.
+                          Customer-specific pricing remains quote-specific rather than an automatic
+                          account discount.
+                        </p>
+                      </div>
+
+                      {product.promotions.length > 0 ? (
+                        <div className="operations-promotion-list">
+                          {product.promotions.map((scheduled) => (
+                            <div key={scheduled.id} className="operations-promotion-row">
+                              <div>
+                                <strong>{formatMoney(scheduled.amount_minor, scheduled.currency)}</strong>
+                                <span>
+                                  {scheduled.state === "active" ? "Active" : "Scheduled"}
+                                  {" · "}
+                                  {new Date(scheduled.effective_from).toLocaleString()}
+                                  {" → "}
+                                  {new Date(scheduled.effective_until).toLocaleString()}
+                                </span>
+                              </div>
+                              {privileged ? (
+                                <button
+                                  type="button"
+                                  className="operations-action secondary"
+                                  onClick={() => {
+                                    void cancelPromotion(product, scheduled.id);
+                                  }}
+                                >
+                                  Cancel promotion
+                                </button>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="operations-note">No active or scheduled promotion.</p>
+                      )}
+
+                      {promotionSupported ? (
+                        <div className="operations-promotion-create">
+                          <label className="operations-field">
+                            <span>Promotional price</span>
+                            <input
+                              inputMode="decimal"
+                              placeholder="0.00"
+                              value={promotion.amount}
+                              disabled={!privileged}
+                              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                setPromotionDrafts((current) => ({
+                                  ...current,
+                                  [product.id]: {
+                                    ...promotion,
+                                    amount: event.target.value,
+                                  },
+                                }));
+                              }}
+                            />
+                          </label>
+                          <label className="operations-field">
+                            <span>Starts</span>
+                            <input
+                              type="datetime-local"
+                              value={promotion.startLocal}
+                              disabled={!privileged}
+                              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                setPromotionDrafts((current) => ({
+                                  ...current,
+                                  [product.id]: {
+                                    ...promotion,
+                                    startLocal: event.target.value,
+                                  },
+                                }));
+                              }}
+                            />
+                          </label>
+                          <label className="operations-field">
+                            <span>Ends</span>
+                            <input
+                              type="datetime-local"
+                              value={promotion.endLocal}
+                              disabled={!privileged}
+                              onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                setPromotionDrafts((current) => ({
+                                  ...current,
+                                  [product.id]: {
+                                    ...promotion,
+                                    endLocal: event.target.value,
+                                  },
+                                }));
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            className={
+                              "operations-action "
+                              + (promotionSaveState === "saved" ? "is-saved" : "")
+                            }
+                            disabled={!privileged || promotionSaveState === "saving"}
+                            onClick={() => void schedulePromotion(product)}
+                          >
+                            {promotionSaveState === "saving"
+                              ? "Scheduling…"
+                              : promotionSaveState === "saved"
+                                ? "Scheduled ✓"
+                                : "Schedule promotion"}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="operations-note">
+                          {product.standard_pricing.mode === "MAP_LIMITED"
+                            ? "MAP-limited promotions stay disabled until verified manufacturer promotional terms are recorded; do not infer a permissible advertised discount."
+                            : "Scheduled promotions require a standard PUBLIC, CART_ONLY, or LOGIN_REQUIRED price with an authoritative amount."}
+                        </p>
+                      )}
+                    </div>
                   </fieldset>
 
                   <fieldset>
@@ -4185,9 +4527,9 @@ export function OperationsPage({
       ) : null}
 
       {auditLogAllowed ? (
-        <section
+        <div
           id="audit-events"
-          className="operations-section operations-audit-section"
+          className="operations-audit-section"
         >
           <details
             className="operations-audit-disclosure operations-disclosure"
@@ -4618,7 +4960,7 @@ export function OperationsPage({
               )}
             </div>
           </details>
-        </section>
+        </div>
       ) : null}
 
       <footer className="site-footer operations-footer">

@@ -39,10 +39,54 @@ def select_effective_price(
     if not candidates:
         return None
 
+    # A finite pricing window is an intentional temporary override (for example,
+    # a promotion). Prefer it over the open-ended standard price while the
+    # window is effective, even if the standard price was edited more recently.
     return max(
         candidates,
-        key=lambda price: price.effective_from,
+        key=lambda price: (
+            price.effective_until is not None,
+            price.effective_from,
+        ),
     )
+
+
+def select_standard_price(
+    prices: list[ProductPrice],
+    *,
+    now: datetime | None = None,
+    variant_id: object | None = None,
+) -> ProductPrice | None:
+    effective_now = now or datetime.now(UTC)
+    candidates = [
+        price
+        for price in prices
+        if price.active
+        and price.variant_id == variant_id
+        and price.effective_until is None
+        and price.effective_from <= effective_now
+    ]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda price: price.effective_from)
+
+
+def promotion_mode_supported(mode: PricingPolicyMode) -> bool:
+    return mode in {
+        PricingPolicyMode.PUBLIC,
+        PricingPolicyMode.CART_ONLY,
+        PricingPolicyMode.LOGIN_REQUIRED,
+    }
+
+
+def promotion_windows_overlap(
+    *,
+    existing_from: datetime,
+    existing_until: datetime,
+    proposed_from: datetime,
+    proposed_until: datetime,
+) -> bool:
+    return existing_from < proposed_until and existing_until > proposed_from
 
 
 def resolve_pricing(

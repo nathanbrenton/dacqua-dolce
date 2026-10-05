@@ -33,6 +33,7 @@ type DraftCharge = {
 type FormalQuoteComposerProps = {
   quote: OperationsQuote;
   products: OperationsProduct[];
+  canOverrideCatalogPricing: boolean;
   onChanged: (
     requestId: string,
     formalQuote: OperationsFormalQuote,
@@ -210,6 +211,7 @@ function AddressFields({
 export function FormalQuoteComposer({
   quote,
   products,
+  canOverrideCatalogPricing,
   onChanged,
 }: FormalQuoteComposerProps) {
   const [nextLineKey, setNextLineKey] = useState(2);
@@ -467,6 +469,8 @@ export function FormalQuoteComposer({
 
           {lines.map((line, index) => {
             const product = products.find((candidate) => candidate.id === line.productId);
+            const catalogAmountMinor = product?.pricing.amount_minor ?? null;
+            const catalogCurrency = product?.pricing.currency ?? "USD";
             return (
               <div key={line.key} className="operations-formal-quote-line">
                 <label className="operations-field">
@@ -527,15 +531,33 @@ export function FormalQuoteComposer({
                     type="text"
                     inputMode="decimal"
                     placeholder={
-                      product?.pricing.amount_minor === null
-                        ? "Required when no catalog amount"
-                        : "Use current catalog price"
+                      !product
+                        ? "Choose a product first"
+                        : catalogAmountMinor === null
+                          ? "Required when no catalog amount"
+                          : canOverrideCatalogPricing
+                            ? "Optional administrator override"
+                            : "Uses current catalog price"
                     }
                     value={line.unitAmount}
+                    disabled={
+                      !product
+                      || (catalogAmountMinor !== null && !canOverrideCatalogPricing)
+                    }
                     onChange={(event) => {
                       updateLine(line.key, { unitAmount: event.target.value });
                     }}
                   />
+                  {catalogAmountMinor !== null ? (
+                    <small className="field-helper">
+                      Effective catalog price: {money(
+                        catalogAmountMinor,
+                        catalogCurrency,
+                      )}. {canOverrideCatalogPricing
+                        ? "Entering a different amount creates an administrator-authorized quote override."
+                        : "Administrator authorization is required to quote a different amount."}
+                    </small>
+                  ) : null}
                 </label>
 
                 {lines.length > 1 ? (

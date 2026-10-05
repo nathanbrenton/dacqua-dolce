@@ -310,7 +310,7 @@ export function PolicyManagementPanel({
   }
 
   return (
-    <section className="operations-section operations-policy-section">
+    <section className="operations-policy-section">
       <div className="operations-section-heading">
         <div>
           <p className="eyebrow">Launch policies</p>

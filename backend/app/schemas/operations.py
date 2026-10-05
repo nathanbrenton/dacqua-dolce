@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import (
@@ -671,6 +671,17 @@ class OperationsPricingRead(BaseModel):
     amount_minor: int | None
     currency: str | None
     effective_from: str | None
+    effective_until: str | None = None
+
+
+class OperationsPromotionRead(BaseModel):
+    id: str
+    mode: str
+    amount_minor: int
+    currency: str
+    effective_from: str
+    effective_until: str
+    state: Literal["scheduled", "active"]
 
 
 class OperationsInventoryRead(BaseModel):
@@ -765,6 +776,8 @@ class OperationsProductRead(BaseModel):
     online_sale_approved: bool
     warranty_documents: list[OperationsWarrantyDocumentRead] = Field(default_factory=list)
     pricing: OperationsPricingRead
+    standard_pricing: OperationsPricingRead
+    promotions: list[OperationsPromotionRead] = Field(default_factory=list)
     inventory: OperationsInventoryRead
 
 
@@ -872,6 +885,20 @@ class PricingUpdateRequest(BaseModel):
         if self.mode in amount_forbidden_modes and self.amount_minor is not None:
             raise ValueError("This pricing policy must not store an online price amount.")
 
+        return self
+
+
+class PromotionCreateRequest(BaseModel):
+    amount_minor: int = Field(gt=0)
+    effective_from: datetime
+    effective_until: datetime
+
+    @model_validator(mode="after")
+    def validate_window(self) -> "PromotionCreateRequest":
+        if self.effective_from.tzinfo is None or self.effective_until.tzinfo is None:
+            raise ValueError("Promotion timestamps must include a timezone.")
+        if self.effective_until <= self.effective_from:
+            raise ValueError("Promotion end must be after its start.")
         return self
 
 

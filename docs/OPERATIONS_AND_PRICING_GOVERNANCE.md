@@ -98,11 +98,20 @@ Employees receive read-only Pricing & Inventory access. Mutation controls are
 disabled in the UI for employees, and FastAPI independently rejects unauthorized
 writes. Administrators and developers may perform pricing/inventory mutations.
 
-## Historical pricing
+## Historical pricing and promotions
 
-A pricing change does not overwrite the prior row. The prior active
-product-level pricing record is closed with `effective_until` and marked
-inactive, then a new active pricing record is created.
+A standard pricing change does not overwrite the prior row. The prior active,
+open-ended product-level standard record is closed with `effective_until` and
+marked inactive, then a new open-ended standard pricing record is created.
+
+PT39 uses the existing effective-window fields for manual temporary promotions.
+A finite active price window overrides the open-ended standard price only while
+that window is effective; after expiration or cancellation, the standard price
+becomes effective again. Promotions are initially limited to `PUBLIC`,
+`CART_ONLY`, and `LOGIN_REQUIRED` standard policies. `MAP_LIMITED` promotional
+pricing remains blocked until verified manufacturer promotional/MAP terms are
+recorded rather than inferred. Customer-specific pricing remains manual through
+formal quotes rather than an automatic account-wide discount engine.
 
 ## Inventory
 

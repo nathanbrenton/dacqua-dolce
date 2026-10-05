@@ -126,6 +126,12 @@ def test_operations_product_exposes_catalog_architecture_context() -> None:
             currency=None,
             effective_from=None,
         ),
+        standard_pricing=OperationsPricingRead(
+            mode="NO_ONLINE_SALE",
+            amount_minor=None,
+            currency=None,
+            effective_from=None,
+        ),
         inventory=OperationsInventoryRead(
             status="not_tracked",
             quantity_on_hand=0,

@@ -82,6 +82,7 @@ from app.schemas.operations import (
     OperationsOrderShipmentRead,
     OperationsPricingRead,
     OperationsProductRead,
+    OperationsPromotionRead,
     OperationsProductRelationshipRead,
     OperationsProductVariantRead,
     OperationsQuoteRead,
@@ -93,6 +94,7 @@ from app.schemas.operations import (
     OrderFulfillmentUpdate,
     OrderReturnPolicyExceptionCreate,
     PricingUpdateRequest,
+    PromotionCreateRequest,
     ProductRelationshipCreateRequest,
     ProductRelationshipUpdateRequest,
     QuoteNotesUpdate,
@@ -140,7 +142,12 @@ from app.services.operations_access import (
     require_pricing_inventory_write,
     require_return_policy_exception_write,
 )
-from app.services.pricing import select_effective_price
+from app.services.pricing import (
+    promotion_mode_supported,
+    promotion_windows_overlap,
+    select_effective_price,
+    select_standard_price,
+)
 from app.services.return_policy_exceptions import (
     ReturnPolicyExceptionError,
     ReturnPolicyExceptionEvidence,
@@ -2329,7 +2336,20 @@ def operations_product_read(
     *,
     product: Product,
 ) -> OperationsProductRead:
-    current_price = select_effective_price(product.prices)
+    now = datetime.now(UTC)
+    current_price = select_effective_price(product.prices, now=now)
+    standard_price = select_standard_price(product.prices, now=now)
+    promotions = sorted(
+        (
+            price
+            for price in product.prices
+            if price.active
+            and price.variant_id is None
+            and price.effective_until is not None
+            and price.effective_until > now
+        ),
+        key=lambda price: price.effective_from,
+    )
 
     inventory = db.scalar(
         select(ProductInventory)
@@ -2436,7 +2456,38 @@ def operations_product_read(
             effective_from=(
                 current_price.effective_from.isoformat() if current_price is not None else None
             ),
+            effective_until=(
+                current_price.effective_until.isoformat()
+                if current_price is not None and current_price.effective_until is not None
+                else None
+            ),
         ),
+        standard_pricing=OperationsPricingRead(
+            mode=(
+                standard_price.pricing_policy_mode.value
+                if standard_price is not None
+                else "NO_ONLINE_PRICE"
+            ),
+            amount_minor=(standard_price.amount_minor if standard_price is not None else None),
+            currency=(standard_price.currency if standard_price is not None else None),
+            effective_from=(
+                standard_price.effective_from.isoformat() if standard_price is not None else None
+            ),
+            effective_until=None,
+        ),
+        promotions=[
+            OperationsPromotionRead(
+                id=str(price.id),
+                mode=price.pricing_policy_mode.value,
+                amount_minor=price.amount_minor or 0,
+                currency=price.currency,
+                effective_from=price.effective_from.isoformat(),
+                effective_until=price.effective_until.isoformat(),
+                state=("scheduled" if price.effective_from > now else "active"),
+            )
+            for price in promotions
+            if price.amount_minor is not None
+        ],
         inventory=OperationsInventoryRead(
             status=(inventory.inventory_status.value if inventory is not None else "not_tracked"),
             quantity_on_hand=(inventory.quantity_on_hand if inventory is not None else 0),
@@ -2834,11 +2885,29 @@ def update_product_pricing(
 
     now = datetime.now(UTC)
 
+    active_or_scheduled_promotions = [
+        price
+        for price in product.prices
+        if price.active
+        and price.variant_id is None
+        and price.effective_until is not None
+        and price.effective_until > now
+    ]
+    if active_or_scheduled_promotions:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Cancel active or scheduled promotions before changing "
+                "the standard pricing policy."
+            ),
+        )
+
     prior_prices = db.scalars(
         select(ProductPrice).where(
             ProductPrice.product_id == product.id,
             ProductPrice.variant_id.is_(None),
             ProductPrice.active.is_(True),
+            ProductPrice.effective_until.is_(None),
         )
     ).all()
 
@@ -2882,6 +2951,174 @@ def update_product_pricing(
             detail="Product refresh failed.",
         )
 
+    return operations_product_read(db, product=refreshed)
+
+
+@router.post(
+    "/products/{product_id}/promotions",
+    response_model=OperationsProductRead,
+)
+def schedule_product_promotion(
+    product_id: uuid.UUID,
+    payload: PromotionCreateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_pricing_inventory_write(db, user=current_user)
+
+    product = load_product_for_operations(db, product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found.",
+        )
+
+    now = datetime.now(UTC)
+    if payload.effective_until <= now:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Promotion end must be in the future.",
+        )
+
+    standard_price = select_standard_price(product.prices, now=now)
+    if standard_price is None or standard_price.amount_minor is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Set an authoritative standard price before scheduling a promotion."
+            ),
+        )
+
+    if not promotion_mode_supported(standard_price.pricing_policy_mode):
+        detail = (
+            "MAP-limited promotions require verified manufacturer promotional "
+            "terms and are not scheduled through this launch workflow."
+            if standard_price.pricing_policy_mode.value == "MAP_LIMITED"
+            else "This pricing policy does not support scheduled promotions."
+        )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=detail,
+        )
+
+    if payload.amount_minor >= standard_price.amount_minor:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Promotional price must be lower than the standard price.",
+        )
+
+    for existing in product.prices:
+        if (
+            existing.active
+            and existing.variant_id is None
+            and existing.effective_until is not None
+            and existing.effective_until > now
+            and promotion_windows_overlap(
+                existing_from=existing.effective_from,
+                existing_until=existing.effective_until,
+                proposed_from=payload.effective_from,
+                proposed_until=payload.effective_until,
+            )
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Promotion window overlaps another scheduled promotion.",
+            )
+
+    promotion = ProductPrice(
+        product_id=product.id,
+        variant_id=None,
+        pricing_policy_mode=standard_price.pricing_policy_mode,
+        amount_minor=payload.amount_minor,
+        currency=standard_price.currency,
+        effective_from=payload.effective_from,
+        effective_until=payload.effective_until,
+        active=True,
+    )
+    db.add(promotion)
+    db.flush()
+
+    record_audit_event(
+        db,
+        action="catalog.promotion_scheduled",
+        entity_type="product_price",
+        entity_id=str(promotion.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "product_id": str(product.id),
+            "sku": product.sku,
+            "mode": promotion.pricing_policy_mode.value,
+            "amount_minor": promotion.amount_minor,
+            "currency": promotion.currency,
+            "effective_from": promotion.effective_from.isoformat(),
+            "effective_until": promotion.effective_until.isoformat(),
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
+    return operations_product_read(db, product=refreshed)
+
+
+@router.delete(
+    "/products/{product_id}/promotions/{promotion_id}",
+    response_model=OperationsProductRead,
+)
+def cancel_product_promotion(
+    product_id: uuid.UUID,
+    promotion_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsProductRead:
+    require_pricing_inventory_write(db, user=current_user)
+
+    promotion = db.scalar(
+        select(ProductPrice).where(
+            ProductPrice.id == promotion_id,
+            ProductPrice.product_id == product_id,
+            ProductPrice.variant_id.is_(None),
+            ProductPrice.effective_until.is_not(None),
+            ProductPrice.active.is_(True),
+        )
+    )
+    if promotion is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Active promotion not found.",
+        )
+
+    product = db.get(Product, product_id)
+    promotion.active = False
+    record_audit_event(
+        db,
+        action="catalog.promotion_cancelled",
+        entity_type="product_price",
+        entity_id=str(promotion.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "product_id": str(product_id),
+            "sku": product.sku if product is not None else None,
+            "effective_from": promotion.effective_from.isoformat(),
+            "effective_until": (
+                promotion.effective_until.isoformat()
+                if promotion.effective_until is not None
+                else None
+            ),
+        },
+    )
+    db.commit()
+
+    refreshed = load_product_for_operations(db, product_id)
+    if refreshed is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Product refresh failed.",
+        )
     return operations_product_read(db, product=refreshed)
 
 

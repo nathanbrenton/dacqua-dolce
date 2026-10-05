@@ -5,8 +5,11 @@ from app.models.catalog import (
     ProductPrice,
 )
 from app.services.pricing import (
+    promotion_mode_supported,
+    promotion_windows_overlap,
     resolve_pricing,
     select_effective_price,
+    select_standard_price,
 )
 
 
@@ -93,3 +96,61 @@ def test_effective_price_selects_latest_record() -> None:
     )
 
     assert selected is latest
+
+
+def test_effective_price_prefers_active_temporary_window_over_newer_standard() -> None:
+    now = datetime.now(UTC)
+
+    promotion = make_price(PricingPolicyMode.PUBLIC, amount_minor=9900)
+    promotion.effective_from = now - timedelta(hours=2)
+    promotion.effective_until = now + timedelta(hours=2)
+
+    standard = make_price(PricingPolicyMode.PUBLIC, amount_minor=12500)
+    standard.effective_from = now - timedelta(minutes=30)
+    standard.effective_until = None
+
+    selected = select_effective_price([promotion, standard], now=now)
+
+    assert selected is promotion
+
+
+def test_standard_price_ignores_temporary_promotions() -> None:
+    now = datetime.now(UTC)
+
+    standard = make_price(PricingPolicyMode.PUBLIC, amount_minor=12500)
+    standard.effective_from = now - timedelta(days=5)
+    standard.effective_until = None
+
+    promotion = make_price(PricingPolicyMode.PUBLIC, amount_minor=9900)
+    promotion.effective_from = now - timedelta(hours=1)
+    promotion.effective_until = now + timedelta(hours=1)
+
+    selected = select_standard_price([standard, promotion], now=now)
+
+    assert selected is standard
+
+
+def test_promotion_mode_support_is_conservative_for_map_and_quote_modes() -> None:
+    assert promotion_mode_supported(PricingPolicyMode.PUBLIC) is True
+    assert promotion_mode_supported(PricingPolicyMode.CART_ONLY) is True
+    assert promotion_mode_supported(PricingPolicyMode.LOGIN_REQUIRED) is True
+    assert promotion_mode_supported(PricingPolicyMode.MAP_LIMITED) is False
+    assert promotion_mode_supported(PricingPolicyMode.PRIVATE_QUOTE) is False
+    assert promotion_mode_supported(PricingPolicyMode.NO_ONLINE_PRICE) is False
+    assert promotion_mode_supported(PricingPolicyMode.NO_ONLINE_SALE) is False
+
+
+def test_promotion_window_overlap_uses_half_open_boundaries() -> None:
+    now = datetime.now(UTC)
+    assert promotion_windows_overlap(
+        existing_from=now,
+        existing_until=now + timedelta(hours=2),
+        proposed_from=now + timedelta(hours=1),
+        proposed_until=now + timedelta(hours=3),
+    ) is True
+    assert promotion_windows_overlap(
+        existing_from=now,
+        existing_until=now + timedelta(hours=2),
+        proposed_from=now + timedelta(hours=2),
+        proposed_until=now + timedelta(hours=3),
+    ) is False
