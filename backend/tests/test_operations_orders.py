@@ -43,6 +43,8 @@ class OrderHistoryDatabase:
         query = str(statement)
         if "FROM order_cancellation_requests" in query:
             return None
+        if "FROM formal_quote_policy_snapshots" in query:
+            return None
         raise AssertionError(
             f"Unexpected scalar query: {query}"
         )
@@ -71,6 +73,9 @@ class OrderHistoryDatabase:
             return ScalarResult([])
 
         if "FROM order_charges" in query:
+            return ScalarResult([])
+
+        if "FROM audit_events" in query:
             return ScalarResult([])
 
         raise AssertionError(
@@ -129,6 +134,7 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
     order = SimpleNamespace(
         id=order_id,
         user_id=customer_id,
+        formal_quote_id=None,
         status=OrderStatus.paid,
         fulfillment_status=FulfillmentStatus.supplier_ordered,
         supplier_order_reference="PO-12345",
@@ -181,6 +187,8 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         "fulfillment_status": "supplier_ordered",
         "cancellation_mode": "manual_review",
         "cancellation": None,
+        "refund_policy_snapshot": None,
+        "return_policy_exceptions": [],
         "supplier_order_reference": "PO-12345",
         "supplier_ordered_at": order.supplier_ordered_at.isoformat(),
         "received_ready_at": None,

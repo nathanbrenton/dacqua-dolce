@@ -52,16 +52,15 @@ This preserves evidence of the exact policy version and exact structured return 
 that accompanied the approved quote without making the current draft language legally
 sufficient.
 
-## Intentionally unresolved
+## Historical PT28 boundary
 
-PT28 does **not** choose between:
+At PT28 these values were intentionally unresolved. PT36 later selected the initial
+business configuration of a 60-day standard return window with authorized exceptions
+and a 15% standard restocking fee. Those values remain policy-version data rather than
+hard-coded application behavior, so a later approved Refund Policy version can change
+them prospectively.
 
-- a 60-day return window and case-by-case eligibility; or
-- a 25% restocking fee and case-by-case restocking.
-
-Those choices remain explicit configuration in a Refund Policy version.
-
-PT28 also does not implement:
+PT28 did not implement:
 
 - automated refunds;
 - payment-provider refund calls;

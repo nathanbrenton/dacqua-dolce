@@ -23,12 +23,28 @@ class FakeDatabase:
 
 
 def policy(kind: PolicyKind) -> SimpleNamespace:
+    structured_terms = None
+    if kind == PolicyKind.refund:
+        structured_terms = {
+            "eligibility_mode": "fixed_window_with_exception",
+            "return_window_days": 60,
+            "restocking_mode": "fixed_percentage",
+            "restocking_fee_basis_points": 1500,
+            "merchandise_condition": "new_uninstalled",
+            "customer_pays_return_shipping_by_default": True,
+            "outbound_shipping_refund_rule": (
+                "nonrefundable_with_error_defect_or_discretion_exception"
+            ),
+            "acknowledgement_required": True,
+        }
+
     return SimpleNamespace(
         id=uuid.uuid4(),
         kind=kind,
         version="2026-10-01",
         title=policy_service.POLICY_LABELS[kind],
         body=f"Approved {kind.value} text.",
+        structured_terms=structured_terms,
         effective_at=datetime(2026, 10, 1, tzinfo=UTC),
     )
 
@@ -63,6 +79,37 @@ def test_quote_policy_snapshot_requires_complete_approved_set(
     )
     assert all(len(snapshot.content_sha256) == 64 for snapshot in snapshots)
     assert len(db.added) == len(policy_service.BASE_REQUIRED_QUOTE_POLICIES)
+
+
+def test_quote_policy_snapshot_requires_structured_refund_terms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    available = {
+        kind: policy(kind)
+        for kind in policy_service.BASE_REQUIRED_QUOTE_POLICIES
+    }
+    available[PolicyKind.refund].structured_terms = None
+
+    monkeypatch.setattr(
+        policy_service,
+        "current_approved_policy",
+        lambda _db, *, kind: available.get(kind),
+    )
+
+    quote = SimpleNamespace(
+        id=uuid.uuid4(),
+        charges=[],
+        policy_snapshots=[],
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        policy_service.snapshot_quote_policies(
+            FakeDatabase(),  # type: ignore[arg-type]
+            formal_quote=quote,  # type: ignore[arg-type]
+        )
+
+    assert exc.value.status_code == 409
+    assert "Refund Policy structured return terms" in exc.value.detail
 
 
 def test_installation_charge_requires_installation_policy(
@@ -171,6 +218,52 @@ def test_only_refund_policy_accepts_structured_refund_terms() -> None:
             body="Draft shipping policy text.",
             refund_terms=terms,
         )
+
+
+def test_refund_policy_approval_requires_structured_terms() -> None:
+    row = SimpleNamespace(
+        id=uuid.uuid4(),
+        kind=PolicyKind.refund,
+        version="2026-10-03",
+        title="Refund Policy",
+        body="Reviewed policy text.",
+        structured_terms=None,
+        status=PolicyDocumentStatus.draft,
+    )
+
+    with pytest.raises(HTTPException) as exc:
+        policy_service.approve_policy_document(
+            FakeDatabase(),  # type: ignore[arg-type]
+            policy=row,  # type: ignore[arg-type]
+            actor_user=SimpleNamespace(id=uuid.uuid4()),  # type: ignore[arg-type]
+        )
+
+    assert exc.value.status_code == 409
+    assert "structured return and restocking terms" in exc.value.detail
+
+
+def test_refund_policy_terms_summary_is_data_driven() -> None:
+    terms = RefundPolicyTerms(
+        eligibility_mode="fixed_window_with_exception",
+        return_window_days=60,
+        restocking_mode="fixed_percentage",
+        restocking_fee_basis_points=1500,
+    )
+    assert policy_service.refund_policy_terms_summary(terms) == (
+        "60-day return window with authorized exceptions; "
+        "15.00% restocking fee"
+    )
+
+    changed = terms.model_copy(
+        update={
+            "return_window_days": 30,
+            "restocking_fee_basis_points": 1000,
+        }
+    )
+    assert policy_service.refund_policy_terms_summary(changed) == (
+        "30-day return window with authorized exceptions; "
+        "10.00% restocking fee"
+    )
 
 
 def test_refund_policy_snapshot_preserves_structured_terms_and_digest(

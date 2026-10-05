@@ -2761,6 +2761,7 @@ export function OperationsPage({
 
                   <OrderFulfillmentControls
                     order={order}
+                    roles={roles}
                     onUpdated={(updated) => {
                       setOrders((current) =>
                         current.map((candidate) =>

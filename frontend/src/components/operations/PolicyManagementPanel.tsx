@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -76,6 +77,12 @@ export function PolicyManagementPanel({
     useState<string | null>(null);
   const [error, setError] =
     useState<string | null>(null);
+  const [draftSaveFeedback, setDraftSaveFeedback] =
+    useState<{
+      kind: "success" | "error";
+      text: string;
+    } | null>(null);
+  const draftSaveInFlight = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,10 +190,53 @@ export function PolicyManagementPanel({
     && configureRefundTerms
     && refundTerms === null;
 
+  function beginSuccessorDraft(policy: PolicyDocument): void {
+    setKind(policy.kind);
+    setVersion("");
+    setTitle(policy.title);
+    setBody(policy.body);
+
+    if (policy.kind === "refund" && policy.refund_terms !== null) {
+      setConfigureRefundTerms(true);
+      setRefundEligibilityMode(policy.refund_terms.eligibility_mode);
+      setReturnWindowDays(
+        policy.refund_terms.return_window_days === null
+          ? ""
+          : String(policy.refund_terms.return_window_days),
+      );
+      setRestockingMode(policy.refund_terms.restocking_mode);
+      setRestockingPercent(
+        policy.refund_terms.restocking_fee_basis_points === null
+          ? ""
+          : String(
+              policy.refund_terms.restocking_fee_basis_points / 100,
+            ),
+      );
+    } else {
+      setConfigureRefundTerms(false);
+      setRefundEligibilityMode("");
+      setReturnWindowDays("");
+      setRestockingMode("");
+      setRestockingPercent("");
+    }
+
+    setMessage(
+      `Started a new draft from ${policy.title} version ${policy.version}.`,
+    );
+    setError(null);
+    setDraftSaveFeedback(null);
+  }
+
   async function createDraft(): Promise<void> {
+    if (draftSaveInFlight.current) {
+      return;
+    }
+
+    draftSaveInFlight.current = true;
     setBusy(true);
     setError(null);
     setMessage(null);
+    setDraftSaveFeedback(null);
 
     try {
       const created = await createPolicyDraft({
@@ -205,16 +255,25 @@ export function PolicyManagementPanel({
       setReturnWindowDays("");
       setRestockingMode("");
       setRestockingPercent("");
-      setMessage(
-        `${created.title} version ${created.version} saved as draft.`,
-      );
+      const savedMessage =
+        `${created.title} version ${created.version} saved as draft.`;
+      setMessage(savedMessage);
+      setDraftSaveFeedback({
+        kind: "success",
+        text: savedMessage,
+      });
     } catch (caught) {
-      setError(
+      const saveError =
         caught instanceof Error
           ? caught.message
-          : "Policy draft could not be created.",
-      );
+          : "Policy draft could not be created.";
+      setError(saveError);
+      setDraftSaveFeedback({
+        kind: "error",
+        text: saveError,
+      });
     } finally {
+      draftSaveInFlight.current = false;
       setBusy(false);
     }
   }
@@ -317,6 +376,18 @@ export function PolicyManagementPanel({
                           }}
                         >
                           Approve version
+                        </button>
+                      ) : null}
+                      {policy.status === "approved" && writable ? (
+                        <button
+                          type="button"
+                          className="operations-action secondary"
+                          disabled={busy}
+                          onClick={() => {
+                            beginSuccessorDraft(policy);
+                          }}
+                        >
+                          Start successor draft
                         </button>
                       ) : null}
                     </div>
@@ -473,9 +544,9 @@ export function PolicyManagementPanel({
                 </>
               ) : (
                 <p className="operations-request-empty">
-                  Leave this off while return-window or restocking decisions remain
-                  unresolved. A draft can still store legal text without inventing
-                  structured values.
+                  Refund Policy approval requires structured return/restocking
+                  terms. Use the approved policy as the starting point when changing
+                  terms so a new version can take effect prospectively.
                 </p>
               )}
             </div>
@@ -491,12 +562,26 @@ export function PolicyManagementPanel({
               || body.trim() === ""
               || refundTermsInvalid
             }
+            aria-busy={draftSaveInFlight.current}
             onClick={() => {
               void createDraft();
             }}
           >
-            Save draft version
+            {draftSaveInFlight.current ? "Saving draft…" : "Save draft version"}
           </button>
+
+          {draftSaveFeedback !== null ? (
+            <p
+              className={
+                draftSaveFeedback.kind === "error"
+                  ? "operations-alert operations-error"
+                  : "operations-alert"
+              }
+              role={draftSaveFeedback.kind === "error" ? "alert" : "status"}
+            >
+              {draftSaveFeedback.text}
+            </p>
+          ) : null}
         </div>
       ) : (
         <p className="operations-request-empty">

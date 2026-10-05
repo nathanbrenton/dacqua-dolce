@@ -36,6 +36,14 @@ CUSTOMER_EQUIPMENT_WRITE_ROLES = frozenset(
     }
 )
 
+RETURN_POLICY_EXCEPTION_WRITE_ROLES = frozenset(
+    {
+        RoleName.manager,
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
 AUDIT_LOG_READ_ROLES = frozenset(
     {
         RoleName.developer,
@@ -113,6 +121,18 @@ def require_customer_equipment_write(
         db,
         user=user,
         allowed_roles=CUSTOMER_EQUIPMENT_WRITE_ROLES,
+    )
+
+
+def require_return_policy_exception_write(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=RETURN_POLICY_EXCEPTION_WRITE_ROLES,
     )
 
 

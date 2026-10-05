@@ -496,6 +496,61 @@ class OperationsOrderCancellationRead(BaseModel):
     completed_at: str | None
 
 
+class OperationsReturnPolicyExceptionRead(BaseModel):
+    id: str
+    actor_user_id: str | None
+    created_at: str
+    policy_snapshot_id: str
+    policy_version: str
+    reason: str
+    return_window_days_override: int | None
+    restocking_fee_basis_points_override: int | None
+    customer_pays_return_shipping_override: bool | None
+    refund_outbound_shipping_override: bool | None
+
+
+class OrderReturnPolicyExceptionCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=1, max_length=4000)
+    return_window_days_override: int | None = Field(
+        default=None,
+        ge=1,
+        le=3650,
+    )
+    restocking_fee_basis_points_override: int | None = Field(
+        default=None,
+        ge=0,
+        le=10_000,
+    )
+    customer_pays_return_shipping_override: bool | None = None
+    refund_outbound_shipping_override: bool | None = None
+
+    @field_validator("reason")
+    @classmethod
+    def clean_reason(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("A reason is required.")
+        return cleaned
+
+    @model_validator(mode="after")
+    def require_override(self) -> "OrderReturnPolicyExceptionCreate":
+        if all(
+            value is None
+            for value in (
+                self.return_window_days_override,
+                self.restocking_fee_basis_points_override,
+                self.customer_pays_return_shipping_override,
+                self.refund_outbound_shipping_override,
+            )
+        ):
+            raise ValueError(
+                "At least one return-policy term must be overridden."
+            )
+        return self
+
+
 class OperationsOrderRead(BaseModel):
     id: str
     status: str
@@ -505,6 +560,10 @@ class OperationsOrderRead(BaseModel):
         "manual_review",
     ]
     cancellation: OperationsOrderCancellationRead | None = None
+    refund_policy_snapshot: FormalQuotePolicySnapshotRead | None = None
+    return_policy_exceptions: list[
+        OperationsReturnPolicyExceptionRead
+    ] = Field(default_factory=list)
     supplier_order_reference: str | None
     supplier_ordered_at: str | None
     received_ready_at: str | None

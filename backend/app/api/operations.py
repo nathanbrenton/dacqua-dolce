@@ -83,10 +83,12 @@ from app.schemas.operations import (
     OperationsProductRelationshipRead,
     OperationsProductVariantRead,
     OperationsQuoteRead,
+    OperationsReturnPolicyExceptionRead,
     OperationsSalesInsightsRead,
     OperationsSummaryRead,
     OrderCancellationReviewUpdate,
     OrderFulfillmentUpdate,
+    OrderReturnPolicyExceptionCreate,
     PricingUpdateRequest,
     ProductRelationshipCreateRequest,
     ProductRelationshipUpdateRequest,
@@ -133,8 +135,16 @@ from app.services.operations_access import (
     require_customer_equipment_write,
     require_operations,
     require_pricing_inventory_write,
+    require_return_policy_exception_write,
 )
 from app.services.pricing import select_effective_price
+from app.services.return_policy_exceptions import (
+    ReturnPolicyExceptionError,
+    ReturnPolicyExceptionEvidence,
+    authorize_return_policy_exception,
+    list_return_policy_exceptions,
+    refund_policy_snapshot_for_order,
+)
 from app.services.sales_insights import summarize_assisted_sales
 
 router = APIRouter(prefix="/operations", tags=["operations"])
@@ -1843,6 +1853,31 @@ def operations_cancellation_read(
     )
 
 
+def operations_return_policy_exception_read(
+    exception: ReturnPolicyExceptionEvidence,
+) -> OperationsReturnPolicyExceptionRead:
+    return OperationsReturnPolicyExceptionRead(
+        id=exception.id,
+        actor_user_id=exception.actor_user_id,
+        created_at=exception.created_at.isoformat(),
+        policy_snapshot_id=exception.policy_snapshot_id,
+        policy_version=exception.policy_version,
+        reason=exception.reason,
+        return_window_days_override=(
+            exception.return_window_days_override
+        ),
+        restocking_fee_basis_points_override=(
+            exception.restocking_fee_basis_points_override
+        ),
+        customer_pays_return_shipping_override=(
+            exception.customer_pays_return_shipping_override
+        ),
+        refund_outbound_shipping_override=(
+            exception.refund_outbound_shipping_override
+        ),
+    )
+
+
 def operations_order_read(
     db: DatabaseSession,
     *,
@@ -1877,6 +1912,14 @@ def operations_order_read(
         db,
         order_id=order.id,
     )
+    refund_policy_snapshot = refund_policy_snapshot_for_order(
+        db,
+        order=order,
+    )
+    return_policy_exceptions = list_return_policy_exceptions(
+        db,
+        order_id=order.id,
+    )
 
     return OperationsOrderRead(
         id=str(order.id),
@@ -1888,6 +1931,27 @@ def operations_order_read(
             if cancellation is not None
             else None
         ),
+        refund_policy_snapshot=(
+            {
+                "id": refund_policy_snapshot.id,
+                "kind": refund_policy_snapshot.kind,
+                "version": refund_policy_snapshot.version_snapshot,
+                "title": refund_policy_snapshot.title_snapshot,
+                "body": refund_policy_snapshot.body_snapshot,
+                "refund_terms": refund_policy_snapshot.structured_terms_snapshot,
+                "content_sha256": refund_policy_snapshot.content_sha256,
+                "structured_terms_sha256": (
+                    refund_policy_snapshot.structured_terms_sha256
+                ),
+                "effective_at": refund_policy_snapshot.effective_at_snapshot,
+            }
+            if refund_policy_snapshot is not None
+            else None
+        ),
+        return_policy_exceptions=[
+            operations_return_policy_exception_read(exception)
+            for exception in return_policy_exceptions
+        ],
         supplier_order_reference=order.supplier_order_reference,
         supplier_ordered_at=(
             order.supplier_ordered_at.isoformat()
@@ -2139,6 +2203,68 @@ def review_order_cancellation_request(
             note=payload.note,
         )
     except CancellationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(
+        db,
+        order=order,
+        customer=customer,
+    )
+
+
+@router.post(
+    "/orders/{order_id}/return-policy-exceptions",
+    response_model=OperationsOrderRead,
+)
+def authorize_order_return_policy_exception(
+    order_id: uuid.UUID,
+    payload: OrderReturnPolicyExceptionCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_return_policy_exception_write(
+        db,
+        user=current_user,
+    )
+
+    order = db.get(Order, order_id)
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    try:
+        authorize_return_policy_exception(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            reason=payload.reason,
+            return_window_days_override=(
+                payload.return_window_days_override
+            ),
+            restocking_fee_basis_points_override=(
+                payload.restocking_fee_basis_points_override
+            ),
+            customer_pays_return_shipping_override=(
+                payload.customer_pays_return_shipping_override
+            ),
+            refund_outbound_shipping_override=(
+                payload.refund_outbound_shipping_override
+            ),
+        )
+    except ReturnPolicyExceptionError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),

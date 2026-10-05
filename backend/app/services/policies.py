@@ -5,6 +5,7 @@ import json
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,7 @@ from app.models.policy import (
     PolicyKind,
 )
 from app.models.quote import CommercialChargeKind, FormalQuote
+from app.schemas.policies import RefundPolicyTerms
 from app.services.audit import record_audit_event
 
 BASE_REQUIRED_QUOTE_POLICIES = (
@@ -35,6 +37,44 @@ POLICY_LABELS = {
     PolicyKind.warranty: "Warranty",
     PolicyKind.installation: "Installation Terms",
 }
+
+
+def refund_policy_terms(
+    policy: PolicyDocument,
+) -> RefundPolicyTerms | None:
+    if policy.kind != PolicyKind.refund:
+        return None
+
+    structured_terms = policy.structured_terms
+    if not isinstance(structured_terms, dict):
+        return None
+
+    try:
+        return RefundPolicyTerms.model_validate(structured_terms)
+    except ValidationError:
+        return None
+
+
+def refund_policy_terms_summary(terms: RefundPolicyTerms) -> str:
+    if terms.eligibility_mode == "case_by_case":
+        eligibility = "case-by-case return eligibility"
+    elif terms.eligibility_mode == "fixed_window":
+        eligibility = f"{terms.return_window_days}-day return window"
+    else:
+        eligibility = (
+            f"{terms.return_window_days}-day return window "
+            "with authorized exceptions"
+        )
+
+    if terms.restocking_mode == "case_by_case":
+        restocking = "case-by-case restocking"
+    else:
+        restocking = (
+            f"{(terms.restocking_fee_basis_points or 0) / 100:.2f}% "
+            "restocking fee"
+        )
+
+    return f"{eligibility}; {restocking}"
 
 
 def current_approved_policy(db: Session, *, kind: PolicyKind) -> PolicyDocument | None:
@@ -117,6 +157,18 @@ def approve_policy_document(
             detail="Only a draft policy version can be approved.",
         )
 
+    if (
+        policy.kind == PolicyKind.refund
+        and refund_policy_terms(policy) is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Refund Policy approval requires complete structured "
+                "return and restocking terms."
+            ),
+        )
+
     now = datetime.now(UTC)
     current = current_approved_policy(db, kind=policy.kind)
     if current is not None and current.id != policy.id:
@@ -164,6 +216,11 @@ def snapshot_quote_policies(
         policy = current_approved_policy(db, kind=kind)
         if policy is None:
             missing.append(POLICY_LABELS[kind])
+        elif (
+            kind == PolicyKind.refund
+            and refund_policy_terms(policy) is None
+        ):
+            missing.append("Refund Policy structured return terms")
         else:
             documents.append(policy)
 

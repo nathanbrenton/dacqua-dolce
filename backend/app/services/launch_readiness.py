@@ -17,10 +17,13 @@ from app.models.catalog import (
     InventoryStatus,
     Product,
 )
+from app.models.policy import PolicyKind
 from app.services.policies import (
     BASE_REQUIRED_QUOTE_POLICIES,
     POLICY_LABELS,
     current_approved_policy,
+    refund_policy_terms,
+    refund_policy_terms_summary,
 )
 from app.services.warranties import warranty_document_is_sale_ready
 
@@ -173,6 +176,7 @@ def _sales_area_check() -> LaunchReadinessCheck:
 
 def _policy_check(db: Session) -> LaunchReadinessCheck:
     missing: list[str] = []
+    invalid: list[str] = []
     evidence: list[str] = []
 
     for kind in BASE_REQUIRED_QUOTE_POLICIES:
@@ -181,17 +185,33 @@ def _policy_check(db: Session) -> LaunchReadinessCheck:
         if policy is None:
             missing.append(label)
             evidence.append(f"{label}: missing approved version")
-        else:
-            evidence.append(f"{label}: approved version {policy.version}")
+            continue
 
-    if missing:
+        if kind == PolicyKind.refund:
+            terms = refund_policy_terms(policy)
+            if terms is None:
+                invalid.append(label)
+                evidence.append(
+                    f"{label}: approved version {policy.version}; "
+                    "structured return terms are missing or invalid"
+                )
+                continue
+            evidence.append(
+                f"{label}: approved version {policy.version}; "
+                f"{refund_policy_terms_summary(terms)}"
+            )
+            continue
+
+        evidence.append(f"{label}: approved version {policy.version}")
+
+    if missing or invalid:
         return LaunchReadinessCheck(
             key="policies",
             label="Required policies",
             status="action_required",
             detail=(
                 "One or more policies required for formal-quote presentation "
-                "do not have an approved version."
+                "are missing or are not fully configured for launch."
             ),
             evidence=tuple(evidence),
         )
@@ -200,7 +220,10 @@ def _policy_check(db: Session) -> LaunchReadinessCheck:
         key="policies",
         label="Required policies",
         status="ready",
-        detail="All base policies required for formal-quote presentation are approved.",
+        detail=(
+            "All base policies required for formal-quote presentation are "
+            "approved and the Refund Policy has valid structured terms."
+        ),
         evidence=tuple(evidence),
     )
 

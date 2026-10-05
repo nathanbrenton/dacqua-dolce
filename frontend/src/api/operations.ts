@@ -345,12 +345,28 @@ export type OperationsOrderCancellation = {
 };
 
 
+export type OperationsReturnPolicyException = {
+  id: string;
+  actor_user_id: string | null;
+  created_at: string;
+  policy_snapshot_id: string;
+  policy_version: string;
+  reason: string;
+  return_window_days_override: number | null;
+  restocking_fee_basis_points_override: number | null;
+  customer_pays_return_shipping_override: boolean | null;
+  refund_outbound_shipping_override: boolean | null;
+};
+
+
 export type OperationsOrder = {
   id: string;
   status: string;
   fulfillment_status: string;
   cancellation_mode: "unrestricted" | "manual_review";
   cancellation: OperationsOrderCancellation | null;
+  refund_policy_snapshot: PolicySnapshot | null;
+  return_policy_exceptions: OperationsReturnPolicyException[];
   supplier_order_reference: string | null;
   supplier_ordered_at: string | null;
   received_ready_at: string | null;
@@ -731,6 +747,24 @@ export function reviewOrderCancellation(
 ): Promise<OperationsOrder> {
   return writeJson(
     `/api/operations/orders/${encodeURIComponent(orderId)}/cancellation`,
+    "POST",
+    payload,
+  );
+}
+
+
+export function authorizeReturnPolicyException(
+  orderId: string,
+  payload: {
+    reason: string;
+    return_window_days_override?: number | null;
+    restocking_fee_basis_points_override?: number | null;
+    customer_pays_return_shipping_override?: boolean | null;
+    refund_outbound_shipping_override?: boolean | null;
+  },
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/return-policy-exceptions`,
     "POST",
     payload,
   );

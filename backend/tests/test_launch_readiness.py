@@ -36,6 +36,28 @@ def sale_ready_product(name: str = "Harmony") -> SimpleNamespace:
     )
 
 
+def approved_policy(kind) -> SimpleNamespace:
+    structured_terms = None
+    if kind.value == "refund":
+        structured_terms = {
+            "eligibility_mode": "fixed_window_with_exception",
+            "return_window_days": 60,
+            "restocking_mode": "fixed_percentage",
+            "restocking_fee_basis_points": 1500,
+            "merchandise_condition": "new_uninstalled",
+            "customer_pays_return_shipping_by_default": True,
+            "outbound_shipping_refund_rule": (
+                "nonrefundable_with_error_defect_or_discretion_exception"
+            ),
+            "acknowledgement_required": True,
+        }
+    return SimpleNamespace(
+        kind=kind,
+        version=f"{kind.value}-v1",
+        structured_terms=structured_terms,
+    )
+
+
 def test_launch_readiness_reports_dynamic_checks_ready(
     monkeypatch,
 ) -> None:
@@ -52,9 +74,7 @@ def test_launch_readiness_reports_dynamic_checks_ready(
     monkeypatch.setattr(
         launch_readiness,
         "current_approved_policy",
-        lambda _db, *, kind: SimpleNamespace(
-            version=f"{kind.value}-v1",
-        ),
+        lambda _db, *, kind: approved_policy(kind),
     )
     monkeypatch.setattr(
         launch_readiness,
@@ -100,7 +120,7 @@ def test_launch_readiness_surfaces_configuration_action_items(
         lambda _db, *, kind: (
             None
             if kind.value == "shipping"
-            else SimpleNamespace(version="approved")
+            else approved_policy(kind)
         ),
     )
     product = sale_ready_product("Origin")
@@ -175,6 +195,61 @@ def test_launch_readiness_rejects_wrong_launch_country(
         "Configured country does not match the approved launch country."
         in check.evidence
     )
+
+
+def test_launch_readiness_requires_structured_refund_terms(
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        launch_readiness,
+        "current_approved_policy",
+        lambda _db, *, kind: (
+            SimpleNamespace(
+                kind=kind,
+                version="refund-v1",
+                structured_terms=None,
+            )
+            if kind.value == "refund"
+            else approved_policy(kind)
+        ),
+    )
+
+    check = launch_readiness._policy_check(
+        object(),  # type: ignore[arg-type]
+    )
+
+    assert check.status == "action_required"
+    assert "structured return terms are missing or invalid" in " ".join(
+        check.evidence
+    )
+
+
+def test_launch_readiness_accepts_future_refund_policy_values_without_code_change(
+    monkeypatch,
+) -> None:
+    def current(_db, *, kind):
+        policy = approved_policy(kind)
+        if kind.value == "refund":
+            policy.structured_terms = {
+                **policy.structured_terms,
+                "return_window_days": 30,
+                "restocking_fee_basis_points": 1000,
+            }
+        return policy
+
+    monkeypatch.setattr(
+        launch_readiness,
+        "current_approved_policy",
+        current,
+    )
+
+    check = launch_readiness._policy_check(
+        object(),  # type: ignore[arg-type]
+    )
+
+    assert check.status == "ready"
+    assert "30-day return window" in " ".join(check.evidence)
+    assert "10.00% restocking fee" in " ".join(check.evidence)
 
 
 def test_launch_readiness_has_no_global_feature_toggle() -> None:

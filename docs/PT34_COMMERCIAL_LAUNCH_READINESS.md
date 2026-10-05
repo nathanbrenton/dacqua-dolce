@@ -100,3 +100,8 @@ production values that must be commissioned.
 
 PT34 derives all status from existing configuration and database records. It
 adds no tables, columns, constraints, or data migration.
+
+
+## PT36 refinement
+
+The Required policies check now also requires the approved Refund Policy to contain valid structured return/restocking terms. The check reports the configured values but does not hard-code the initial 60-day / 15% business decision, so later approved policy versions can change those values without a software release.

@@ -4,6 +4,7 @@ import {
 } from "react";
 
 import {
+  authorizeReturnPolicyException,
   reviewOrderCancellation,
   type OperationsOrder,
   updateOrderFulfillment,
@@ -11,6 +12,7 @@ import {
 
 type Props = {
   order: OperationsOrder;
+  roles: string[];
   onUpdated: (order: OperationsOrder) => void;
 };
 
@@ -28,6 +30,7 @@ function label(value: string): string {
 
 export function OrderFulfillmentControls({
   order,
+  roles,
   onUpdated,
 }: Props) {
   const [supplierReference, setSupplierReference] =
@@ -45,6 +48,26 @@ export function OrderFulfillmentControls({
     useState(order.cancellation?.review_note ?? "");
   const [error, setError] =
     useState<string | null>(null);
+  const [exceptionSaving, setExceptionSaving] =
+    useState(false);
+  const [exceptionReason, setExceptionReason] =
+    useState("");
+  const [returnWindowOverride, setReturnWindowOverride] =
+    useState("");
+  const [restockingPercentOverride, setRestockingPercentOverride] =
+    useState("");
+  const [returnShippingOverride, setReturnShippingOverride] =
+    useState<"" | "customer" | "business">("");
+  const [outboundShippingOverride, setOutboundShippingOverride] =
+    useState<"" | "nonrefundable" | "refund">("");
+
+  const canAuthorizeReturnException = roles.some(
+    (role) => (
+      role === "manager"
+      || role === "administrator"
+      || role === "developer"
+    ),
+  );
 
   const nextStatus = useMemo(() => {
     switch (order.fulfillment_status) {
@@ -90,6 +113,92 @@ export function OrderFulfillmentControls({
       );
     } finally {
       setCancellationSaving(false);
+    }
+  }
+
+  async function authorizeException(): Promise<void> {
+    const parsedWindow = returnWindowOverride.trim() === ""
+      ? null
+      : Number.parseInt(returnWindowOverride, 10);
+    if (
+      parsedWindow !== null
+      && (
+        !Number.isInteger(parsedWindow)
+        || parsedWindow < 1
+        || parsedWindow > 3650
+      )
+    ) {
+      setError("Return-window override must be between 1 and 3650 days.");
+      return;
+    }
+
+    const parsedRestocking = restockingPercentOverride.trim() === ""
+      ? null
+      : Number.parseFloat(restockingPercentOverride);
+    if (
+      parsedRestocking !== null
+      && (
+        Number.isNaN(parsedRestocking)
+        || parsedRestocking < 0
+        || parsedRestocking > 100
+      )
+    ) {
+      setError("Restocking override must be between 0% and 100%.");
+      return;
+    }
+
+    if (exceptionReason.trim() === "") {
+      setError("A reason is required for a return-policy exception.");
+      return;
+    }
+
+    if (
+      parsedWindow === null
+      && parsedRestocking === null
+      && returnShippingOverride === ""
+      && outboundShippingOverride === ""
+    ) {
+      setError("Select at least one return-policy term to override.");
+      return;
+    }
+
+    setExceptionSaving(true);
+    setError(null);
+
+    try {
+      const updated = await authorizeReturnPolicyException(
+        order.id,
+        {
+          reason: exceptionReason.trim(),
+          return_window_days_override: parsedWindow,
+          restocking_fee_basis_points_override:
+            parsedRestocking === null
+              ? null
+              : Math.round(parsedRestocking * 100),
+          customer_pays_return_shipping_override:
+            returnShippingOverride === ""
+              ? null
+              : returnShippingOverride === "customer",
+          refund_outbound_shipping_override:
+            outboundShippingOverride === ""
+              ? null
+              : outboundShippingOverride === "refund",
+        },
+      );
+      onUpdated(updated);
+      setExceptionReason("");
+      setReturnWindowOverride("");
+      setRestockingPercentOverride("");
+      setReturnShippingOverride("");
+      setOutboundShippingOverride("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Return-policy exception could not be authorized.",
+      );
+    } finally {
+      setExceptionSaving(false);
     }
   }
 
@@ -241,6 +350,162 @@ export function OrderFulfillmentControls({
           <p className="account-muted">
             Cancellation workflow is complete.
           </p>
+        ) : null}
+      </div>
+
+      <div className="order-cancellation-operations">
+        <div>
+          <strong>Return policy</strong>
+          <span>
+            {order.refund_policy_snapshot === null
+              ? "No snapshotted Refund Policy"
+              : `Version ${order.refund_policy_snapshot.version}`}
+          </span>
+        </div>
+
+        {order.refund_policy_snapshot?.refund_terms !== null
+          && order.refund_policy_snapshot?.refund_terms !== undefined ? (
+          <p className="account-muted">
+            {order.refund_policy_snapshot.refund_terms.return_window_days === null
+              ? "Case-by-case return eligibility"
+              : `${order.refund_policy_snapshot.refund_terms.return_window_days}-day return window`}
+            {" · "}
+            {order.refund_policy_snapshot.refund_terms.restocking_fee_basis_points === null
+              ? "Case-by-case restocking"
+              : `${(
+                  order.refund_policy_snapshot.refund_terms.restocking_fee_basis_points / 100
+                ).toFixed(2)}% restocking`}
+          </p>
+        ) : null}
+
+        {order.return_policy_exceptions.length > 0 ? (
+          <div className="operations-policy-history">
+            {order.return_policy_exceptions.map((exception) => (
+              <div key={exception.id}>
+                <strong>
+                  Authorized exception · policy {exception.policy_version}
+                </strong>
+                <span>{exception.reason}</span>
+                <small>
+                  {exception.return_window_days_override !== null
+                    ? `Return window: ${exception.return_window_days_override} days. `
+                    : ""}
+                  {exception.restocking_fee_basis_points_override !== null
+                    ? `Restocking: ${(
+                        exception.restocking_fee_basis_points_override / 100
+                      ).toFixed(2)}%. `
+                    : ""}
+                  {exception.customer_pays_return_shipping_override !== null
+                    ? (
+                        exception.customer_pays_return_shipping_override
+                          ? "Customer pays return shipping. "
+                          : "Business pays return shipping. "
+                      )
+                    : ""}
+                  {exception.refund_outbound_shipping_override !== null
+                    ? (
+                        exception.refund_outbound_shipping_override
+                          ? "Outbound shipping refundable."
+                          : "Outbound shipping non-refundable."
+                      )
+                    : ""}
+                </small>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="account-muted">
+            No order-specific return-policy exceptions are recorded.
+          </p>
+        )}
+
+        {canAuthorizeReturnException
+          && order.refund_policy_snapshot !== null ? (
+          <details>
+            <summary>Authorize return-policy exception</summary>
+
+            <label className="operations-field">
+              <span>Return window override (days, optional)</span>
+              <input
+                type="number"
+                min="1"
+                max="3650"
+                value={returnWindowOverride}
+                onChange={(event) => {
+                  setReturnWindowOverride(event.target.value);
+                }}
+              />
+            </label>
+
+            <label className="operations-field">
+              <span>Restocking percentage override (optional)</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={restockingPercentOverride}
+                onChange={(event) => {
+                  setRestockingPercentOverride(event.target.value);
+                }}
+              />
+            </label>
+
+            <label className="operations-field">
+              <span>Return shipping override</span>
+              <select
+                value={returnShippingOverride}
+                onChange={(event) => {
+                  setReturnShippingOverride(
+                    event.target.value as "" | "customer" | "business",
+                  );
+                }}
+              >
+                <option value="">No override</option>
+                <option value="customer">Customer pays</option>
+                <option value="business">Business pays</option>
+              </select>
+            </label>
+
+            <label className="operations-field">
+              <span>Outbound shipping refund override</span>
+              <select
+                value={outboundShippingOverride}
+                onChange={(event) => {
+                  setOutboundShippingOverride(
+                    event.target.value as "" | "nonrefundable" | "refund",
+                  );
+                }}
+              >
+                <option value="">No override</option>
+                <option value="nonrefundable">Non-refundable</option>
+                <option value="refund">Refund outbound shipping</option>
+              </select>
+            </label>
+
+            <label className="operations-field">
+              <span>Exception reason</span>
+              <textarea
+                rows={3}
+                maxLength={4000}
+                value={exceptionReason}
+                onChange={(event) => {
+                  setExceptionReason(event.target.value);
+                }}
+              />
+            </label>
+
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={exceptionSaving}
+              onClick={() => {
+                void authorizeException();
+              }}
+            >
+              {exceptionSaving ? "Saving…" : "Authorize exception"}
+            </button>
+          </details>
         ) : null}
       </div>
 
