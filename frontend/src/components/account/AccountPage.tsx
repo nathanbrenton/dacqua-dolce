@@ -743,6 +743,8 @@ export function AccountPage({
   ) {
     return (
       <main
+        id="main-content"
+        tabIndex={-1}
         className="account-shell"
         data-appearance={appearance}
       >
@@ -778,6 +780,8 @@ export function AccountPage({
   if (!isCustomer) {
     return (
       <main
+        id="main-content"
+        tabIndex={-1}
         className="account-shell"
         data-appearance={appearance}
       >
@@ -823,6 +827,8 @@ export function AccountPage({
   if (profile === null) {
     return (
       <main
+        id="main-content"
+        tabIndex={-1}
         className="account-shell"
         data-appearance={appearance}
       >
@@ -1030,9 +1036,11 @@ export function AccountPage({
 
   return (
     <main
-        className="account-shell"
-        data-appearance={appearance}
-      >
+      id="main-content"
+      tabIndex={-1}
+      className="account-shell"
+      data-appearance={appearance}
+    >
       <button
         type="button"
         className="text-button"

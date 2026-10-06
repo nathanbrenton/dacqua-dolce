@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -339,6 +340,10 @@ export function CommunicationsInbox() {
     useState<string | null>(null);
   const [selectionPulseThreadId, setSelectionPulseThreadId] =
     useState<string | null>(null);
+  const searchInputRef =
+    useRef<HTMLInputElement>(null);
+  const threadButtonRefs =
+    useRef<Map<string, HTMLButtonElement>>(new Map());
   const [lastRefreshedAt, setLastRefreshedAt] =
     useState<Date | null>(null);
   const [replySending, setReplySending] = useState(false);
@@ -533,9 +538,21 @@ export function CommunicationsInbox() {
       if (nextThread === null) {
         setSelectedThreadId(null);
         setThreadDetail(null);
+
+        window.requestAnimationFrame(() => {
+          searchInputRef.current?.focus();
+        });
       } else {
         setSelectionPulseThreadId(nextThread.id);
-        await openThread(nextThread.id);
+        const openNextThread = openThread(nextThread.id);
+
+        window.requestAnimationFrame(() => {
+          threadButtonRefs.current
+            .get(nextThread.id)
+            ?.focus();
+        });
+
+        await openNextThread;
       }
     } catch (caught) {
       setError(
@@ -738,6 +755,7 @@ export function CommunicationsInbox() {
       >
         <span>Search conversations</span>
         <input
+          ref={searchInputRef}
           type="search"
           placeholder="Customer, sender, subject, status, related record…"
           value={search}
@@ -748,7 +766,10 @@ export function CommunicationsInbox() {
       </label>
 
       {error !== null ? (
-        <p className="operations-alert operations-error">
+        <p
+          className="operations-alert operations-error"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
@@ -757,6 +778,7 @@ export function CommunicationsInbox() {
         <div
           className="operations-inbox-thread-list"
           aria-label="Communication threads"
+          aria-busy={loading || refreshing}
         >
           {loading ? (
             <p className="account-muted">Loading conversations…</p>
@@ -782,6 +804,14 @@ export function CommunicationsInbox() {
                 }
               >
                 <button
+                  ref={(element) => {
+                    if (element === null) {
+                      threadButtonRefs.current.delete(thread.id);
+                      return;
+                    }
+
+                    threadButtonRefs.current.set(thread.id, element);
+                  }}
                   type="button"
                   className={
                     "operations-inbox-thread "

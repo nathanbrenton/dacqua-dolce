@@ -8,7 +8,11 @@ type SupportPageProps = {
 
 export function SupportPage({ account, onNavigate }: SupportPageProps) {
   return (
-    <main className="support-page-shell">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="support-page-shell"
+    >
       <button type="button" className="text-button" onClick={() => onNavigate("/")}>
         ← Home
       </button>

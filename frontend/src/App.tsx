@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -221,6 +222,9 @@ export function App() {
       window.location.pathname,
     );
 
+  const routeFocusReadyRef =
+    useRef(false);
+
   useEffect(() => {
     document.documentElement
       .dataset.theme = theme;
@@ -352,6 +356,23 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!routeFocusReadyRef.current) {
+      routeFocusReadyRef.current = true;
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .getElementById("main-content")
+        ?.focus({ preventScroll: true });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [path]);
+
   function navigate(
     nextPath: string,
   ) {
@@ -477,6 +498,13 @@ export function App() {
 
   return (
     <>
+      <a
+        className="skip-link"
+        href="#main-content"
+      >
+        Skip to main content
+      </a>
+
       <DeveloperControls
         open={developerControlsOpen}
         onClose={() => {
@@ -590,7 +618,11 @@ export function App() {
             }}
           />
         ) : (
-          <main className="operations-shell">
+          <main
+            id="main-content"
+            className="operations-shell"
+            tabIndex={-1}
+          >
             <section
               className="operations-route-loading"
               role="status"
@@ -665,7 +697,11 @@ export function App() {
           }}
         />
       ) : isHome ? (
-        <main className="site-shell">
+        <main
+          id="main-content"
+          className="site-shell"
+          tabIndex={-1}
+        >
           <header className="site-header">
             <a
               className="brand-logo-link"
@@ -935,7 +971,11 @@ export function App() {
           </footer>
         </main>
       ) : (
-        <main className="detail-shell">
+        <main
+          id="main-content"
+          className="detail-shell"
+          tabIndex={-1}
+        >
           <button
             type="button"
             className="text-button"

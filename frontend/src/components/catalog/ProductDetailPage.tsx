@@ -122,7 +122,11 @@ export function ProductDetailPage({
 
   if (loading) {
     return (
-      <main className="detail-shell">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="detail-shell"
+      >
         <p role="status">
           Loading system…
         </p>
@@ -135,7 +139,11 @@ export function ProductDetailPage({
     || product === null
   ) {
     return (
-      <main className="detail-shell">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="detail-shell"
+      >
         <button
           type="button"
           className="text-button"
@@ -286,7 +294,11 @@ export function ProductDetailPage({
         }}
       />
 
-      <main className="detail-shell">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="detail-shell"
+      >
         <button
           type="button"
           className="text-button"

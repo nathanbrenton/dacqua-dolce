@@ -88,7 +88,11 @@ export function VerifyEmailPage({
   }
 
   return (
-    <main className="detail-shell">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="detail-shell"
+    >
       <button
         type="button"
         className="text-button"

@@ -74,6 +74,9 @@ export function QuoteDialog({
   const dialogRef =
     useRef<HTMLDialogElement>(null);
 
+  const successRef =
+    useRef<HTMLDivElement>(null);
+
   const backdropPointerStartedOutsideRef =
     useRef(false);
 
@@ -144,6 +147,20 @@ export function QuoteDialog({
     productId,
     recommendationContext,
   ]);
+
+  useEffect(() => {
+    if (successId === null) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      successRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [successId]);
 
   const isProductInquiry =
     inquiryContext === "product"
@@ -316,7 +333,12 @@ export function QuoteDialog({
       </div>
 
       {successId !== null ? (
-        <div className="quote-success">
+        <div
+          ref={successRef}
+          className="quote-success"
+          role="status"
+          tabIndex={-1}
+        >
           <strong>
             Request received.
           </strong>
@@ -347,6 +369,7 @@ export function QuoteDialog({
             <input
               type="text"
               autoComplete="name"
+              autoFocus
               required
               maxLength={160}
               value={name}

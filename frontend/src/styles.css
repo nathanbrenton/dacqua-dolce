@@ -91,9 +91,30 @@ button:disabled {
 button:focus-visible,
 a:focus-visible,
 select:focus-visible,
-input:focus-visible {
+input:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 10000;
+  min-height: 44px;
+  padding: 11px 16px;
+  color: var(--action-text);
+  background: var(--action);
+  border: 1px solid var(--action);
+  border-radius: var(--radius-button);
+  transform: translateY(calc(-100% - 24px));
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 .site-shell {
@@ -769,18 +790,36 @@ h2 {
   }
 
   .site-header {
-    gap: 12px;
+    min-height: 0;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 12px 0;
   }
 
   .brand-logo {
     width: 132px;
   }
 
-  nav {
+  .site-header nav {
+    width: 100%;
     gap: 10px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
   }
 
-  nav a,
+  .site-header nav > a,
+  .site-header nav > button,
+  .site-header .account-controls {
+    flex: 0 0 auto;
+  }
+
+  .site-header nav a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+  }
+
   .account-email {
     display: none;
   }
@@ -836,6 +875,15 @@ h2 {
 
   .auth-privacy-note {
     padding: 6px 22px 24px;
+  }
+}
+
+@media (pointer: coarse) {
+  button,
+  summary,
+  .site-header nav a,
+  .footer-policy-links a {
+    min-height: 44px;
   }
 }
 
@@ -3252,6 +3300,7 @@ textarea:focus-visible {
 
 .operations-inbox-thread-archive {
   min-width: 72px;
+  min-height: 44px;
   padding: 8px 10px;
   color: var(--ink-muted);
   background: var(--surface-1);
@@ -3716,6 +3765,7 @@ textarea:focus-visible {
 
 .operations-inbox-tabs button,
 .operations-request-tabs button {
+  min-height: 44px;
   padding: 7px 10px;
   color: var(--ink-muted);
   background: transparent;

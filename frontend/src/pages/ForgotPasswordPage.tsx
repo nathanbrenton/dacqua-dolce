@@ -55,7 +55,11 @@ export function ForgotPasswordPage({
   }
 
   return (
-    <main className="recovery-shell">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="recovery-shell"
+    >
       <button
         type="button"
         className="text-button"

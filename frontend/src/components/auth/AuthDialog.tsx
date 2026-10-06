@@ -61,6 +61,9 @@ export function AuthDialog({
   const dialogRef =
     useRef<HTMLDialogElement>(null);
 
+  const dialogTitleRef =
+    useRef<HTMLHeadingElement>(null);
+
   const backdropPointerStartedOutsideRef =
     useRef(false);
 
@@ -71,6 +74,9 @@ export function AuthDialog({
     useState<AuthStage>(
       "credentials",
     );
+
+  const previousStageRef =
+    useRef<AuthStage>("credentials");
 
   const [email, setEmail] =
     useState("");
@@ -166,6 +172,27 @@ export function AuthDialog({
     open,
     pendingAuthentication,
   ]);
+
+  useEffect(() => {
+    if (!open) {
+      previousStageRef.current = "credentials";
+      return;
+    }
+
+    if (previousStageRef.current === stage) {
+      return;
+    }
+
+    previousStageRef.current = stage;
+
+    const frame = window.requestAnimationFrame(() => {
+      dialogTitleRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [open, stage]);
 
   function switchMode(
     nextMode: AuthMode,
@@ -470,7 +497,11 @@ export function AuthDialog({
             D&apos;Acqua Dolce
           </p>
 
-          <h2 id="auth-dialog-title">
+          <h2
+            ref={dialogTitleRef}
+            id="auth-dialog-title"
+            tabIndex={-1}
+          >
             {dialogTitle}
           </h2>
         </div>
@@ -543,6 +574,7 @@ export function AuthDialog({
                 type="email"
                 name="email"
                 autoComplete="email"
+                autoFocus
                 required
                 maxLength={320}
                 value={email}

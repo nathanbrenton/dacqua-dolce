@@ -1562,7 +1562,11 @@ export function OperationsPage({
 
   if (!authorized) {
     return (
-      <main className="operations-shell">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="operations-shell"
+      >
         <button
           type="button"
           className="text-button"
@@ -2563,6 +2567,8 @@ export function OperationsPage({
 
   return (
     <main
+      id="main-content"
+      tabIndex={-1}
       className="operations-shell"
       data-appearance={appearance}
     >

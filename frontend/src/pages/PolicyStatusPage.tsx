@@ -79,7 +79,11 @@ export function PolicyStatusPage({
     && policies.every((policy) => policy.approved);
 
   return (
-    <main className="detail-shell policy-status-page">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="detail-shell policy-status-page"
+    >
       <button
         type="button"
         className="text-button"
