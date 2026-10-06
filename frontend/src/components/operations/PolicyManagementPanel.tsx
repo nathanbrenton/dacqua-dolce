@@ -6,10 +6,17 @@ import {
 } from "react";
 
 import {
+  applyPolicyImport,
   approvePolicyDocument,
   createPolicyDraft,
+  exportPolicyBundle,
   getOperationsPolicies,
+  previewPolicyImport,
   type PolicyDocument,
+  type PolicyExportBundle,
+  type PolicyExportScope,
+  type PolicyImportMode,
+  type PolicyImportReport,
   type PolicyKind,
   type RefundPolicyTerms,
 } from "../../api/policies";
@@ -83,6 +90,14 @@ export function PolicyManagementPanel({
       text: string;
     } | null>(null);
   const draftSaveInFlight = useRef(false);
+  const [exportScope, setExportScope] =
+    useState<PolicyExportScope>("all");
+  const [importBundle, setImportBundle] =
+    useState<PolicyExportBundle | null>(null);
+  const [importMode, setImportMode] =
+    useState<PolicyImportMode>("draft_only");
+  const [importReport, setImportReport] =
+    useState<PolicyImportReport | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -278,6 +293,110 @@ export function PolicyManagementPanel({
     }
   }
 
+  async function downloadExport(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const bundle = await exportPolicyBundle(exportScope);
+      const blob = new Blob(
+        [JSON.stringify(bundle, null, 2) + "\n"],
+        { type: "application/json" },
+      );
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const day = new Date().toISOString().slice(0, 10);
+      anchor.href = url;
+      anchor.download = `dacqua-dolce-policies-${day}-${exportScope}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setMessage(`Exported ${bundle.policies.length} policy versions.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Policy export could not be created.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function loadImportFile(file: File | null): Promise<void> {
+    setImportBundle(null);
+    setImportReport(null);
+    setError(null);
+    setMessage(null);
+    if (file === null) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(await file.text()) as PolicyExportBundle;
+      setImportBundle(parsed);
+      setMessage(`Loaded policy bundle from ${file.name}. Preview before applying.`);
+    } catch {
+      setError("That file is not valid JSON.");
+    }
+  }
+
+  async function previewImport(): Promise<void> {
+    if (importBundle === null) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const report = await previewPolicyImport(importBundle, importMode);
+      setImportReport(report);
+      setMessage("Import preview completed. No policy data was changed.");
+    } catch (caught) {
+      setImportReport(null);
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Policy import preview failed.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function applyImport(): Promise<void> {
+    if (importBundle === null || importReport === null || importReport.conflicts > 0) {
+      return;
+    }
+    const confirmed = window.confirm(
+      importMode === "preserve_lifecycle"
+        ? "Apply this lifecycle-preserving policy import? This mode is intended only for non-production synchronization."
+        : "Import the missing policy versions as drafts? Existing versions will not be overwritten or deleted.",
+    );
+    if (!confirmed) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const report = await applyPolicyImport(importBundle, importMode);
+      setImportReport(report);
+      setPolicies(await getOperationsPolicies());
+      setMessage(
+        `Policy import applied: ${report.additions} added, ${report.skips} skipped, ${report.lifecycle_updates} lifecycle updates.`,
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Policy import could not be applied.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function approve(policy: PolicyDocument): Promise<void> {
     const confirmed = window.confirm(
       `Approve ${policy.title} version ${policy.version}? `
@@ -333,6 +452,130 @@ export function PolicyManagementPanel({
           {message}
         </p>
       ) : null}
+
+
+      <div className="operations-policy-editor">
+        <h3>Policy portability</h3>
+        <p className="operations-request-empty">
+          Export policy versions without customer data or credentials. Imports are
+          previewed first, never delete destination-only versions, and never overwrite
+          conflicting policy content.
+        </p>
+
+        <div className="operations-field-row">
+          <label className="operations-field">
+            <span>Export scope</span>
+            <select
+              value={exportScope}
+              onChange={(event) => {
+                setExportScope(event.target.value as PolicyExportScope);
+              }}
+            >
+              <option value="all">All policy versions</option>
+              <option value="approved_effective">Approved/effective only</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="operations-action secondary"
+            disabled={busy}
+            onClick={() => {
+              void downloadExport();
+            }}
+          >
+            Export policies
+          </button>
+        </div>
+
+        {writable ? (
+          <>
+            <label className="operations-field">
+              <span>Import policy bundle</span>
+              <input
+                type="file"
+                accept="application/json,.json"
+                disabled={busy}
+                onChange={(event) => {
+                  void loadImportFile(event.target.files?.[0] ?? null);
+                }}
+              />
+            </label>
+
+            <label className="operations-field">
+              <span>Import mode</span>
+              <select
+                value={importMode}
+                disabled={busy}
+                onChange={(event) => {
+                  setImportMode(event.target.value as PolicyImportMode);
+                  setImportReport(null);
+                }}
+              >
+                <option value="draft_only">Safe import — add missing versions as drafts</option>
+                <option value="preserve_lifecycle">Non-production mirror — preserve lifecycle</option>
+              </select>
+            </label>
+
+            {importMode === "preserve_lifecycle" ? (
+              <p className="operations-request-empty">
+                Lifecycle preservation is for Local/Dev/Test synchronization only and
+                requires DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true on that
+                environment. Production should normally use safe draft-only import.
+              </p>
+            ) : null}
+
+            <button
+              type="button"
+              className="operations-action secondary"
+              disabled={busy || importBundle === null}
+              onClick={() => {
+                void previewImport();
+              }}
+            >
+              Preview import
+            </button>
+
+            {importReport !== null ? (
+              <div className="operations-policy-history" role="status">
+                <div>
+                  <strong>Import preview</strong>
+                  <span>
+                    {importReport.additions} add · {importReport.skips} skip · {importReport.conflicts} conflict · {importReport.lifecycle_updates} lifecycle update · {importReport.destination_retirements} destination retirement
+                  </span>
+                </div>
+                {importReport.actions.map((action) => (
+                  <div key={`${action.kind}-${action.version}-${action.action}`}>
+                    <strong>{action.kind} · {action.version}</strong>
+                    <span>{action.action.replaceAll("_", " ")}</span>
+                    <span>{action.detail}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              className="operations-action"
+              disabled={
+                busy
+                || importBundle === null
+                || importReport === null
+                || importReport.conflicts > 0
+              }
+              onClick={() => {
+                void applyImport();
+              }}
+            >
+              Apply previewed import
+            </button>
+          </>
+        ) : (
+          <p className="operations-request-empty">
+            Operations staff can export policy bundles. Administrator or developer
+            authorization is required to preview or apply imports.
+          </p>
+        )}
+      </div>
 
       <div className="operations-policy-grid">
         {POLICY_OPTIONS.map((option) => {

@@ -10,6 +10,10 @@ from app.models.policy import PolicyDocument, PolicyKind
 from app.schemas.policies import (
     PolicyDocumentCreate,
     PolicyDocumentRead,
+    PolicyExportBundle,
+    PolicyExportScope,
+    PolicyImportReport,
+    PolicyImportRequest,
     PolicyPublicRead,
 )
 from app.services.operations_access import require_administration, require_operations
@@ -18,6 +22,11 @@ from app.services.policies import (
     approve_policy_document,
     create_policy_draft,
     current_approved_policy,
+)
+from app.services.policy_portability import (
+    apply_policy_import,
+    export_policy_bundle,
+    preview_policy_import,
 )
 
 public_router = APIRouter(prefix="/policies", tags=["policies"])
@@ -143,3 +152,53 @@ def approve_operations_policy(
     db.commit()
     db.refresh(row)
     return policy_document_read(row)
+
+
+@operations_router.get(
+    "/export",
+    response_model=PolicyExportBundle,
+)
+def export_operations_policies(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+    scope: PolicyExportScope = PolicyExportScope.all,
+) -> PolicyExportBundle:
+    require_operations(db, user=current_user)
+    return export_policy_bundle(db, scope=scope)
+
+
+@operations_router.post(
+    "/import/preview",
+    response_model=PolicyImportReport,
+)
+def preview_operations_policy_import(
+    payload: PolicyImportRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> PolicyImportReport:
+    require_administration(db, user=current_user)
+    return preview_policy_import(
+        db,
+        bundle=payload.bundle,
+        mode=payload.mode,
+    )
+
+
+@operations_router.post(
+    "/import/apply",
+    response_model=PolicyImportReport,
+)
+def apply_operations_policy_import(
+    payload: PolicyImportRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> PolicyImportReport:
+    require_administration(db, user=current_user)
+    report = apply_policy_import(
+        db,
+        bundle=payload.bundle,
+        mode=payload.mode,
+        actor_user=current_user,
+    )
+    db.commit()
+    return report

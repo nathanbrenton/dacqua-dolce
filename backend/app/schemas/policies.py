@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -119,3 +120,67 @@ class FormalQuotePolicySnapshotRead(BaseModel):
 
 class FormalQuoteApprovalRequest(BaseModel):
     policy_snapshot_ids: list[uuid.UUID] = Field(min_length=1, max_length=20)
+
+
+class PolicyExportScope(StrEnum):
+    all = "all"
+    approved_effective = "approved_effective"
+
+
+class PolicyImportMode(StrEnum):
+    draft_only = "draft_only"
+    preserve_lifecycle = "preserve_lifecycle"
+
+
+class PolicyExportEntry(BaseModel):
+    kind: PolicyKind
+    version: str = Field(min_length=1, max_length=80)
+    title: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=100_000)
+    structured_terms: dict[str, object] | None = None
+    status: PolicyDocumentStatus
+    effective_at: datetime | None = None
+    approved_at: datetime | None = None
+    source_created_at: datetime
+    content_sha256: str = Field(min_length=64, max_length=64)
+    structured_terms_sha256: str | None = Field(default=None, min_length=64, max_length=64)
+
+
+class PolicyExportBundle(BaseModel):
+    format: str
+    format_version: int
+    scope: PolicyExportScope
+    exported_at: datetime
+    policies: list[PolicyExportEntry]
+    bundle_sha256: str = Field(min_length=64, max_length=64)
+
+
+class PolicyImportAction(BaseModel):
+    kind: PolicyKind
+    version: str
+    action: Literal[
+        "add",
+        "skip",
+        "conflict",
+        "update_lifecycle",
+        "retire_destination_approved",
+    ]
+    detail: str
+
+
+class PolicyImportRequest(BaseModel):
+    bundle: PolicyExportBundle
+    mode: PolicyImportMode = PolicyImportMode.draft_only
+
+
+class PolicyImportReport(BaseModel):
+    mode: PolicyImportMode
+    source_scope: PolicyExportScope
+    bundle_sha256: str
+    lifecycle_preservation_allowed: bool
+    additions: int
+    skips: int
+    conflicts: int
+    lifecycle_updates: int
+    destination_retirements: int
+    actions: list[PolicyImportAction]

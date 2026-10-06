@@ -152,3 +152,106 @@ export async function approvePolicyDocument(
   }
   return response.json() as Promise<PolicyDocument>;
 }
+
+export type PolicyExportScope = "all" | "approved_effective";
+export type PolicyImportMode = "draft_only" | "preserve_lifecycle";
+
+export type PolicyExportEntry = {
+  kind: PolicyKind;
+  version: string;
+  title: string;
+  body: string;
+  structured_terms: Record<string, unknown> | null;
+  status: PolicyDocumentStatus;
+  effective_at: string | null;
+  approved_at: string | null;
+  source_created_at: string;
+  content_sha256: string;
+  structured_terms_sha256: string | null;
+};
+
+export type PolicyExportBundle = {
+  format: string;
+  format_version: number;
+  scope: PolicyExportScope;
+  exported_at: string;
+  policies: PolicyExportEntry[];
+  bundle_sha256: string;
+};
+
+export type PolicyImportAction = {
+  kind: PolicyKind;
+  version: string;
+  action:
+    | "add"
+    | "skip"
+    | "conflict"
+    | "update_lifecycle"
+    | "retire_destination_approved";
+  detail: string;
+};
+
+export type PolicyImportReport = {
+  mode: PolicyImportMode;
+  source_scope: PolicyExportScope;
+  bundle_sha256: string;
+  lifecycle_preservation_allowed: boolean;
+  additions: number;
+  skips: number;
+  conflicts: number;
+  lifecycle_updates: number;
+  destination_retirements: number;
+  actions: PolicyImportAction[];
+};
+
+export async function exportPolicyBundle(
+  scope: PolicyExportScope,
+): Promise<PolicyExportBundle> {
+  const response = await fetch(
+    `/api/operations/policies/export?scope=${encodeURIComponent(scope)}`,
+    { credentials: "include", cache: "no-store" },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json() as Promise<PolicyExportBundle>;
+}
+
+async function postPolicyImport(
+  path: "preview" | "apply",
+  bundle: PolicyExportBundle,
+  mode: PolicyImportMode,
+): Promise<PolicyImportReport> {
+  const csrfToken = await getCsrfToken();
+  const response = await fetch(
+    `/api/operations/policies/import/${path}`,
+    {
+      method: "POST",
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      body: JSON.stringify({ bundle, mode }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(await readError(response));
+  }
+  return response.json() as Promise<PolicyImportReport>;
+}
+
+export async function previewPolicyImport(
+  bundle: PolicyExportBundle,
+  mode: PolicyImportMode,
+): Promise<PolicyImportReport> {
+  return postPolicyImport("preview", bundle, mode);
+}
+
+export async function applyPolicyImport(
+  bundle: PolicyExportBundle,
+  mode: PolicyImportMode,
+): Promise<PolicyImportReport> {
+  return postPolicyImport("apply", bundle, mode);
+}
