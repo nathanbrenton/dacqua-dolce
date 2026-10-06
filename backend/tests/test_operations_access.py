@@ -5,6 +5,7 @@ from app.services.operations_access import (
     CANCELLATION_EXCEPTION_WRITE_ROLES,
     CUSTOMER_EQUIPMENT_WRITE_ROLES,
     INSTALLER_CANDIDATE_WRITE_ROLES,
+    LAUNCH_DEPENDENCY_WRITE_ROLES,
     OPERATIONS_ROLES,
     PRICING_INVENTORY_WRITE_ROLES,
 )
@@ -65,3 +66,12 @@ def test_installer_candidate_writes_are_admin_or_developer_only() -> None:
     }
     assert RoleName.employee not in INSTALLER_CANDIDATE_WRITE_ROLES
     assert RoleName.manager not in INSTALLER_CANDIDATE_WRITE_ROLES
+
+
+def test_launch_dependency_writes_are_admin_or_developer_only() -> None:
+    assert LAUNCH_DEPENDENCY_WRITE_ROLES == {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+    assert RoleName.employee not in LAUNCH_DEPENDENCY_WRITE_ROLES
+    assert RoleName.manager not in LAUNCH_DEPENDENCY_WRITE_ROLES

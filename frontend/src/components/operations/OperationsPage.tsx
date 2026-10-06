@@ -78,6 +78,9 @@ import {
   FormalQuoteComposer,
 } from "./FormalQuoteComposer";
 import {
+  LaunchDependencyEvidencePanel,
+} from "./LaunchDependencyEvidencePanel";
+import {
   OrderFulfillmentControls,
 } from "./OrderFulfillmentControls";
 import {
@@ -335,6 +338,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "formal_quote.created": "Formal quote created",
   "formal_quote.presented": "Formal quote presented",
   "formal_quote.approved": "Formal quote approved",
+  "launch_dependency_evidence.updated": "Launch dependency evidence updated",
   "maintenance.reminder_delivery_attempted": "Maintenance reminder attempted",
 };
 
@@ -349,6 +353,7 @@ const AUDIT_ENTITY_LABELS: Record<string, string> = {
   product_relationship: "Product relationship",
   quote_request: "Customer request",
   formal_quote: "Formal quote",
+  launch_dependency_evidence: "Launch dependency evidence",
   maintenance_reminder: "Maintenance reminder",
   user: "User account",
   user_session: "User session",
@@ -2745,6 +2750,8 @@ export function OperationsPage({
               </div>
             ))}
           </div>
+
+          <LaunchDependencyEvidencePanel roles={roles} />
 
           <p>
             Evaluated{" "}

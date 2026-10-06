@@ -71,6 +71,67 @@ class OperationsLaunchReadinessRead(BaseModel):
     checks: list[OperationsLaunchReadinessCheckRead] = Field(default_factory=list)
 
 
+LaunchDependencyKey = Literal[
+    "tax",
+    "payment_checkout",
+    "legal_review",
+    "shipping_insurance",
+    "support_phone",
+    "installer_program",
+]
+
+LaunchDependencyTrackingStatus = Literal[
+    "action_required",
+    "in_progress",
+    "evidence_received",
+    "verified",
+    "blocked",
+]
+
+
+class OperationsLaunchDependencyEvidenceRead(BaseModel):
+    dependency_key: LaunchDependencyKey
+    label: str
+    tracking_status: LaunchDependencyTrackingStatus
+    source_reference: str | None
+    evidence_received_at: str | None
+    internal_notes: str | None
+    created_by_user_id: str | None
+    updated_by_user_id: str | None
+    created_at: str | None
+    updated_at: str | None
+
+
+class LaunchDependencyEvidenceUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tracking_status: LaunchDependencyTrackingStatus
+    source_reference: str | None = Field(default=None, max_length=4000)
+    evidence_received_at: datetime | None = None
+    internal_notes: str | None = Field(default=None, max_length=8000)
+
+    @field_validator(
+        "source_reference",
+        "internal_notes",
+    )
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("evidence_received_at")
+    @classmethod
+    def require_timezone(
+        cls,
+        value: datetime | None,
+    ) -> datetime | None:
+        if value is not None and value.tzinfo is None:
+            raise ValueError("Evidence received time must include a timezone.")
+        return value
+
+
 class OperationsAuditEventRead(BaseModel):
     id: str
     actor_user_id: str | None

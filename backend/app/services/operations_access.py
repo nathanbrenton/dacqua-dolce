@@ -43,6 +43,13 @@ INSTALLER_CANDIDATE_WRITE_ROLES = frozenset(
     }
 )
 
+LAUNCH_DEPENDENCY_WRITE_ROLES = frozenset(
+    {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
 RETURN_POLICY_EXCEPTION_WRITE_ROLES = frozenset(
     {
         RoleName.manager,
@@ -148,6 +155,18 @@ def require_installer_candidate_write(
         db,
         user=user,
         allowed_roles=INSTALLER_CANDIDATE_WRITE_ROLES,
+    )
+
+
+def require_launch_dependency_write(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=LAUNCH_DEPENDENCY_WRITE_ROLES,
     )
 
 

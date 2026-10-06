@@ -47,6 +47,7 @@ from app.models.identity import (
     UserRole,
     UserStatus,
 )
+from app.models.launch import LaunchDependencyEvidence
 from app.models.quote import (
     FormalQuote,
     QuoteRequest,
@@ -64,6 +65,8 @@ from app.schemas.operations import (
     InstallerCandidateCreateRequest,
     InstallerCandidateUpdateRequest,
     InventoryUpdateRequest,
+    LaunchDependencyEvidenceUpdateRequest,
+    LaunchDependencyKey,
     OperationsAuditEventPageRead,
     OperationsAuditEventRead,
     OperationsCommunicationAttachmentRead,
@@ -84,6 +87,7 @@ from app.schemas.operations import (
     OperationsInsightBucketRead,
     OperationsInstallerCandidateRead,
     OperationsInventoryRead,
+    OperationsLaunchDependencyEvidenceRead,
     OperationsLaunchReadinessCheckRead,
     OperationsLaunchReadinessRead,
     OperationsManufacturerClaimRead,
@@ -162,6 +166,7 @@ from app.services.operations_access import (
     require_cancellation_exception_write,
     require_customer_equipment_write,
     require_installer_candidate_write,
+    require_launch_dependency_write,
     require_operations,
     require_pricing_inventory_write,
     require_return_policy_exception_write,
@@ -197,6 +202,18 @@ from app.services.tax_automation import (
 )
 
 router = APIRouter(prefix="/operations", tags=["operations"])
+
+
+LAUNCH_DEPENDENCIES: tuple[tuple[LaunchDependencyKey, str], ...] = (
+    ("tax", "Automated tax"),
+    ("payment_checkout", "Payment / Affinity24"),
+    ("legal_review", "Legal review"),
+    ("shipping_insurance", "Shipping insurance"),
+    ("support_phone", "Public support phone"),
+    ("installer_program", "Installer program"),
+)
+
+LAUNCH_DEPENDENCY_LABELS = dict(LAUNCH_DEPENDENCIES)
 
 
 def product_name_for_quote(
@@ -541,6 +558,150 @@ def operations_launch_readiness(
             )
             for check in snapshot.checks
         ],
+    )
+
+
+def operations_launch_dependency_evidence_read(
+    dependency_key: LaunchDependencyKey,
+    evidence: LaunchDependencyEvidence | None,
+) -> OperationsLaunchDependencyEvidenceRead:
+    return OperationsLaunchDependencyEvidenceRead(
+        dependency_key=dependency_key,
+        label=LAUNCH_DEPENDENCY_LABELS[dependency_key],
+        tracking_status=(
+            evidence.tracking_status
+            if evidence is not None
+            else "action_required"
+        ),
+        source_reference=(
+            evidence.source_reference
+            if evidence is not None
+            else None
+        ),
+        evidence_received_at=(
+            evidence.evidence_received_at.isoformat()
+            if evidence is not None and evidence.evidence_received_at is not None
+            else None
+        ),
+        internal_notes=(
+            evidence.internal_notes
+            if evidence is not None
+            else None
+        ),
+        created_by_user_id=(
+            str(evidence.created_by_user_id)
+            if evidence is not None
+            else None
+        ),
+        updated_by_user_id=(
+            str(evidence.updated_by_user_id)
+            if evidence is not None
+            else None
+        ),
+        created_at=(
+            evidence.created_at.isoformat()
+            if evidence is not None
+            else None
+        ),
+        updated_at=(
+            evidence.updated_at.isoformat()
+            if evidence is not None
+            else None
+        ),
+    )
+
+
+@router.get(
+    "/launch-dependency-evidence",
+    response_model=list[OperationsLaunchDependencyEvidenceRead],
+)
+def list_launch_dependency_evidence(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsLaunchDependencyEvidenceRead]:
+    require_operations(db, user=current_user)
+
+    rows = {
+        row.dependency_key: row
+        for row in db.scalars(
+            select(LaunchDependencyEvidence)
+        ).all()
+    }
+
+    return [
+        operations_launch_dependency_evidence_read(
+            dependency_key,
+            rows.get(dependency_key),
+        )
+        for dependency_key, _label in LAUNCH_DEPENDENCIES
+    ]
+
+
+@router.patch(
+    "/launch-dependency-evidence/{dependency_key}",
+    response_model=OperationsLaunchDependencyEvidenceRead,
+)
+def update_launch_dependency_evidence(
+    dependency_key: LaunchDependencyKey,
+    payload: LaunchDependencyEvidenceUpdateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsLaunchDependencyEvidenceRead:
+    require_launch_dependency_write(db, user=current_user)
+
+    evidence = db.get(
+        LaunchDependencyEvidence,
+        dependency_key,
+    )
+    previous_status = (
+        evidence.tracking_status
+        if evidence is not None
+        else None
+    )
+
+    if evidence is None:
+        evidence = LaunchDependencyEvidence(
+            dependency_key=dependency_key,
+            tracking_status=payload.tracking_status,
+            source_reference=payload.source_reference,
+            evidence_received_at=payload.evidence_received_at,
+            internal_notes=payload.internal_notes,
+            created_by_user_id=current_user.id,
+            updated_by_user_id=current_user.id,
+        )
+        db.add(evidence)
+    else:
+        evidence.tracking_status = payload.tracking_status
+        evidence.source_reference = payload.source_reference
+        evidence.evidence_received_at = payload.evidence_received_at
+        evidence.internal_notes = payload.internal_notes
+        evidence.updated_by_user_id = current_user.id
+
+    db.flush()
+
+    record_audit_event(
+        db,
+        action="launch_dependency_evidence.updated",
+        entity_type="launch_dependency_evidence",
+        entity_id=dependency_key,
+        actor_user_id=current_user.id,
+        metadata={
+            "dependency_key": dependency_key,
+            "previous_status": previous_status,
+            "new_status": evidence.tracking_status,
+            "has_source_reference": bool(evidence.source_reference),
+            "has_internal_notes": bool(evidence.internal_notes),
+            "evidence_received_at_recorded": evidence.evidence_received_at is not None,
+            "commerce_gate_effect": "none",
+        },
+    )
+
+    db.commit()
+    db.refresh(evidence)
+
+    return operations_launch_dependency_evidence_read(
+        dependency_key,
+        evidence,
     )
 
 

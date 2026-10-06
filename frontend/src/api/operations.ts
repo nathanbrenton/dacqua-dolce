@@ -55,6 +55,41 @@ export type OperationsLaunchReadiness = {
   checks: OperationsLaunchReadinessCheck[];
 };
 
+export type LaunchDependencyKey =
+  | "tax"
+  | "payment_checkout"
+  | "legal_review"
+  | "shipping_insurance"
+  | "support_phone"
+  | "installer_program";
+
+export type LaunchDependencyTrackingStatus =
+  | "action_required"
+  | "in_progress"
+  | "evidence_received"
+  | "verified"
+  | "blocked";
+
+export type OperationsLaunchDependencyEvidence = {
+  dependency_key: LaunchDependencyKey;
+  label: string;
+  tracking_status: LaunchDependencyTrackingStatus;
+  source_reference: string | null;
+  evidence_received_at: string | null;
+  internal_notes: string | null;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type LaunchDependencyEvidenceInput = {
+  tracking_status: LaunchDependencyTrackingStatus;
+  source_reference: string | null;
+  evidence_received_at: string | null;
+  internal_notes: string | null;
+};
+
 export type OperationsInsightBucket = {
   value: string;
   count: number;
@@ -693,6 +728,25 @@ export function getOperationsLaunchReadiness(): Promise<
 > {
   return getJson(
     "/api/operations/launch-readiness",
+  );
+}
+
+export function getLaunchDependencyEvidence(): Promise<
+  OperationsLaunchDependencyEvidence[]
+> {
+  return getJson(
+    "/api/operations/launch-dependency-evidence",
+  );
+}
+
+export function updateLaunchDependencyEvidence(
+  dependencyKey: LaunchDependencyKey,
+  payload: LaunchDependencyEvidenceInput,
+): Promise<OperationsLaunchDependencyEvidence> {
+  return writeJson(
+    `/api/operations/launch-dependency-evidence/${encodeURIComponent(dependencyKey)}`,
+    "PATCH",
+    payload,
   );
 }
 
