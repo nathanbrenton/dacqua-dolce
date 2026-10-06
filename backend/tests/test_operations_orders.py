@@ -45,6 +45,8 @@ class OrderHistoryDatabase:
             return None
         if "FROM formal_quote_policy_snapshots" in query:
             return None
+        if "FROM email_deliveries" in query:
+            return None
         raise AssertionError(
             f"Unexpected scalar query: {query}"
         )
@@ -188,6 +190,13 @@ def test_operations_order_history_is_customer_linked_and_bounded() -> None:
         "customer_status": "supplier_confirmed",
         "cancellation_mode": "closed_after_supplier_confirmation",
         "cancellation": None,
+        "order_confirmation": {
+            "delivery_id": None,
+            "status": "not_sent",
+            "attempted_at": None,
+            "sent_at": None,
+            "error_summary": None,
+        },
         "refund_policy_snapshot": None,
         "return_policy_exceptions": [],
         "supplier_order_reference": "PO-12345",

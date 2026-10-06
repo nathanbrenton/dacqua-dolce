@@ -6,6 +6,7 @@ import {
 import {
   authorizeReturnPolicyException,
   reviewOrderCancellation,
+  sendOrderConfirmation,
   startOrderCancellationException,
   type OperationsOrder,
   updateOrderFulfillment,
@@ -58,6 +59,7 @@ export function OrderFulfillmentControls({
   const [trackingUrl, setTrackingUrl] =
     useState(order.shipment?.tracking_url ?? "");
   const [saving, setSaving] = useState(false);
+  const [confirmationSaving, setConfirmationSaving] = useState(false);
   const [cancellationSaving, setCancellationSaving] =
     useState(false);
   const [reviewNote, setReviewNote] =
@@ -252,6 +254,24 @@ export function OrderFulfillmentControls({
     }
   }
 
+  async function confirmOrder(): Promise<void> {
+    setConfirmationSaving(true);
+    setError(null);
+
+    try {
+      const updated = await sendOrderConfirmation(order.id);
+      onUpdated(updated);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Order confirmation could not be sent.",
+      );
+    } finally {
+      setConfirmationSaving(false);
+    }
+  }
+
   async function advance(): Promise<void> {
     if (nextStatus === null) {
       return;
@@ -306,6 +326,60 @@ export function OrderFulfillmentControls({
           <strong>Customer status:</strong>{" "}
           {customerStatusLabel(order.customer_status)}
         </span>
+      </div>
+
+      <div className="order-cancellation-operations order-confirmation-operations">
+        <div>
+          <strong>Customer confirmation</strong>
+          <span>
+            {order.order_confirmation.status === "sent"
+              ? `Order Confirmed sent${
+                  order.order_confirmation.sent_at !== null
+                    ? ` · ${new Date(order.order_confirmation.sent_at).toLocaleString()}`
+                    : ""
+                }`
+              : order.order_confirmation.status === "not_sent"
+                ? "Not sent"
+                : `Last attempt: ${order.order_confirmation.status}`}
+          </span>
+        </div>
+
+        <p className="account-muted">
+          Supplier Confirmed changes the order lifecycle but does not email the customer.
+          After staff reviews the order, send the separate customer-facing “Order Confirmed” message here.
+        </p>
+
+        {order.order_confirmation.error_summary !== null
+          && order.order_confirmation.status !== "sent" ? (
+          <p className="account-muted">
+            Last delivery result: {order.order_confirmation.error_summary}
+          </p>
+        ) : null}
+
+        {order.order_confirmation.status !== "sent"
+          && order.fulfillment_status !== "not_started"
+          && order.customer_status !== "cancelled"
+          && order.customer_status !== "refunded" ? (
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={confirmationSaving}
+            onClick={() => {
+              void confirmOrder();
+            }}
+          >
+            {confirmationSaving
+              ? "Sending…"
+              : order.order_confirmation.status === "not_sent"
+                ? "Send Order Confirmed"
+                : "Retry Order Confirmed"}
+          </button>
+        ) : null}
+
+        {order.order_confirmation.status === "not_sent"
+          && order.fulfillment_status === "not_started" ? (
+          <small>Available after Supplier Confirmed is recorded.</small>
+        ) : null}
       </div>
 
       <div className="order-cancellation-operations">

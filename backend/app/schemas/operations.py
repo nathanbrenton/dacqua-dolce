@@ -563,6 +563,20 @@ class OrderReturnPolicyExceptionCreate(BaseModel):
         return self
 
 
+class OperationsOrderConfirmationRead(BaseModel):
+    delivery_id: str | None = None
+    status: Literal[
+        "not_sent",
+        "pending",
+        "sent",
+        "suppressed",
+        "failed",
+    ] = "not_sent"
+    attempted_at: str | None = None
+    sent_at: str | None = None
+    error_summary: str | None = None
+
+
 class OperationsOrderRead(BaseModel):
     id: str
     status: str
@@ -582,6 +596,9 @@ class OperationsOrderRead(BaseModel):
         "closed_after_supplier_confirmation",
     ]
     cancellation: OperationsOrderCancellationRead | None = None
+    order_confirmation: OperationsOrderConfirmationRead = Field(
+        default_factory=OperationsOrderConfirmationRead
+    )
     refund_policy_snapshot: FormalQuotePolicySnapshotRead | None = None
     return_policy_exceptions: list[
         OperationsReturnPolicyExceptionRead

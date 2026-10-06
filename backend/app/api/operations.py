@@ -84,6 +84,7 @@ from app.schemas.operations import (
     OperationsLaunchReadinessRead,
     OperationsManufacturerClaimRead,
     OperationsOrderCancellationRead,
+    OperationsOrderConfirmationRead,
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
     OperationsOrderRead,
@@ -157,6 +158,11 @@ from app.services.operations_access import (
     require_operations,
     require_pricing_inventory_write,
     require_return_policy_exception_write,
+)
+from app.services.order_confirmations import (
+    OrderConfirmationError,
+    latest_order_confirmation_delivery,
+    send_order_confirmation,
 )
 from app.services.order_lifecycle import customer_order_stage
 from app.services.pricing import (
@@ -2091,6 +2097,10 @@ def operations_order_read(
         db,
         order_id=order.id,
     )
+    order_confirmation_delivery = latest_order_confirmation_delivery(
+        db,
+        order_id=order.id,
+    )
 
     return OperationsOrderRead(
         id=str(order.id),
@@ -2102,6 +2112,21 @@ def operations_order_read(
             operations_cancellation_read(cancellation)
             if cancellation is not None
             else None
+        ),
+        order_confirmation=(
+            OperationsOrderConfirmationRead(
+                delivery_id=str(order_confirmation_delivery.id),
+                status=order_confirmation_delivery.status.value,
+                attempted_at=order_confirmation_delivery.created_at.isoformat(),
+                sent_at=(
+                    order_confirmation_delivery.sent_at.isoformat()
+                    if order_confirmation_delivery.sent_at is not None
+                    else None
+                ),
+                error_summary=order_confirmation_delivery.error_summary,
+            )
+            if order_confirmation_delivery is not None
+            else OperationsOrderConfirmationRead()
         ),
         refund_policy_snapshot=(
             {
@@ -2350,6 +2375,60 @@ def update_order_fulfillment(
             tracking_url=payload.tracking_url,
         )
     except FulfillmentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(
+        db,
+        order=order,
+        customer=customer,
+    )
+
+
+@router.post(
+    "/orders/{order_id}/confirmation",
+    response_model=OperationsOrderRead,
+)
+def send_customer_order_confirmation(
+    order_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    order = db.scalar(
+        select(Order)
+        .where(Order.id == order_id)
+        .with_for_update()
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    try:
+        send_order_confirmation(
+            db,
+            order=order,
+            customer=customer,
+            settings=get_email_runtime_settings(),
+            actor_user_id=current_user.id,
+        )
+    except OrderConfirmationError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),

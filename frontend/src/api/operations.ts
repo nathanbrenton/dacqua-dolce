@@ -386,6 +386,13 @@ export type OperationsOrder = {
     | "unrestricted"
     | "closed_after_supplier_confirmation";
   cancellation: OperationsOrderCancellation | null;
+  order_confirmation: {
+    delivery_id: string | null;
+    status: "not_sent" | "pending" | "sent" | "suppressed" | "failed";
+    attempted_at: string | null;
+    sent_at: string | null;
+    error_summary: string | null;
+  };
   refund_policy_snapshot: PolicySnapshot | null;
   return_policy_exceptions: OperationsReturnPolicyException[];
   supplier_order_reference: string | null;
@@ -822,6 +829,17 @@ export function updateOrderFulfillment(
     payload,
   );
 }
+
+export function sendOrderConfirmation(
+  orderId: string,
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/confirmation`,
+    "POST",
+    {},
+  );
+}
+
 
 export function reviewOrderCancellation(
   orderId: string,
