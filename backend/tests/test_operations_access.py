@@ -4,6 +4,7 @@ from app.services.operations_access import (
     AUDIT_LOG_READ_ROLES,
     CANCELLATION_EXCEPTION_WRITE_ROLES,
     CUSTOMER_EQUIPMENT_WRITE_ROLES,
+    INSTALLER_CANDIDATE_WRITE_ROLES,
     OPERATIONS_ROLES,
     PRICING_INVENTORY_WRITE_ROLES,
 )
@@ -55,3 +56,12 @@ def test_cancellation_exceptions_require_privileged_staff() -> None:
         RoleName.developer,
     }
     assert RoleName.employee not in CANCELLATION_EXCEPTION_WRITE_ROLES
+
+
+def test_installer_candidate_writes_are_admin_or_developer_only() -> None:
+    assert INSTALLER_CANDIDATE_WRITE_ROLES == {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+    assert RoleName.employee not in INSTALLER_CANDIDATE_WRITE_ROLES
+    assert RoleName.manager not in INSTALLER_CANDIDATE_WRITE_ROLES

@@ -203,6 +203,41 @@ export type OperationsCommunicationReply = {
   thread: OperationsCommunicationThreadDetail;
 };
 
+export type InstallerCandidateStatus =
+  | "researching"
+  | "contacted"
+  | "review_pending"
+  | "inactive";
+
+export type OperationsInstallerCandidate = {
+  id: string;
+  business_name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  service_area_notes: string | null;
+  source_reference: string | null;
+  status: InstallerCandidateStatus;
+  internal_notes: string | null;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InstallerCandidateInput = {
+  business_name: string;
+  contact_name: string | null;
+  email: string | null;
+  phone: string | null;
+  website: string | null;
+  service_area_notes: string | null;
+  source_reference: string | null;
+  status: InstallerCandidateStatus;
+  internal_notes: string | null;
+};
+
 export type OperationsFormalQuoteItem = {
   id: string;
   product_id: string | null;
@@ -815,6 +850,35 @@ export function presentFormalQuote(
     `/api/operations/formal-quotes/${encodeURIComponent(formalQuoteId)}/present`,
     "POST",
     {},
+  );
+}
+
+export function getOperationsInstallerCandidates(): Promise<
+  OperationsInstallerCandidate[]
+> {
+  return getJson(
+    "/api/operations/installer-candidates",
+  );
+}
+
+export function createInstallerCandidate(
+  payload: InstallerCandidateInput,
+): Promise<OperationsInstallerCandidate> {
+  return writeJson(
+    "/api/operations/installer-candidates",
+    "POST",
+    payload,
+  );
+}
+
+export function updateInstallerCandidate(
+  candidateId: string,
+  payload: InstallerCandidateInput,
+): Promise<OperationsInstallerCandidate> {
+  return writeJson(
+    `/api/operations/installer-candidates/${encodeURIComponent(candidateId)}`,
+    "PATCH",
+    payload,
   );
 }
 

@@ -58,6 +58,78 @@ class PaymentReferenceStatus(StrEnum):
     refunded = "refunded"
 
 
+class InstallerCandidate(Base):
+    """Internal-only research record for a possible installer.
+
+    Presence in this table never represents approval, recommendation,
+    licensing verification, insurance verification, partnership, or referral
+    eligibility. Those decisions remain outside the application until legal
+    review establishes a public installer program.
+    """
+
+    __tablename__ = "installer_candidates"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('researching', 'contacted', 'review_pending', 'inactive')",
+            name="installer_candidates_status_supported",
+        ),
+        Index(
+            "ix_installer_candidates_status_updated",
+            "status",
+            "updated_at",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    business_name: Mapped[str] = mapped_column(
+        String(160),
+        nullable=False,
+    )
+    contact_name: Mapped[str | None] = mapped_column(String(160))
+    email: Mapped[str | None] = mapped_column(String(320))
+    phone: Mapped[str | None] = mapped_column(String(80))
+    website: Mapped[str | None] = mapped_column(String(2048))
+    service_area_notes: Mapped[str | None] = mapped_column(Text)
+    source_reference: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="researching",
+    )
+    internal_notes: Mapped[str | None] = mapped_column(Text)
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+    updated_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
 class Cart(Base):
     __tablename__ = "carts"
 

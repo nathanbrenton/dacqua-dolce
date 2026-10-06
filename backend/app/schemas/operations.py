@@ -468,6 +468,127 @@ class OperationsCustomerRead(BaseModel):
     created_at: str
 
 
+InstallerCandidateStatus = Literal[
+    "researching",
+    "contacted",
+    "review_pending",
+    "inactive",
+]
+
+
+class OperationsInstallerCandidateRead(BaseModel):
+    id: str
+    business_name: str
+    contact_name: str | None
+    email: str | None
+    phone: str | None
+    website: str | None
+    service_area_notes: str | None
+    source_reference: str | None
+    status: InstallerCandidateStatus
+    internal_notes: str | None
+    created_by_user_id: str
+    updated_by_user_id: str
+    created_at: str
+    updated_at: str
+
+
+class InstallerCandidateCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    business_name: str = Field(min_length=1, max_length=160)
+    contact_name: str | None = Field(default=None, max_length=160)
+    email: str | None = Field(default=None, max_length=320)
+    phone: str | None = Field(default=None, max_length=80)
+    website: str | None = Field(default=None, max_length=2048)
+    service_area_notes: str | None = Field(default=None, max_length=4000)
+    source_reference: str | None = Field(default=None, max_length=4000)
+    status: InstallerCandidateStatus = "researching"
+    internal_notes: str | None = Field(default=None, max_length=8000)
+
+    @field_validator("business_name")
+    @classmethod
+    def clean_business_name(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Business name cannot be blank.")
+        return cleaned
+
+    @field_validator(
+        "contact_name",
+        "phone",
+        "website",
+        "service_area_notes",
+        "source_reference",
+        "internal_notes",
+    )
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        try:
+            return normalize_email_address(value)
+        except ValueError as exc:
+            raise ValueError("Enter a valid installer candidate email address.") from exc
+
+
+class InstallerCandidateUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    business_name: str | None = Field(default=None, min_length=1, max_length=160)
+    contact_name: str | None = Field(default=None, max_length=160)
+    email: str | None = Field(default=None, max_length=320)
+    phone: str | None = Field(default=None, max_length=80)
+    website: str | None = Field(default=None, max_length=2048)
+    service_area_notes: str | None = Field(default=None, max_length=4000)
+    source_reference: str | None = Field(default=None, max_length=4000)
+    status: InstallerCandidateStatus | None = None
+    internal_notes: str | None = Field(default=None, max_length=8000)
+
+    @field_validator("business_name")
+    @classmethod
+    def clean_business_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Business name cannot be blank.")
+        return cleaned
+
+    @field_validator(
+        "contact_name",
+        "phone",
+        "website",
+        "service_area_notes",
+        "source_reference",
+        "internal_notes",
+    )
+    @classmethod
+    def clean_optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        try:
+            return normalize_email_address(value)
+        except ValueError as exc:
+            raise ValueError("Enter a valid installer candidate email address.") from exc
+
+
 class OperationsOrderCustomerRead(BaseModel):
     id: str
     email: str

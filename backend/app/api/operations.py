@@ -20,6 +20,7 @@ from app.models.catalog import (
     StockNotificationSubscription,
 )
 from app.models.commerce import (
+    InstallerCandidate,
     Order,
     OrderCancellationRequest,
     OrderCharge,
@@ -60,6 +61,8 @@ from app.schemas.operations import (
     CustomerEquipmentCreateRequest,
     CustomerEquipmentUpdateRequest,
     FormalQuoteCreate,
+    InstallerCandidateCreateRequest,
+    InstallerCandidateUpdateRequest,
     InventoryUpdateRequest,
     OperationsAuditEventPageRead,
     OperationsAuditEventRead,
@@ -79,6 +82,7 @@ from app.schemas.operations import (
     OperationsFormalQuoteItemRead,
     OperationsFormalQuoteRead,
     OperationsInsightBucketRead,
+    OperationsInstallerCandidateRead,
     OperationsInventoryRead,
     OperationsLaunchReadinessCheckRead,
     OperationsLaunchReadinessRead,
@@ -157,6 +161,7 @@ from app.services.operations_access import (
     require_audit_log_read,
     require_cancellation_exception_write,
     require_customer_equipment_write,
+    require_installer_candidate_write,
     require_operations,
     require_pricing_inventory_write,
     require_return_policy_exception_write,
@@ -1763,6 +1768,147 @@ def update_quote_notes(
         db,
         quote=quote,
     )
+
+
+def operations_installer_candidate_read(
+    candidate: InstallerCandidate,
+) -> OperationsInstallerCandidateRead:
+    return OperationsInstallerCandidateRead(
+        id=str(candidate.id),
+        business_name=candidate.business_name,
+        contact_name=candidate.contact_name,
+        email=candidate.email,
+        phone=candidate.phone,
+        website=candidate.website,
+        service_area_notes=candidate.service_area_notes,
+        source_reference=candidate.source_reference,
+        status=candidate.status,
+        internal_notes=candidate.internal_notes,
+        created_by_user_id=str(candidate.created_by_user_id),
+        updated_by_user_id=str(candidate.updated_by_user_id),
+        created_at=candidate.created_at.isoformat(),
+        updated_at=candidate.updated_at.isoformat(),
+    )
+
+
+@router.get(
+    "/installer-candidates",
+    response_model=list[OperationsInstallerCandidateRead],
+)
+def list_installer_candidates(
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsInstallerCandidateRead]:
+    require_operations(db, user=current_user)
+
+    candidates = db.scalars(
+        select(InstallerCandidate).order_by(
+            InstallerCandidate.updated_at.desc(),
+            InstallerCandidate.business_name,
+        )
+    ).all()
+
+    return [
+        operations_installer_candidate_read(candidate)
+        for candidate in candidates
+    ]
+
+
+@router.post(
+    "/installer-candidates",
+    response_model=OperationsInstallerCandidateRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_installer_candidate(
+    payload: InstallerCandidateCreateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsInstallerCandidateRead:
+    require_installer_candidate_write(db, user=current_user)
+
+    candidate = InstallerCandidate(
+        **payload.model_dump(),
+        created_by_user_id=current_user.id,
+        updated_by_user_id=current_user.id,
+    )
+    db.add(candidate)
+    db.flush()
+
+    record_audit_event(
+        db,
+        action="installer_candidate.created",
+        entity_type="installer_candidate",
+        entity_id=str(candidate.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "business_name": candidate.business_name,
+            "status": candidate.status,
+        },
+    )
+
+    db.commit()
+    db.refresh(candidate)
+    return operations_installer_candidate_read(candidate)
+
+
+@router.patch(
+    "/installer-candidates/{candidate_id}",
+    response_model=OperationsInstallerCandidateRead,
+)
+def update_installer_candidate(
+    candidate_id: uuid.UUID,
+    payload: InstallerCandidateUpdateRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsInstallerCandidateRead:
+    require_installer_candidate_write(db, user=current_user)
+
+    candidate = db.get(InstallerCandidate, candidate_id)
+    if candidate is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Installer candidate not found.",
+        )
+
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No installer candidate changes were supplied.",
+        )
+    if "business_name" in changes and changes["business_name"] is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Business name cannot be cleared.",
+        )
+    if "status" in changes and changes["status"] is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Installer candidate status cannot be cleared.",
+        )
+
+    changed_fields = sorted(changes)
+    previous_status = candidate.status
+    for field, value in changes.items():
+        setattr(candidate, field, value)
+    candidate.updated_by_user_id = current_user.id
+
+    record_audit_event(
+        db,
+        action="installer_candidate.updated",
+        entity_type="installer_candidate",
+        entity_id=str(candidate.id),
+        actor_user_id=current_user.id,
+        metadata={
+            "changed_fields": changed_fields,
+            "previous_status": previous_status,
+            "new_status": candidate.status,
+        },
+    )
+
+    db.commit()
+    db.refresh(candidate)
+    return operations_installer_candidate_read(candidate)
 
 
 def operations_customer_read(

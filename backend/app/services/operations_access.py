@@ -36,6 +36,13 @@ CUSTOMER_EQUIPMENT_WRITE_ROLES = frozenset(
     }
 )
 
+INSTALLER_CANDIDATE_WRITE_ROLES = frozenset(
+    {
+        RoleName.administrator,
+        RoleName.developer,
+    }
+)
+
 RETURN_POLICY_EXCEPTION_WRITE_ROLES = frozenset(
     {
         RoleName.manager,
@@ -129,6 +136,18 @@ def require_customer_equipment_write(
         db,
         user=user,
         allowed_roles=CUSTOMER_EQUIPMENT_WRITE_ROLES,
+    )
+
+
+def require_installer_candidate_write(
+    db: Session,
+    *,
+    user: User,
+) -> set[RoleName]:
+    return require_any_role(
+        db,
+        user=user,
+        allowed_roles=INSTALLER_CANDIDATE_WRITE_ROLES,
     )
 
 
