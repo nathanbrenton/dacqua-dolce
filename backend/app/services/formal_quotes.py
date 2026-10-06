@@ -38,6 +38,27 @@ from app.services.warranties import snapshot_quote_warranties
 
 FORMAL_QUOTE_VALIDITY_DAYS = 30
 
+STAFF_REVIEW_REASON_ASSISTED_SALE = "assisted_sale_product"
+STAFF_REVIEW_REASON_MANUAL_COMPLEX = "staff_flagged_complex"
+
+
+def formal_quote_staff_review_reasons(
+    db: Session,
+    *,
+    lines: list["FormalQuoteLineInput"],
+    manual_staff_review_required: bool,
+) -> list[str]:
+    reasons: list[str] = []
+    if any(
+        bool(product.assisted_sale_required)
+        for line in lines
+        if (product := db.get(Product, line.product_id)) is not None
+    ):
+        reasons.append(STAFF_REVIEW_REASON_ASSISTED_SALE)
+    if manual_staff_review_required:
+        reasons.append(STAFF_REVIEW_REASON_MANUAL_COMPLEX)
+    return reasons
+
 
 @dataclass(frozen=True)
 class FormalQuoteChargeInput:
@@ -260,6 +281,7 @@ def create_formal_quote_revision(
     delivery_address_snapshot: dict[str, object],
     billing_address_snapshot: dict[str, object],
     customer_note: str | None,
+    manual_staff_review_required: bool,
     actor_user: User,
     actor_roles: set[RoleName],
 ) -> FormalQuote:
@@ -297,6 +319,11 @@ def create_formal_quote_revision(
 
     allow_override = not actor_roles.isdisjoint(
         {RoleName.administrator, RoleName.developer}
+    )
+    staff_review_reasons = formal_quote_staff_review_reasons(
+        db,
+        lines=lines,
+        manual_staff_review_required=manual_staff_review_required,
     )
     items: list[FormalQuoteItem] = []
     currencies: set[str] = set()
@@ -379,6 +406,8 @@ def create_formal_quote_revision(
         delivery_address_snapshot=delivery_address_snapshot,
         billing_address_snapshot=billing_address_snapshot,
         customer_note=customer_note,
+        staff_review_required=bool(staff_review_reasons),
+        staff_review_reasons=staff_review_reasons,
         items=items,
         charges=charge_rows,
     )
@@ -400,9 +429,53 @@ def create_formal_quote_revision(
             "total_amount_minor": total,
             "charge_count": len(charge_rows),
             "currency": formal_quote.currency,
+            "staff_review_required": formal_quote.staff_review_required,
+            "staff_review_reasons": list(formal_quote.staff_review_reasons),
         },
     )
 
+    return formal_quote
+
+
+
+def complete_formal_quote_staff_review(
+    db: Session,
+    *,
+    formal_quote: FormalQuote,
+    actor_user: User,
+) -> FormalQuote:
+    if formal_quote.status != FormalQuoteStatus.draft:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Staff review can only be completed for a draft quote.",
+        )
+    if not formal_quote.staff_review_required:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This formal quote does not require staff review.",
+        )
+    if formal_quote.staff_review_completed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Staff review has already been completed for this quote revision.",
+        )
+
+    now = datetime.now(UTC)
+    formal_quote.staff_review_completed_at = now
+    formal_quote.staff_review_completed_by_user_id = actor_user.id
+    record_audit_event(
+        db,
+        action="formal_quote.staff_review_completed",
+        entity_type="formal_quote",
+        entity_id=str(formal_quote.id),
+        actor_user_id=actor_user.id,
+        metadata={
+            "quote_request_id": str(formal_quote.quote_request_id),
+            "revision_number": formal_quote.revision_number,
+            "staff_review_reasons": list(formal_quote.staff_review_reasons),
+            "completed_at": now.isoformat(),
+        },
+    )
     return formal_quote
 
 
@@ -417,6 +490,17 @@ def present_formal_quote(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Only a draft quote can be presented to a customer.",
+        )
+    if (
+        formal_quote.staff_review_required
+        and formal_quote.staff_review_completed_at is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Complete the required staff review/customer contact before "
+                "presenting this quote."
+            ),
         )
 
     request = db.get(QuoteRequest, formal_quote.quote_request_id)
@@ -519,6 +603,18 @@ def present_formal_quote(
                 for snapshot in policy_snapshots
             },
             "warranty_snapshot_count": len(warranty_snapshots),
+            "staff_review_required": formal_quote.staff_review_required,
+            "staff_review_reasons": list(formal_quote.staff_review_reasons),
+            "staff_review_completed_at": (
+                formal_quote.staff_review_completed_at.isoformat()
+                if formal_quote.staff_review_completed_at is not None
+                else None
+            ),
+            "staff_review_completed_by_user_id": (
+                str(formal_quote.staff_review_completed_by_user_id)
+                if formal_quote.staff_review_completed_by_user_id is not None
+                else None
+            ),
         },
     )
     return formal_quote

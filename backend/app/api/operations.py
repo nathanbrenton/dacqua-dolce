@@ -139,6 +139,7 @@ from app.services.communications_reply import (
 from app.services.formal_quotes import (
     FormalQuoteChargeInput,
     FormalQuoteLineInput,
+    complete_formal_quote_staff_review,
     create_formal_quote_revision,
     present_formal_quote,
     shipping_insurance_amount_minor,
@@ -288,6 +289,18 @@ def operations_formal_quote_read(
             for snapshot in formal_quote.policy_snapshots
         ],
         customer_note=formal_quote.customer_note,
+        staff_review_required=formal_quote.staff_review_required,
+        staff_review_reasons=list(formal_quote.staff_review_reasons),
+        staff_review_completed_at=(
+            formal_quote.staff_review_completed_at.isoformat()
+            if formal_quote.staff_review_completed_at is not None
+            else None
+        ),
+        staff_review_completed_by_user_id=(
+            str(formal_quote.staff_review_completed_by_user_id)
+            if formal_quote.staff_review_completed_by_user_id is not None
+            else None
+        ),
         presented_at=(
             formal_quote.presented_at.isoformat()
             if formal_quote.presented_at is not None
@@ -3807,6 +3820,7 @@ def create_formal_quote(
         delivery_address_snapshot=payload.delivery_address.model_dump(),
         billing_address_snapshot=payload.billing_address.model_dump(),
         customer_note=payload.customer_note,
+        manual_staff_review_required=payload.manual_staff_review_required,
         actor_user=current_user,
         actor_roles=actor_roles,
     )
@@ -3855,6 +3869,42 @@ def calculate_draft_formal_quote_tax(
     db.commit()
     db.refresh(calculation)
     return operations_tax_calculation_read(calculation)
+
+
+@router.post(
+    "/formal-quotes/{formal_quote_id}/staff-review/complete",
+    response_model=OperationsFormalQuoteRead,
+)
+def complete_quote_staff_review(
+    formal_quote_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsFormalQuoteRead:
+    require_operations(db, user=current_user)
+    formal_quote = db.scalar(
+        select(FormalQuote)
+        .options(
+            selectinload(FormalQuote.items),
+            selectinload(FormalQuote.charges),
+            selectinload(FormalQuote.policy_snapshots),
+            selectinload(FormalQuote.warranty_snapshots),
+        )
+        .where(FormalQuote.id == formal_quote_id)
+    )
+    if formal_quote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Formal quote not found.",
+        )
+
+    complete_formal_quote_staff_review(
+        db,
+        formal_quote=formal_quote,
+        actor_user=current_user,
+    )
+    db.commit()
+    db.refresh(formal_quote)
+    return operations_formal_quote_read(formal_quote)
 
 
 @router.post(

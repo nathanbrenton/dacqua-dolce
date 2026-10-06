@@ -7,6 +7,7 @@ from enum import StrEnum
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     Enum,
@@ -257,6 +258,28 @@ class FormalQuote(Base):
 
     customer_note: Mapped[str | None] = mapped_column(
         Text,
+    )
+
+    staff_review_required: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    staff_review_reasons: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+
+    staff_review_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    # Immutable actor identity snapshot so review evidence survives later
+    # account retirement or removal.
+    staff_review_completed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
     )
 
     presented_at: Mapped[datetime | None] = mapped_column(

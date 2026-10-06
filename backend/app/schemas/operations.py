@@ -299,6 +299,7 @@ class FormalQuoteCreate(BaseModel):
     delivery_address: CommercialAddressSnapshot
     billing_address: CommercialAddressSnapshot
     customer_note: str | None = Field(default=None, max_length=4000)
+    manual_staff_review_required: bool = False
 
     @field_validator("customer_note")
     @classmethod
@@ -358,6 +359,10 @@ class OperationsFormalQuoteRead(BaseModel):
     shipping_insurance_decided_at: str | None
     shipping_insurance_decided_by_user_id: str | None
     customer_note: str | None
+    staff_review_required: bool
+    staff_review_reasons: list[str] = Field(default_factory=list)
+    staff_review_completed_at: str | None
+    staff_review_completed_by_user_id: str | None
     presented_at: str | None
     expires_at: str | None
     approved_at: str | None

@@ -252,6 +252,10 @@ export type OperationsFormalQuote = {
   shipping_insurance_decided_at: string | null;
   shipping_insurance_decided_by_user_id: string | null;
   customer_note: string | null;
+  staff_review_required: boolean;
+  staff_review_reasons: string[];
+  staff_review_completed_at: string | null;
+  staff_review_completed_by_user_id: string | null;
   presented_at: string | null;
   expires_at: string | null;
   approved_at: string | null;
@@ -784,12 +788,23 @@ export function createFormalQuote(
     delivery_address: CommercialAddress;
     billing_address: CommercialAddress;
     customer_note: string | null;
+    manual_staff_review_required: boolean;
   },
 ): Promise<OperationsFormalQuote> {
   return writeJson(
     `/api/operations/quotes/${encodeURIComponent(quoteId)}/formal-quotes`,
     "POST",
     payload,
+  );
+}
+
+export function completeFormalQuoteStaffReview(
+  formalQuoteId: string,
+): Promise<OperationsFormalQuote> {
+  return writeJson(
+    `/api/operations/formal-quotes/${encodeURIComponent(formalQuoteId)}/staff-review/complete`,
+    "POST",
+    {},
   );
 }
 

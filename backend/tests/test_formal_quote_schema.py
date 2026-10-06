@@ -92,3 +92,33 @@ def test_commercial_adjustments_enforce_charge_and_credit_signs() -> None:
                 }
             ],
         )
+
+def test_formal_quote_manual_staff_review_defaults_off() -> None:
+    payload = FormalQuoteCreate(
+        items=[
+            {
+                "product_id": uuid.uuid4(),
+                "quantity": 1,
+            }
+        ],
+        delivery_address=address(),
+        billing_address=address(),
+    )
+
+    assert payload.manual_staff_review_required is False
+
+
+def test_formal_quote_manual_staff_review_can_be_requested() -> None:
+    payload = FormalQuoteCreate(
+        items=[
+            {
+                "product_id": uuid.uuid4(),
+                "quantity": 1,
+            }
+        ],
+        delivery_address=address(),
+        billing_address=address(),
+        manual_staff_review_required=True,
+    )
+
+    assert payload.manual_staff_review_required is True

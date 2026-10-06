@@ -8,6 +8,7 @@ import type {
   CommercialChargeKind,
 } from "../../api/commercial";
 import {
+  completeFormalQuoteStaffReview,
   createFormalQuote,
   presentFormalQuote,
   type OperationsFormalQuote,
@@ -228,6 +229,7 @@ export function FormalQuoteComposer({
     defaultAddress(quote),
   );
   const [customerNote, setCustomerNote] = useState("");
+  const [manualStaffReviewRequired, setManualStaffReviewRequired] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -239,6 +241,10 @@ export function FormalQuoteComposer({
     [quote.formal_quotes],
   );
   const approved = history.find((formalQuote) => formalQuote.status === "approved") ?? null;
+  const includesAssistedSaleProduct = lines.some((line) => (
+    products.find((candidate) => candidate.id === line.productId)?.assisted_sale_required
+      ?? false
+  ));
 
   function updateLine(
     key: number,
@@ -306,12 +312,32 @@ export function FormalQuoteComposer({
         delivery_address: cleanedDelivery,
         billing_address: cleanedBilling,
         customer_note: customerNote.trim() || null,
+        manual_staff_review_required: manualStaffReviewRequired,
       });
       onChanged(quote.id, formalQuote);
       setNotice(`Draft quote revision ${formalQuote.revision_number} created.`);
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Formal quote could not be created.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function completeStaffReview(
+    formalQuote: OperationsFormalQuote,
+  ): Promise<void> {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await completeFormalQuoteStaffReview(formalQuote.id);
+      onChanged(quote.id, updated);
+      setNotice(`Staff review completed for revision ${updated.revision_number}.`);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Staff review could not be completed.",
       );
     } finally {
       setBusy(false);
@@ -433,11 +459,52 @@ export function FormalQuoteComposer({
                   </small>
                 )}
               </div>
+              {formalQuote.staff_review_required ? (
+                <p className="field-helper">
+                  Staff review / customer contact:{" "}
+                  {formalQuote.staff_review_completed_at !== null
+                    ? `complete ${new Date(
+                        formalQuote.staff_review_completed_at,
+                      ).toLocaleString()}`
+                    : "required before presentation"}
+                  {formalQuote.staff_review_reasons.length > 0
+                    ? ` · ${formalQuote.staff_review_reasons
+                        .map((reason) => (
+                          reason === "assisted_sale_product"
+                            ? "assisted-sale product"
+                            : reason === "staff_flagged_complex"
+                              ? "staff-marked large/complex quote"
+                              : reason
+                        ))
+                        .join(" · ")}`
+                    : ""}
+                </p>
+              ) : null}
+              {formalQuote.status === "draft"
+                && formalQuote.staff_review_required
+                && formalQuote.staff_review_completed_at === null ? (
+                  <button
+                    type="button"
+                    className="operations-action secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      void completeStaffReview(formalQuote);
+                    }}
+                  >
+                    Mark staff review complete
+                  </button>
+                ) : null}
               {formalQuote.status === "draft" ? (
                 <button
                   type="button"
                   className="operations-action secondary"
-                  disabled={busy}
+                  disabled={
+                    busy
+                    || (
+                      formalQuote.staff_review_required
+                      && formalQuote.staff_review_completed_at === null
+                    )
+                  }
                   onClick={() => {
                     void presentDraft(formalQuote);
                   }}
@@ -466,6 +533,25 @@ export function FormalQuoteComposer({
             not offered as a new quote adjustment. This workflow does not calculate carrier,
             insurance-provider, or jurisdiction-specific tax amounts automatically.
           </p>
+
+          {includesAssistedSaleProduct ? (
+            <p className="field-helper">
+              This draft includes an assisted-sale product. Staff review/customer contact will
+              be required automatically before presentation.
+            </p>
+          ) : null}
+
+          <p className="field-helper">Large / complex quote review</p>
+          <label className="operations-checkbox-row">
+            <input
+              type="checkbox"
+              checked={manualStaffReviewRequired}
+              onChange={(event) => setManualStaffReviewRequired(event.target.checked)}
+            />
+            <span>
+              Require staff review/customer contact before this revision can be presented.
+            </span>
+          </label>
 
           {lines.map((line, index) => {
             const product = products.find((candidate) => candidate.id === line.productId);
