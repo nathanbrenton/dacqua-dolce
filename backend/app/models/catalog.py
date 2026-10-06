@@ -64,6 +64,7 @@ class InventorySourceKind(StrEnum):
 class ProductRelationshipType(StrEnum):
     option = "option"
     accessory = "accessory"
+    replacement = "replacement"
 
 
 class ReminderPreferenceKind(StrEnum):
@@ -180,6 +181,10 @@ class Product(Base):
             "slug",
             name="uq_products_slug",
         ),
+        CheckConstraint(
+            "public_retire_at IS NULL OR lifecycle_status = 'discontinued'",
+            name="public_retirement_requires_discontinued",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -238,6 +243,10 @@ class Product(Base):
         ),
         nullable=False,
         default=ProductLifecycleStatus.active,
+    )
+    public_retire_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
     allow_inquiry_when_unavailable: Mapped[bool] = mapped_column(
         Boolean,

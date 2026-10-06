@@ -333,3 +333,35 @@ def test_availability_policy_defaults_to_inquiry_without_formal_quote() -> None:
 
     assert payload.allow_inquiry_when_unavailable is True
     assert payload.allow_formal_quote_when_unavailable is False
+
+
+
+def test_discontinued_product_can_schedule_public_retirement() -> None:
+    from datetime import UTC, datetime
+
+    payload = AvailabilityPolicyUpdateRequest(
+        lifecycle_status=ProductLifecycleStatus.discontinued,
+        public_retire_at=datetime(2026, 12, 1, tzinfo=UTC),
+    )
+
+    assert payload.public_retire_at is not None
+
+
+def test_active_product_rejects_public_retirement_schedule() -> None:
+    from datetime import UTC, datetime
+
+    with pytest.raises(ValidationError):
+        AvailabilityPolicyUpdateRequest(
+            lifecycle_status=ProductLifecycleStatus.active,
+            public_retire_at=datetime(2026, 12, 1, tzinfo=UTC),
+        )
+
+
+def test_replacement_relationship_type_is_supported() -> None:
+    payload = ProductRelationshipCreateRequest(
+        related_product_id="00000000-0000-0000-0000-000000000002",
+        relationship_type=ProductRelationshipType.replacement,
+    )
+
+    assert payload.relationship_type == ProductRelationshipType.replacement
+    assert payload.public is False

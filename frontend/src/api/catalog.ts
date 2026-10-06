@@ -88,6 +88,7 @@ export type CatalogProductDetail =
     images: CatalogImage[];
     variants: CatalogVariant[];
     options_accessories: CatalogOption[];
+    replacements: CatalogOption[];
     documents: CatalogDocument[];
     specifications: CatalogSpecification[];
     manufacturer_claims: CatalogManufacturerClaim[];

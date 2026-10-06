@@ -46,7 +46,13 @@ function humanizeOptionKey(value: string): string {
 }
 
 function relationshipLabel(value: string): string {
-  return value === "accessory" ? "Accessory" : "Option";
+  if (value === "accessory") {
+    return "Accessory";
+  }
+  if (value === "replacement") {
+    return "Replacement";
+  }
+  return "Option";
 }
 
 export function ProductDetailPage({
@@ -642,6 +648,54 @@ export function ProductDetailPage({
                       <p className="product-configuration-sku">
                         SKU {variant.sku}
                       </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {product.replacements.length > 0 ? (
+              <section
+                className="product-options"
+                aria-labelledby="product-replacements-heading"
+              >
+                <p className="eyebrow">Current alternatives</p>
+                <h2
+                  id="product-replacements-heading"
+                  className="product-detail-section-title"
+                >
+                  Recommended replacement
+                </h2>
+                <p className="product-options-intro">
+                  These current products are shown only when staff has explicitly
+                  approved the replacement relationship for public presentation.
+                </p>
+
+                <div className="product-option-list">
+                  {product.replacements.map((replacement) => (
+                    <article
+                      className="product-option-row"
+                      key={`replacement-${replacement.id}`}
+                    >
+                      <div>
+                        <p className="product-option-type">Replacement</p>
+                        <h3>{replacement.name}</h3>
+                        {replacement.system_type !== null ? (
+                          <p className="product-option-system-type">
+                            {replacement.system_type}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => {
+                          onNavigate(replacement.public_path);
+                        }}
+                      >
+                        View replacement
+                      </button>
                     </article>
                   ))}
                 </div>

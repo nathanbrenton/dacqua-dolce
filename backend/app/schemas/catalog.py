@@ -103,6 +103,7 @@ class CatalogProductDetailRead(CatalogProductRead):
     images: list[CatalogImageRead] = Field(default_factory=list)
     variants: list[CatalogVariantRead] = Field(default_factory=list)
     options_accessories: list[CatalogOptionRead] = Field(default_factory=list)
+    replacements: list[CatalogOptionRead] = Field(default_factory=list)
     documents: list[CatalogDocumentRead] = Field(default_factory=list)
     specifications: list[CatalogSpecificationRead] = Field(
         default_factory=list,

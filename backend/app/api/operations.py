@@ -123,6 +123,7 @@ from app.services.cancellations import (
     request_order_cancellation,
     review_order_cancellation,
 )
+from app.services.catalog_publication import product_is_publicly_visible
 from app.services.commerce import (
     active_reserved_quantity,
 )
@@ -2703,6 +2704,7 @@ def operations_product_read(
             if relationship.active
             and relationship.public
             and not relationship.is_consumable
+            and relationship.relationship_type.value != "replacement"
         ),
         relationships=[
             OperationsProductRelationshipRead(
@@ -2728,6 +2730,8 @@ def operations_product_read(
             product.online_sale_approved
         ),
         lifecycle_status=product.lifecycle_status,
+        public_retire_at=product.public_retire_at,
+        public_catalog_visible=product_is_publicly_visible(product),
         allow_inquiry_when_unavailable=product.allow_inquiry_when_unavailable,
         allow_formal_quote_when_unavailable=product.allow_formal_quote_when_unavailable,
         warranty_documents=[
@@ -3585,6 +3589,7 @@ def update_product_availability_policy(
         )
 
     product.lifecycle_status = payload.lifecycle_status
+    product.public_retire_at = payload.public_retire_at
     product.allow_inquiry_when_unavailable = payload.allow_inquiry_when_unavailable
     product.allow_formal_quote_when_unavailable = (
         payload.allow_formal_quote_when_unavailable
@@ -3599,6 +3604,11 @@ def update_product_availability_policy(
         metadata={
             "sku": product.sku,
             "lifecycle_status": payload.lifecycle_status.value,
+            "public_retire_at": (
+                payload.public_retire_at.isoformat()
+                if payload.public_retire_at is not None
+                else None
+            ),
             "allow_inquiry_when_unavailable": payload.allow_inquiry_when_unavailable,
             "allow_formal_quote_when_unavailable": (
                 payload.allow_formal_quote_when_unavailable

@@ -19,7 +19,9 @@ from app.models.catalog import (
     Product,
     ProductDocument,
     ProductInventory,
+    ProductLifecycleStatus,
     ProductRelationship,
+    ProductRelationshipType,
     ProductSpecification,
     StockNotificationSubscription,
 )
@@ -44,6 +46,7 @@ from app.schemas.catalog import (
 )
 from app.schemas.sales_area import SalesAreaRead
 from app.services.audit import record_audit_event
+from app.services.catalog_publication import product_is_publicly_visible
 from app.services.commerce import active_reserved_quantity
 from app.services.pricing import (
     resolve_pricing,
@@ -304,6 +307,9 @@ def list_public_products(
         result: list[CatalogProductRead] = []
 
         for product in products:
+            if not product_is_publicly_visible(product):
+                continue
+
             active_images = [image for image in product.images if image.active]
 
             primary_image = active_images[0] if active_images else None
@@ -372,7 +378,7 @@ def get_public_product(
             )
         )
 
-        if product is None:
+        if product is None or not product_is_publicly_visible(product):
             raise HTTPException(
                 status_code=(status.HTTP_404_NOT_FOUND),
                 detail="System not found.",
@@ -433,7 +439,28 @@ def get_public_product(
                 if relationship.active
                 and relationship.public
                 and not relationship.is_consumable
-                and relationship.related_product.active
+                and relationship.relationship_type
+                != ProductRelationshipType.replacement
+                and product_is_publicly_visible(relationship.related_product)
+            ],
+            replacements=[
+                CatalogOptionRead(
+                    id=str(relationship.related_product.id),
+                    relationship_type=relationship.relationship_type.value,
+                    name=relationship.related_product.name,
+                    slug=relationship.related_product.slug,
+                    product_family=relationship.related_product.product_family,
+                    system_type=relationship.related_product.system_type,
+                    public_path=relationship.related_product.public_path,
+                )
+                for relationship in product.related_options
+                if relationship.active
+                and relationship.public
+                and relationship.relationship_type
+                == ProductRelationshipType.replacement
+                and product_is_publicly_visible(relationship.related_product)
+                and relationship.related_product.lifecycle_status
+                != ProductLifecycleStatus.discontinued
             ],
             documents=public_document_reads(
                 product.documents,
@@ -467,7 +494,7 @@ def get_public_product_availability(
             )
         )
 
-        if product is None:
+        if product is None or not product_is_publicly_visible(product):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="System not found.",
@@ -501,7 +528,7 @@ def subscribe_stock_notification(
             )
         )
 
-        if product is None:
+        if product is None or not product_is_publicly_visible(product):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="System not found.",

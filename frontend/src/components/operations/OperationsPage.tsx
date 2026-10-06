@@ -491,6 +491,7 @@ type InventoryDraft = {
 
 type AvailabilityPolicyDraft = {
   lifecycleStatus: OperationsProduct["lifecycle_status"];
+  publicRetireLocal: string;
   allowInquiryWhenUnavailable: boolean;
   allowFormalQuoteWhenUnavailable: boolean;
 };
@@ -711,7 +712,7 @@ export function OperationsPage({
   const [relationshipProductDrafts, setRelationshipProductDrafts] =
     useState<Record<string, string>>({});
   const [relationshipTypeDrafts, setRelationshipTypeDrafts] =
-    useState<Record<string, "option" | "accessory">>({});
+    useState<Record<string, "option" | "accessory" | "replacement">>({});
   const [relationshipSaveStates, setRelationshipSaveStates] =
     useState<Record<string, SaveState>>({});
   const [pricingDrafts, setPricingDrafts] =
@@ -840,6 +841,9 @@ export function OperationsPage({
           };
           nextAvailabilityPolicies[product.id] = {
             lifecycleStatus: product.lifecycle_status,
+            publicRetireLocal: product.public_retire_at === null
+              ? ""
+              : localDateTimeValue(new Date(product.public_retire_at)),
             allowInquiryWhenUnavailable: product.allow_inquiry_when_unavailable,
             allowFormalQuoteWhenUnavailable: product.allow_formal_quote_when_unavailable,
           };
@@ -1975,6 +1979,9 @@ export function OperationsPage({
         product.id,
         {
           lifecycle_status: draft.lifecycleStatus,
+          public_retire_at: draft.publicRetireLocal.length === 0
+            ? null
+            : new Date(draft.publicRetireLocal).toISOString(),
           allow_inquiry_when_unavailable: draft.allowInquiryWhenUnavailable,
           allow_formal_quote_when_unavailable: draft.allowFormalQuoteWhenUnavailable,
         },
@@ -1985,6 +1992,9 @@ export function OperationsPage({
         ...current,
         [updated.id]: {
           lifecycleStatus: updated.lifecycle_status,
+          publicRetireLocal: updated.public_retire_at === null
+            ? ""
+            : localDateTimeValue(new Date(updated.public_retire_at)),
           allowInquiryWhenUnavailable: updated.allow_inquiry_when_unavailable,
           allowFormalQuoteWhenUnavailable: updated.allow_formal_quote_when_unavailable,
         },
@@ -3550,7 +3560,9 @@ export function OperationsPage({
                             <small>
                               {relationship.relationship_type === "option"
                                 ? "Option"
-                                : "Accessory"}
+                                : relationship.relationship_type === "accessory"
+                                  ? "Accessory"
+                                  : "Replacement"}
                               {relationship.active ? " · active" : " · inactive"}
                               {relationship.public ? " · public" : " · internal"}
                               {relationship.is_consumable ? " · consumable" : ""}
@@ -3729,12 +3741,13 @@ export function OperationsPage({
                           onChange={(event: ChangeEvent<HTMLSelectElement>) => {
                             setRelationshipTypeDrafts((current) => ({
                               ...current,
-                              [product.id]: event.target.value as "option" | "accessory",
+                              [product.id]: event.target.value as "option" | "accessory" | "replacement",
                             }));
                           }}
                         >
                           <option value="option">Option</option>
                           <option value="accessory">Accessory</option>
+                          <option value="replacement">Replacement</option>
                         </select>
                       </label>
 
@@ -3751,7 +3764,7 @@ export function OperationsPage({
                           : "Add as internal"}
                       </button>
                       <p className="operations-note">
-                        New relationships start internal. Mark verified replacement items as consumable; add an interval only when product/manufacturer guidance supports one.
+                        New relationships start internal. Use Replacement only for a verified successor/current product; make it public only after approval. Consumable flags and intervals remain for service/replacement items.
                       </p>
                     </div>
                   ) : null}
@@ -4089,6 +4102,37 @@ export function OperationsPage({
                         </select>
                         <small>Discontinued is distinct from a temporary stock shortage.</small>
                       </label>
+
+                      <label className="operations-field">
+                        <span>Remove from public catalog at</span>
+                        <input
+                          type="datetime-local"
+                          value={availabilityPolicy.publicRetireLocal}
+                          disabled={
+                            !privileged
+                            || availabilityPolicy.lifecycleStatus !== "discontinued"
+                          }
+                          onChange={(event) => {
+                            updateAvailabilityPolicyDraft(product.id, {
+                              publicRetireLocal: event.target.value,
+                            });
+                          }}
+                        />
+                        <small>
+                          Optional. Leave blank to keep the discontinued product public.
+                          At the configured time it disappears from customer catalog
+                          routes while its internal/history record remains.
+                        </small>
+                      </label>
+
+                      <p className="operations-note">
+                        Public catalog state: {product.public_catalog_visible
+                          ? "visible"
+                          : "retired from customer-facing catalog"}
+                        {product.public_retire_at !== null
+                          ? ` · scheduled ${new Date(product.public_retire_at).toLocaleString()}`
+                          : ""}.
+                      </p>
 
                       <label className="operations-checkbox-row">
                         <input

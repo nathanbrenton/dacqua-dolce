@@ -472,7 +472,7 @@ export type OperationsProductRelationship = {
   related_product_id: string;
   related_sku: string;
   related_name: string;
-  relationship_type: "option" | "accessory";
+  relationship_type: "option" | "accessory" | "replacement";
   public: boolean;
   active: boolean;
   is_consumable: boolean;
@@ -546,6 +546,8 @@ export type OperationsProduct = {
   assisted_sale_required: boolean;
   online_sale_approved: boolean;
   lifecycle_status: "active" | "soon_discontinued" | "discontinued";
+  public_retire_at: string | null;
+  public_catalog_visible: boolean;
   allow_inquiry_when_unavailable: boolean;
   allow_formal_quote_when_unavailable: boolean;
   warranty_documents: OperationsWarrantyDocument[];
@@ -972,6 +974,7 @@ export function updateProductAvailabilityPolicy(
   productId: string,
   payload: {
     lifecycle_status: OperationsProduct["lifecycle_status"];
+    public_retire_at: string | null;
     allow_inquiry_when_unavailable: boolean;
     allow_formal_quote_when_unavailable: boolean;
   },
@@ -1005,7 +1008,7 @@ export function createProductRelationship(
   productId: string,
   payload: {
     related_product_id: string;
-    relationship_type: "option" | "accessory";
+    relationship_type: "option" | "accessory" | "replacement";
     public: boolean;
     active: boolean;
     is_consumable: boolean;
@@ -1029,7 +1032,7 @@ export function updateProductRelationship(
   productId: string,
   relationshipId: string,
   payload: {
-    relationship_type: "option" | "accessory";
+    relationship_type: "option" | "accessory" | "replacement";
     public: boolean;
     active: boolean;
     is_consumable: boolean;

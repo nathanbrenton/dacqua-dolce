@@ -903,6 +903,8 @@ class OperationsProductRead(BaseModel):
     assisted_sale_required: bool
     online_sale_approved: bool
     lifecycle_status: ProductLifecycleStatus = ProductLifecycleStatus.active
+    public_retire_at: datetime | None = None
+    public_catalog_visible: bool = True
     allow_inquiry_when_unavailable: bool = True
     allow_formal_quote_when_unavailable: bool = False
     warranty_documents: list[OperationsWarrantyDocumentRead] = Field(default_factory=list)
@@ -1040,8 +1042,22 @@ class AvailabilityPolicyUpdateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     lifecycle_status: ProductLifecycleStatus
+    public_retire_at: datetime | None = None
     allow_inquiry_when_unavailable: bool = True
     allow_formal_quote_when_unavailable: bool = False
+
+    @model_validator(mode="after")
+    def validate_public_retirement(self) -> "AvailabilityPolicyUpdateRequest":
+        if self.public_retire_at is not None and self.public_retire_at.tzinfo is None:
+            raise ValueError("Public retirement timestamp must include a timezone.")
+        if (
+            self.public_retire_at is not None
+            and self.lifecycle_status != ProductLifecycleStatus.discontinued
+        ):
+            raise ValueError(
+                "Public retirement can be scheduled only for a discontinued product."
+            )
+        return self
 
 
 class InventoryUpdateRequest(BaseModel):
