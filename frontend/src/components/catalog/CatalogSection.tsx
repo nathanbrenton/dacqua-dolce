@@ -28,6 +28,44 @@ function formatPrice(
   ).format(amountMinor / 100);
 }
 
+
+function productIdentityDetail(
+  product: CatalogProduct,
+  familyName: string,
+  systemType: string | null,
+  technologyLabel: string | null,
+): string | null {
+  const canonicalName = product.name.trim();
+  const normalizedFamily = familyName.trim();
+  const familyPrefix = `${normalizedFamily} - `;
+
+  if (
+    technologyLabel === null
+    && canonicalName.startsWith(familyPrefix)
+  ) {
+    const variantLabel = canonicalName
+      .slice(familyPrefix.length)
+      .trim();
+
+    if (variantLabel.length > 0) {
+      return variantLabel;
+    }
+  }
+
+  if (
+    systemType !== null
+    && systemType.trim().localeCompare(
+      product.category.trim(),
+      undefined,
+      { sensitivity: "base" },
+    ) !== 0
+  ) {
+    return systemType;
+  }
+
+  return null;
+}
+
 export function CatalogSection({
   onNavigate,
 }: CatalogSectionProps) {
@@ -141,6 +179,13 @@ export function CatalogSection({
           {products.map((product) => {
             const presentation =
               getProductPresentation(product);
+            const identityDetail =
+              productIdentityDetail(
+                product,
+                presentation.familyName,
+                presentation.systemType,
+                presentation.technologyLabel,
+              );
 
             return (
             <article
@@ -180,9 +225,9 @@ export function CatalogSection({
                 <div className="product-identity">
                   <h3>{presentation.familyName}</h3>
 
-                  {presentation.systemType !== null ? (
+                  {identityDetail !== null ? (
                     <p className="product-system-type">
-                      {presentation.systemType}
+                      {identityDetail}
                     </p>
                   ) : null}
 

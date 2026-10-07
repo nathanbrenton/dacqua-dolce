@@ -96,6 +96,7 @@ from app.schemas.operations import (
     OperationsOrderCustomerRead,
     OperationsOrderItemRead,
     OperationsOrderRead,
+    OperationsOrderReviewRead,
     OperationsOrderShipmentRead,
     OperationsPricingRead,
     OperationsProductRead,
@@ -114,6 +115,9 @@ from app.schemas.operations import (
     OrderCancellationReviewUpdate,
     OrderFulfillmentUpdate,
     OrderReturnPolicyExceptionCreate,
+    OrderReviewHoldCreate,
+    OrderReviewHoldRelease,
+    OrderReviewUpdate,
     PricingUpdateRequest,
     ProductRelationshipCreateRequest,
     ProductRelationshipUpdateRequest,
@@ -177,6 +181,12 @@ from app.services.order_confirmations import (
     send_order_confirmation,
 )
 from app.services.order_lifecycle import customer_order_stage
+from app.services.order_reviews import (
+    OrderReviewError,
+    place_order_on_hold,
+    release_order_hold,
+    update_order_review,
+)
 from app.services.pricing import (
     promotion_mode_supported,
     promotion_windows_overlap,
@@ -2422,6 +2432,12 @@ def operations_order_read(
         db,
         order_id=order.id,
     )
+    reviewed_by_user_id = getattr(order, "reviewed_by_user_id", None)
+    reviewer = (
+        db.get(User, reviewed_by_user_id)
+        if reviewed_by_user_id is not None
+        else None
+    )
 
     return OperationsOrderRead(
         id=str(order.id),
@@ -2433,6 +2449,75 @@ def operations_order_read(
             operations_cancellation_read(cancellation)
             if cancellation is not None
             else None
+        ),
+        review=OperationsOrderReviewRead(
+            status=(
+                "reviewed"
+                if getattr(order, "reviewed_at", None) is not None
+                else "pending"
+            ),
+            customer_contact_reviewed=bool(
+                getattr(order, "review_customer_contact_reviewed", False)
+            ),
+            supplier_availability_verified=bool(
+                getattr(order, "review_supplier_availability_verified", False)
+            ),
+            whole_order_reviewed=bool(
+                getattr(order, "review_whole_order_reviewed", False)
+            ),
+            customer_contact_required=bool(
+                getattr(order, "review_customer_contact_required", False)
+            ),
+            customer_contact_completed=bool(
+                getattr(order, "review_customer_contact_completed", False)
+            ),
+            reviewed_by_user_id=(
+                str(reviewed_by_user_id)
+                if reviewed_by_user_id is not None
+                else None
+            ),
+            reviewed_by_email=(
+                reviewer.email
+                if reviewer is not None
+                else None
+            ),
+            reviewed_at=(
+                order.reviewed_at.isoformat()
+                if getattr(order, "reviewed_at", None) is not None
+                else None
+            ),
+            on_hold=bool(getattr(order, "review_on_hold", False)),
+            hold_reason=getattr(order, "review_hold_reason", None),
+            proposed_alternative=getattr(
+                order,
+                "review_proposed_alternative",
+                None,
+            ),
+            hold_started_by_user_id=(
+                str(order.review_hold_started_by_user_id)
+                if getattr(order, "review_hold_started_by_user_id", None) is not None
+                else None
+            ),
+            hold_started_at=(
+                order.review_hold_started_at.isoformat()
+                if getattr(order, "review_hold_started_at", None) is not None
+                else None
+            ),
+            hold_released_by_user_id=(
+                str(order.review_hold_released_by_user_id)
+                if getattr(order, "review_hold_released_by_user_id", None) is not None
+                else None
+            ),
+            hold_released_at=(
+                order.review_hold_released_at.isoformat()
+                if getattr(order, "review_hold_released_at", None) is not None
+                else None
+            ),
+            customer_response_note=getattr(
+                order,
+                "review_customer_response_note",
+                None,
+            ),
         ),
         order_confirmation=(
             OperationsOrderConfirmationRead(
@@ -2653,6 +2738,147 @@ def calculate_awaiting_payment_order_tax(
     db.commit()
     db.refresh(calculation)
     return operations_tax_calculation_read(calculation)
+
+
+@router.post(
+    "/orders/{order_id}/review",
+    response_model=OperationsOrderRead,
+)
+def update_order_review_checklist(
+    order_id: uuid.UUID,
+    payload: OrderReviewUpdate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_operations(db, user=current_user)
+
+    order = db.scalar(
+        select(Order).where(Order.id == order_id).with_for_update()
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    try:
+        update_order_review(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            customer_contact_reviewed=payload.customer_contact_reviewed,
+            supplier_availability_verified=payload.supplier_availability_verified,
+            whole_order_reviewed=payload.whole_order_reviewed,
+            customer_contact_required=payload.customer_contact_required,
+            customer_contact_completed=payload.customer_contact_completed,
+            complete=payload.action == "complete",
+        )
+    except OrderReviewError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(db, order=order, customer=customer)
+
+
+@router.post(
+    "/orders/{order_id}/review/hold",
+    response_model=OperationsOrderRead,
+)
+def hold_order_for_customer_response(
+    order_id: uuid.UUID,
+    payload: OrderReviewHoldCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_operations(db, user=current_user)
+
+    order = db.scalar(
+        select(Order).where(Order.id == order_id).with_for_update()
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    try:
+        place_order_on_hold(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            reason=payload.reason,
+            proposed_alternative=payload.proposed_alternative,
+        )
+    except OrderReviewError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(db, order=order, customer=customer)
+
+
+@router.post(
+    "/orders/{order_id}/review/hold/release",
+    response_model=OperationsOrderRead,
+)
+def release_order_customer_response_hold(
+    order_id: uuid.UUID,
+    payload: OrderReviewHoldRelease,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsOrderRead:
+    require_operations(db, user=current_user)
+
+    order = db.scalar(
+        select(Order).where(Order.id == order_id).with_for_update()
+    )
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found.",
+        )
+
+    customer = db.get(User, order.user_id)
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Order customer record not found.",
+        )
+
+    try:
+        release_order_hold(
+            db,
+            order=order,
+            actor_user_id=current_user.id,
+            customer_response_note=payload.customer_response_note,
+        )
+    except OrderReviewError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    db.commit()
+    return operations_order_read(db, order=order, customer=customer)
 
 
 @router.post(

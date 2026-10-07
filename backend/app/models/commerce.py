@@ -5,6 +5,7 @@ from enum import StrEnum
 from sqlalchemy import (
     JSON,
     BigInteger,
+    Boolean,
     CheckConstraint,
     DateTime,
     Enum,
@@ -354,6 +355,90 @@ class Order(Base):
     fulfillment_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
     )
+
+    review_customer_contact_reviewed: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    review_supplier_availability_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    review_whole_order_reviewed: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    review_customer_contact_required: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    review_customer_contact_completed: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    review_on_hold: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+
+    review_hold_reason: Mapped[str | None] = mapped_column(Text)
+
+    review_proposed_alternative: Mapped[str | None] = mapped_column(Text)
+
+    review_hold_started_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    review_hold_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    review_hold_released_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "users.id",
+            ondelete="RESTRICT",
+        ),
+    )
+
+    review_hold_released_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    review_customer_response_note: Mapped[str | None] = mapped_column(Text)
 
     subtotal_amount_minor: Mapped[int] = mapped_column(
         BigInteger,

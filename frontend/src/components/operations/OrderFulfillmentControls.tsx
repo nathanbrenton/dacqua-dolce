@@ -5,11 +5,14 @@ import {
 
 import {
   authorizeReturnPolicyException,
+  holdOrderForCustomerResponse,
+  releaseOrderCustomerResponseHold,
   reviewOrderCancellation,
   sendOrderConfirmation,
   startOrderCancellationException,
   type OperationsOrder,
   updateOrderFulfillment,
+  updateOrderReview,
 } from "../../api/operations";
 
 type Props = {
@@ -59,6 +62,22 @@ export function OrderFulfillmentControls({
   const [trackingUrl, setTrackingUrl] =
     useState(order.shipment?.tracking_url ?? "");
   const [saving, setSaving] = useState(false);
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [holdSaving, setHoldSaving] = useState(false);
+  const [reviewCustomerContactReviewed, setReviewCustomerContactReviewed] =
+    useState(order.review.customer_contact_reviewed);
+  const [reviewSupplierAvailabilityVerified, setReviewSupplierAvailabilityVerified] =
+    useState(order.review.supplier_availability_verified);
+  const [reviewWholeOrderReviewed, setReviewWholeOrderReviewed] =
+    useState(order.review.whole_order_reviewed);
+  const [reviewCustomerContactRequired, setReviewCustomerContactRequired] =
+    useState(order.review.customer_contact_required);
+  const [reviewCustomerContactCompleted, setReviewCustomerContactCompleted] =
+    useState(order.review.customer_contact_completed);
+  const [holdReason, setHoldReason] = useState("");
+  const [proposedAlternative, setProposedAlternative] = useState("");
+  const [customerResponseNote, setCustomerResponseNote] =
+    useState(order.review.customer_response_note ?? "");
   const [confirmationSaving, setConfirmationSaving] = useState(false);
   const [cancellationSaving, setCancellationSaving] =
     useState(false);
@@ -254,6 +273,95 @@ export function OrderFulfillmentControls({
     }
   }
 
+  function syncReviewState(updated: OperationsOrder): void {
+    setReviewCustomerContactReviewed(updated.review.customer_contact_reviewed);
+    setReviewSupplierAvailabilityVerified(updated.review.supplier_availability_verified);
+    setReviewWholeOrderReviewed(updated.review.whole_order_reviewed);
+    setReviewCustomerContactRequired(updated.review.customer_contact_required);
+    setReviewCustomerContactCompleted(updated.review.customer_contact_completed);
+    setCustomerResponseNote(updated.review.customer_response_note ?? "");
+  }
+
+  async function saveReview(complete: boolean): Promise<void> {
+    setReviewSaving(true);
+    setError(null);
+
+    try {
+      const updated = await updateOrderReview(order.id, {
+        action: complete ? "complete" : "save",
+        customer_contact_reviewed: reviewCustomerContactReviewed,
+        supplier_availability_verified: reviewSupplierAvailabilityVerified,
+        whole_order_reviewed: reviewWholeOrderReviewed,
+        customer_contact_required: reviewCustomerContactRequired,
+        customer_contact_completed: reviewCustomerContactCompleted,
+      });
+      syncReviewState(updated);
+      onUpdated(updated);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Order review could not be saved.",
+      );
+    } finally {
+      setReviewSaving(false);
+    }
+  }
+
+  async function placeReviewHold(): Promise<void> {
+    if (holdReason.trim() === "" || proposedAlternative.trim() === "") {
+      setError("Hold reason and proposed alternative are both required.");
+      return;
+    }
+
+    setHoldSaving(true);
+    setError(null);
+    try {
+      const updated = await holdOrderForCustomerResponse(order.id, {
+        reason: holdReason.trim(),
+        proposed_alternative: proposedAlternative.trim(),
+      });
+      syncReviewState(updated);
+      onUpdated(updated);
+      setHoldReason("");
+      setProposedAlternative("");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Order could not be placed on hold.",
+      );
+    } finally {
+      setHoldSaving(false);
+    }
+  }
+
+  async function releaseReviewHold(): Promise<void> {
+    if (customerResponseNote.trim() === "") {
+      setError("Record the customer response before releasing the hold.");
+      return;
+    }
+
+    setHoldSaving(true);
+    setError(null);
+    try {
+      const updated = await releaseOrderCustomerResponseHold(
+        order.id,
+        customerResponseNote.trim(),
+      );
+      syncReviewState(updated);
+      onUpdated(updated);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Order hold could not be released.",
+      );
+    } finally {
+      setHoldSaving(false);
+    }
+  }
+
   async function confirmOrder(): Promise<void> {
     setConfirmationSaving(true);
     setError(null);
@@ -328,6 +436,165 @@ export function OrderFulfillmentControls({
         </span>
       </div>
 
+      <div className="order-cancellation-operations order-review-operations">
+        <div>
+          <strong>Order review</strong>
+          <span>
+            {order.review.status === "reviewed"
+              ? `Reviewed${
+                  order.review.reviewed_at !== null
+                    ? ` · ${new Date(order.review.reviewed_at).toLocaleString()}`
+                    : ""
+                }`
+              : order.review.on_hold
+                ? "On hold · customer response pending"
+                : "Pending"}
+          </span>
+        </div>
+
+        {order.review.reviewed_by_email !== null ? (
+          <p className="account-muted">
+            Reviewed by {order.review.reviewed_by_email}.
+          </p>
+        ) : null}
+
+        {order.review.status !== "reviewed" ? (
+          <>
+            <fieldset className="order-review-checklist" disabled={reviewSaving || holdSaving}>
+              <legend>Short review checklist</legend>
+              <label className="operations-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={reviewCustomerContactReviewed}
+                  onChange={(event) => setReviewCustomerContactReviewed(event.target.checked)}
+                />
+                <span>Customer and contact details reviewed</span>
+              </label>
+              <label className="operations-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={reviewSupplierAvailabilityVerified}
+                  onChange={(event) => setReviewSupplierAvailabilityVerified(event.target.checked)}
+                />
+                <span>Supplier availability verified</span>
+              </label>
+              <label className="operations-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={reviewWholeOrderReviewed}
+                  onChange={(event) => setReviewWholeOrderReviewed(event.target.checked)}
+                />
+                <span>Whole order reviewed</span>
+              </label>
+              <label className="operations-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={reviewCustomerContactRequired}
+                  onChange={(event) => {
+                    const required = event.target.checked;
+                    setReviewCustomerContactRequired(required);
+                    if (!required) {
+                      setReviewCustomerContactCompleted(false);
+                    }
+                  }}
+                />
+                <span>Customer contact required</span>
+              </label>
+              {reviewCustomerContactRequired ? (
+                <label className="operations-checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={reviewCustomerContactCompleted}
+                    onChange={(event) => setReviewCustomerContactCompleted(event.target.checked)}
+                  />
+                  <span>Required customer contact completed</span>
+                </label>
+              ) : null}
+            </fieldset>
+
+            <div className="order-review-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={reviewSaving || holdSaving || order.review.on_hold}
+                onClick={() => { void saveReview(false); }}
+              >
+                {reviewSaving ? "Saving…" : "Save checklist"}
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={reviewSaving || holdSaving || order.review.on_hold}
+                onClick={() => { void saveReview(true); }}
+              >
+                {reviewSaving ? "Saving…" : "Mark Order Reviewed"}
+              </button>
+            </div>
+          </>
+        ) : null}
+
+        {order.review.on_hold ? (
+          <div className="order-review-hold">
+            <p className="operations-alert" role="status">
+              Fulfillment and Order Confirmed are blocked while this order is on hold.
+            </p>
+            <p><strong>Reason:</strong> {order.review.hold_reason}</p>
+            <p><strong>Proposed alternative:</strong> {order.review.proposed_alternative}</p>
+            <label className="operations-field">
+              <span>Customer response</span>
+              <textarea
+                rows={3}
+                maxLength={4000}
+                value={customerResponseNote}
+                onChange={(event) => setCustomerResponseNote(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={holdSaving}
+              onClick={() => { void releaseReviewHold(); }}
+            >
+              {holdSaving ? "Saving…" : "Release hold after customer response"}
+            </button>
+          </div>
+        ) : order.review.status !== "reviewed" ? (
+          <details className="operations-policy-exception">
+            <summary>Cannot fulfill exactly as ordered</summary>
+            <p className="account-muted">
+              Contact the customer, propose an alternative, and hold the order pending their response.
+              This workflow never substitutes a product automatically.
+            </p>
+            <label className="operations-field">
+              <span>Hold reason</span>
+              <textarea
+                rows={3}
+                maxLength={4000}
+                value={holdReason}
+                onChange={(event) => setHoldReason(event.target.value)}
+              />
+            </label>
+            <label className="operations-field">
+              <span>Proposed alternative</span>
+              <textarea
+                rows={3}
+                maxLength={4000}
+                value={proposedAlternative}
+                onChange={(event) => setProposedAlternative(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={holdSaving}
+              onClick={() => { void placeReviewHold(); }}
+            >
+              {holdSaving ? "Saving…" : "Place order on hold"}
+            </button>
+          </details>
+        ) : null}
+      </div>
+
       <div className="order-cancellation-operations order-confirmation-operations">
         <div>
           <strong>Customer confirmation</strong>
@@ -346,7 +613,7 @@ export function OrderFulfillmentControls({
 
         <p className="account-muted">
           Supplier Confirmed changes the order lifecycle but does not email the customer.
-          After staff reviews the order, send the separate customer-facing “Order Confirmed” message here.
+          The formal Order Reviewed checklist must also be complete before this separate customer-facing message can be sent.
         </p>
 
         {order.order_confirmation.error_summary !== null
@@ -358,6 +625,8 @@ export function OrderFulfillmentControls({
 
         {order.order_confirmation.status !== "sent"
           && order.fulfillment_status !== "not_started"
+          && order.review.status === "reviewed"
+          && !order.review.on_hold
           && order.customer_status !== "cancelled"
           && order.customer_status !== "refunded" ? (
           <button
@@ -377,8 +646,12 @@ export function OrderFulfillmentControls({
         ) : null}
 
         {order.order_confirmation.status === "not_sent"
-          && order.fulfillment_status === "not_started" ? (
-          <small>Available after Supplier Confirmed is recorded.</small>
+          && (
+            order.fulfillment_status === "not_started"
+            || order.review.status !== "reviewed"
+            || order.review.on_hold
+          ) ? (
+          <small>Available after Supplier Confirmed and Order Reviewed, with no active hold.</small>
         ) : null}
       </div>
 
@@ -700,6 +973,12 @@ export function OrderFulfillmentControls({
         </p>
       ) : null}
 
+      {order.review.on_hold ? (
+        <p className="operations-alert" role="status">
+          Fulfillment is blocked while this order is on hold pending customer response.
+        </p>
+      ) : null}
+
       {supplierOrderingBlocked ? (
         <p className="operations-alert" role="status">
           Supplier ordering is blocked while this cancellation is active.
@@ -778,7 +1057,7 @@ export function OrderFulfillmentControls({
         <button
           type="button"
           className="secondary-button"
-          disabled={saving || supplierOrderingBlocked}
+          disabled={saving || supplierOrderingBlocked || order.review.on_hold}
           onClick={() => {
             void advance();
           }}

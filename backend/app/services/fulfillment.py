@@ -13,6 +13,7 @@ from app.models.commerce import (
 )
 from app.services.audit import record_audit_event
 from app.services.cancellations import get_order_cancellation_request
+from app.services.order_reviews import order_review_on_hold
 
 ALLOWED_FULFILLMENT_TRANSITIONS: dict[
     FulfillmentStatus,
@@ -96,6 +97,11 @@ def transition_order_fulfillment(
 
     if new_status == previous:
         return get_order_shipment(db, order_id=order.id)
+
+    if order_review_on_hold(order):
+        raise FulfillmentError(
+            "Fulfillment cannot advance while the order is on hold pending customer response."
+        )
 
     if order.status != OrderStatus.paid:
         raise FulfillmentError(

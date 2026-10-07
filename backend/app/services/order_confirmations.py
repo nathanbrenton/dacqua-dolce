@@ -18,6 +18,10 @@ from app.services.order_lifecycle import (
     customer_order_stage,
     supplier_confirmation_recorded,
 )
+from app.services.order_reviews import (
+    order_review_completed,
+    order_review_on_hold,
+)
 
 ORDER_CONFIRMATION_CATEGORY = "order_confirmation"
 ORDER_CONFIRMATION_ENTITY_TYPE = "order"
@@ -86,6 +90,14 @@ def send_order_confirmation(
     if not supplier_confirmation_recorded(order):
         raise OrderConfirmationError(
             "Order Confirmed can be sent only after Supplier Confirmed is recorded."
+        )
+    if not order_review_completed(order):
+        raise OrderConfirmationError(
+            "Order Confirmed can be sent only after Order Reviewed is complete."
+        )
+    if order_review_on_hold(order):
+        raise OrderConfirmationError(
+            "Order Confirmed cannot be sent while the order is on hold pending customer response."
         )
 
     stage = customer_order_stage(order)

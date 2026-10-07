@@ -460,6 +460,25 @@ export type OperationsOrder = {
     | "unrestricted"
     | "closed_after_supplier_confirmation";
   cancellation: OperationsOrderCancellation | null;
+  review: {
+    status: "pending" | "reviewed";
+    customer_contact_reviewed: boolean;
+    supplier_availability_verified: boolean;
+    whole_order_reviewed: boolean;
+    customer_contact_required: boolean;
+    customer_contact_completed: boolean;
+    reviewed_by_user_id: string | null;
+    reviewed_by_email: string | null;
+    reviewed_at: string | null;
+    on_hold: boolean;
+    hold_reason: string | null;
+    proposed_alternative: string | null;
+    hold_started_by_user_id: string | null;
+    hold_started_at: string | null;
+    hold_released_by_user_id: string | null;
+    hold_released_at: string | null;
+    customer_response_note: string | null;
+  };
   order_confirmation: {
     delivery_id: string | null;
     status: "not_sent" | "pending" | "sent" | "suppressed" | "failed";
@@ -945,6 +964,46 @@ export function getOperationsCustomers(): Promise<OperationsCustomer[]> {
 export function getOperationsOrders(): Promise<OperationsOrder[]> {
   return getJson(
     "/api/operations/orders",
+  );
+}
+
+export function updateOrderReview(
+  orderId: string,
+  payload: {
+    action: "save" | "complete";
+    customer_contact_reviewed: boolean;
+    supplier_availability_verified: boolean;
+    whole_order_reviewed: boolean;
+    customer_contact_required: boolean;
+    customer_contact_completed: boolean;
+  },
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/review`,
+    "POST",
+    payload,
+  );
+}
+
+export function holdOrderForCustomerResponse(
+  orderId: string,
+  payload: { reason: string; proposed_alternative: string },
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/review/hold`,
+    "POST",
+    payload,
+  );
+}
+
+export function releaseOrderCustomerResponseHold(
+  orderId: string,
+  customerResponseNote: string,
+): Promise<OperationsOrder> {
+  return writeJson(
+    `/api/operations/orders/${encodeURIComponent(orderId)}/review/hold/release`,
+    "POST",
+    { customer_response_note: customerResponseNote },
   );
 }
 

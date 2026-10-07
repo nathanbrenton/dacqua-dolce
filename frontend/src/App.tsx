@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useRef,
   useState,
@@ -39,9 +41,6 @@ import {
 import {
   DeveloperControls,
 } from "./components/developer/DeveloperControls";
-import {
-  OperationsPage,
-} from "./components/operations/OperationsPage";
 import {
   QuoteDialog,
   type QuoteInquiryContext,
@@ -135,6 +134,34 @@ const OPERATIONS_ROLE_NAMES = new Set([
   "administrator",
   "developer",
 ]);
+
+const LazyOperationsPage = lazy(
+  () => import(
+    "./components/operations/OperationsPage"
+  ).then((module) => ({
+    default: module.OperationsPage,
+  })),
+);
+
+function OperationsRouteLoading() {
+  return (
+    <main
+      id="main-content"
+      className="operations-shell"
+      tabIndex={-1}
+    >
+      <section
+        className="operations-route-loading"
+        role="status"
+        aria-live="polite"
+      >
+        <p className="eyebrow">Operations</p>
+        <h1>Restoring your workspace…</h1>
+        <p>Loading the Operations workspace.</p>
+      </section>
+    </main>
+  );
+}
 
 function hasOperationsRole(
   account: AuthenticationStatus | null,
@@ -602,37 +629,27 @@ export function App() {
         />
       ) : path === "/operations" ? (
         accountReady ? (
-          <OperationsPage
-            roles={account?.roles ?? []}
-            currentUserEmail={account?.email ?? null}
-            onNavigate={navigate}
-            appearance={appearance}
-            logoVariant={logoVariant}
-            developerControlsOpen={
-              developerControlsOpen
-            }
-            onToggleDeveloperControls={() => {
-              setDeveloperControlsOpen(
-                (current) => !current,
-              );
-            }}
-          />
-        ) : (
-          <main
-            id="main-content"
-            className="operations-shell"
-            tabIndex={-1}
+          <Suspense
+            fallback={<OperationsRouteLoading />}
           >
-            <section
-              className="operations-route-loading"
-              role="status"
-              aria-live="polite"
-            >
-              <p className="eyebrow">Operations</p>
-              <h1>Restoring your workspace…</h1>
-              <p>Checking the current authenticated session.</p>
-            </section>
-          </main>
+            <LazyOperationsPage
+              roles={account?.roles ?? []}
+              currentUserEmail={account?.email ?? null}
+              onNavigate={navigate}
+              appearance={appearance}
+              logoVariant={logoVariant}
+              developerControlsOpen={
+                developerControlsOpen
+              }
+              onToggleDeveloperControls={() => {
+                setDeveloperControlsOpen(
+                  (current) => !current,
+                );
+              }}
+            />
+          </Suspense>
+        ) : (
+          <OperationsRouteLoading />
         )
       ) : path === "/account" ? (
         <AccountPage
@@ -887,7 +904,7 @@ export function App() {
 
             <button
               type="button"
-              className="secondary"
+              className="primary-button service-action"
               onClick={() => {
                 navigate("/support");
               }}

@@ -750,6 +750,26 @@ class OrderReturnPolicyExceptionCreate(BaseModel):
         return self
 
 
+class OperationsOrderReviewRead(BaseModel):
+    status: Literal["pending", "reviewed"] = "pending"
+    customer_contact_reviewed: bool = False
+    supplier_availability_verified: bool = False
+    whole_order_reviewed: bool = False
+    customer_contact_required: bool = False
+    customer_contact_completed: bool = False
+    reviewed_by_user_id: str | None = None
+    reviewed_by_email: str | None = None
+    reviewed_at: str | None = None
+    on_hold: bool = False
+    hold_reason: str | None = None
+    proposed_alternative: str | None = None
+    hold_started_by_user_id: str | None = None
+    hold_started_at: str | None = None
+    hold_released_by_user_id: str | None = None
+    hold_released_at: str | None = None
+    customer_response_note: str | None = None
+
+
 class OperationsOrderConfirmationRead(BaseModel):
     delivery_id: str | None = None
     status: Literal[
@@ -783,6 +803,9 @@ class OperationsOrderRead(BaseModel):
         "closed_after_supplier_confirmation",
     ]
     cancellation: OperationsOrderCancellationRead | None = None
+    review: OperationsOrderReviewRead = Field(
+        default_factory=OperationsOrderReviewRead
+    )
     order_confirmation: OperationsOrderConfirmationRead = Field(
         default_factory=OperationsOrderConfirmationRead
     )
@@ -847,6 +870,46 @@ class OrderCancellationReviewUpdate(BaseModel):
             return None
         cleaned = value.strip()
         return cleaned or None
+
+
+class OrderReviewUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["save", "complete"]
+    customer_contact_reviewed: bool
+    supplier_availability_verified: bool
+    whole_order_reviewed: bool
+    customer_contact_required: bool
+    customer_contact_completed: bool
+
+
+class OrderReviewHoldCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=1, max_length=4000)
+    proposed_alternative: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("reason", "proposed_alternative")
+    @classmethod
+    def clean_required_text(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("A value is required.")
+        return cleaned
+
+
+class OrderReviewHoldRelease(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    customer_response_note: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("customer_response_note")
+    @classmethod
+    def clean_response_note(cls, value: str) -> str:
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Customer response note is required.")
+        return cleaned
 
 
 class OrderFulfillmentUpdate(BaseModel):

@@ -2015,6 +2015,10 @@ textarea:focus-visible {
   line-height: 1.7;
 }
 
+.service-statement .service-action {
+  justify-self: start;
+}
+
 @media (max-width: 900px) {
   .service-statement {
     grid-template-columns: 1fr;
@@ -6519,4 +6523,51 @@ summary {
 
 .support-request-notice {
   color: var(--ink);
+}
+
+
+/* PT54 — guided order review and customer-response hold workflow. */
+.order-review-checklist {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.order-review-checklist legend {
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.order-review-checklist .operations-checkbox-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.order-review-checklist .operations-checkbox-row input {
+  margin-top: 0.2rem;
+}
+
+.order-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.order-review-hold {
+  display: grid;
+  gap: 10px;
+}
+
+.order-review-hold p {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .order-review-actions .secondary-button,
+  .order-review-hold > .secondary-button {
+    width: 100%;
+  }
 }

@@ -37,7 +37,13 @@ def settings() -> EmailRuntimeSettings:
     )
 
 
-def order(*, fulfillment_status: FulfillmentStatus) -> SimpleNamespace:
+def order(
+    *,
+    fulfillment_status: FulfillmentStatus,
+    reviewed: bool = True,
+    on_hold: bool = False,
+) -> SimpleNamespace:
+    reviewed_at = datetime.now(UTC) if reviewed else None
     return SimpleNamespace(
         id=uuid.uuid4(),
         status=OrderStatus.paid,
@@ -47,6 +53,9 @@ def order(*, fulfillment_status: FulfillmentStatus) -> SimpleNamespace:
             if fulfillment_status != FulfillmentStatus.not_started
             else None
         ),
+        reviewed_at=reviewed_at,
+        reviewed_by_user_id=uuid.uuid4() if reviewed else None,
+        review_on_hold=on_hold,
     )
 
 
@@ -67,6 +76,45 @@ def test_order_confirmation_requires_supplier_confirmation() -> None:
         order_confirmations.send_order_confirmation(
             database,  # type: ignore[arg-type]
             order=order(fulfillment_status=FulfillmentStatus.not_started),  # type: ignore[arg-type]
+            customer=customer(),  # type: ignore[arg-type]
+            settings=settings(),
+            actor_user_id=uuid.uuid4(),
+        )
+
+
+def test_order_confirmation_requires_formal_order_review() -> None:
+    database = ConfirmationDatabase([])
+
+    with pytest.raises(
+        order_confirmations.OrderConfirmationError,
+        match="only after Order Reviewed",
+    ):
+        order_confirmations.send_order_confirmation(
+            database,  # type: ignore[arg-type]
+            order=order(
+                fulfillment_status=FulfillmentStatus.supplier_ordered,
+                reviewed=False,
+            ),  # type: ignore[arg-type]
+            customer=customer(),  # type: ignore[arg-type]
+            settings=settings(),
+            actor_user_id=uuid.uuid4(),
+        )
+
+
+def test_order_confirmation_is_blocked_while_review_hold_is_active() -> None:
+    database = ConfirmationDatabase([])
+
+    with pytest.raises(
+        order_confirmations.OrderConfirmationError,
+        match="on hold pending customer response",
+    ):
+        order_confirmations.send_order_confirmation(
+            database,  # type: ignore[arg-type]
+            order=order(
+                fulfillment_status=FulfillmentStatus.supplier_ordered,
+                reviewed=True,
+                on_hold=True,
+            ),  # type: ignore[arg-type]
             customer=customer(),  # type: ignore[arg-type]
             settings=settings(),
             actor_user_id=uuid.uuid4(),
