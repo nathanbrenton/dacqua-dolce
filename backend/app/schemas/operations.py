@@ -183,6 +183,13 @@ class OperationsCommunicationAttachmentRead(BaseModel):
     sha256: str
 
 
+class OperationsCommunicationSecurityRead(BaseModel):
+    spam_status: str | None = None
+    spam_score: float | None = None
+    spam_tests: list[str] = Field(default_factory=list)
+    spf_result: str | None = None
+
+
 class OperationsCommunicationMessageRead(BaseModel):
     id: str
     direction: str
@@ -196,6 +203,7 @@ class OperationsCommunicationMessageRead(BaseModel):
     sent_at: str | None
     received_at: str | None
     created_at: str
+    security: OperationsCommunicationSecurityRead | None = None
     recipients: list[OperationsCommunicationRecipientRead] = Field(
         default_factory=list,
     )

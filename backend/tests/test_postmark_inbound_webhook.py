@@ -62,6 +62,7 @@ def inbound_payload(
     mailbox_hash: str = "",
     in_reply_to: str | None = None,
     attachment_content: bytes | None = None,
+    extra_headers: list[dict[str, str]] | None = None,
 ) -> dict[str, object]:
     headers = [
         {
@@ -77,6 +78,9 @@ def inbound_payload(
                 "Value": in_reply_to,
             }
         )
+
+    if extra_headers is not None:
+        headers.extend(extra_headers)
 
     attachments: list[dict[str, object]] = []
     if attachment_content is not None:
@@ -190,6 +194,20 @@ def test_inbound_webhook_archives_message_recipients_attachment_and_event() -> N
             message_id=message_id,
             sender=sender,
             attachment_content=attachment_content,
+            extra_headers=[
+                {
+                    "Name": "X-Spam-Status",
+                    "Value": "No, score=0.4 required=5.0",
+                },
+                {
+                    "Name": "X-Spam-Score",
+                    "Value": "0.4",
+                },
+                {
+                    "Name": "Received-SPF",
+                    "Value": "Pass (sender SPF authorized)",
+                },
+            ],
         ),
         headers=basic_auth_header(),
     )
@@ -264,6 +282,16 @@ def test_inbound_webhook_archives_message_recipients_attachment_and_event() -> N
         assert event.details is not None
         assert event.details["original_recipient"] == "support@example.test"
         assert event.details["raw_email_present"] is False
+        assert {
+            (item["name"], item["value"])
+            for item in event.details["headers"]
+            if item["name"].startswith("X-Spam")
+            or item["name"] == "Received-SPF"
+        } == {
+            ("X-Spam-Status", "No, score=0.4 required=5.0"),
+            ("X-Spam-Score", "0.4"),
+            ("Received-SPF", "Pass (sender SPF authorized)"),
+        }
 
         db.delete(thread)
         user = db.get(User, user_id)

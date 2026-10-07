@@ -672,7 +672,7 @@ Commissioned:
 - Operations API filtering that keeps Postmark inbound-routing addresses out of the employee UI;
 - manual refresh plus lightweight 60-second polling while the Operations page is open;
 - public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
-- safe plain-text `http://`/`https://` URL linkification in Customer Inbox without rendering arbitrary inbound HTML.
+- outbound/archive `http://`/`https://` links remain linkified where appropriate, while inbound/customer-supplied URLs remain non-clickable; arbitrary inbound HTML is not rendered as trusted markup.
 
 Not yet commissioned:
 
@@ -712,4 +712,34 @@ The Operations Customer Inbox separates active work from retained history withou
 - Archiving is a workflow/presentation action only. It does not delete messages, recipients, events, or attachment bytes.
 - Permanent deletion is intentionally not exposed in the routine Operations UI. Retention or purge rules should be introduced only through an explicit documented policy.
 - Failed archived communication messages are surfaced with a failure badge. The separate delivery-issues list also exposes failed `email_deliveries`, including legacy failures that may not be associated with a durable communication thread.
-- Message bodies remain archived as plain text/HTML data, but the Operations UI renders the plain-text form and linkifies only explicit `http://` and `https://` URLs. Arbitrary inbound HTML is not executed/rendered as trusted markup.
+- Message bodies remain archived as plain text/HTML data, but the Operations UI renders the plain-text form. Inbound/customer-supplied URLs remain non-clickable, while arbitrary inbound HTML is not executed/rendered as trusted markup.
+
+## 16. Customer Inbox security hardening
+
+A focused review after suspicious production inbound mail confirmed that the
+existing archive already preserves Postmark inbound headers in the normalized
+`communication_events` evidence record. The Operations API/UI now exposes only
+a narrow advisory subset of that evidence:
+
+- `X-Spam-Status`;
+- `X-Spam-Score`;
+- `X-Spam-Tests`;
+- the result token from `Received-SPF`.
+
+These values are staff-facing evidence only. They do not automatically trust,
+reject, delete, archive, reply to, or quarantine a message.
+
+The existing content boundaries remain important:
+
+- inbound HTML may be archived for evidence, but it is not returned by the
+  Operations communications response model and is not rendered as trusted HTML;
+- inbound/customer-supplied URLs are shown as plain text in Operations instead
+  of one-click links;
+- attachment metadata is visible to staff, but attachment bytes are not exposed
+  by the Customer Inbox API/UI;
+- raw Postmark headers are not copied wholesale into the employee-facing API;
+  only the normalized advisory fields above are returned.
+
+This hardening does not change Postmark spam settings, add automatic sender
+blocking, or create a Spam/Quarantine mailbox. Provider-side filtering and a
+dedicated staff quarantine workflow remain separate, deliberate decisions.

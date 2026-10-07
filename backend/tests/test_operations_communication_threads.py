@@ -97,6 +97,35 @@ def test_communication_thread_list_and_detail_expose_archive(
                 content=b"report",
             )
         )
+        db.add(
+            CommunicationEvent(
+                message_id=inbound.id,
+                provider="postmark",
+                event_type="inbound_received",
+                provider_event_id=f"inbound:{uuid.uuid4()}",
+                occurred_at=now,
+                details={
+                    "headers": [
+                        {
+                            "name": "X-Spam-Status",
+                            "value": "No, score=1.7 required=5.0",
+                        },
+                        {
+                            "name": "X-Spam-Score",
+                            "value": "1.7",
+                        },
+                        {
+                            "name": "X-Spam-Tests",
+                            "value": "DKIM_VALID, SPF_PASS",
+                        },
+                        {
+                            "name": "Received-SPF",
+                            "value": "Pass (sender SPF authorized)",
+                        },
+                    ]
+                },
+            )
+        )
         db.flush()
 
         thread_rows = operations.list_communication_threads(
@@ -132,6 +161,14 @@ def test_communication_thread_list_and_detail_expose_archive(
         assert message.status == "received"
         assert message.body_text == "Can you tell me what happens next?"
         assert message.content_redacted is False
+        assert message.security is not None
+        assert message.security.spam_status == "no"
+        assert message.security.spam_score == 1.7
+        assert message.security.spam_tests == [
+            "DKIM_VALID",
+            "SPF_PASS",
+        ]
+        assert message.security.spf_result == "pass"
         assert message.recipients == []
         assert message.attachments[0].filename == "water-report.txt"
         assert message.attachments[0].size_bytes == 6
@@ -143,6 +180,7 @@ def test_communication_thread_list_and_detail_expose_archive(
         assert "internet_message_id" not in payload
         assert "inbound.postmarkapp.com" not in str(payload)
         assert "content" not in payload["attachments"][0]
+        assert "headers" not in payload
 
         db.rollback()
 

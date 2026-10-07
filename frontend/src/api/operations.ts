@@ -174,6 +174,13 @@ export type OperationsCommunicationAttachment = {
   sha256: string;
 };
 
+export type OperationsCommunicationSecurity = {
+  spam_status: string | null;
+  spam_score: number | null;
+  spam_tests: string[];
+  spf_result: string | null;
+};
+
 export type OperationsCommunicationMessage = {
   id: string;
   direction: string;
@@ -187,6 +194,7 @@ export type OperationsCommunicationMessage = {
   sent_at: string | null;
   received_at: string | null;
   created_at: string;
+  security?: OperationsCommunicationSecurity | null;
   recipients: OperationsCommunicationRecipient[];
   attachments: OperationsCommunicationAttachment[];
 };

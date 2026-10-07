@@ -107,6 +107,7 @@ type VisibleMessageBody = {
 };
 
 const HTTP_URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
+const INBOUND_URL_PATTERN = /https?:\/\//i;
 const SIMPLE_TRAILING_URL_PUNCTUATION = /[.,!?;:]+$/;
 
 function splitTrailingUrlPunctuation(value: string): {
@@ -252,6 +253,65 @@ function splitQuotedHistory(body: string): VisibleMessageBody {
   };
 }
 
+function MessageSecuritySummary({
+  message,
+}: {
+  message: OperationsCommunicationMessage;
+}) {
+  if (
+    message.direction !== "inbound"
+    || message.security == null
+  ) {
+    return null;
+  }
+
+  const security = message.security;
+  const spamStatus =
+    security.spam_status?.toLowerCase() ?? null;
+  const spfResult =
+    security.spf_result?.toLowerCase() ?? null;
+  const spamWarning = spamStatus === "yes";
+  const spfWarning =
+    spfResult === "fail"
+    || spfResult === "softfail"
+    || spfResult === "permerror";
+
+  return (
+    <div className="operations-inbox-message-badges">
+      {spamStatus !== null
+        || security.spam_score !== null ? (
+        <span
+          className={
+            "operations-status-badge"
+            + (spamWarning ? " is-failed" : "")
+          }
+          title={
+            security.spam_tests.length > 0
+              ? `Spam checks: ${security.spam_tests.join(", ")}`
+              : "Postmark spam assessment"
+          }
+        >
+          Spam: {spamStatus ?? "unknown"}
+          {security.spam_score !== null
+            ? ` · score ${security.spam_score}`
+            : ""}
+        </span>
+      ) : null}
+      {spfResult !== null ? (
+        <span
+          className={
+            "operations-status-badge"
+            + (spfWarning ? " is-failed" : "")
+          }
+        >
+          SPF: {spfResult}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+
 function ArchivedMessageBody({
   message,
 }: {
@@ -273,14 +333,30 @@ function ArchivedMessageBody({
   }
 
   const body = splitQuotedHistory(message.body_text);
+  const inbound = message.direction === "inbound";
+  const hasInboundUrl =
+    inbound && INBOUND_URL_PATTERN.test(message.body_text);
 
   return (
     <>
-      <p><PlainTextWithLinks text={body.visible} /></p>
+      <p>
+        {inbound
+          ? body.visible
+          : <PlainTextWithLinks text={body.visible} />}
+      </p>
+      {hasInboundUrl ? (
+        <small>
+          Inbound URLs are shown as plain text to reduce accidental phishing clicks.
+        </small>
+      ) : null}
       {body.quoted !== null ? (
         <details className="operations-inbox-quoted-history">
           <summary>Show quoted history</summary>
-          <p><PlainTextWithLinks text={body.quoted} /></p>
+          <p>
+            {inbound
+              ? body.quoted
+              : <PlainTextWithLinks text={body.quoted} />}
+          </p>
         </details>
       ) : null}
     </>
@@ -1001,9 +1077,7 @@ export function CommunicationsInbox() {
                     {threadDetail.originating_request.message !== null
                       && threadDetail.originating_request.message.trim().length > 0 ? (
                         <p>
-                          <PlainTextWithLinks
-                            text={threadDetail.originating_request.message}
-                          />
+                          {threadDetail.originating_request.message}
                         </p>
                       ) : (
                         <em>No written question was included with this request.</em>
@@ -1056,6 +1130,8 @@ export function CommunicationsInbox() {
                     <p className="operations-inbox-recipient">
                       {recipientLabel(message)}
                     </p>
+
+                    <MessageSecuritySummary message={message} />
 
                     <h4>{message.subject}</h4>
 

@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from math import isfinite
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -76,6 +77,7 @@ from app.schemas.operations import (
     OperationsCommunicationRecipientRead,
     OperationsCommunicationReplyCreate,
     OperationsCommunicationReplyRead,
+    OperationsCommunicationSecurityRead,
     OperationsCommunicationThreadDetailRead,
     OperationsCommunicationThreadRead,
     OperationsCommunicationThreadStatusUpdate,
@@ -1402,6 +1404,143 @@ def _is_internal_postmark_inbound_address(
     return domain == "inbound.postmarkapp.com"
 
 
+def _postmark_header_values(
+    event: CommunicationEvent,
+    name: str,
+) -> list[str]:
+    if not isinstance(event.details, dict):
+        return []
+
+    headers = event.details.get("headers")
+    if not isinstance(headers, list):
+        return []
+
+    target = name.casefold()
+    values: list[str] = []
+
+    for header in headers:
+        if not isinstance(header, dict):
+            continue
+
+        header_name = header.get("name")
+        header_value = header.get("value")
+        if (
+            not isinstance(header_name, str)
+            or not isinstance(header_value, str)
+            or header_name.casefold() != target
+        ):
+            continue
+
+        cleaned = header_value.strip()
+        if cleaned:
+            values.append(cleaned)
+
+    return values
+
+
+def _postmark_security_read(
+    event: CommunicationEvent,
+) -> OperationsCommunicationSecurityRead | None:
+    spam_status_values = _postmark_header_values(
+        event,
+        "X-Spam-Status",
+    )
+    spam_score_values = _postmark_header_values(
+        event,
+        "X-Spam-Score",
+    )
+    spam_test_values = _postmark_header_values(
+        event,
+        "X-Spam-Tests",
+    )
+    spf_values = _postmark_header_values(
+        event,
+        "Received-SPF",
+    )
+
+    if not any(
+        (
+            spam_status_values,
+            spam_score_values,
+            spam_test_values,
+            spf_values,
+        )
+    ):
+        return None
+
+    spam_status: str | None = None
+    if spam_status_values:
+        candidate = spam_status_values[-1].split(",", 1)[0].strip().lower()
+        if candidate:
+            spam_status = candidate[:40]
+
+    spam_score: float | None = None
+    if spam_score_values:
+        try:
+            spam_score = float(spam_score_values[-1])
+        except ValueError:
+            spam_score = None
+        else:
+            if not isfinite(spam_score):
+                spam_score = None
+
+    spam_tests: list[str] = []
+    for value in spam_test_values:
+        for test_name in value.split(","):
+            cleaned = test_name.strip()
+            if (
+                cleaned
+                and cleaned not in spam_tests
+                and len(spam_tests) < 30
+            ):
+                spam_tests.append(cleaned[:100])
+
+    spf_result: str | None = None
+    if spf_values:
+        candidate = spf_values[-1].split(None, 1)[0].strip().lower()
+        if candidate:
+            spf_result = candidate[:40]
+
+    return OperationsCommunicationSecurityRead(
+        spam_status=spam_status,
+        spam_score=spam_score,
+        spam_tests=spam_tests,
+        spf_result=spf_result,
+    )
+
+
+def _communication_security_by_message(
+    db: DatabaseSession,
+    *,
+    message_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, OperationsCommunicationSecurityRead]:
+    events = db.scalars(
+        select(CommunicationEvent)
+        .where(
+            CommunicationEvent.message_id.in_(message_ids),
+            CommunicationEvent.provider == "postmark",
+            CommunicationEvent.event_type == "inbound_received",
+        )
+        .order_by(
+            CommunicationEvent.message_id,
+            CommunicationEvent.occurred_at,
+            CommunicationEvent.id,
+        )
+    ).all()
+
+    security_by_message: dict[
+        uuid.UUID,
+        OperationsCommunicationSecurityRead,
+    ] = {}
+
+    for event in events:
+        security = _postmark_security_read(event)
+        if security is not None:
+            security_by_message[event.message_id] = security
+
+    return security_by_message
+
+
 def _communication_message_reads(
     db: DatabaseSession,
     *,
@@ -1436,6 +1575,11 @@ def _communication_message_reads(
             CommunicationAttachment.id,
         )
     ).all()
+
+    security_by_message = _communication_security_by_message(
+        db,
+        message_ids=message_ids,
+    )
 
     recipients_by_message: dict[
         uuid.UUID,
@@ -1484,6 +1628,7 @@ def _communication_message_reads(
                 else None
             ),
             created_at=message.created_at.isoformat(),
+            security=security_by_message.get(message.id),
             recipients=[
                 OperationsCommunicationRecipientRead(
                     recipient_type=recipient.recipient_type.value,
