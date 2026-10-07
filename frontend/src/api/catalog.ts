@@ -29,6 +29,12 @@ export type CatalogImage = {
   alt_text: string;
 };
 
+export type CatalogProductIdentity = {
+  category: string;
+  family: string;
+  variant: string | null;
+};
+
 export type CatalogSpecification = {
   spec_key: string;
   label: string;
@@ -57,6 +63,9 @@ export type CatalogVariant = {
   display_name: string;
   sku: string;
   option_values: Record<string, string>;
+  primary_image: CatalogImage | null;
+  pricing: CatalogPricing;
+  availability: CatalogAvailability;
 };
 
 export type CatalogDocument = {
@@ -77,6 +86,7 @@ export type CatalogProduct = {
   product_family: string | null;
   system_type: string | null;
   category: string;
+  identity: CatalogProductIdentity;
   public_path: string;
   primary_image: CatalogImage | null;
   pricing: CatalogPricing;

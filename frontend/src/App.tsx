@@ -163,6 +163,73 @@ function OperationsRouteLoading() {
   );
 }
 
+type CustomerSiteFooterProps = {
+  logoVariant: LogoVariantId;
+  controlsOpen: boolean;
+  onToggleControls: () => void;
+  backendState: BackendState;
+  onNavigate: (path: string) => void;
+};
+
+function CustomerSiteFooter({
+  logoVariant,
+  controlsOpen,
+  onToggleControls,
+  backendState,
+  onNavigate,
+}: CustomerSiteFooterProps) {
+  return (
+    <footer className="site-footer">
+      <DeveloperFooterLogo
+        variant={logoVariant}
+        controlsOpen={controlsOpen}
+        onToggleControls={onToggleControls}
+      />
+
+      <div className="site-footer-meta">
+        <nav
+          className="footer-policy-links"
+          aria-label="Policies"
+        >
+          <a
+            href="/privacy"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("/privacy");
+            }}
+          >
+            Privacy
+          </a>
+
+          <a
+            href="/terms"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("/terms");
+            }}
+          >
+            Terms &amp; Policies
+          </a>
+        </nav>
+
+        <FooterCopyright />
+
+        <div className="development-status">
+          <span
+            className={
+              `status-dot `
+              + `status-${backendState}`
+            }
+            aria-hidden="true"
+          />
+
+          Local API: {backendState}
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 function hasOperationsRole(
   account: AuthenticationStatus | null,
 ): boolean {
@@ -703,16 +770,30 @@ export function App() {
         />
       ) : detailSlug
         !== null ? (
-        <ProductDetailPage
-          slug={decodeURIComponent(
-            detailSlug,
-          )}
-          account={account}
-          onNavigate={navigate}
-          onRequestSignIn={() => {
-            setAuthDialogOpen(true);
-          }}
-        />
+        <div className="product-detail-route">
+          <ProductDetailPage
+            slug={decodeURIComponent(
+              detailSlug,
+            )}
+            account={account}
+            onNavigate={navigate}
+            onRequestSignIn={() => {
+              setAuthDialogOpen(true);
+            }}
+          />
+
+          <CustomerSiteFooter
+            logoVariant={logoVariant}
+            controlsOpen={developerControlsOpen}
+            onToggleControls={() => {
+              setDeveloperControlsOpen(
+                (current) => !current,
+              );
+            }}
+            backendState={backendState}
+            onNavigate={navigate}
+          />
+        </div>
       ) : isHome ? (
         <main
           id="main-content"
@@ -932,60 +1013,17 @@ export function App() {
             </p>
           </section>
 
-          <footer className="site-footer">
-            <DeveloperFooterLogo
-              variant={logoVariant}
-              controlsOpen={
-                developerControlsOpen
-              }
-              onToggleControls={() => {
-                setDeveloperControlsOpen(
-                  (current) => !current,
-                );
-              }}
-            />
-
-            <div className="site-footer-meta">
-              <nav
-                className="footer-policy-links"
-                aria-label="Policies"
-              >
-                <a
-                  href="/privacy"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate("/privacy");
-                  }}
-                >
-                  Privacy
-                </a>
-
-                <a
-                  href="/terms"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    navigate("/terms");
-                  }}
-                >
-                  Terms & Policies
-                </a>
-              </nav>
-
-              <FooterCopyright />
-
-              <div className="development-status">
-                <span
-                  className={
-                    `status-dot `
-                    + `status-${backendState}`
-                  }
-                  aria-hidden="true"
-                />
-
-                Local API: {backendState}
-              </div>
-            </div>
-          </footer>
+          <CustomerSiteFooter
+            logoVariant={logoVariant}
+            controlsOpen={developerControlsOpen}
+            onToggleControls={() => {
+              setDeveloperControlsOpen(
+                (current) => !current,
+              );
+            }}
+            backendState={backendState}
+            onNavigate={navigate}
+          />
         </main>
       ) : (
         <main

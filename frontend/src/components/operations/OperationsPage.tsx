@@ -786,6 +786,8 @@ export function OperationsPage({
     useState("");
   const [products, setProducts] =
     useState<OperationsProduct[]>([]);
+  const [openCatalogProductId, setOpenCatalogProductId] =
+    useState<string | null>(null);
   const [stockNotifications, setStockNotifications] =
     useState<OperationsStockNotification[]>([]);
   const [relationshipProductDrafts, setRelationshipProductDrafts] =
@@ -3608,7 +3610,52 @@ export function OperationsPage({
               ?? "idle";
 
             return (
-              <article key={product.id} className="operations-product">
+              <details
+                key={product.id}
+                className="operations-product operations-product-disclosure"
+                open={openCatalogProductId === product.id}
+                onToggle={(event) => {
+                  if (event.currentTarget.open) {
+                    setOpenCatalogProductId(product.id);
+                    return;
+                  }
+
+                  setOpenCatalogProductId((current) =>
+                    current === product.id ? null : current,
+                  );
+                }}
+              >
+                <summary className="operations-product-disclosure-summary">
+                  <span
+                    className="operations-product-disclosure-chevron"
+                    aria-hidden="true"
+                  />
+                  <span className="operations-product-disclosure-identity">
+                    <span className="product-meta">
+                      {product.manufacturer}
+                      {" · "}
+                      {product.category}
+                    </span>
+                    <strong>{product.name}</strong>
+                    <code>{product.sku}</code>
+                  </span>
+                  <span className="operations-product-disclosure-status">
+                    <span>
+                      Lifecycle: {PRODUCT_LIFECYCLE_LABELS[product.lifecycle_status]
+                        ?? product.lifecycle_status}
+                    </span>
+                    <span>
+                      Inventory: {INVENTORY_STATUS_LABELS[product.inventory.status]
+                        ?? product.inventory.status}
+                    </span>
+                    <span>
+                      Pricing: {PRICING_MODE_LABELS[product.pricing.mode]
+                        ?? product.pricing.mode}
+                    </span>
+                  </span>
+                </summary>
+
+                <div className="operations-product-disclosure-content">
                 <header>
                   <p className="product-meta">
                     {product.manufacturer}
@@ -4595,7 +4642,8 @@ export function OperationsPage({
                     ) : null}
                   </fieldset>
                 </div>
-              </article>
+                </div>
+              </details>
             );
           })}
         </div>

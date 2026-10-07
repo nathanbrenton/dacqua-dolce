@@ -23,6 +23,7 @@ from app.models.catalog import (
     ProductRelationship,
     ProductRelationshipType,
     ProductSpecification,
+    ProductVariant,
     StockNotificationSubscription,
 )
 from app.models.identity import (
@@ -37,6 +38,7 @@ from app.schemas.catalog import (
     CatalogOptionRead,
     CatalogPricingRead,
     CatalogProductDetailRead,
+    CatalogProductIdentityRead,
     CatalogProductListResponse,
     CatalogProductRead,
     CatalogSpecificationRead,
@@ -63,6 +65,33 @@ router = APIRouter(
 
 settings = get_settings()
 
+
+
+
+def catalog_product_identity_read(
+    product: Product,
+) -> CatalogProductIdentityRead:
+    category = product.category.name.strip()
+    family = (product.product_family or product.name).strip()
+    canonical_name = product.name.strip()
+    family_prefix = f"{family} - "
+    variant: str | None = None
+
+    if canonical_name.startswith(family_prefix):
+        suffix = canonical_name[len(family_prefix) :].strip()
+        variant = suffix or None
+    elif (
+        product.system_type is not None
+        and product.system_type.strip()
+        and product.system_type.strip().casefold() != category.casefold()
+    ):
+        variant = product.system_type.strip()
+
+    return CatalogProductIdentityRead(
+        category=category,
+        family=family,
+        variant=variant,
+    )
 
 def request_is_authenticated(
     request: Request,
@@ -269,6 +298,84 @@ def pricing_read(
     )
 
 
+def variant_availability_read(
+    db: Session,
+    *,
+    product: Product,
+    variant: ProductVariant,
+) -> CatalogAvailabilityRead:
+    inventory = db.scalar(
+        select(ProductInventory)
+        .where(
+            ProductInventory.product_id == product.id,
+            ProductInventory.variant_id == variant.id,
+        )
+        .order_by(ProductInventory.updated_at.desc())
+    )
+    if inventory is None:
+        return availability_read(db, product=product)
+    reserved_quantity = active_reserved_quantity(
+        db,
+        product_id=product.id,
+        variant_id=variant.id,
+    )
+    decision = resolve_public_availability(
+        inventory,
+        reserved_quantity=reserved_quantity,
+        online_sale_approved=(
+            product.online_sale_approved and not product.assisted_sale_required
+        ),
+        lifecycle_status=product.lifecycle_status,
+        allow_inquiry_when_unavailable=product.allow_inquiry_when_unavailable,
+    )
+    return CatalogAvailabilityRead(
+        status=decision.status,
+        available=decision.available,
+        action=decision.action,
+        action_label=decision.action_label,
+        lifecycle_status=decision.lifecycle_status,
+        expected_available_on=decision.expected_available_on,
+        estimated_lead_time=decision.estimated_lead_time,
+        can_notify_when_in_stock=decision.can_notify_when_in_stock,
+        can_inquire=decision.can_inquire,
+    )
+
+
+def variant_pricing_read(
+    product: Product,
+    variant: ProductVariant,
+    *,
+    authenticated: bool,
+) -> CatalogPricingRead:
+    if product.assisted_sale_required:
+        return pricing_read(product, authenticated=authenticated)
+    price = select_effective_price(variant.prices)
+    if price is None:
+        return pricing_read(product, authenticated=authenticated)
+    decision = resolve_pricing(price, authenticated=authenticated)
+    if not product.online_sale_approved:
+        return CatalogPricingRead(
+            mode=PricingPolicyMode.NO_ONLINE_SALE.value,
+            amount_minor=None,
+            currency=decision.currency,
+            display_price=False,
+            can_add_to_cart=False,
+            can_checkout_online=False,
+            action="REQUEST_QUOTE",
+            action_label="Contact for Availability",
+        )
+    return CatalogPricingRead(
+        mode=decision.mode.value,
+        amount_minor=decision.amount_minor if decision.display_price else None,
+        currency=decision.currency,
+        display_price=decision.display_price,
+        can_add_to_cart=decision.can_add_to_cart,
+        can_checkout_online=decision.can_checkout_online,
+        action=decision.action,
+        action_label=decision.action_label,
+    )
+
+
 @router.get(
     "/sales-area",
     response_model=SalesAreaRead,
@@ -324,6 +431,7 @@ def list_public_products(
                     product_family=(product.product_family),
                     system_type=(product.system_type),
                     category=(product.category.name),
+                    identity=catalog_product_identity_read(product),
                     public_path=(product.public_path),
                     primary_image=(
                         CatalogImageRead(
@@ -364,7 +472,8 @@ def get_public_product(
                 selectinload(Product.category),
                 selectinload(Product.images),
                 selectinload(Product.prices),
-                selectinload(Product.variants),
+                selectinload(Product.variants).selectinload(ProductVariant.prices),
+                selectinload(Product.variants).selectinload(ProductVariant.inventory),
                 selectinload(Product.documents),
                 selectinload(Product.specifications),
                 selectinload(Product.approved_claims),
@@ -404,6 +513,7 @@ def get_public_product(
             product_family=(product.product_family),
             system_type=(product.system_type),
             category=product.category.name,
+            identity=catalog_product_identity_read(product),
             public_path=product.public_path,
             primary_image=primary_image,
             pricing=pricing_read(
@@ -418,9 +528,30 @@ def get_public_product(
             variants=[
                 CatalogVariantRead(
                     id=str(variant.id),
-                    display_name=(variant.display_name),
+                    display_name=variant.display_name,
                     sku=variant.sku,
-                    option_values=(variant.option_values),
+                    option_values=variant.option_values,
+                    primary_image=(
+                        CatalogImageRead(
+                            path=variant.option_values["image_path"],
+                            alt_text=variant.option_values.get(
+                                "image_alt",
+                                variant.display_name,
+                            ),
+                        )
+                        if variant.option_values.get("image_path")
+                        else None
+                    ),
+                    pricing=variant_pricing_read(
+                        product,
+                        variant,
+                        authenticated=authenticated,
+                    ),
+                    availability=variant_availability_read(
+                        db,
+                        product=product,
+                        variant=variant,
+                    ),
                 )
                 for variant in product.variants
                 if variant.active

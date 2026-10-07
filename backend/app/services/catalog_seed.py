@@ -16,6 +16,7 @@ from app.models.catalog import (
     ProductCategory,
     ProductImage,
     ProductSpecification,
+    ProductVariant,
 )
 
 DEFAULT_CATALOG_PATH = (
@@ -41,6 +42,8 @@ class CatalogSeedResult:
     images_updated: int = 0
     specifications_created: int = 0
     specifications_updated: int = 0
+    variants_created: int = 0
+    variants_updated: int = 0
 
     @property
     def total_changes(self) -> int:
@@ -71,6 +74,7 @@ def validate_catalog_manifest(data: dict[str, Any]) -> None:
         "products",
         "images",
         "specifications",
+        "variants",
     )
 
     for section in required_sections:
@@ -136,6 +140,39 @@ def validate_catalog_manifest(data: dict[str, Any]) -> None:
                 "Product references unknown category: "
                 f"{product['sku']}"
             )
+
+
+    _require_unique(
+        data["variants"],
+        key="sku",
+        label="variant",
+    )
+
+    variant_keys: set[tuple[str, str]] = set()
+    for variant in data["variants"]:
+        sku = variant["product_sku"]
+        if sku not in product_skus:
+            raise CatalogSeedError(
+                f"Variant references unknown product: {sku}"
+            )
+        key = (sku, variant["display_name"])
+        if key in variant_keys:
+            raise CatalogSeedError(
+                "Canonical catalog contains duplicate variant display name for "
+                f"{sku}: {variant['display_name']}"
+            )
+        if not isinstance(variant.get("option_values"), dict):
+            raise CatalogSeedError(
+                f"Variant option_values must be an object: {variant['sku']}"
+            )
+        if not all(
+            isinstance(key, str) and isinstance(value, str)
+            for key, value in variant["option_values"].items()
+        ):
+            raise CatalogSeedError(
+                f"Variant option_values must contain string values: {variant['sku']}"
+            )
+        variant_keys.add(key)
 
     image_keys: set[tuple[str, str]] = set()
 
@@ -242,6 +279,19 @@ def reconcile_product_metadata(
     }
 
     return _reconcile_attributes(product, desired_values)
+
+
+def reconcile_variant_metadata(
+    variant: ProductVariant,
+    *,
+    display_name: str,
+    option_values: dict[str, str],
+) -> bool:
+    desired_values = {
+        "display_name": display_name,
+        "option_values": option_values,
+    }
+    return _reconcile_attributes(variant, desired_values)
 
 
 def reconcile_image_metadata(
@@ -448,6 +498,37 @@ def apply_catalog_manifest(
                 result.products_updated += 1
 
         products[row["sku"]] = product
+
+    for row in data["variants"]:
+        product = products[row["product_sku"]]
+        variant = db.scalar(
+            select(ProductVariant).where(
+                ProductVariant.sku == row["sku"]
+            )
+        )
+
+        if variant is None:
+            variant = ProductVariant(
+                product_id=product.id,
+                display_name=row["display_name"],
+                sku=row["sku"],
+                option_values=row["option_values"],
+                active=row["active"],
+            )
+            db.add(variant)
+            result.variants_created += 1
+        else:
+            if variant.product_id != product.id:
+                raise CatalogSeedError(
+                    "Existing variant SKU belongs to a different product: "
+                    f"{row['sku']}"
+                )
+            if reconcile_variant_metadata(
+                variant,
+                display_name=row["display_name"],
+                option_values=row["option_values"],
+            ):
+                result.variants_updated += 1
 
     for row in data["images"]:
         product = products[row["product_sku"]]

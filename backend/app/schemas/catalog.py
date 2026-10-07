@@ -45,6 +45,12 @@ class CatalogImageRead(BaseModel):
     alt_text: str
 
 
+class CatalogProductIdentityRead(BaseModel):
+    category: str
+    family: str
+    variant: str | None = None
+
+
 class CatalogSpecificationRead(BaseModel):
     spec_key: str
     label: str
@@ -73,6 +79,9 @@ class CatalogVariantRead(BaseModel):
     display_name: str
     sku: str
     option_values: dict[str, str]
+    primary_image: CatalogImageRead | None = None
+    pricing: CatalogPricingRead
+    availability: CatalogAvailabilityRead
 
 
 class CatalogDocumentRead(BaseModel):
@@ -93,6 +102,7 @@ class CatalogProductRead(BaseModel):
     product_family: str | None
     system_type: str | None
     category: str
+    identity: CatalogProductIdentityRead
     public_path: str
     primary_image: CatalogImageRead | None
     pricing: CatalogPricingRead

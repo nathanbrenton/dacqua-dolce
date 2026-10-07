@@ -6,7 +6,9 @@ export type ProductPresentationFact = {
 };
 
 export type ProductPresentation = {
+  categoryName: string;
   familyName: string;
+  variantLabel: string | null;
   systemType: string | null;
   technologyLabel: string | null;
   catalogSummary: string | null;
@@ -24,7 +26,9 @@ export function getProductPresentation(
 ): ProductPresentation {
   if (product.sku === HARMONY_CLEAR_SKU) {
     return {
-      familyName: "Harmony",
+      categoryName: product.identity.category,
+      familyName: product.identity.family,
+      variantLabel: "Water Conditioner",
       systemType: "Water Conditioner",
       technologyLabel: "Featuring CLEAR Technology",
       catalogSummary:
@@ -71,7 +75,9 @@ export function getProductPresentation(
   }
 
   return {
-    familyName: product.product_family ?? product.name,
+    categoryName: product.identity.category,
+    familyName: product.identity.family,
+    variantLabel: product.identity.variant,
     systemType: product.system_type,
     technologyLabel: null,
     catalogSummary: null,

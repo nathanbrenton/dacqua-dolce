@@ -29,42 +29,6 @@ function formatPrice(
 }
 
 
-function productIdentityDetail(
-  product: CatalogProduct,
-  familyName: string,
-  systemType: string | null,
-  technologyLabel: string | null,
-): string | null {
-  const canonicalName = product.name.trim();
-  const normalizedFamily = familyName.trim();
-  const familyPrefix = `${normalizedFamily} - `;
-
-  if (
-    technologyLabel === null
-    && canonicalName.startsWith(familyPrefix)
-  ) {
-    const variantLabel = canonicalName
-      .slice(familyPrefix.length)
-      .trim();
-
-    if (variantLabel.length > 0) {
-      return variantLabel;
-    }
-  }
-
-  if (
-    systemType !== null
-    && systemType.trim().localeCompare(
-      product.category.trim(),
-      undefined,
-      { sensitivity: "base" },
-    ) !== 0
-  ) {
-    return systemType;
-  }
-
-  return null;
-}
 
 export function CatalogSection({
   onNavigate,
@@ -179,13 +143,6 @@ export function CatalogSection({
           {products.map((product) => {
             const presentation =
               getProductPresentation(product);
-            const identityDetail =
-              productIdentityDetail(
-                product,
-                presentation.familyName,
-                presentation.systemType,
-                presentation.technologyLabel,
-              );
 
             return (
             <article
@@ -219,15 +176,15 @@ export function CatalogSection({
 
               <div className="product-card-body">
                 <p className="product-meta">
-                  {product.category}
+                  {presentation.categoryName}
                 </p>
 
                 <div className="product-identity">
                   <h3>{presentation.familyName}</h3>
 
-                  {identityDetail !== null ? (
+                  {presentation.variantLabel !== null ? (
                     <p className="product-system-type">
-                      {identityDetail}
+                      {presentation.variantLabel}
                     </p>
                   ) : null}
 

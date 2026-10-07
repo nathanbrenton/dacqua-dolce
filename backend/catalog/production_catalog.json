@@ -99,6 +99,20 @@
       "product_sku": "DD5ROAE",
       "sort_order": 10,
       "storage_path": "/products/media/dd5roae-spec-dimensions.webp"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce Refine 1.5 cubic foot water softener with brine tank",
+      "product_sku": "REFINE",
+      "sort_order": 0,
+      "storage_path": "/products/media/refine-1-5-cf.jpeg"
+    },
+    {
+      "active": true,
+      "alt_text": "D'Acqua Dolce Refine 2.0 cubic foot water softener with brine tank",
+      "product_sku": "REFINE",
+      "sort_order": 10,
+      "storage_path": "/products/media/refine-2-0-cf.jpeg"
     }
   ],
   "manufacturers": [
@@ -114,7 +128,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Non-backwashing whole-home water conditioner featuring CLEAR Technology. CLEAR is D'Acqua Dolce's branded terminology for its anti-scale conditioning approach. Calcium and magnesium remain in the treated water rather than being removed as hardness. The conditioner requires no electrical power or backwash drain. Harmony may be purchased individually; the preferred filtration configuration pairs it with a Duo cartridge filtration system containing replaceable sediment and carbon filtration.",
+      "description": "Whole-home water conditioner featuring CLEAR Technology. CLEAR is D'Acqua Dolce's branded terminology for its anti-scale conditioning approach. Calcium and magnesium remain in the treated water rather than being removed as hardness. The conditioner requires no electrical power or drain connection for an automatic rinse cycle. Harmony may be purchased individually; the preferred filtration configuration pairs it with a dual-cartridge sediment and carbon filtration system.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Harmony - Water Conditioner featuring CLEAR Technology",
       "assisted_sale_required": true,
@@ -128,9 +142,9 @@
     {
       "active": false,
       "category_slug": "whole-home-filtration",
-      "description": "Retired catalog record retained for historical traceability. This regenerating Harmony configuration is not offered for sale.",
+      "description": "Historical catalog record retained for traceability. This regenerating Harmony configuration is not offered for sale.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Harmony - Regenerating (Retired)",
+      "name": "Harmony - Regenerating",
       "assisted_sale_required": true,
       "online_sale_approved": false,
       "product_family": "Harmony",
@@ -142,7 +156,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home catalytic carbon filtration system with 1.5 cubic feet of media and a pass-through valve.",
+      "description": "Whole-home catalytic carbon filtration with 1.5 cubic feet of media and a pass-through valve. This configuration is retained for lifecycle history and is being retired from normal sale.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Essence - Pass-Through",
       "assisted_sale_required": true,
@@ -156,9 +170,9 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home carbon filtration with automatic backwashing. Public performance language remains limited to verified manufacturer-supported specifications.",
+      "description": "Whole-home catalytic carbon filtration with an automatic media-rinse cycle. Public performance language remains limited to verified manufacturer-supported specifications.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Essence - Backwashing",
+      "name": "Essence - Automatic Rinse",
       "assisted_sale_required": true,
       "online_sale_approved": false,
       "product_family": "Essence",
@@ -170,9 +184,9 @@
     {
       "active": true,
       "category_slug": "reverse-osmosis",
-      "description": "Five-stage point-of-use reverse osmosis drinking water system.",
+      "description": "Five-stage point-of-use reverse osmosis system for applications where very low-mineral water is preferred, including baking and food preparation. For everyday drinking water, consider Origin Alkaline Plus.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Origin",
+      "name": "Origin - Ultra-Pure",
       "assisted_sale_required": false,
       "online_sale_approved": false,
       "product_family": "Origin",
@@ -184,9 +198,9 @@
     {
       "active": true,
       "category_slug": "reverse-osmosis",
-      "description": "Five-stage point-of-use reverse osmosis drinking water system with an alkaline remineralization stage.",
+      "description": "Five-stage point-of-use drinking water system with an alkaline remineralization stage.",
       "manufacturer_slug": "dacqua-dolce",
-      "name": "Origin - Alkaline Remineralization",
+      "name": "Origin - Alkaline Plus",
       "assisted_sale_required": false,
       "online_sale_approved": false,
       "product_family": "Origin",
@@ -194,6 +208,20 @@
       "sku": "DD5ROAE",
       "slug": "dd5roae",
       "system_type": "Reverse Osmosis"
+    },
+    {
+      "active": true,
+      "category_slug": "whole-home-filtration",
+      "description": "Whole-home water softener offered in 1.5 and 2.0 cubic foot media-volume configurations.",
+      "manufacturer_slug": "dacqua-dolce",
+      "name": "Refine",
+      "assisted_sale_required": true,
+      "online_sale_approved": false,
+      "product_family": "Refine",
+      "public_path": "/systems/refine",
+      "sku": "REFINE",
+      "slug": "refine",
+      "system_type": "Water Softener"
     }
   ],
   "schema_version": 1,
@@ -483,7 +511,7 @@
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5ROAE.jpg",
       "spec_key": "dimension_tolerance",
       "unit": "in",
-      "value_text": "\u00b10.5",
+      "value_text": "±0.5",
       "verified_at": "2026-09-11T15:13:17.519454+00:00"
     },
     {
@@ -495,7 +523,7 @@
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD5RO.jpg",
       "spec_key": "dimension_tolerance",
       "unit": "in",
-      "value_text": "\u00b10.5",
+      "value_text": "±0.5",
       "verified_at": "2026-09-11T15:13:17.516639+00:00"
     },
     {
@@ -524,14 +552,14 @@
     },
     {
       "active": true,
-      "label": "Valve Type",
+      "label": "Operating Mode",
       "product_sku": "DD15CATRV",
       "public": true,
       "sort_order": 20,
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
       "spec_key": "valve_type",
       "unit": null,
-      "value_text": "Regenerating",
+      "value_text": "Automatic Rinse",
       "verified_at": "2026-09-11T04:06:48.332415+00:00"
     },
     {
@@ -651,7 +679,7 @@
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATPTV.jpg",
       "spec_key": "dimension_tolerance",
       "unit": "in",
-      "value_text": "\u00b10.5",
+      "value_text": "±0.5",
       "verified_at": "2026-09-11T18:40:59.677399+00:00"
     },
     {
@@ -675,7 +703,7 @@
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACPTV.jpg",
       "spec_key": "dimension_tolerance",
       "unit": "in",
-      "value_text": "\u00b10.5",
+      "value_text": "±0.5",
       "verified_at": "2026-09-11T18:40:59.681035+00:00"
     },
     {
@@ -711,7 +739,7 @@
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CAT-TTACRV.jpg",
       "spec_key": "dimension_tolerance",
       "unit": "in",
-      "value_text": "\u00b10.5",
+      "value_text": "±0.5",
       "verified_at": "2026-09-11T18:40:59.682643+00:00"
     },
     {
@@ -735,8 +763,32 @@
       "source_reference": "owner-supplied image: dacqua-dolce-business/04_Brand_and_Creative/Product_Imagery/skudims/DD15CATRV.jpg",
       "spec_key": "dimension_tolerance",
       "unit": "in",
-      "value_text": "\u00b10.5",
+      "value_text": "±0.5",
       "verified_at": "2026-09-11T18:40:59.679274+00:00"
+    }
+  ],
+  "variants": [
+    {
+      "active": true,
+      "display_name": "1.5 cu ft",
+      "product_sku": "REFINE",
+      "sku": "REFINE-15CF",
+      "option_values": {
+        "media_volume": "1.5 cu ft",
+        "image_path": "/products/media/refine-1-5-cf.jpeg",
+        "image_alt": "D'Acqua Dolce Refine 1.5 cubic foot water softener with brine tank"
+      }
+    },
+    {
+      "active": true,
+      "display_name": "2.0 cu ft",
+      "product_sku": "REFINE",
+      "sku": "REFINE-20CF",
+      "option_values": {
+        "media_volume": "2.0 cu ft",
+        "image_path": "/products/media/refine-2-0-cf.jpeg",
+        "image_alt": "D'Acqua Dolce Refine 2.0 cubic foot water softener with brine tank"
+      }
     }
   ]
 }

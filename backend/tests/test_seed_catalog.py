@@ -25,8 +25,9 @@ def test_production_catalog_manifest_is_valid() -> None:
     assert catalog["schema_version"] == 1
     assert len(catalog["manufacturers"]) == 1
     assert len(catalog["categories"]) == 2
-    assert len(catalog["products"]) == 6
-    assert len(catalog["images"]) == 12
+    assert len(catalog["products"]) == 7
+    assert len(catalog["images"]) == 14
+    assert len(catalog["variants"]) == 2
     assert len(catalog["specifications"]) == 45
 
     assert all(
@@ -50,11 +51,25 @@ def test_production_catalog_manifest_is_valid() -> None:
     assert products["DD15CAT-TTACPTV"]["product_family"] == "Harmony"
     assert products["DD15CAT-TTACPTV"]["system_type"] == "Water Conditioner"
     assert products["DD15CAT-TTACRV"]["active"] is False
+    assert products["DD15CAT-TTACRV"]["name"] == "Harmony - Regenerating"
     assert products["DD15CATPTV"]["product_family"] == "Essence"
     assert products["DD15CATRV"]["product_family"] == "Essence"
-    assert products["DD15CATRV"]["name"] == "Essence - Backwashing"
+    assert products["DD15CATRV"]["name"] == "Essence - Automatic Rinse"
     assert products["DD5RO"]["product_family"] == "Origin"
+    assert products["DD5RO"]["name"] == "Origin - Ultra-Pure"
     assert products["DD5ROAE"]["product_family"] == "Origin"
+    assert products["DD5ROAE"]["name"] == "Origin - Alkaline Plus"
+    assert products["REFINE"]["product_family"] == "Refine"
+    assert products["REFINE"]["system_type"] == "Water Softener"
+
+    refine_variants = [
+        variant for variant in catalog["variants"]
+        if variant["product_sku"] == "REFINE"
+    ]
+    assert [variant["display_name"] for variant in refine_variants] == [
+        "1.5 cu ft",
+        "2.0 cu ft",
+    ]
 
 
 def test_manifest_rejects_unknown_product_reference() -> None:

@@ -71,6 +71,8 @@ export function ProductDetailPage({
     useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] =
     useState(0);
+  const [selectedVariantId, setSelectedVariantId] =
+    useState<string | null>(null);
   const [quoteOpen, setQuoteOpen] =
     useState(false);
   const [commerceError, setCommerceError] =
@@ -88,6 +90,7 @@ export function ProductDetailPage({
     setLoading(true);
     setError(null);
     setSelectedImageIndex(0);
+    setSelectedVariantId(null);
     setNotificationEmail(account?.email ?? "");
     setNotificationState("idle");
     setNotificationMessage(null);
@@ -108,16 +111,22 @@ export function ProductDetailPage({
       });
   }, [slug, account]);
 
+  const selectedVariant = useMemo(() => {
+    if (product === null || product.variants.length === 0) {
+      return null;
+    }
+    return product.variants.find((variant) => variant.id === selectedVariantId)
+      ?? product.variants[0];
+  }, [product, selectedVariantId]);
+
   const selectedImage = useMemo(
     () => (
-      product?.images[
-        selectedImageIndex
-      ] ?? product?.primary_image ?? null
+      selectedVariant?.primary_image
+      ?? product?.images[selectedImageIndex]
+      ?? product?.primary_image
+      ?? null
     ),
-    [
-      product,
-      selectedImageIndex,
-    ],
+    [product, selectedImageIndex, selectedVariant],
   );
 
   if (loading) {
@@ -163,8 +172,8 @@ export function ProductDetailPage({
     );
   }
 
-  const pricing = product.pricing;
-  const availability = product.availability;
+  const pricing = selectedVariant?.pricing ?? product.pricing;
+  const availability = selectedVariant?.availability ?? product.availability;
   const productId = product.id;
   const presentation = getProductPresentation(product);
 
@@ -264,6 +273,7 @@ export function ProductDetailPage({
       try {
         await addCartItem(
           productId,
+          selectedVariant?.id ?? null,
         );
         onNavigate("/account");
       } catch (caught) {
@@ -283,7 +293,11 @@ export function ProductDetailPage({
       <QuoteDialog
         open={quoteOpen}
         productId={product.id}
-        productName={product.name}
+        productName={
+          selectedVariant !== null
+            ? `${product.name} — ${selectedVariant.display_name}`
+            : product.name
+        }
         inquiryContext="product"
         initialEmail={
           account?.email ?? null
@@ -366,15 +380,15 @@ export function ProductDetailPage({
 
           <div className="product-detail-copy">
             <p className="product-meta">
-              {product.category}
+              {presentation.categoryName}
             </p>
 
             <div className="product-detail-identity">
               <h1>{presentation.familyName}</h1>
 
-              {presentation.systemType !== null ? (
+              {presentation.variantLabel !== null ? (
                 <p className="product-detail-system-type">
-                  {presentation.systemType}
+                  {presentation.variantLabel}
                 </p>
               ) : null}
 
@@ -469,6 +483,37 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
+
+            {product.variants.length > 0 ? (
+              <section
+                className="product-variant-selector"
+                aria-labelledby="product-variant-selector-heading"
+              >
+                <p className="eyebrow">Configuration</p>
+                <h2
+                  id="product-variant-selector-heading"
+                  className="product-detail-section-title"
+                >
+                  Select system size
+                </h2>
+                <label>
+                  <span>MEDIA VOLUME</span>
+                  <select
+                    value={selectedVariant?.id ?? product.variants[0].id}
+                    onChange={(event) => {
+                      setSelectedVariantId(event.target.value);
+                      setSelectedImageIndex(0);
+                    }}
+                  >
+                    {product.variants.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.option_values.media_volume ?? variant.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </section>
+            ) : null}
 
             {availability.lifecycle_status === "soon_discontinued" ? (
               <aside className="product-availability product-lifecycle-notice">
@@ -623,49 +668,6 @@ export function ProductDetailPage({
               </button>
             </div>
 
-            {product.variants.length > 0 ? (
-              <section
-                className="product-configurations"
-                aria-labelledby="product-configurations-heading"
-              >
-                <p className="eyebrow">Configurations</p>
-                <h2
-                  id="product-configurations-heading"
-                  className="product-detail-section-title"
-                >
-                  Available sizes &amp; capacities
-                </h2>
-
-                <div className="product-configuration-grid">
-                  {product.variants.map((variant) => (
-                    <article
-                      className="product-configuration-card"
-                      key={variant.id}
-                    >
-                      <h3>{variant.display_name}</h3>
-
-                      {Object.keys(variant.option_values).length > 0 ? (
-                        <dl className="product-configuration-values">
-                          {Object.entries(variant.option_values).map(
-                            ([key, value]) => (
-                              <div key={key}>
-                                <dt>{humanizeOptionKey(key)}</dt>
-                                <dd>{value}</dd>
-                              </div>
-                            ),
-                          )}
-                        </dl>
-                      ) : null}
-
-                      <p className="product-configuration-sku">
-                        SKU {variant.sku}
-                      </p>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-
             {product.replacements.length > 0 ? (
               <section
                 className="product-options"
@@ -791,7 +793,7 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
-            {product.specifications.length > 0 ? (
+            {product.specifications.length > 0 || selectedVariant !== null ? (
               <section
                 className="product-specifications"
                 aria-labelledby="product-specifications-heading"
@@ -805,19 +807,36 @@ export function ProductDetailPage({
                 </h2>
 
                 <dl className="product-facts">
-                  {product.specifications.map(
-                    (specification) => (
+                  {(() => {
+                    const variantValues = selectedVariant?.option_values ?? {};
+                    const reservedKeys = new Set(["image_path", "image_alt"]);
+                    const baseKeys = new Set(product.specifications.map((item) => item.spec_key));
+                    const merged = product.specifications.map((specification) => ({
+                      ...specification,
+                      value_text: variantValues[specification.spec_key] ?? specification.value_text,
+                      unit: variantValues[specification.spec_key] !== undefined ? null : specification.unit,
+                    }));
+                    for (const [key, value] of Object.entries(variantValues)) {
+                      if (reservedKeys.has(key) || baseKeys.has(key)) {
+                        continue;
+                      }
+                      merged.push({
+                        spec_key: key,
+                        label: humanizeOptionKey(key),
+                        value_text: value,
+                        unit: null,
+                      });
+                    }
+                    return merged.map((specification) => (
                       <div key={specification.spec_key}>
                         <dt>{specification.label}</dt>
                         <dd>
                           {specification.value_text}
-                          {specification.unit !== null
-                            ? ` ${specification.unit}`
-                            : ""}
+                          {specification.unit !== null ? ` ${specification.unit}` : ""}
                         </dd>
                       </div>
-                    ),
-                  )}
+                    ));
+                  })()}
                 </dl>
               </section>
             ) : null}
@@ -836,7 +855,7 @@ export function ProductDetailPage({
               <dl className="product-facts">
                 <div>
                   <dt>SKU</dt>
-                  <dd>{product.sku}</dd>
+                  <dd>{selectedVariant?.sku ?? product.sku}</dd>
                 </div>
               </dl>
             </section>
@@ -879,17 +898,22 @@ export function ProductDetailPage({
                 Support for your system.
               </h2>
               <p>
-                Product-specific warranty documents are shown only when the recorded
-                manufacturer document has passed the existing verification boundary.
-                D&apos;Acqua Dolce can help route warranty and product-support questions
-                without adding or changing manufacturer warranty terms.
+                Warranty coverage applies to residential use only. Product-specific
+                warranty documents are shown only when the recorded manufacturer document
+                has passed the existing verification boundary. D&apos;Acqua Dolce can help
+                route warranty and product-support questions without adding or changing
+                manufacturer warranty terms.
               </p>
               <details className="product-support-request">
                 <summary>Start a warranty or support request</summary>
                 <SupportRequestForm
                   account={account}
                   productId={product.id}
-                  productName={product.name}
+                  productName={
+                    selectedVariant !== null
+                      ? `${product.name} — ${selectedVariant.display_name}`
+                      : product.name
+                  }
                   defaultKind="warranty"
                 />
               </details>

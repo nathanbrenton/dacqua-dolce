@@ -942,6 +942,15 @@ textarea:focus-visible {
   cursor: pointer;
 }
 
+.product-detail-route {
+  min-height: 100vh;
+  background: var(--surface-0);
+}
+
+.product-detail-route > .site-footer {
+  margin: 0 var(--shell-padding);
+}
+
 .detail-shell {
   min-height: 100vh;
   padding:
@@ -6569,5 +6578,293 @@ summary {
   .order-review-actions .secondary-button,
   .order-review-hold > .secondary-button {
     width: 100%;
+  }
+}
+
+/* Catalog variant selector — one family page, variant-aware details. */
+.product-variant-selector {
+  display: grid;
+  gap: 14px;
+  padding-block: 8px;
+}
+
+.product-variant-selector label {
+  display: grid;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.product-variant-selector label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.product-variant-selector select {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+/* Catalog governance product cards: compact, single-open disclosure cards. */
+#catalog-governance .operations-product-disclosure {
+  display: block;
+  padding: 0;
+  overflow: clip;
+  border: 1px solid var(--hairline);
+  border-top-color: var(--hairline);
+  background: var(--surface-1);
+}
+
+#catalog-governance .operations-product-disclosure-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 72px;
+  padding: 16px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+#catalog-governance .operations-product-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+#catalog-governance .operations-product-disclosure-summary:hover {
+  background: color-mix(in srgb, var(--action) 5%, transparent);
+}
+
+#catalog-governance .operations-product-disclosure-summary:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: -2px;
+}
+
+#catalog-governance .operations-product-disclosure-chevron {
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 8px solid var(--ink-muted);
+  transition: transform 140ms ease;
+}
+
+#catalog-governance .operations-product-disclosure[open]
+  > .operations-product-disclosure-summary
+  .operations-product-disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+#catalog-governance .operations-product-disclosure-identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+#catalog-governance .operations-product-disclosure-identity .product-meta {
+  margin: 0;
+}
+
+#catalog-governance .operations-product-disclosure-identity > strong {
+  color: var(--ink);
+  font-family: var(--display-font);
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  line-height: 1.05;
+}
+
+#catalog-governance .operations-product-disclosure-identity code {
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+#catalog-governance .operations-product-disclosure-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+#catalog-governance .operations-product-disclosure-status > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 9px;
+  color: var(--ink-muted);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+#catalog-governance .operations-product-disclosure[open]
+  > .operations-product-disclosure-summary {
+  border-bottom: 1px solid var(--hairline);
+}
+
+#catalog-governance .operations-product-disclosure-content {
+  display: grid;
+  grid-template-columns:
+    minmax(250px, 0.72fr)
+    minmax(0, 1.28fr);
+  grid-template-areas:
+    "summary relationships"
+    "controls controls";
+  column-gap: clamp(22px, 3vw, 40px);
+  row-gap: 20px;
+  align-items: start;
+  padding: clamp(22px, 3vw, 34px);
+}
+
+#catalog-governance .operations-product-disclosure-content > header {
+  grid-area: summary;
+  margin-bottom: 0;
+}
+
+#catalog-governance .operations-product-disclosure-content > header > .product-meta,
+#catalog-governance .operations-product-disclosure-content > header > h3,
+#catalog-governance .operations-product-disclosure-content > header > code {
+  display: none;
+}
+
+#catalog-governance .operations-product-disclosure-content
+  > .operations-product-relationships {
+  grid-area: relationships;
+  min-width: 0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+#catalog-governance .operations-product-disclosure-content
+  > .operations-product-grid {
+  grid-area: controls;
+  width: 100%;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #catalog-governance .operations-product-disclosure-chevron {
+    transition: none;
+  }
+}
+
+@media (max-width: 980px) {
+  #catalog-governance .operations-product-disclosure-content {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "summary"
+      "relationships"
+      "controls";
+  }
+
+  #catalog-governance .operations-product-disclosure-content
+    > .operations-product-relationships {
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline);
+  }
+}
+
+@media (max-width: 720px) {
+  #catalog-governance .operations-product-disclosure-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  #catalog-governance .operations-product-disclosure-status {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+/* Customer-facing select affordance.
+ *
+ * Native select controls can become visually ambiguous when a theme uses a
+ * low-contrast field surface. Keep a single theme-token-driven treatment for
+ * customer-facing routes so current and future dropdowns consistently read as
+ * interactive controls without affecting Operations or Developer tooling.
+ */
+:is(
+  .site-shell,
+  .detail-shell,
+  .account-shell,
+  .support-page-shell,
+  .quote-dialog,
+  .auth-dialog
+) select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 48px;
+  color: var(--field-text);
+  background-color: var(--field-surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-button);
+  padding: 10px 54px 10px 14px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--action) 50%),
+    linear-gradient(135deg, var(--action) 50%, transparent 50%),
+    linear-gradient(to right, var(--field-border), var(--field-border));
+  background-position:
+    calc(100% - 19px) 50%,
+    calc(100% - 14px) 50%,
+    calc(100% - 42px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px,
+    1px 62%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--action) 52%, transparent);
+  color-scheme: inherit;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background-color 140ms ease;
+}
+
+@media (hover: hover) {
+  :is(
+    .site-shell,
+    .detail-shell,
+    .account-shell,
+    .support-page-shell,
+    .quote-dialog,
+    .auth-dialog
+  ) select:not(:disabled):hover {
+    border-color: var(--action);
+    box-shadow:
+      inset 0 0 0 1px var(--action),
+      inset 0 -2px 0 var(--action);
+  }
+}
+
+:is(
+  .site-shell,
+  .detail-shell,
+  .account-shell,
+  .support-page-shell,
+  .quote-dialog,
+  .auth-dialog
+) select:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(
+    .site-shell,
+    .detail-shell,
+    .account-shell,
+    .support-page-shell,
+    .quote-dialog,
+    .auth-dialog
+  ) select {
+    transition: none;
   }
 }
