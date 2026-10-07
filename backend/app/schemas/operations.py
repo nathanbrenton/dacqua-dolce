@@ -194,6 +194,7 @@ class OperationsCommunicationMessageRead(BaseModel):
     id: str
     direction: str
     status: str
+    provider: str
     author_user_id: str | None
     sender_address: str
     sender_name: str | None

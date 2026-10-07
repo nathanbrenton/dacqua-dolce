@@ -25,6 +25,7 @@ export function SupportRequestForm({
   const [email, setEmail] = useState(account?.email ?? "");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -47,9 +48,11 @@ export function SupportRequestForm({
         phone: phone || null,
         product_id: productId,
         message,
+        website: website || null,
       });
       setNotice(`${result.message} Reference: ${result.id}`);
       setMessage("");
+      setWebsite("");
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -68,6 +71,19 @@ export function SupportRequestForm({
           System: <strong>{productName}</strong>
         </p>
       ) : null}
+
+      <div className="support-request-honeypot" aria-hidden="true">
+        <label>
+          <span>Website</span>
+          <input
+            type="text"
+            value={website}
+            tabIndex={-1}
+            autoComplete="off"
+            onChange={(event) => setWebsite(event.target.value)}
+          />
+        </label>
+      </div>
 
       <label>
         <span>Support type</span>

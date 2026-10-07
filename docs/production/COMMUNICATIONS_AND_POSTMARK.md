@@ -743,3 +743,35 @@ The existing content boundaries remain important:
 This hardening does not change Postmark spam settings, add automatic sender
 blocking, or create a Spam/Quarantine mailbox. Provider-side filtering and a
 dedicated staff quarantine workflow remain separate, deliberate decisions.
+
+## Public website support-form abuse controls — 2026-10-07
+
+The public `/api/support` path is a separate inbound source from Postmark email.
+A website support submission is archived as `provider=web` with a
+`support_request_submitted` communication event; it therefore does not have
+Postmark SpamAssassin or SPF evidence and must not be presented to staff as if
+it arrived by email.
+
+The application-layer controls in this revision are:
+
+- CSRF protection on the support POST;
+- a process-local IP limiter of 8 submissions per 15 minutes;
+- signed-in requests must use the authenticated account email address;
+- normalized/length-bounded support payloads;
+- an intentionally empty off-screen `website` honeypot field. If a bot fills
+  the trap, the API returns the ordinary success shape but creates no customer
+  communication or inbox item;
+- Operations exposes the archived message provider and labels website-originated
+  versus email-originated correspondence rather than using one generic email
+  label.
+
+The honeypot is a low-friction first layer, not a replacement for a managed bot
+challenge. Cloudflare Turnstile remains a suitable follow-up if public-form spam
+continues, but it is **not commissioned by this change**. Enabling Turnstile
+requires explicit production configuration for site/secret keys plus review of
+the Nginx Content Security Policy needed for the challenge script/frame.
+
+The current support limiter uses the application process's view of the client IP.
+Before treating it as the sole production abuse boundary, verify the commissioned
+Nginx/Uvicorn forwarded-client-IP behavior; do not loosen proxy trust merely to
+make rate limiting appear more granular.

@@ -185,6 +185,7 @@ export type OperationsCommunicationMessage = {
   id: string;
   direction: string;
   status: string;
+  provider: string;
   author_user_id: string | null;
   sender_address: string;
   sender_name: string | null;

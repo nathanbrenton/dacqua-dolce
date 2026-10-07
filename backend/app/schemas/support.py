@@ -19,6 +19,7 @@ class SupportRequestCreate(BaseModel):
     phone: str | None = Field(default=None, max_length=50)
     product_id: str | None = None
     message: str = Field(min_length=1, max_length=4000)
+    website: str | None = Field(default=None, max_length=200)
 
     @field_validator("name", "message")
     @classmethod
@@ -32,6 +33,16 @@ class SupportRequestCreate(BaseModel):
     @classmethod
     def normalize_email(cls, value: str) -> str:
         return normalize_email_address(value)
+
+    @field_validator("website", mode="before")
+    @classmethod
+    def normalize_honeypot(cls, value: object) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("Website field must be text.")
+        cleaned = value.strip()
+        return cleaned or None
 
     @field_validator("phone", mode="before")
     @classmethod

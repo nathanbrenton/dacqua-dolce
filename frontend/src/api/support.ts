@@ -1,4 +1,5 @@
 import { getCsrfToken } from "./authentication";
+import { readApiError } from "./httpErrors";
 
 export type SupportRequestKind =
   | "warranty"
@@ -12,6 +13,7 @@ export type SupportRequestPayload = {
   phone: string | null;
   product_id: string | null;
   message: string;
+  website: string | null;
 };
 
 export type SupportRequestResponse = {
@@ -19,18 +21,6 @@ export type SupportRequestResponse = {
   status: "received";
   message: string;
 };
-
-async function readError(response: Response): Promise<string> {
-  try {
-    const payload = (await response.json()) as { detail?: string };
-    if (typeof payload.detail === "string") {
-      return payload.detail;
-    }
-  } catch {
-    // Fall through.
-  }
-  return `Support request failed: ${response.status}`;
-}
 
 export async function submitSupportRequest(
   payload: SupportRequestPayload,
@@ -48,7 +38,7 @@ export async function submitSupportRequest(
   });
 
   if (!response.ok) {
-    throw new Error(await readError(response));
+    throw new Error(await readApiError(response, "Support request failed"));
   }
 
   return response.json() as Promise<SupportRequestResponse>;

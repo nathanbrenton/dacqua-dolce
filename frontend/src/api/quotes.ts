@@ -1,4 +1,5 @@
 import { getCsrfToken } from "./authentication";
+import { readApiError } from "./httpErrors";
 
 export type RecommendationContext = {
   source_water: "municipal" | "well" | "unsure";
@@ -69,28 +70,6 @@ export type QuoteRequestResponse = {
   status: string;
 };
 
-async function readError(
-  response: Response,
-): Promise<string> {
-  try {
-    const payload = (await response.json()) as {
-      detail?: string;
-    };
-
-    if (
-      typeof payload.detail === "string"
-    ) {
-      return payload.detail;
-    }
-  } catch {
-    // Fall through.
-  }
-
-  return (
-    `Quote request failed: ${response.status}`
-  );
-}
-
 export async function submitQuoteRequest(
   payload: QuoteRequestPayload,
 ): Promise<QuoteRequestResponse> {
@@ -112,7 +91,7 @@ export async function submitQuoteRequest(
 
   if (!response.ok) {
     throw new Error(
-      await readError(response),
+      await readApiError(response, "Quote request failed"),
     );
   }
 
@@ -144,7 +123,7 @@ export async function evaluateRecommendation(
   );
 
   if (!response.ok) {
-    throw new Error(await readError(response));
+    throw new Error(await readApiError(response, "Quote request failed"));
   }
 
   return response.json() as Promise<RecommendationDecision>;

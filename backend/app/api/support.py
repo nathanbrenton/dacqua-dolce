@@ -59,6 +59,11 @@ def optional_user(request: Request) -> User | None:
         return session_record.user
 
 
+def support_request_is_trapped(payload: SupportRequestCreate) -> bool:
+    """Detect the intentionally empty public-form honeypot field."""
+    return payload.website is not None
+
+
 def support_subject(
     kind: str,
     *,
@@ -89,6 +94,19 @@ def create_support_request(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many support requests. Try again later.",
             headers={"Retry-After": str(rate.retry_after_seconds)},
+        )
+
+    if support_request_is_trapped(payload):
+        # Deliberately return the normal success shape without creating a
+        # customer communication. This avoids teaching simple form bots which
+        # field triggered the rejection while keeping spam out of Operations.
+        return SupportRequestRead(
+            id=str(uuid.uuid4()),
+            message=(
+                "Your support request was received. "
+                "Our team can continue the conversation using the contact information "
+                "you provided."
+            ),
         )
 
     current_user = optional_user(request)

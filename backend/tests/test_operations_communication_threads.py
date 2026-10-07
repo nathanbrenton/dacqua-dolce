@@ -323,6 +323,8 @@ def test_support_request_origin_is_exposed_in_customer_inbox(
             detail.originating_request.message
             == "Please help with my warranty document."
         )
+        assert len(detail.messages) == 1
+        assert detail.messages[0].provider == "web"
 
         db.rollback()
 

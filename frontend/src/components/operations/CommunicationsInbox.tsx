@@ -253,6 +253,21 @@ function splitQuotedHistory(body: string): VisibleMessageBody {
   };
 }
 
+
+function messageSourceLabel(
+  message: OperationsCommunicationMessage,
+): string {
+  if (message.provider === "web") {
+    return "Website";
+  }
+
+  if (message.provider === "postmark") {
+    return "Email";
+  }
+
+  return "Archived";
+}
+
 function MessageSecuritySummary({
   message,
 }: {
@@ -762,7 +777,7 @@ export function CommunicationsInbox() {
           <p className="eyebrow">Customer Communications</p>
           <h2>Customer inbox</h2>
           <p>
-            Search the durable customer email archive, inspect a
+            Search the durable customer communications archive, inspect a
             conversation, and reply from the same thread.
           </p>
         </div>
@@ -1088,7 +1103,7 @@ export function CommunicationsInbox() {
 
               <div className="operations-inbox-message-list">
                 <p className="operations-inbox-message-list-label">
-                  Email correspondence
+                  Conversation history
                 </p>
                 {threadDetail.messages.map((message) => (
                   <article
@@ -1102,6 +1117,9 @@ export function CommunicationsInbox() {
                     <header>
                       <div>
                         <div className="operations-inbox-message-badges">
+                          <span className="operations-status-badge">
+                            {messageSourceLabel(message)}
+                          </span>
                           <span
                             className={
                               "operations-inbox-direction "

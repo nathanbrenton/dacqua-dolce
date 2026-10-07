@@ -6504,9 +6504,19 @@ summary {
 }
 
 .support-request-form {
+  position: relative;
   display: grid;
   gap: 16px;
   margin-top: 18px;
+}
+
+.support-request-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .support-request-form label {

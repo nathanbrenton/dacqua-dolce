@@ -1607,6 +1607,7 @@ def _communication_message_reads(
             id=str(message.id),
             direction=message.direction.value,
             status=message.status.value,
+            provider=message.provider,
             author_user_id=(
                 str(message.author_user_id)
                 if message.author_user_id is not None
