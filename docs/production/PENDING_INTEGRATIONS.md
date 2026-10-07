@@ -67,7 +67,10 @@ Commissioned:
 - archive/restore workflow with no data destruction;
 - employee replies and thread-specific return routing;
 - public `support@dacquadolce.com` inbound route through Cloudflare Email Routing -> Postmark -> production webhook;
-- safe plain-text URL linkification in the Operations inbox.
+- provider/source labeling in Customer Inbox;
+- inbound/customer-supplied URLs are non-clickable while arbitrary inbound HTML remains untrusted;
+- narrow advisory Postmark SpamAssassin/SPF evidence is surfaced when provider headers exist;
+- website support submissions use CSRF, process-local IP limiting, and an invisible honeypot before archiving.
 
 Still pending as a business/data-governance decision:
 
@@ -131,7 +134,22 @@ PT51 is commissioned as an internal evidence/work-tracking layer for Automated T
 
 PT53 provides explicit policy export/import rather than database synchronization. Production PostgreSQL remains authoritative for live approved policies. Recommended periodic non-production refresh is Production `Export all` -> trusted JSON bundle -> Local/Dev/Test preview/import. Lifecycle-preserving import is non-production-only and must remain disabled in Production.
 
-## 8. Current launch posture
+## 8. Public support-form managed bot challenge / spam workflow
+
+The current application source/rebuild target includes support-path abuse resistance (CSRF, an 8-per-15-minute process-local IP limiter, normalized payloads, authenticated-email enforcement for signed-in users, and an invisible honeypot). Website submissions are labeled as Website rather than Email in Customer Inbox. Confirm active release metadata during production operations rather than inferring deployment from Git alone.
+
+Still optional/pending if abuse volume justifies it:
+
+- Cloudflare Turnstile (Managed mode or another explicitly approved challenge) with **server-side** token verification;
+- protected production secret/config handling for the Turnstile secret and public site-key configuration;
+- Nginx Content Security Policy review for the required challenge script/frame origins;
+- validation of forwarded-client-IP trust before relying on application IP limits;
+- a dedicated staff Spam/Quarantine workflow if the business needs something beyond Archive;
+- deliberate Postmark inbound spam-threshold or sender/domain blocking changes after false-positive review.
+
+Do not interpret missing Postmark Spam/SPF headers as a clean verdict, and do not apply email-spam policy to `provider=web` website submissions.
+
+## 9. Current launch posture
 
 `DACQUA_LAUNCH_PHASE` defaults to `prelaunch`. `soft_launch` is a validation posture and also keeps hosted checkout closed. `public_launch` opens only the launch-phase gate; all independent commerce blockers still apply.
 

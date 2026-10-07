@@ -122,23 +122,37 @@ A candidate that fails before activation is removed automatically. A candidate t
 
 `backend/catalog/production_catalog.json` is the rebuild-grade baseline for seed-owned catalog metadata.
 
-Deployment reconciliation may create/update:
+Deployment reconciliation may create/update seed-owned metadata including:
 
-- manufacturer metadata;
-- product categories;
+- manufacturer/category metadata;
 - products by stable SKU/slug;
-- product image metadata;
-- verified product specifications.
+- repository-backed product image metadata;
+- verified product specifications;
+- canonical product variants/options represented in the manifest.
 
-It deliberately does not reset operational state such as:
+The current catalog source also carries the shared public Category -> Family -> Variant identity used by cards/detail pages and the accepted Essence/Origin/Refine reconciliation. Required static product media ships inside the exact Git revision; do not copy catalog images manually to production.
+
+Reconciliation deliberately does **not** reset mutable operational state such as:
 
 - pricing history;
 - inventory quantities/reservations;
-- approved claims;
-- jurisdiction rules;
-- existing lifecycle/approval state.
+- approved claims/policies;
+- jurisdiction/tax evidence;
+- existing lifecycle/public-retirement state;
+- customer inquiry/formal-quote availability policy;
+- accounts, quotes, orders, communications, or audit evidence.
 
-An unchanged production catalog is expected to report `total_changes 0` during deployment.
+An unchanged production catalog is expected to report `total_changes 0` during deployment. Catalog reconciliation is not a substitute for restoring Production PostgreSQL during disaster recovery.
+
+## Database-recovery ordering
+
+For an ordinary release, the deployment helper uses the existing production database and runs the normal backup -> Alembic -> catalog sequence.
+
+For a clean-host disaster recovery of an existing business, restore the authoritative production PostgreSQL state **before** the first current-source deployment/migration. Then deploy the intended exact Git revision so Alembic advances the restored schema to `head` and catalog reconciliation refreshes seed-owned metadata without overwriting restored business state.
+
+Do not attempt to rebuild production by replaying historical PT releases, importing a Local/Dev/Test database, or using PT53 policy bundles as a replacement for the production database. A deliberately empty database is appropriate only for a new environment or an explicitly approved state-loss recovery plan.
+
+The repository currently validates backups/restores through the commissioned backup/restore-check tooling, but a destructive live production restore remains an operator-controlled disaster-recovery action. Do not automate destructive database replacement without a separately rehearsed restore procedure and current backup verification.
 
 ## Migration compatibility policy
 
@@ -200,45 +214,28 @@ Use the repository public verifier as the canonical edge smoke test:
     /srv/dacqua-dolce/current/scripts/production/verify_release.sh \
       https://dacquadolce.com
 
-For a release that changes customer/account UI, perform the corresponding live browser acceptance test after infrastructure smoke tests pass. Examples include email verification, account appearance, role administration, and Operations ordering.
+After infrastructure smoke tests, perform browser acceptance for the user-facing surfaces changed by the release. Current high-value checks include:
 
-## Last validated checkpoint
+- catalog card/detail Category -> Family -> Variant consistency and variant-aware media;
+- product-detail footer/theme controls and customer select affordance;
+- Operations product lifecycle/status labels and PT54 order-review/hold controls;
+- Customer Inbox Website/Email source labels, plain-text inbound handling, and communications reply flow;
+- support-form normal submission plus useful field-specific validation errors.
 
-The exact-revision rsync staging workflow and immutable deployment process are production validated.
+A real Postmark inbound test is needed only when communications transport/webhook behavior changed; do not send unnecessary live acceptance mail for unrelated releases. Spam/SPF badges are expected only when the archived inbound event actually contains those provider headers.
 
-The latest application checkpoint before the documentation-only PT17 closeout is:
+## Release checkpoint rule
 
-    ce8f92ff2e60e06fc8e6de809f29828695723ce9
+Do not maintain a "latest production SHA" as a long-lived constant in this runbook. Determine the running release from production at the time of an operation:
 
-It was deployed on 2026-09-28 as:
+    readlink -f /srv/dacqua-dolce/current
+    cat /srv/dacqua-dolce/current/.dacqua-release-revision
 
-    /srv/dacqua-dolce/releases/20260928T072624Z
+When the release marker is unavailable on a legacy release, use the deployment history/source metadata for that release rather than guessing from documentation prose.
 
-with immediate rollback release:
+Documentation/rebuild changes may advance Git beyond the active production application release, and a production deployment may advance beyond the last documentation audit. Exact-revision staging plus the release marker is the authoritative source for what was deployed.
 
-    /srv/dacqua-dolce/releases/20260928T053754Z
-
-and pre-migration PostgreSQL backup:
-
-    /var/backups/dacqua-dolce/postgresql/dacqua_dolce_20260928T072647Z.dump
-
-The PT17 release passed:
-
-- staged-source exact-revision verification;
-- immutable-release source verification;
-- backend dependency installation and frontend production build;
-- pre-migration PostgreSQL backup;
-- Alembic/current-schema validation with no new migration work;
-- canonical catalog reconciliation with `total_changes 0`;
-- local readiness;
-- public `/`, `/account`, and `/health` checks;
-- non-public `/readiness`, `/api/docs`, and `/openapi.json` boundary checks;
-- HSTS, CSP, Permissions-Policy, X-Content-Type-Options, X-Frame-Options, and Referrer-Policy validation;
-- post-switch production validation.
-
-This checkpoint includes the closed PT17 catalog/visual refinement, compact actionable Operations attention dashboard, raised small/medium typography floor, semantic typography recipes, and shared responsive typography hierarchy.
-
-The historical communications/Postmark checkpoint `f5b7622126c57c0fae2fe06c343b225fec7e02af` remains useful as a communications acceptance reference, but operators must always deploy the exact intended current Git revision rather than reusing any historical revision blindly.
+The accumulated application model is intentionally collapsed into one current-source deployment. Alembic applies every required migration in order; the canonical catalog reconcile applies current seed-owned metadata/variants/images; current frontend/server code carries the PT54, catalog-identity, Customer Inbox, support-form, and validation behavior without replaying historical releases.
 
 ## Rollback decision boundary
 

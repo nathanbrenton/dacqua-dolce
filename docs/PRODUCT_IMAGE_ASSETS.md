@@ -197,3 +197,25 @@ The duplicate copies were not emitted twice.
 - Source SHA-256: `edbd8f18fe2d61aeeb84024532b3e08e2300802a9cad9da7cf4d1e937777f9b3`
 - WebP: `/products/media/reverse-osmosis-without-remineralizer-dimensions.webp`
 - JPEG: `/products/media/reverse-osmosis-without-remineralizer-dimensions.jpg`
+
+## Additional repository-managed Refine media — 2026-10-07
+
+The catalog reconciliation added two client-supplied Refine variant photographs directly to the repository. These files are deployment assets and therefore travel automatically with an exact Git release; a rebuild must not copy them manually from the business inbox/source-photo tree.
+
+### `refine-1-5-cf.jpeg`
+
+- Public path: `/products/media/refine-1-5-cf.jpeg`
+- Repository path: `frontend/public/products/media/refine-1-5-cf.jpeg`
+- Catalog variant: Refine 1.5 cu ft (default)
+- Dimensions: 3870×6773
+- SHA-256: `79272d582f3a56368b76f848b3b7755b3c4008973d8db63b4a58985063eefa38`
+
+### `refine-2-0-cf.jpeg`
+
+- Public path: `/products/media/refine-2-0-cf.jpeg`
+- Repository path: `frontend/public/products/media/refine-2-0-cf.jpeg`
+- Catalog variant: Refine 2.0 cu ft
+- Dimensions: 3687×6453
+- SHA-256: `906ed93bb034bf39812379d652a12dfe955c446c5985c0d035c6aa9f8837d188`
+
+The product-detail variant selector resolves media from catalog/variant data. Do not hard-code a separate frontend image mapping or invent missing dimensions/specifications/prices from the photographs.

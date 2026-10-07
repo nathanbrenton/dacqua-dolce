@@ -16,7 +16,7 @@ Use:
 
 The current production platform includes live Postmark application email,
 Cloudflare split inbound routing, Proton human/business mail for the commissioned
-`jamie@dacquadolce.com` identity, durable Customer Inbox communications, immutable application releases,
+`jamie@dacquadolce.com` identity, durable Customer Inbox communications with Website/Email source labeling and inbound-content hardening, PT54 order-review/hold governance, immutable application releases,
 separated PostgreSQL migrator/runtime principals, repo-managed catalog
 reconciliation, capability-based application authorization, out-of-band
 developer provisioning, full observability, and local backup/real-restore
@@ -26,6 +26,6 @@ The server hostname remains `dacqua-platform-prod-01`. Workstation SSH
 configuration may use the convenience alias `dacqua-prod`; the alias is not a
 server hostname or application configuration value.
 
-Current deployed application checkpoint: PT53 on 2026-10-06 at revision `0dfc6329a4a8e9584fba4b00cba66512438fd21b`. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance is pending. Use `docs/production/` for authoritative current state.
+The active production release changes over time and is intentionally not hard-coded in this compatibility pointer. Use the immutable release metadata/deployment output for the running SHA and `docs/production/` for the authoritative rebuild target.
 
 Do not use superseded bootstrap instructions as production commands.

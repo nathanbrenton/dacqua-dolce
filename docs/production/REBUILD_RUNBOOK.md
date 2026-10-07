@@ -2,10 +2,11 @@
 
 ## Status and scope
 
-This is the authoritative rebuild baseline for the current D'Acqua Dolce production architecture. Application state is reconciled through the PT53 deployment on 2026-10-06; PT47-PT51 browser acceptance is complete, while PT52/PT53 final production browser acceptance remains pending at this audit checkpoint.
+This is the authoritative rebuild baseline for the current D'Acqua Dolce production architecture and current repository/rebuild target through the 2026-10-07 PT54, catalog-reconciliation, Customer Inbox security, and public support-form hardening work.
 
-It documents the clean validated production architecture and the repository-supported rebuild path. It does
-not record commissioning mistakes, failed experiments, or transient troubleshooting.
+The active production SHA/release path is deliberately not hard-coded here. Determine it from immutable release metadata/deployment output when operating production. This runbook documents the clean rebuild architecture and repository-supported recovery path, not commissioning mistakes, failed experiments, or transient troubleshooting.
+
+Historical PT milestones are **not** replayed one-by-one during rebuild. One exact current Git revision contains the accumulated application code, Alembic migration chain, repository-managed product media/catalog source, frontend behavior, and application security controls. Production PostgreSQL is restored as a separate authority layer for mutable business state.
 
 A fully reproducible rebuild requires two classes of material:
 
@@ -37,6 +38,7 @@ Before destroying/rebuilding a production host, confirm independent access to:
 
 - administrator SSH private key;
 - populated `/etc/dacqua-dolce/backend.env` values or an authoritative secret-store copy;
+- a current validated production PostgreSQL backup plus its SHA-256 sidecar when recovering an existing production business state;
 - PostgreSQL application credential;
 - MFA/application cryptographic material;
 - TLS/DNS/Cloudflare administrative access;
@@ -63,6 +65,30 @@ Relevant application deployment documentation and dependency policy also live un
 
 The production documentation in this directory supersedes older bootstrap/planning documents when they
 conflict with the current validated production state.
+
+## 3.1 Efficient rebuild composition
+
+Treat the rebuild as four layers with different authorities:
+
+1. **Repository layer** — exact Git revision containing source, migrations, deployment assets, catalog metadata/images, frontend UX/security behavior, and docs.
+2. **Production data layer** — PostgreSQL backup containing live users, orders, quotes, communications, policies, product lifecycle, pricing/inventory, audit/evidence, and other mutable state.
+3. **Protected/provider layer** — `/etc/dacqua-dolce/*`, TLS private material, DNS/Cloudflare, Proton/Postmark, and other secrets/provider state that Git intentionally does not contain.
+4. **Host/observability layer** — Debian, systemd, Nginx, PostgreSQL, monitoring, backups, and direct observability mail rebuilt from repository assets plus the validated manual boundaries below.
+
+The efficient application recovery path is therefore:
+
+    fresh host/base services
+      -> restore protected configuration/provider state
+      -> restore authoritative Production PostgreSQL (for DR)
+      -> stage one exact current Git revision
+      -> deploy_release.sh
+         -> build backend/frontend
+         -> pre-migration backup
+         -> alembic upgrade head
+         -> canonical catalog reconcile
+         -> activate + verify
+
+Do not manually replay PT36/PT37/.../PT54 releases. Do not copy individual frontend assets or product images outside Git. Do not use PT53 policy bundles in place of a production database restore.
 
 ## 4. Provision the host
 
@@ -101,6 +127,26 @@ After installation, set/verify:
 - UTC timezone;
 - 8 GiB swap;
 - `vm.swappiness=10`.
+
+## 5.1 Restore production resolver reliability
+
+The current production host stopped relying on intermittently failing Vultr recursive resolvers after a validated DNS incident. The commissioned host state uses:
+
+    /etc/resolv.conf
+      nameserver 1.1.1.1
+      nameserver 8.8.8.8
+
+and prevents DHCP from replacing that file. On the current host the interface is `enp1s0` and `/etc/dhcpcd.conf` contains an interface-specific `nohook resolv.conf` boundary.
+
+A replacement VM may receive a different interface name. Determine it first (`ip -br addr` / `ip route`), then reproduce the no-overwrite resolver boundary for that interface rather than blindly hard-coding `enp1s0`.
+
+Validate before continuing:
+
+    getent hosts dacquadolce.com
+    dig +short dacquadolce.com
+    ip route
+
+A DHCP rebind may briefly interrupt networking. Keep provider-console/recovery access available and revalidate address/default-route state afterward.
 
 ## 6. Create the administrator account
 
@@ -215,6 +261,22 @@ Verify:
     sudo -u postgres psql -Atqc "SHOW port;"
 
 Expected major version is PostgreSQL 17 and the listener must remain local-only.
+
+## 11.1 Choose the database recovery mode
+
+Before the first application deployment, decide explicitly between:
+
+**A. Existing-production disaster recovery (normal production rebuild)**
+
+Restore the latest accepted production PostgreSQL backup into the freshly initialized production database using an operator-reviewed recovery procedure. Validate the backup checksum/restore evidence and preserve the migrator/runtime ownership/privilege boundary. Only after the restored database is in place should the current application release run Alembic and catalog reconciliation.
+
+This restores mutable state that Git cannot recreate: accounts, roles/MFA state, quotes/orders, communications, approved policies, product lifecycle/public-retirement decisions, pricing/inventory, launch evidence, audit history, and other business records.
+
+**B. Deliberately empty/new environment**
+
+Allow Alembic plus catalog reconciliation to create the current schema/catalog baseline. This is appropriate for a new environment, not for recovering an existing production business. A blank database does not recreate live product lifecycle, policies, accounts, communications, pricing/inventory, or orders.
+
+The commissioned `/usr/local/sbin/dacqua-postgres-restore-check` proves that backups can be restored into a disposable verification database; it is not a one-command destructive production restore tool. Do not automate dropping/replacing the live production database until that exact recovery procedure has been separately rehearsed and documented.
 
 ## 12. Prepare production filesystem and runtime identity
 
@@ -371,6 +433,8 @@ The hardened deployment sequence is:
 14. automatically restore the previous application release if post-switch validation fails;
 15. after success, retain the newest five timestamped releases by default.
 
+That one deployment automatically carries current application-level changes. No extra rebuild steps are required for PT54 order-review/hold schema/code, shared catalog Category -> Family -> Variant identity, Essence/Origin/Refine catalog metadata and Refine images, product-detail footer/theme controls, customer-select affordances, Operations catalog accordions/status labels, Customer Inbox source/security behavior, public-support honeypot/rate limiting, or field-specific validation errors. Those are all source/migration/catalog assets in the exact revision.
+
 The release source must represent a known Git revision. The commissioned
 staging workflow is:
 
@@ -390,6 +454,18 @@ Database migrations are not automatically downgraded during application rollback
 compatibility with the immediately previous application release unless a deployment has an explicit database recovery
 plan. See `docs/production/DEPLOYMENT_AND_ROLLBACK.md`.
 
+
+### Verify restored mutable catalog/business state
+
+Catalog reconciliation intentionally preserves operational state already present in PostgreSQL. After disaster recovery and deployment, confirm at minimum:
+
+- legacy Essence Pass-Through remains Discontinued/publicly retired;
+- legacy Harmony Regenerating remains Discontinued/publicly retired;
+- active catalog presentation shows Essence `Automatic Rinse`, Origin `Ultra-Pure` / `Alkaline Plus`, and Refine with 1.5/2.0 cu ft variants;
+- Product Category / Product Family / Product Variant identity matches between catalog cards and detail pages;
+- pricing/inventory/policies were restored rather than reset to invented defaults.
+
+Do not encode a production lifecycle decision into a one-off rebuild command merely to make the UI look right. Production PostgreSQL is authoritative for those mutable states; recover it from backup or apply an explicitly approved operational change through the audited application workflow.
 
 ## 18.1 Preserve and migrate production application identities
 
@@ -443,6 +519,37 @@ Also verify:
 Use the repository verifier when applicable:
 
     scripts/production/verify_release.sh https://dacquadolce.com
+
+## 19.1 Current application browser acceptance after rebuild
+
+After edge smoke tests, perform one consolidated browser acceptance pass rather than replaying every historical milestone:
+
+**Catalog/customer UI**
+
+- catalog card/detail identity is consistent (`Product Category -> Product Family -> Product Variant`);
+- Essence shows `Automatic Rinse`; retired Pass-Through is absent from normal browsing;
+- legacy Harmony Regenerating is absent from normal browsing;
+- Origin `Ultra-Pure` and `Alkaline Plus` are clearly differentiated;
+- Refine defaults to 1.5 cu ft and switching to 2.0 cu ft changes the repository-managed variant presentation/image;
+- customer dropdowns have a clear theme-safe clickable affordance;
+- product-detail footer/logo appearance controls work;
+- residential-use-only warranty presentation is present without invented duration/terms.
+
+**Operations**
+
+- Pricing & Inventory product cards are compact/collapsed and show explicit lifecycle/inventory/pricing badges;
+- PT54 Order Reviewed checklist/hold controls appear and retain server-side blocking semantics;
+- Customer Inbox shows Website/Email source labels and Conversation history;
+- inbound/customer-supplied URLs are non-clickable.
+
+**Public forms**
+
+- a normal website support submission succeeds;
+- a validation error returns a useful field-specific message instead of only `422`;
+- the off-screen honeypot does not alter layout;
+- a filled honeypot is silently accepted but creates no communication record.
+
+Do not expect Postmark Spam/SPF badges on website-originated or local `.test` outbound records. Validate those badges only with a genuine Postmark inbound message whose archived event includes the corresponding provider headers.
 
 ## 20. Configure and validate DNS, Cloudflare Email Routing, Proton, Postmark, and communications
 
@@ -874,7 +981,12 @@ Expected boundaries:
 - public health succeeds;
 - Prometheus ready;
 - no failed systemd units;
-- backup/restore timers active.
+- backup/restore timers active;
+- active release revision marker matches the intended exact Git revision;
+- Alembic is at `head`;
+- catalog reconciliation is idempotent on a second plan/apply check (normally zero changes after deployment);
+- restored operational catalog lifecycle/policy/account/communication state is present;
+- PT54/order-review and Customer Inbox/support-form acceptance checks above pass.
 
 ## 27. Disaster-recovery boundary
 

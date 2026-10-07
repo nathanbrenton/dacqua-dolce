@@ -10,7 +10,7 @@ The canonical public origin is:
 
 The `www` hostname is an alias and redirects permanently to the canonical bare domain.
 
-Application/host state is reconciled through the PT53 deployment on 2026-10-06. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and their final production browser-acceptance checkpoint remains pending as of this audit.
+This document represents the current production/rebuild architecture through the 2026-10-07 PT54, catalog, Customer Inbox, and public-support hardening work. The active production SHA/release path is operational state and must be read from immutable release metadata/deployment output rather than maintained as a prose constant.
 
 ## 2. Production host
 
@@ -31,6 +31,12 @@ Application/host state is reconciled through the PT53 deployment on 2026-10-06. 
 
 The host is intentionally consolidated for P0. The architecture favors explicit local boundaries, backup/restore validation, and rebuildability over early multi-host complexity.
 
+### Resolver reliability
+
+The current production host does not rely on the intermittently failing Vultr-provided recursive resolvers for application/DNS operations. The validated mitigation keeps `/etc/resolv.conf` on `1.1.1.1` and `8.8.8.8` and prevents DHCP from rewriting it. On the current host the DHCP interface is `enp1s0`; a rebuilt host must verify its actual interface name before reproducing the `dhcpcd` `nohook resolv.conf` boundary.
+
+This is host networking configuration, not application configuration. Validate name resolution after any DHCP/network rebind before continuing a deployment.
+
 ## 3. Application stack
 
 ### Frontend
@@ -40,7 +46,7 @@ The host is intentionally consolidated for P0. The architecture favors explicit 
 - Vite
 - production static build served directly by Nginx
 
-The customer account experience includes profile/address management plus site-wide visual-theme and light/dark preferences. The same persisted appearance selection applies to Operations; the current default baseline is Light + Lagoon Editorial unless the user has stored an override.
+The customer account experience includes profile/address management plus site-wide visual-theme and light/dark preferences. The same persisted appearance selection applies to Operations; the current default baseline is Light + Lagoon Editorial unless the user has stored an override. Product-detail pages reuse the customer footer/logo appearance controls, and customer-facing select controls share one theme-safe interactive affordance rather than product-specific styling.
 
 ### Backend
 
@@ -78,13 +84,21 @@ Application roles are not PostgreSQL roles. Human/customer identities never rece
 
 ### Catalog
 
-The repository contains a canonical rebuild-grade public catalog baseline:
+The repository contains a canonical rebuild-grade catalog baseline:
 
     backend/catalog/production_catalog.json
 
-The catalog seed reconciles seed-owned descriptive metadata while preserving operational state such as pricing history, inventory, reservations, approved claims, jurisdiction rules, lifecycle flags, and verification state.
+Repository-managed product media required by that baseline lives under the frontend public product-media tree and therefore travels with the exact Git revision.
 
-The deployment helper runs the catalog reconciliation after Alembic and before activation. Re-running the same catalog against an already reconciled production database is expected to report zero changes.
+The public presentation uses one API-provided structured identity:
+
+    Product Category -> Product Family -> Product Variant
+
+Catalog cards and individual product pages consume the same identity so names cannot drift independently between views. Current source includes the accepted Essence **Automatic Rinse** naming, Origin **Ultra-Pure / Alkaline Plus** differentiation, and Refine 1.5/2.0 cu ft variants with variant-aware images/presentation. Legacy/historical records remain representable without embedding lifecycle words such as `(Retired)` in canonical names.
+
+The catalog seed reconciles seed-owned descriptive metadata and missing canonical variants/images while preserving operational state such as pricing history, inventory, reservations, approved claims, jurisdiction rules, lifecycle/public-retirement state, quote eligibility, and verification state. This is intentional: Git describes the catalog baseline; Production PostgreSQL remains authoritative for live business state.
+
+The deployment helper runs catalog reconciliation after Alembic and before activation. Re-running the same catalog against an already reconciled production database is expected to report zero changes. A blank-database bootstrap is not equivalent to disaster recovery because it cannot reconstruct mutable production state.
 
 ### Database
 
@@ -240,6 +254,14 @@ production staging directory. The production copy is independently checked with
 `verify_staged_source.py` before activation. Source must never be rsynced
 directly into `/srv/dacqua-dolce/current`, and timestamped releases are
 immutable.
+
+### Rebuild composition and milestone collapse
+
+A rebuild does **not** replay PT milestones manually. One exact current Git revision carries the accumulated application code, Alembic migration chain, catalog source/media, frontend UX, and security behavior. The production deployment helper then performs build -> pre-migration backup -> `alembic upgrade head` -> catalog reconciliation -> activation/verification.
+
+Production PostgreSQL is a separate authority layer. Restoring the database recovers live accounts, orders, communications, policies, lifecycle state, pricing/inventory, and evidence; deploying the current Git revision brings that restored schema/catalog metadata forward. Protected `/etc` configuration plus external DNS/mail/TLS provider state form the remaining rebuild layers.
+
+This separation is what makes the rebuild efficient: current source is deployed once, while mutable production data is restored rather than reconstructed from historical implementation notes.
 
 ## 8. Observability stack
 
@@ -444,7 +466,7 @@ Employee reply path:
 
 A private thread-specific Postmark alias is used only as `Reply-To`, allowing the customer's normal Reply action to return to the same conversation. A production three-message acceptance sequence (`inbound -> outbound -> inbound`) was validated.
 
-The inbox renders archived plain-text message bodies. Explicit `http://` and `https://` URLs are safely linkified in the browser; arbitrary inbound HTML is not trusted/rendered as executable markup.
+The inbox renders archived plain-text message bodies. Inbound and customer-supplied URLs are intentionally non-clickable to reduce accidental phishing interaction; outbound/archive URLs may be linkified where appropriate. Arbitrary inbound HTML is not trusted/rendered as executable markup. Message source is surfaced as Website/Email/provider-aware evidence, and genuine Postmark inbound events may expose normalized SpamAssassin/SPF fields when those headers were actually archived. Website form submissions are a separate `provider=web` source and never fabricate email-authentication evidence.
 
 ### Address roles
 
@@ -468,7 +490,7 @@ The wrapper is `/usr/local/sbin/dacqua-observability-send-report`. Daily and wee
 
 ## 12.1 Current application/commerce and policy authority
 
-Production now includes the PT36-PT53 application governance layers: versioned return policies and exceptions; safe account retirement; pricing promotions; inventory lifecycle; Supplier Confirmed order lifecycle; back-in-stock notifications; manufacturer-claim provenance and warranty support; automated-tax and payment-provider commissioning foundations; explicit launch phases and Commerce Launch Gate; employee-controlled Order Confirmed mail; discontinued-product retirement/replacements; formal-quote staff review; internal installer candidates; launch-dependency evidence tracking; accessibility hardening; and policy portability.
+The current rebuild target includes the PT36-PT54 governance layers: versioned return policies and exceptions; safe account retirement; pricing promotions; inventory lifecycle; Supplier Confirmed order lifecycle; back-in-stock notifications; manufacturer-claim provenance and warranty support; automated-tax and payment-provider commissioning foundations; explicit launch phases and Commerce Launch Gate; employee-controlled Order Confirmed mail; discontinued-product retirement/replacements; formal-quote staff review; internal installer candidates; launch-dependency evidence tracking; accessibility hardening; policy portability; and the PT54 formal Order Reviewed checklist/customer-response hold boundary. Current source also includes the accepted catalog shared-identity/variant reconciliation and the Customer Inbox/public-support hardening described in the communications runbook.
 
 The data authority model is intentionally split:
 
@@ -478,7 +500,7 @@ The data authority model is intentionally split:
 - A recommended non-production refresh is Production `Export all` -> trusted JSON bundle -> Local/Dev/Test import preview -> lifecycle-preserving import only where `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true`. Do not enable that flag in Production.
 - AWS S3/Restic, once commissioned, is a disaster-recovery copy of production backup state, not a Local/Dev/Test synchronization source.
 
-## 13. Production boundaries at the PT53 deployment
+## 13. Production boundaries represented by the current rebuild target
 
 Commissioned:
 
@@ -505,12 +527,12 @@ Commissioned:
 - PT48 discontinued-product retirement/replacement workflow;
 - PT49 formal-quote staff-review gate;
 - PT50 internal-only installer candidate registry;
-- PT53 policy export/import portability.
+- PT53 policy export/import portability;
+- PT54 formal Order Reviewed checklist and customer-response hold workflow;
+- shared catalog Category/Family/Variant identity plus accepted Essence/Origin/Refine reconciliation and repository-managed Refine variant media;
+- Customer Inbox Website/Email source labeling, inbound-link hardening, and advisory Postmark spam/SPF evidence when provider headers exist.
 
-Deployed with smoke validation and awaiting the final recorded production browser-acceptance checkpoint:
-
-- PT52 accessibility/keyboard/mobile hardening;
-- PT53 policy portability UI/flow.
+Current repository/rebuild target also includes the public support-form CSRF/rate-limit/honeypot controls and field-specific structured validation messages. Confirm the active release metadata before treating a newly committed source behavior as production-commissioned.
 
 Not yet commissioned:
 

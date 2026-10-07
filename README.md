@@ -37,31 +37,27 @@ Authoritative production documentation:
 
 ## Current production application state
 
-Production is deployed at `https://dacquadolce.com`. The current deployed source revision is `0dfc6329a4a8e9584fba4b00cba66512438fd21b` in release `/srv/dacqua-dolce/releases/20261006T175805Z`. PT52 and PT53 deployment smoke validation passed; their final production browser-acceptance checkpoint is still pending as of this documentation audit.
+Production is deployed at `https://dacquadolce.com`. The running release is an operational fact and should be read from the production release metadata/deployment output rather than hard-coded into this README. Rebuilds and deployments always target an exact 40-character Git revision.
 
-The production application includes:
+The current repository/rebuild target includes:
 
-- six canonical water-filtration products bootstrapped from repo-managed catalog data;
 - customer registration, login, sessions, password reset, explicit email verification, and privileged MFA;
-- customer profile/address management and appearance controls;
-- quote, cart, order, pricing, inventory, return/cancellation, and assisted-sales governance;
-- employee-controlled `Order Confirmed` communication after Supplier Confirmed;
-- discontinued-product public retirement and explicit replacement recommendations;
-- formal-quote staff review for assisted-sale products plus manual large/complex review flags;
-- internal-only installer candidate registry;
-- provider-neutral automated-tax and payment commissioning foundations, with live checkout still closed;
-- PT46 launch-phase / Commerce Launch Gate and PT51 external-dependency evidence registry;
-- Operations console, Customer Inbox, Accounts & Address Book, User Access & Roles, and Audit Log;
-- GUI staff roles `employee` and `administrator`; `manager` is legacy-only and `developer` remains out-of-band;
-- durable audit, email-delivery, and PostgreSQL communications evidence;
-- PT52 keyboard/mobile/accessibility hardening;
-- PT53 policy export/import portability for deliberate Production -> Local/Dev/Test synchronization without database cloning.
+- customer profile/address management, site-wide appearance controls, and product-detail footer/theme controls;
+- quote, cart, order, pricing, inventory, return/cancellation, assisted-sales, and policy governance;
+- PT54 formal **Order Reviewed** checklist evidence plus cannot-fulfill customer-response holds before employee-controlled `Order Confirmed`;
+- repo-managed catalog reconciliation with shared `Product Category -> Product Family -> Product Variant` identity, Essence **Automatic Rinse**, Origin **Ultra-Pure / Alkaline Plus**, and Refine 1.5/2.0 cu ft variants with repository-managed images;
+- discontinued-product public retirement/replacement behavior while preserving historical product records;
+- Operations console, Customer Inbox, Accounts & Address Book, User Access & Roles, Audit Log, and compact Pricing & Inventory governance;
+- durable PostgreSQL communications with Website/Email source distinction, safe plain-text inbound rendering, non-clickable inbound/customer-supplied URLs, and advisory Postmark spam/SPF evidence when the provider actually supplies those headers;
+- public support-form CSRF, rate limiting, an invisible honeypot, and field-specific FastAPI/Pydantic validation messages;
+- provider-neutral automated-tax/payment commissioning foundations, with public hosted checkout still closed;
+- PT52 keyboard/mobile/accessibility hardening and PT53 policy export/import portability for deliberate Production -> Local/Dev/Test policy synchronization without database cloning.
 
 The authoritative production catalog baseline is under:
 
     backend/catalog/
 
-Operational state such as price history, inventory quantities, approved claims, policies, orders, accounts, and jurisdiction/tax evidence is deliberately not reset from the catalog manifest during deployment.
+Operational state such as product lifecycle, price history, inventory, accounts, orders, communications, approved claims/policies, and launch evidence is deliberately not reconstructed from the catalog manifest during deployment. Production recovery requires the production PostgreSQL state or an explicitly approved manual reconstruction of that state.
 
 ## Authority model
 

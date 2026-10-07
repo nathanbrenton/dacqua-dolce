@@ -2,9 +2,9 @@
 
 This directory is the authoritative documentation namespace for the D'Acqua Dolce production platform.
 
-**Production application state represented:** PT53 deployed on 2026-10-06 at source revision `0dfc6329a4a8e9584fba4b00cba66512438fd21b`, release `/srv/dacqua-dolce/releases/20261006T175805Z`, with Alembic head `f1c4a5b76e80`. PT47-PT51 production browser acceptance is complete. PT52 and PT53 deployment smoke validation passed; their final production browser-acceptance checkpoint remains pending as of this documentation audit.
+**Production/rebuild state represented:** current repository capabilities through the 2026-10-07 catalog, PT54 order-review, Customer Inbox security, and public support-form hardening work. The active production SHA/release path is intentionally not hard-coded here; read it from the immutable release metadata/deployment output.
 
-Production releases are timestamped immutable artifacts created by the standard deployment workflow. The exact source revision for a running release is recorded by release metadata/deployment output; do not treat a historical commit hash in prose as a configuration constant.
+Production releases are timestamped immutable artifacts created by the standard deployment workflow. Rebuilds deploy one exact Git revision; Alembic applies the complete migration chain and the deployment helper reconciles the current canonical catalog automatically. Do not replay historical PT milestones one-by-one.
 
 ## Document set
 
@@ -15,6 +15,19 @@ Production releases are timestamped immutable artifacts created by the standard 
 - `COMMUNICATIONS_AND_POSTMARK.md` — commissioned Cloudflare split-routing + Proton human/business mail + Postmark application mail + direct Postfix/OpenDKIM observability mail, PostgreSQL communications archive, authentication records, rebuild sequence, and production validation.
 - `GRAFANA_DASHBOARDS.md` — repo-managed dashboard provisioning, access, and validation.
 - `PENDING_INTEGRATIONS.md` — intentionally unfinished production items that must not be mistaken for commissioned infrastructure/application capability.
+
+## Efficient rebuild composition
+
+A production rebuild is composed from four authoritative layers:
+
+1. **Git** — application source, migrations, deployment assets, repository-managed catalog metadata/images, frontend UX/security behavior, and technical documentation.
+2. **Production PostgreSQL** — accounts, orders, quotes, communications, approved policies, product lifecycle, pricing/inventory, launch evidence, and other mutable business state.
+3. **Protected configuration/provider state** — `/etc/dacqua-dolce/*`, DNS, Cloudflare routing, Proton/Postmark credentials, TLS private material, and other secrets that are intentionally outside Git.
+4. **Host/observability state** — Debian/systemd/Nginx/PostgreSQL/monitoring configuration reconstructed from repository assets and the rebuild runbook.
+
+For disaster recovery, restore authoritative PostgreSQL state first (or explicitly choose an empty-environment rebuild), then deploy the intended exact Git revision so Alembic and catalog reconciliation bring the restored database forward. PT53 policy bundles are not a substitute for restoring Production PostgreSQL.
+
+Recent catalog/frontend/security changes require no separate manual installer: they travel with the exact Git revision. Product images are repository assets; PT54 schema changes travel through Alembic; current catalog metadata/variants travel through `production_catalog.json`; Customer Inbox/support-form protections travel in the application/frontend build.
 
 ## Authority rules
 

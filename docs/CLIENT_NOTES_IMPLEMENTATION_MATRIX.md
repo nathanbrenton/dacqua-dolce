@@ -1,7 +1,7 @@
 # Client Notes Implementation Matrix
 
-Status: living requirements / implementation matrix through PT53
-Current reconciliation: 2026-10-06
+Status: living requirements / implementation matrix through PT54 plus 2026-10-07 catalog/communications hardening
+Current reconciliation: 2026-10-07
 
 This matrix is the durable boundary between client-supported requirements and implementation assumptions. New explicit client answers supersede older interpretations. Items marked **Needs Client Confirmation** or **Needs Manufacturer/Technical Verification** must not be converted into public claims or irreversible workflow decisions without new evidence.
 
@@ -13,14 +13,14 @@ This matrix is the durable boundary between client-supported requirements and im
 | CAM terminology | Implemented | Crystal Aggregate Matrix is approved customer-facing terminology. |
 | Customer Requests | Implemented | Active, Closed, All; persisted status changes and private internal notes; no inferred account relationship. |
 | Accounts & Address Book | Implemented | Persisted customer identity/contact/address/order-count information. |
-| Customer Inbox | Implemented | Inbox, Archived, All; delivery/system issues remain separately discoverable; PostgreSQL remains authoritative. |
+| Customer Inbox | Implemented / hardened | Inbox/System/Archived/All with durable PostgreSQL authority, Website/Email source labeling, non-clickable inbound/customer URLs, narrow advisory Postmark spam/SPF evidence when provider headers exist, and archive/restore without deletion. |
 | Welcome email | Implemented | One restrained post-verification welcome message with duplicate-send protection. |
 | Pricing & Inventory | Implemented / Actionable Now | Backend-authoritative pricing and inventory exist. PT15.1 improves operational clarity without manufacturing prices or sale eligibility. |
 | User Access & Roles | Implemented / Actionable Now | Persisted roles, MFA posture and privileged role management exist. Developer is protected/out-of-band and cannot be assigned/revoked through the web GUI. |
 | Audit Log | Implemented / Actionable Now | Privileged recent-event history exists. PT15.1 adds human-readable labels, actor email when retained user identity is available, and action/entity filtering while continuing to exclude sensitive metadata, IP addresses and user agents. |
 | Recommend a System positioning | Implemented | Hero CTA enters the concise Recommend a System section. The detailed questionnaire is secondary guided assistance revealed only on request. Section language begins with `Start with your water treatment goals.` and avoids assuming homeownership or customer inexperience. |
 | Recommendation-to-request language continuity | Implemented | Quote, guided-recommendation, and general-consultation prompts ask about water goals, water-use needs, source water, and installation constraints without assuming a home/household or first-time buyer. |
-| Cartridge filtration public terminology | Implemented / Actionable Now | `Big Blue` remains manufacturer/internal terminology. Public system naming will use `[Family Name] Single — Cartridge Filtration` / `[Family Name] Duo — Cartridge Filtration` once the family name is approved. |
+| Cartridge filtration public terminology | Pending client/manufacturer confirmation | Do not publish `Big Blue` yet. The client is unsure whether it is an OEM/trademark term and will confirm with Jamie. Existing public cartridge language must remain generic until naming/compatibility is authoritative. |
 | Replacement-cartridge naming convention | Actionable Now | Use `Brand + function + micron/specification` when authoritative cartridge specifications exist. |
 | Cartridge replacement guidance | Implemented | General public guidance states replacement at least every six months where applicable, with actual life varying by source-water quality, micron rating, usage, and system conditions. Harmony pass-through surfaces this guidance on its product detail. |
 | Exterior-water installation guidance | Implemented | Recommend a System explains that irrigation and hose-bib lines should generally bypass treated-water equipment where appropriate, while preserving property/installation-specific judgment. |
@@ -28,19 +28,19 @@ This matrix is the durable boundary between client-supported requirements and im
 | Sediment micron offerings | Needs Manufacturer/Technical Verification | Actual micron ratings to be offered remain TBD pending manufacturer confirmation. |
 | Carbon-block cartridge offerings | Needs Manufacturer/Technical Verification | Actual cartridge types to be offered remain TBD pending manufacturer confirmation. |
 | Cartridge gallon/service capacities | Needs Manufacturer/Technical Verification | No validated gallon/service capacities are approved for publication. |
-| Customer Orders | Needs Client Confirmation | Persisted order records and backend status machinery exist; Operations remains read-only until the client confirms the operational lifecycle. |
-| Payment provider | Needs Client Confirmation | Provider boundary exists; do not select or commission a provider without client direction. |
-| Online purchase vs quote boundary | Needs Client Confirmation | Do not infer which products/configurations may be purchased online. |
-| Installation purchasing model | Needs Client Confirmation | Do not invent installation/fulfillment commercial policy. |
+| Customer Orders | Implemented / governed | Persisted orders have supplier-confirmation, fulfillment, cancellation, PT54 Order Reviewed, and customer-response hold governance. Customer-facing Order Confirmed remains an explicit employee action. |
+| Payment provider | Selected direction / external details pending | Affinity24 remains the selected processor direction, but the exact provisioned gateway and production adapter/credentials are still unknown and must not be guessed. |
+| Online purchase vs quote boundary | Confirmed / implemented gate | Direct-purchase scope is everything except whole-house systems; whole-house systems remain assisted-sale and require staff/customer interaction. Independent tax/payment/launch gates still keep hosted checkout closed until commissioned. |
+| Installation purchasing model | Confirmed current posture | D'Acqua Dolce currently sells equipment only and does not perform installation. Future installer/referral coordination remains separate and requires legal/business review. |
 | New Message composer | Needs Client Confirmation | Existing customer threads can be replied to in-app; standalone composition priority remains unresolved. |
 | Custom mail filters/rules | Needs Client Confirmation | Do not add generic mail-rule complexity without a demonstrated use case. |
 | Customer Request → account relationship | Needs Client Confirmation | No durable relationship exists; do not match by name, email or phone. |
 | CRM assignment / priority / next action | Needs Client Confirmation | Do not add generic CRM fields without operational need. |
 | Whole-house carbon family name | Implemented | `Essence` is confirmed and applied to existing whole-house carbon catalog records. |
-| Conventional softener family name | Confirmed / awaiting product data | `Refine` is confirmed; no SKU is invented until authoritative softener product data exists. |
+| Conventional softener family name | Implemented | `Refine` is confirmed and present as one product family with 1.5 cu ft and 2.0 cu ft variants. Current `REFINE*` identifiers are internal catalog identifiers, not manufacturer model claims. |
 | CLEAR public acronym | Implemented | Approved expansion: `Crystal Lattice Enabling Anti-Scale Reduction`. `Reduction` must not be presented as conventional hardness/mineral removal. |
 | Harmony Regenerating operation | Needs Manufacturer/Technical Verification | Exact media, cycle type, electrical/drain requirements, valve model and flow behavior remain unverified. |
-| Harmony Regenerating product | Implemented / retired | Removed from the offered lineup; historical record retained inactive. Future combined conditioner + carbon concept remains TBD. |
+| Harmony Regenerating product | Implemented / retired | Historical record retained with neutral canonical name `Harmony - Regenerating`; lifecycle is Discontinued/publicly retired through operational state rather than lifecycle words embedded in the title. |
 | Physical conditioning-component proprietary name | Implemented | `CAM Induction` is approved as the public name for the internal conditioning component associated with CLEAR. The name does not establish an unverified physical mechanism. |
 | Temporary calcium-magnesium interaction mechanism | Needs Manufacturer/Technical Verification | Client can provide supporting documentation. Do not publish as established mechanism until that documentation is reviewed and accepted. |
 | Exact option availability | Needs Manufacturer/Technical Verification / Client Confirmation | Optional post-filter/UV concepts must not be presented as universally purchasable until configuration applicability is verified. |
@@ -182,10 +182,10 @@ Implementation rules:
 
 | Client direction | Classification | Implementation |
 | --- | --- | --- |
-| Essence = whole-house carbon family | Implemented | Existing carbon catalog records use `Essence` as family; backwashing configuration is presented as `Essence - Backwashing`. |
-| Refine = conventional softener family | Confirmed / deferred catalog creation | Name is reserved for the softener line; no softener SKU/product is fabricated. |
-| Harmony - Regenerating removed from lineup | Implemented | Canonical catalog marks the record inactive and a migration retires the existing production row while retaining history. |
-| One product page with size variants | Implemented architecture / sizing inputs captured | Existing `ProductVariant` layer remains the capacity/configuration mechanism. Bathrooms, occupants, and water-service pipe size are now captured, while actual capacity thresholds remain deferred pending authoritative rules. |
+| Essence = whole-house carbon family | Implemented | Existing carbon catalog records use `Essence` as family; the active customer-facing automatic media-rinse configuration is presented as `Essence - Automatic Rinse`. |
+| Refine = conventional softener family | Implemented | Refine now exists with 1.5 cu ft (default) and 2.0 cu ft variants plus repository-managed client-supplied photos. Missing manufacturer dimensions/prices/specs remain intentionally unfilled. |
+| Harmony - Regenerating removed from lineup | Implemented | Canonical metadata retains the historical record with a neutral name, while lifecycle retirement is mutable Operations/PostgreSQL state. The catalog seed does not overwrite that lifecycle state. |
+| One product page with size variants | Implemented | Refine uses one product page with 1.5 cu ft (default) and 2.0 cu ft variants. Variant selection can change image/SKU/availability/pricing/spec values only where authoritative records exist; recommendation sizing thresholds remain deferred pending authoritative rules. |
 | Harmony preferred pairing = Duo sediment + carbon cartridge filtration | Implemented as presentation guidance | Removed the superseded always-included carbon-block prefilter claim; no unverified Duo SKU/family is fabricated. |
 | UV for Harmony | Confirmed direction / awaiting catalog product data | Relationship architecture exists; no public relationship is created until an authoritative UV product record exists. |
 | Calcium/magnesium mechanism documentation | Needs Manufacturer/Technical Verification | Client says documentation can be supplied; mechanism remains unpublished until reviewed. |
@@ -242,9 +242,9 @@ Public Harmony education may spell out `CLEAR` as `Crystal Lattice Enabling Anti
 | Client direction | Classification | Implementation |
 | --- | --- | --- |
 | Product/catalogue + visual/branding are next priorities | Active priority | This milestone focuses on catalogue correctness and customer-facing availability presentation; speculative CRM/order workflow expansion remains deferred. |
-| Harmony Regenerating removed | Already implemented / revalidated | Canonical catalog retains only an inactive historical record; it is not offered publicly. |
-| Refine Pass-Through removed | Reconciled | `Refine` remains reserved for the conventional softener family. The legacy seed script no longer mislabels the carbon pass-through SKU as Refine; the carbon line remains `Essence`. |
-| Refine Regenerating description inaccurate | Publication guardrail | No Refine softener SKU is published until authoritative product data/copy exists. The legacy carbon SKU is reconciled to `Essence - Backwashing` rather than publishing inaccurate Refine copy. |
+| Harmony Regenerating removed | Already implemented / revalidated | Historical catalog metadata is retained, while the production lifecycle is Discontinued/publicly retired through Operations/PostgreSQL state. |
+| Refine Pass-Through removed | Reconciled | `Refine` is the conventional softener family with 1.5/2.0 cu ft variants. The legacy carbon pass-through record belongs to `Essence`, not Refine. |
+| Essence carbon variant terminology | Implemented | The active customer-facing variant is `Automatic Rinse`; the technical term `backwash` may remain in technical/internal context where necessary but is not the primary public product label. |
 | Out of stock + estimated lead time | Implemented foundation | Product inventory can store an optional customer-facing lead-time string. Out-of-stock/backordered inventory remains visible even when a product is quote-only. |
 | Notify When in Stock | Implemented consent foundation | Customers may register an email against an out-of-stock product. The subscription is stored idempotently; no automatic notification job is commissioned yet. |
 | Customer product documents | Architecture expanded | Document taxonomy now supports specification sheet, owner’s manual, installation guide, maintenance guide, warranty, service schedule, and water-test/report information. Documents still require authoritative files before publication. |
@@ -259,7 +259,7 @@ Public Harmony education may spell out `CLEAR` as `Crystal Lattice Enabling Anti
 | Client direction | Classification | Implementation |
 | --- | --- | --- |
 | Product/catalogue + visual/branding are next priorities | Implemented milestone | PT17 focused on public catalog clarity, product presentation, Operations attention workflow, and typography/visual consistency rather than speculative CRM/payment expansion. |
-| Preserve confirmed Harmony / Essence / Origin architecture | Implemented / revalidated | Product presentation and supporting seed/catalog wording were refined without inventing missing Refine softener data. |
+| Preserve confirmed Harmony / Essence / Origin / Refine architecture | Implemented / revalidated | Public catalog identity is now supplied programmatically as Product Category -> Product Family -> Product Variant so cards and detail pages cannot drift independently. |
 | Do not publish unverified Harmony mechanism claims | Implemented guardrail | Superseded temporary mechanism wording remains withheld pending authoritative manufacturer/technical documentation. |
 | Make Operations attention area more compact and immediately actionable | Implemented | PT17.1 converted the metric area into a compact clickable dashboard that navigates to the relevant section and, where possible, the first matching item requiring attention. |
 | Smallest typography should be larger across all font choices | Implemented | PT17.2 raised the small/medium readability floor while preserving the established large-display hierarchy. |
@@ -394,6 +394,23 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | Shipping, cancellation, refund, and warranty policy are required before first assisted sale | Implemented as configuration requirement | Quote presentation is blocked until approved Terms, Shipping, Cancellation, Refund, and Warranty versions exist. |
 | Installation model remains undecided | Preserved | Installation Terms are required only when an installation charge is included; no installation policy or business model is invented. |
 | Privacy policy remains a separate public-launch requirement | Preserved | Public Privacy exposes only an explicitly approved version; absence remains visible as pre-launch status. |
+
+## 2026-10-07 catalog clarity and communications reconciliation
+
+| Client / operational direction | Classification | Implementation / boundary |
+| --- | --- | --- |
+| Essence active carbon variant should avoid customer-facing `Backwashing` terminology | Implemented | Public variant is `Automatic Rinse`; technical backwash terminology remains only where technically necessary. |
+| Essence Pass-Through is no longer offered | Implemented / operational lifecycle | Historical record remains in PostgreSQL but is Discontinued/publicly retired. Canonical seed does not overwrite mutable lifecycle state. |
+| Origin variants need obvious differentiation | Implemented | Public variants are `Ultra-Pure` and `Alkaline Plus`; Alkaline Plus is positioned as the point-of-use drinking-water option while Ultra-Pure copy avoids unsafe/not-for-drinking claims. |
+| Refine softener sizing | Implemented | One Refine product family exposes 1.5 cu ft (default) and 2.0 cu ft variants. Variant selection changes the supplied image and any variant-dependent data that actually exists. Missing prices/dimensions/specs are not invented. |
+| Shared catalog identity | Implemented | Product Category, Product Family, and Product Variant are generated once in the public API and consumed by catalog cards/detail pages. |
+| Residential-use-only warranty direction | Implemented with legal boundary | Catalog surfaces a residential-use-only statement; exact legal duration/coverage remains provenance/legal-review dependent. |
+| Whole-house black neoprene jacket | Pending confirmation | Treat as an intended option direction only. Compatibility, exact name, pricing, source, and functional claims must be verified before publication. |
+| `Big Blue` naming | Pending Jamie/client confirmation | Do not publish until the client confirms whether this is the correct manufacturer/trademark terminology. |
+| Formal Order Reviewed step | Implemented (PT54) | Staff checklist must complete before employee-controlled Order Confirmed. Cannot-fulfill cases can be held pending customer response with no automatic substitution. |
+| Suspicious Customer Inbox content | Implemented hardening | Website vs Email source is explicit; inbound/customer URLs are non-clickable; Postmark spam/SPF evidence is advisory only when provider headers exist. |
+| Public website support spam | Implemented first layer | CSRF + process-local rate limiting + invisible honeypot; optional managed Turnstile challenge remains uncommissioned/pending if abuse continues. |
+| Customer-facing validation failures | Implemented | Quote/Inquiry and Support parse FastAPI/Pydantic structured 422 errors into field-specific messages rather than exposing only the HTTP status. |
 
 ## PT43 — Manufacturer claims provenance + warranty support
 

@@ -14,3 +14,12 @@ beginning with 0 or 1.
 P0 phone support is deliberately US/NANP. International support should later
 use country selection and a vetted international phone-number parser instead
 of weakening current validation.
+
+Customer-facing Quote/Inquiry and Support API clients parse FastAPI/Pydantic
+structured validation errors and surface field-specific messages rather than a
+bare HTTP `422` status. Backend validation remains authoritative; the improved
+message handling does not weaken NANP rules.
+
+For example, `(714) 123-1234` has ten digits but is invalid under the current
+NANP rule because the exchange/prefix begins with `1`. A customer should see the
+specific exchange-rule explanation rather than `Quote request failed: 422`.

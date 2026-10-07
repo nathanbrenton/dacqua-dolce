@@ -1,6 +1,6 @@
 # D'Acqua Dolce Production Operations Reference
 
-This is the concise operator reference for the current production platform through the PT53 deployment on 2026-10-06. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance remains pending as of this audit. It is not a substitute for the full rebuild procedure.
+This is the concise operator reference for the current production/rebuild platform through the 2026-10-07 PT54, catalog, Customer Inbox, and public-support hardening work. The active application revision changes over time; use immutable release metadata/deployment output for the running SHA. This reference is not a substitute for the full rebuild procedure.
 
 ## SSH
 
@@ -386,6 +386,23 @@ Backup/restore jobs:
     cat /proc/pressure/memory
     cat /proc/pressure/io
 
+## DNS resolver reliability
+
+The current host pins recursive resolution to:
+
+    1.1.1.1
+    8.8.8.8
+
+The validated production mitigation prevents DHCP from rewriting `/etc/resolv.conf`. On the current host that boundary is associated with `enp1s0`; verify the actual interface name before reproducing it on a replacement VM. This exists because the provider-supplied recursive resolvers intermittently failed resolution for `dacquadolce.com`.
+
+Useful non-secret checks:
+
+    cat /etc/resolv.conf
+    getent hosts dacquadolce.com
+    dig +short dacquadolce.com
+
+If a DHCP rebind/network change is required, keep an existing SSH/recovery-console path available and revalidate interface/address/default-route state afterward.
+
 ## Firewall
 
     sudo nft list ruleset
@@ -447,7 +464,10 @@ Useful boundaries:
 - raw Postmark payload duplication is not required;
 - Customer Inbox supports Inbox/System/Archived/All views, archive/restore, and employee replies;
 - System contains structured application-generated verification/reset/welcome mail and remains separate from the routine customer Inbox;
-- explicit `http://` and `https://` URLs in archived plain-text bodies are rendered as safe external links; inbound HTML remains untrusted and is not rendered as executable markup;
+- inbound/customer-supplied URLs are rendered as plain text to reduce accidental phishing clicks; outbound/archive URLs may be linkified where appropriate; inbound HTML remains untrusted and is not rendered as executable markup;
+- each message exposes a staff-facing provider/source label so Website submissions are not mistaken for Email;
+- genuine Postmark inbound messages may show normalized Spam status/score/tests and SPF result when those headers are present in the archived event; missing provider headers produce no badge and are not interpreted as a safety verdict;
+- website support submissions enter as `provider=web`, are protected by CSRF, a process-local limit of 8 submissions per 15 minutes, and an invisible `website` honeypot, and do not fabricate Postmark security evidence;
 - `support@dacquadolce.com` is the public inbound customer address; the private Postmark destination remains hidden;
 - `jamie@dacquadolce.com` is the commissioned human/business identity routed by Cloudflare to `dacquadolce@proton.me` / Proton;
 - Cloudflare remains the root MX provider; Proton MX being unconfigured/red is intentional;
@@ -617,6 +637,8 @@ the `current` symlink, validates readiness/public behavior, automatically
 restores the previous application release after a failed activation, and prunes
 old timestamped releases only after success.
 
+Do not replay PT migrations/releases individually during rebuild. Restore Production PostgreSQL when recovering live business state, then deploy one intended exact current revision; Alembic and catalog reconciliation apply the accumulated current-source changes automatically.
+
 List rollback targets:
 
     sudo /srv/dacqua-dolce/current/scripts/production/rollback_release.sh
@@ -713,6 +735,24 @@ explicit writable application path.
 For a non-interactive systemd security report:
 
     SYSTEMD_PAGER=cat systemd-analyze security       dacqua-dolce-api.service --no-pager
+
+## Current catalog and order-review operations
+
+Pricing & Inventory product cards are collapsed by default and only one product card is expanded at a time. Compact badges explicitly label `Lifecycle`, `Inventory`, and `Pricing` state so canonical names do not carry lifecycle words. Public retirement remains mutable PostgreSQL state; catalog deployment does not overwrite it.
+
+Current catalog acceptance includes:
+
+- Essence `Automatic Rinse` as the active customer-facing carbon variant;
+- legacy Essence Pass-Through retained historically and retired from normal public browsing through lifecycle state;
+- legacy Harmony Regenerating retained historically and retired from normal public browsing through lifecycle state;
+- Origin `Ultra-Pure` and `Alkaline Plus` differentiation;
+- Refine 1.5/2.0 cu ft variants with 1.5 cu ft default and repository-managed variant images;
+- one shared API identity for Product Category -> Product Family -> Product Variant across catalog cards and product detail pages;
+- catalog-wide residential-use-only warranty presentation without invented duration/coverage terms.
+
+PT54 adds a formal **Order Reviewed** gate. Before employee-controlled `Order Confirmed`, staff must complete the review checklist after Supplier Confirmed. The checklist records customer/contact review, supplier availability verification, whole-order review, customer-contact requirements/completion, reviewer, and timestamp.
+
+If an order cannot be fulfilled exactly as submitted, staff can place it on hold with a reason and proposed alternative. Active hold state blocks fulfillment advancement and Order Confirmed. Release requires a recorded customer response. No automatic substitution is permitted.
 
 ## Operations queue history and cleanup
 

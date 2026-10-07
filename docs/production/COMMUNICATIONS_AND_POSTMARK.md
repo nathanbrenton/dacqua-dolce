@@ -4,6 +4,8 @@
 
 This document is the technical source of truth for D'Acqua Dolce email/DNS routing, human business mail, application transactional/customer correspondence, and the commissioned direct infrastructure-monitoring mail boundary. Better Stack successful-delivery heartbeat integration remains separate/pending.
 
+Customer Inbox currently receives two distinct customer-originated channels: public website requests (`provider=web`) and genuine inbound email routed through Postmark. Website submissions do not have SPF/SpamAssassin evidence and must never be presented as if they were authenticated email.
+
 It describes the validated final implementation only. It intentionally omits transient troubleshooting, failed commands, incorrect diagnostics, temporary test assumptions, and superseded implementation paths.
 
 Production validation checkpoint:
@@ -403,6 +405,18 @@ Do not remove the provider-native `dacquadolce@proton.me` identity merely becaus
 8. Configure Postmark's **Default Inbound Stream** webhook using the authenticated HTTPS URL prepared privately in Section 10. Keep raw-email inclusion disabled unless a later requirement explicitly justifies it.
 9. Use Postmark **Check** and confirm the synthetic message is archived.
 
+### 9.2.1 Restore application-level website support protections
+
+No provider commissioning is required for the current support-form controls. They ship with the application revision. After the normal production release is deployed, verify:
+
+- the visible support form is unchanged by the off-screen honeypot;
+- a normal submission succeeds and appears as `Website` in Customer Inbox;
+- a validation failure returns a useful field-specific message rather than only `HTTP 422`;
+- inbound/customer-supplied URLs are plain text in Operations;
+- a filled honeypot returns the ordinary success shape but creates no communication record.
+
+The process-local support rate limiter is currently 8 submissions per 15 minutes per application-observed client IP. Verify the Nginx/Uvicorn client-IP boundary before relying on it as a standalone abuse control. Cloudflare Turnstile is not commissioned and is documented under pending integrations.
+
 ### 9.3 Rebuild Cloudflare DNS without breaking split mail routing
 
 Cloudflare is both authoritative DNS and the root-domain MX/front-door. Preserve/import the complete zone before any registrar delegation change.
@@ -590,7 +604,21 @@ The public-address acceptance validated in production was:
 
 Validate by metadata only. Avoid printing full message bodies, full provider IDs, attachment bytes, verification tokens, or the complete assigned inbound address.
 
+For a genuine Postmark inbound message, the application surfaces normalized SpamAssassin/SPF evidence only when the archived webhook headers include it. `X-Spam-Status`, `X-Spam-Score`, `X-Spam-Tests`, or `Received-SPF` may be absent on a historical/provider event; absence means **no evidence was supplied**, not "safe" and not a parsing failure. Raw headers remain outside the employee-facing API.
+
 A useful provider/database correlation technique is to compare short one-way fingerprints of Postmark MessageIDs rather than displaying the IDs themselves.
+
+### Website support acceptance
+
+Use a controlled website support submission independently from the Postmark test. Verify:
+
+- the created thread/message is labeled Website rather than Email;
+- the original website request remains separately visible above Conversation history;
+- there are no fabricated Spam/SPF badges for the website source;
+- URLs supplied by the customer remain non-clickable;
+- the confirmation/outbound archive remains associated with the conversation.
+
+This validates the web-origin path only; it does not validate Postmark inbound delivery.
 
 ### Threaded employee reply acceptance
 
@@ -672,7 +700,10 @@ Commissioned:
 - Operations API filtering that keeps Postmark inbound-routing addresses out of the employee UI;
 - manual refresh plus lightweight 60-second polling while the Operations page is open;
 - public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
-- outbound/archive `http://`/`https://` links remain linkified where appropriate, while inbound/customer-supplied URLs remain non-clickable; arbitrary inbound HTML is not rendered as trusted markup.
+- outbound/archive `http://`/`https://` links remain linkified where appropriate, while inbound/customer-supplied URLs remain non-clickable; arbitrary inbound HTML is not rendered as trusted markup;
+- staff-facing Website/Email/provider source labels distinguish website submissions from mail transport;
+- Postmark inbound SpamAssassin/SPF evidence is surfaced narrowly when provider headers exist, without automatic trust/reject behavior;
+- public support submissions use CSRF, process-local IP limiting, an invisible honeypot, and structured field-specific validation messages.
 
 Not yet commissioned:
 
@@ -683,7 +714,9 @@ Not yet commissioned:
 - additional named human custom-domain identities beyond the commissioned `jamie@dacquadolce.com` route/mail identity; approved application sender roles such as `info@` are not evidence that a hosted human mailbox exists;
 - DMARC enforcement hardening from `p=none` to `quarantine`/`reject` after all legitimate senders are validated;
 - Better Stack report-delivery heartbeat integration (direct Postfix/OpenDKIM report delivery and timers are already commissioned);
-- payment-provider checkout.
+- payment-provider checkout;
+- optional Cloudflare Turnstile commissioning for public support forms if honeypot/rate limiting proves insufficient;
+- any dedicated Customer Inbox Spam/Quarantine workflow or provider-side spam-threshold change (must be deliberate and false-positive aware).
 
 ## 15. Vendor references
 

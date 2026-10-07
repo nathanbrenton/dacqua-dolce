@@ -11,16 +11,19 @@ replaces already-loaded ORM state with the committed pricing records.
 
 ## Current Operations layout contract
 
-As of the 2026-09-22 PT12 production checkpoint, the Operations sections are
-ordered as follows:
+The current Operations sections are ordered as follows:
 
 1. Customer Requests
 2. Customer Orders
 3. Pricing & Inventory
 4. Accounts & Address Book
 5. User Access & Roles
-6. Customer Email Activity
+6. Customer Inbox
 7. Audit Log
+
+Pricing & Inventory product cards are collapsed by default and use a one-open-at-a-time accordion. Compact summary badges explicitly label `Lifecycle:`, `Inventory:`, and `Pricing:` so canonical product names never need lifecycle words embedded in the title.
+
+Customer Inbox distinguishes Website, Email/Postmark, and archived/provider evidence. Website submissions are not treated as email-authentication events. Inbound/customer-supplied URLs remain non-clickable; arbitrary inbound HTML remains untrusted.
 
 Operations keeps its own persistent light/dark appearance preference and defaults
 to dark when no preference has been stored. Customer Account appearance is a

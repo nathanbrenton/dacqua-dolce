@@ -13,7 +13,7 @@ Use the current production documentation instead:
 - `docs/production/OPERATIONS_REFERENCE.md`
 - `docs/production/PENDING_INTEGRATIONS.md`
 
-Current deployed application checkpoint: PT53 on 2026-10-06 at revision `0dfc6329a4a8e9584fba4b00cba66512438fd21b`. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance is pending. Use `docs/production/` for authoritative current state.
+The active production release changes over time and is intentionally not hard-coded in this compatibility pointer. Use the immutable release metadata/deployment output for the running SHA and `docs/production/` for the authoritative rebuild target.
 
 Key changes since the original foundation planning include:
 
@@ -26,6 +26,7 @@ Key changes since the original foundation planning include:
 - local PostgreSQL backup + real restore validation;
 - Cloudflare split inbound routing, Proton human/business mail, live Postmark application/customer email, PostgreSQL Customer Inbox archive, and commissioned direct Postfix/OpenDKIM observability mail;
 - production customer registration/email verification/MFA/account administration;
+- PT54 order-review/hold governance plus the current catalog/shared-identity and Customer Inbox/support-form hardening;
 - AWS S3/restic off-host disaster recovery still pending.
 
 Do not copy commands or architectural assumptions from an older version of this document into production. Use `docs/production/` as the source of truth.

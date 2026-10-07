@@ -20,7 +20,7 @@ Current production host:
 
     dacqua-platform-prod-01
 
-Current deployed application checkpoint: PT53 on 2026-10-06 at revision `0dfc6329a4a8e9584fba4b00cba66512438fd21b`. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance is pending. Use `docs/production/` for authoritative current state.
+The active production release changes over time and is intentionally not hard-coded in this compatibility pointer. Use the immutable release metadata/deployment output for the running SHA and `docs/production/` for the authoritative rebuild target.
 
 Important present-day boundaries include:
 

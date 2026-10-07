@@ -140,8 +140,10 @@ Current behavior includes:
 - original website request content shown separately from later correspondence;
 - quoted reply history may be collapsed in the UI while the full archived body
   remains stored;
-- explicit `http://` and `https://` URLs in archived plain text are safely
-  linkified while arbitrary inbound HTML is not executed.
+- outbound/archive URLs may be linkified where appropriate, while inbound and customer-supplied URLs are rendered as plain text to reduce accidental phishing clicks; arbitrary inbound HTML is not executed;
+- each archived message exposes a staff-facing source label such as Website, Email, or Archived/provider fallback;
+- genuine inbound Postmark messages may expose normalized SpamAssassin/SPF evidence when those headers were archived; absence of those headers is not treated as a safety verdict;
+- public website support submissions are a separate `provider=web` source and use CSRF protection, process-local IP rate limiting, and an invisible honeypot before they enter the Customer Inbox.
 
 Outbound employee replies use approved company sender roles. Quote-request
 replies prefer `sales`, then `contact`, `info`, `support`, and `no-reply`.
@@ -372,11 +374,15 @@ approved by the business and appropriate legal counsel before production workflo
 that depend on it are commissioned.
 
 
-## PT47-PT53 operations governance
+## PT47-PT54 operations governance
 
-### Order confirmation
+### Order confirmation and formal review
 
-After Supplier Confirmed, an employee explicitly sends the customer-facing `Order Confirmed` communication. The internal lifecycle label remains Supplier Confirmed. Automatic confirmation is a future option, not current behavior.
+After Supplier Confirmed, an employee explicitly sends the customer-facing `Order Confirmed` communication. PT54 also requires completed formal **Order Reviewed** evidence before that message can be sent. The review checklist records customer/contact review, supplier availability verification, whole-order review, customer-contact requirements/completion, reviewer identity, and completion time.
+
+If an order cannot be fulfilled exactly as submitted, staff can place it on a customer-response hold with a reason and proposed alternative. Active hold state blocks fulfillment advancement and `Order Confirmed`; release requires a recorded customer response. The application does not automatically substitute products.
+
+The internal lifecycle label remains Supplier Confirmed. Automatic confirmation remains a future option, not current behavior.
 
 ### Discontinued-product retirement
 

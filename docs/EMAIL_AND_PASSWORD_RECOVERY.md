@@ -185,6 +185,10 @@ shown as the visible company sender.
 Employees work from the authenticated D'Acqua Dolce application rather than
 requiring the production server to operate a general-purpose IMAP mailbox.
 
+Website support requests are a distinct communications source from email. They enter the same durable thread/archive through the public support API, are labeled as Website-originated in Operations, and therefore do not have Postmark SPF/SpamAssassin evidence. The public support path uses CSRF protection, a process-local IP limit, and an invisible honeypot.
+
+For actual inbound Postmark email, Operations may display normalized `X-Spam-Status`, `X-Spam-Score`, `X-Spam-Tests`, and `Received-SPF` evidence only when those headers were present in the archived event. These fields are advisory and do not automatically block, trust, delete, or quarantine a message. Inbound/customer-supplied URLs remain non-clickable and arbitrary inbound HTML is not rendered as trusted markup.
+
 ## Mail-authentication validation
 
 As of 2026-10-01, the root-domain mail-authentication DNS has been reconciled for the current split-routing and direct observability-mail architecture:

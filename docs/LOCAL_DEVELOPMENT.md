@@ -133,6 +133,25 @@ Canonical dev/test identities use `@dacquadolce.test`; production identities
 are never populated from that fixture set.
 
 
+## Updating Local/Dev/Test to the current application state
+
+Do not replay historical milestones manually after pulling a newer Git revision. The current source tree already carries the migrations, catalog manifest/images, frontend behavior, and application security changes.
+
+For an existing local database, use the migration and catalog layers in order:
+
+    scripts/alembic_local.sh upgrade head
+
+    cd backend
+    .venv/bin/python3 -m app.cli.seed_catalog plan
+    .venv/bin/python3 -m app.cli.seed_catalog apply
+
+Catalog reconciliation updates seed-owned descriptive metadata and creates missing canonical variants/images, but deliberately preserves operational lifecycle/pricing/inventory state already present in the database. Local policy data remains environment-local unless deliberately imported through PT53.
+
+For a destructive clean local rebuild, continue to use `scripts/rebuild_local_database.sh --confirm-destroy-local-data`, then Alembic, catalog reconciliation, and the canonical dev-user bootstrap. The rebuild is for Local/Dev/Test only; production recovery uses the production backup/restore and immutable-release workflow.
+
+Current Website/Email source labeling, Customer Inbox inbound-content hardening, support-form honeypot/rate limit, field-specific 422 messages, PT54 order-review workflow, product-detail theme/footer behavior, customer select affordances, and catalog shared identity are application-source behavior and require no separate local configuration beyond running the current revision. Postmark spam/SPF badges appear only when an actual inbound Postmark event archived those provider headers; local `.test` website/outbound records normally have no such evidence.
+
+
 ## PT53 policy portability in Local/Dev/Test
 
 Policy data is environment-local PostgreSQL state. Application deployment does not copy policy rows between environments. Production PostgreSQL is authoritative for live approved policy versions.
