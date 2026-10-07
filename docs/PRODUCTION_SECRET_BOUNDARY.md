@@ -60,3 +60,8 @@ remain quoted:
 
 The application must never print secrets during startup diagnostics or include
 them in health/readiness responses.
+
+
+## Production safety configuration: policy imports
+
+`DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION` is not a secret, but it is a production safety boundary. Keep it unset/false in Production. Lifecycle-preserving policy import exists only so Local/Dev/Test can deliberately mirror Production policy state. Production policy imports remain draft-only and must pass the normal approval workflow.

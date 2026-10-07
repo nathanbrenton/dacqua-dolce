@@ -95,132 +95,44 @@ For each service:
 - run a non-interactive `systemd-analyze security ... --no-pager` comparison;
 - document the final validated state only.
 
-## 5. Pricing activation, checkout policy, and payment provider
+## 5. Public transactional commerce commissioning
 
-The application preserves a strict third-party hosted/tokenized payment-data boundary, but authoritative production prices and a production payment processor/checkout flow are not yet commissioned.
+The internal commerce foundations are implemented, but public hosted checkout remains intentionally closed. PT46 launch-phase configuration cannot bypass the underlying tax/payment/business guards.
 
-Before enabling live checkout:
+### Automated tax
 
-1. populate authoritative backend/database pricing rather than frontend/static prices;
-2. confirm MAP/list/cart-only/private-quote/no-online-sale policy per product;
-3. define tax, shipping/delivery, installation, deposit, quote-only, and inventory-reservation behavior;
-4. select the payment processor;
-5. integrate through the existing payment-provider boundary;
-6. use sandbox/test mode first;
-7. create payment sessions/intents server-side;
-8. keep raw PAN/CVV/track/PIN data entirely outside D'Acqua Dolce;
-9. authenticate and idempotently process provider webhooks;
-10. map provider payment states to internal order states;
-11. validate authorization/capture/cancel/refund/failure/retry paths;
-12. perform a controlled production acceptance only after the business approves go-live.
+PT44 provides a provider-neutral tax domain and Stripe Tax test-mode adapter. Production still requires authoritative product classifications, registration/nexus configuration, filing/remittance ownership, production credentials/funding arrangement, and live-mode validation. Do not hard-code jurisdictional tax rules locally.
 
-## Commissioned items removed from this file
+### Affinity24 / concrete gateway
 
-The following are no longer pending and belong in the commissioned production documents:
+Affinity24 is the selected processor direction, but the exact gateway provisioned for D'Acqua Dolce remains unknown. Obtain the actual gateway identity plus authoritative sandbox/API/hosted-payment/webhook/refund/void/idempotency documentation before implementing the concrete adapter. PT45 intentionally rejects guessed production adapters.
 
-- durable communications archive;
-- outbound communication archival;
-- authenticated Postmark inbound webhook;
-- real inbound-email archival/idempotency validation;
-- authenticated Operations Customer Inbox and threaded employee replies;
-- Inbox/System/Archived/All communication-history workflow;
-- public `support@dacquadolce.com` inbound routing through Cloudflare Email Routing;
-- safe plain-text URL linkification in Customer Inbox.
+### Legal/customer-policy review
 
-### PT20.1 payment/order boundary status
+The application has versioned policy governance, quote snapshots, acknowledgement evidence, return/cancellation workflows, and PT53 portability. Final customer-facing Terms, Return, Cancellation, Privacy, Warranty/Support, and Shipping/Shipping-Insurance material still requires coordinated attorney review. Application structure is not a substitute for legal approval.
 
-The approved-quote-to-order boundary is now implemented in application code: an approved formal quote can produce one authoritative `awaiting_payment` order with immutable line snapshots and an auditable source-quote link. A provider-neutral hosted-checkout orchestration seam is also present and tested without card data.
+### Shipping insurance
 
-Production payment remains pending. Before PT20.2, Affinity24 must identify the concrete gateway/account provisioned for D'Acqua Dolce (for example, one of the gateway families they publicly support or another explicitly assigned option) and provide authoritative sandbox credentials, API documentation, webhook authentication/verification rules, idempotency behavior, refund/status semantics, and permitted retained identifiers. Do not enable a customer-facing payment launch merely from Affinity24 marketing material.
+The intended business direction is optional customer add-on, unchecked by default. Keep it disabled until provider, legal, claim, refund, and manufacturer responsibilities are finalized.
 
-### PT20.2A verified-event readiness
+### Public support phone
 
-The provider-neutral verified-payment-event core is implemented. It gives the
-future gateway adapter a narrow authenticated handoff: provider event identity,
-normalized payment status, authoritative amount/currency, provider-issued
-references, and minimal payment-method display metadata. Provider events are
-idempotent and raw webhook payloads are not stored.
+The client intends to provide a dedicated business cell number before launch and may consider an 800 number later. Do not publish or invent a number until an authoritative number is supplied and approved for publication.
 
-A verified successful event may mark an `awaiting_payment` order `paid` only on
-an exact amount/currency match. Refund events are recorded without guessing
-full/partial-refund policy.
+### Installer/referral program
 
-Still required before customer-facing payment can be enabled:
+PT50 provides an internal-only installer candidate registry. There is no customer-facing recommended-installer program, and no candidate may be represented as approved, licensed, insured, vetted, partnered, or affiliated without the required business/legal process.
 
-1. the exact Affinity24-provisioned gateway/platform;
-2. authoritative sandbox and production endpoint documentation;
-3. server-side authentication/credential names;
-4. hosted checkout/session creation contract;
-5. webhook signature/authentication rules and event identifiers;
-6. provider event/status mapping, including asynchronous/out-of-order behavior;
-7. refund, void, retry, and idempotency semantics;
-8. return/cancel URL requirements;
-9. merchant/account identifiers and permitted retained fields;
-10. confirmation of enabled payment methods such as ACH.
+## 6. Launch dependency evidence registry
 
-Do not create an unauthenticated generic payment webhook merely to exercise the
-new event core. The public endpoint belongs with the concrete verified adapter.
+PT51 is commissioned as an internal evidence/work-tracking layer for Automated Tax, Payment/Affinity24, Legal Review, Shipping Insurance, Public Support Phone, and Installer Program workstreams. Evidence status is informational only. Marking an item `Evidence Verified` does not alter `DACQUA_LAUNCH_PHASE`, `commerce_checkout_allowed`, or any tax/payment/service guard.
 
+## 7. Policy portability/environment synchronization
 
-## Automated sales tax — PT44 foundation
+PT53 provides explicit policy export/import rather than database synchronization. Production PostgreSQL remains authoritative for live approved policies. Recommended periodic non-production refresh is Production `Export all` -> trusted JSON bundle -> Local/Dev/Test preview/import. Lifecycle-preserving import is non-production-only and must remain disabled in Production.
 
-**Status:** Foundation implemented; production commissioning still required.
+## 8. Current launch posture
 
-PT44 introduces a provider-neutral automated-tax domain and a Stripe Tax
-test-mode adapter. Product tax classifications require an exact provider code
-and a recorded authoritative source; no default code is inferred. Draft quotes
-and awaiting-payment orders can hold sanitized provider calculation evidence,
-and hosted checkout fails closed without current authoritative order tax
-evidence.
+`DACQUA_LAUNCH_PHASE` defaults to `prelaunch`. `soft_launch` is a validation posture and also keeps hosted checkout closed. `public_launch` opens only the launch-phase gate; all independent commerce blockers still apply.
 
-PT44 intentionally rejects live Stripe credentials. Before production checkout,
-D’Acqua Dolce still needs:
-
-- authoritative product tax-code review and completion;
-- required tax registrations/compliance setup in the tax provider;
-- live account/credential commissioning;
-- confirmation of filing/reporting operations for externally processed
-  Affinity24 payments;
-- concrete Affinity24 payment-success/refund integration so Stripe Tax
-  transactions and reversals can be committed idempotently;
-- explicit taxability rules for currently blocked adjustment types such as
-  shipping insurance, discounts, installation, and custom charges.
-
-Stripe Tax is used only as the tax engine in this design. It does not replace
-Affinity24 as the intended payment provider.
-
-## Payment provider — PT45 gateway-contract foundation
-
-**Status:** Provider-neutral commissioning boundary implemented; exact Affinity24
-gateway still required.
-
-PT45 requires every future concrete payment adapter to declare its exact gateway
-identity, sandbox/production environment, hosted/tokenized integration mode,
-authoritative contract source, and documented capabilities. Hosted checkout is
-rejected unless the adapter establishes authenticated webhooks, durable provider
-event IDs, idempotent checkout creation, and the required hosted/tokenized
-card-entry capability. Production adapters require explicit commissioning.
-
-Affinity24's public solutions page currently lists multiple gateway options
-(Authorize.Net, iPOS, FluidPay, and NMI), so the application intentionally does
-not select one based on marketing material. Obtain the gateway actually
-provisioned for D'Acqua Dolce plus its sandbox/API/webhook/refund/void contract
-before implementing the concrete adapter.
-
-PT45 also defines card-data-free provider-neutral refund and void command
-interfaces. They are not wired to public/customer/Operations actions and do not
-change refund policy or payment state. Commission those commands only after the
-provisioned gateway semantics and D'Acqua Dolce refund/cancellation workflow are
-reconciled.
-
-## PT46 commerce launch gate
-
-`DACQUA_LAUNCH_PHASE` now defaults to `prelaunch`.
-
-Use `soft_launch` only for invited/test validation while commerce checkout
-remains closed. Do not set `public_launch` until automated tax and the concrete
-Affinity24 gateway are production-commissioned and the remaining launch
-readiness blockers have been reviewed.
-
-Changing the phase does not override PT44 tax guards or PT45 payment-provider
-commissioning.
+Do not enable public transactional commerce until the relevant external commissioning work above is complete and validated.

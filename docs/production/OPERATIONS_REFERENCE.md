@@ -1,6 +1,6 @@
 # D'Acqua Dolce Production Operations Reference
 
-This is the concise operator reference for the commissioned PT18 application/host system. Application state is validated through 2026-09-29; email/DNS/vendor-routing state is reconciled through 2026-09-30. It is not a substitute for the full rebuild procedure.
+This is the concise operator reference for the current production platform through the PT53 deployment on 2026-10-06. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance remains pending as of this audit. It is not a substitute for the full rebuild procedure.
 
 ## SSH
 
@@ -326,7 +326,7 @@ Mail identity/authentication:
 Commissioned schedule/recipients:
 
 - `dacqua-observability-daily-report.timer` — enabled/active, daily 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
-- `dacqua-observability-weekly-report.timer` — enabled/active, Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
+- `dacqua-observability-weekly-report.timer` — enabled/active, Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`, `dacquadolce@proton.me`.
 
 Protected/non-secret configuration boundary:
 
@@ -723,3 +723,16 @@ The Operations page keeps current work concise while preserving history:
 - Both the inbox thread list and the selected conversation have independent vertical scrolling so communication growth does not expand the page indefinitely.
 - Failed email deliveries are identified with an explicit `Failed` badge and a dedicated Delivery Issues list. The dashboard next-action link targets that list.
 - The Operations header shows the authenticated operator identity when profile data is available, with the authenticated email as the fallback.
+
+
+## Policy authority and PT53 portability
+
+Production PostgreSQL is authoritative for live approved customer policy versions. A policy created only in Local/Dev/Test is not promoted by deployment. A policy created or approved in Production remains production data and is included in PostgreSQL backups.
+
+Operations can export either all policy versions or approved/effective versions as a PT53 JSON bundle. For periodic non-production synchronization, use the deliberate direction:
+
+    Production -> Export all -> trusted JSON bundle -> Local/Dev/Test preview -> import
+
+Default import is `draft_only`. Lifecycle-preserving import is intended only for non-production mirrors and requires `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true` in that destination. Keep that variable unset/false in Production. Imports never delete destination-only versions and never overwrite same kind/version content conflicts.
+
+Restic/S3 is not a policy synchronization channel. It is disaster recovery for production backup state once the off-host repository is commissioned.

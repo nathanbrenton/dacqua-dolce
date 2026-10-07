@@ -13,7 +13,7 @@ Use the current production documentation instead:
 - `docs/production/OPERATIONS_REFERENCE.md`
 - `docs/production/PENDING_INTEGRATIONS.md`
 
-Current validated production application checkpoint represented by the documentation set: 2026-09-29 / PT18. Email/DNS/vendor-routing and direct observability-mail state are reconciled through 2026-10-01.
+Current deployed application checkpoint: PT53 on 2026-10-06 at revision `0dfc6329a4a8e9584fba4b00cba66512438fd21b`. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance is pending. Use `docs/production/` for authoritative current state.
 
 Key changes since the original foundation planning include:
 

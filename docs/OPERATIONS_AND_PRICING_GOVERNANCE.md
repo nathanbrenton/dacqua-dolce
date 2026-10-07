@@ -370,3 +370,30 @@ This architecture does not make draft language legally sufficient and does not
 constitute legal approval. Final policy text must still be reviewed and explicitly
 approved by the business and appropriate legal counsel before production workflows
 that depend on it are commissioned.
+
+
+## PT47-PT53 operations governance
+
+### Order confirmation
+
+After Supplier Confirmed, an employee explicitly sends the customer-facing `Order Confirmed` communication. The internal lifecycle label remains Supplier Confirmed. Automatic confirmation is a future option, not current behavior.
+
+### Discontinued-product retirement
+
+A discontinued product can remain public until an explicitly configured retirement timestamp. Replacement relationships are explicit and must be deliberately public. Retirement removes the product from client-facing catalog paths without destroying internal/history records.
+
+### Formal-quote staff review
+
+Quote revisions containing an assisted-sale product require staff review/contact before presentation. Staff may also flag other unusually large/complex revisions. There is no hard-coded dollar threshold. Review completion is revision-specific and audited.
+
+### Installer candidates
+
+Installer candidate records are internal-only. Operations-authorized staff may read; Administrator/Developer may write. Candidate status does not establish approval, licensing, insurance, partnership, or customer-facing recommendation.
+
+### Launch dependency evidence
+
+PT51 records external commissioning evidence/status separately from the PT46 Commerce Launch Gate. Evidence status never opens checkout and never substitutes for the underlying tax/payment/service guards.
+
+### Policy portability
+
+Production PostgreSQL is authoritative for live approved policies. PT53 permits explicit JSON export/import for manual environment synchronization. Default import is draft-only. Lifecycle-preserving import is restricted to non-production destinations with `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true`. Imports do not delete destination-only versions or overwrite content conflicts.

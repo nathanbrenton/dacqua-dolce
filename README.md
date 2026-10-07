@@ -29,7 +29,7 @@ D'Acqua Dolce is a mobile-first water-filtration commerce and customer-lifecycle
 - Postmark HTTPS API commissioned for application transactional/customer mail
 - Cloudflare Email Routing commissioned for public `support@dacquadolce.com` inbound mail
 - PostgreSQL communications archive + Operations Customer Inbox commissioned
-- observability report email delivery/timers still pending
+- direct Postfix/OpenDKIM observability mail commissioned with daily/weekly timers; Better Stack successful-delivery heartbeat integration remains pending
 
 Authoritative production documentation:
 
@@ -37,27 +37,40 @@ Authoritative production documentation:
 
 ## Current production application state
 
-The public production application includes:
+Production is deployed at `https://dacquadolce.com`. The current deployed source revision is `0dfc6329a4a8e9584fba4b00cba66512438fd21b` in release `/srv/dacqua-dolce/releases/20261006T175805Z`. PT52 and PT53 deployment smoke validation passed; their final production browser-acceptance checkpoint is still pending as of this documentation audit.
 
-- canonical public origin `https://dacquadolce.com`;
+The production application includes:
+
 - six canonical water-filtration products bootstrapped from repo-managed catalog data;
-- customer registration, login, sessions, password reset, and explicit email verification;
-- privileged MFA;
-- customer profile and address management;
-- customer account Appearance controls with visual-theme and light/dark preferences;
-- quote, cart, order, pricing-policy, and inventory foundations;
-- Operations console for staff workflows;
-- web administration of `employee` and `administrator`; `manager` is legacy/deprecated and cannot be newly assigned;
-- CLI-only provisioning/replacement of the `developer` role;
-- audit events, email-delivery metadata, and a durable PostgreSQL communications archive;
-- Operations Customer Inbox with Inbox/System/Archived/All views and threaded employee replies;
-- Postmark-backed outbound mail plus Cloudflare Email Routing for the public support address.
+- customer registration, login, sessions, password reset, explicit email verification, and privileged MFA;
+- customer profile/address management and appearance controls;
+- quote, cart, order, pricing, inventory, return/cancellation, and assisted-sales governance;
+- employee-controlled `Order Confirmed` communication after Supplier Confirmed;
+- discontinued-product public retirement and explicit replacement recommendations;
+- formal-quote staff review for assisted-sale products plus manual large/complex review flags;
+- internal-only installer candidate registry;
+- provider-neutral automated-tax and payment commissioning foundations, with live checkout still closed;
+- PT46 launch-phase / Commerce Launch Gate and PT51 external-dependency evidence registry;
+- Operations console, Customer Inbox, Accounts & Address Book, User Access & Roles, and Audit Log;
+- GUI staff roles `employee` and `administrator`; `manager` is legacy-only and `developer` remains out-of-band;
+- durable audit, email-delivery, and PostgreSQL communications evidence;
+- PT52 keyboard/mobile/accessibility hardening;
+- PT53 policy export/import portability for deliberate Production -> Local/Dev/Test synchronization without database cloning.
 
 The authoritative production catalog baseline is under:
 
     backend/catalog/
 
-Operational state such as price history, inventory quantities, approved claims, and jurisdiction rules is deliberately not reset from the catalog manifest during deployment.
+Operational state such as price history, inventory quantities, approved claims, policies, orders, accounts, and jurisdiction/tax evidence is deliberately not reset from the catalog manifest during deployment.
+
+## Authority model
+
+- Git is authoritative for application code, schema, deployment assets, and repository-managed catalog source.
+- Production PostgreSQL is authoritative for live business/operational state, including approved customer policy versions.
+- PT53 policy bundles are manual transport artifacts, not a second source of truth.
+- AWS S3/Restic, once commissioned, is a disaster-recovery destination rather than an environment synchronization mechanism.
+
+See `docs/PT53_POLICY_PORTABILITY_ENVIRONMENT_SYNC.md` for the safe policy portability workflow.
 
 ## Development policy
 

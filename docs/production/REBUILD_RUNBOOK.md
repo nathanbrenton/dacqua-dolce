@@ -2,7 +2,7 @@
 
 ## Status and scope
 
-This is the authoritative PT18 application/host rebuild baseline for `dacqua-platform-prod-01`. Application state is validated through 2026-09-29; email/DNS/vendor-routing state is reconciled through 2026-09-30.
+This is the authoritative rebuild baseline for the current D'Acqua Dolce production architecture. Application state is reconciled through the PT53 deployment on 2026-10-06; PT47-PT51 browser acceptance is complete, while PT52/PT53 final production browser acceptance remains pending at this audit checkpoint.
 
 It documents the clean validated production architecture and the repository-supported rebuild path. It does
 not record commissioning mistakes, failed experiments, or transient troubleshooting.
@@ -727,7 +727,7 @@ Then enable:
 Canonical schedules:
 
 - daily — 09:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`;
-- weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`.
+- weekly — Saturday 11:00 `America/Los_Angeles` -> `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`, `dacquadolce@proton.me`.
 
 Better Stack successful-delivery heartbeat submission remains a separate commissioning step. Do not submit a success heartbeat merely because the report rendered.
 
@@ -994,3 +994,10 @@ The release pointed to by `/srv/dacqua-dolce/current` should be owned by
 `root:root`, and `dacqua-app` must not be able to write to the release tree.
 Application state that requires persistence belongs under explicitly managed
 shared/state paths rather than inside a timestamped release.
+
+
+## Policy-state recovery and non-production synchronization
+
+Approved customer policy versions are production PostgreSQL data. They are recovered with the production database, not reconstructed from Git or `production_catalog.json`. PT53 JSON export/import is for deliberate portability and test-environment synchronization, not for replacing database restore during disaster recovery.
+
+For Local/Dev/Test refreshes, export all policy versions from Production and import after preview. Lifecycle-preserving import requires `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true` only in the non-production destination. Keep that setting disabled in Production.

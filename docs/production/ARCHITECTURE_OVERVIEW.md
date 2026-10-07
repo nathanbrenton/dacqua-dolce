@@ -10,7 +10,7 @@ The canonical public origin is:
 
 The `www` hostname is an alias and redirects permanently to the canonical bare domain.
 
-Application/host state reflects the validated PT18 production baseline through 2026-09-29; email/DNS/vendor-routing state is reconciled through 2026-09-30.
+Application/host state is reconciled through the PT53 deployment on 2026-10-06. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and their final production browser-acceptance checkpoint remains pending as of this audit.
 
 ## 2. Production host
 
@@ -303,7 +303,7 @@ Direct observability-mail delivery is commissioned as of 2026-10-01. Vultr outbo
 Commissioned schedule:
 
 - daily — `dacqua-observability-daily-report.timer`, 09:00 `America/Los_Angeles` to `nathan@nathanbrenton.com`;
-- weekly — `dacqua-observability-weekly-report.timer`, Saturday 11:00 `America/Los_Angeles` to `nathan@nathanbrenton.com` and `jamie.dacqua.dolce@gmail.com`.
+- weekly — `dacqua-observability-weekly-report.timer`, Saturday 11:00 `America/Los_Angeles` to `nathan@nathanbrenton.com`, `jamie.dacqua.dolce@gmail.com`, and `dacquadolce@proton.me`.
 
 The monitoring transport is:
 
@@ -466,7 +466,19 @@ The application Postmark path remains separate from `/usr/local/sbin/dacqua-obse
 
 The wrapper is `/usr/local/sbin/dacqua-observability-send-report`. Daily and weekly systemd timers are enabled and active at the documented PT schedules. Better Stack report-delivery heartbeat submission remains uncommissioned until it is explicitly connected to successful delivery.
 
-## 13. Production boundaries at PT18
+## 12.1 Current application/commerce and policy authority
+
+Production now includes the PT36-PT53 application governance layers: versioned return policies and exceptions; safe account retirement; pricing promotions; inventory lifecycle; Supplier Confirmed order lifecycle; back-in-stock notifications; manufacturer-claim provenance and warranty support; automated-tax and payment-provider commissioning foundations; explicit launch phases and Commerce Launch Gate; employee-controlled Order Confirmed mail; discontinued-product retirement/replacements; formal-quote staff review; internal installer candidates; launch-dependency evidence tracking; accessibility hardening; and policy portability.
+
+The data authority model is intentionally split:
+
+- Git is authoritative for code, schema/migrations, deployment assets, and the canonical catalog source.
+- Production PostgreSQL is authoritative for live accounts, orders, communications, pricing/inventory state, evidence records, and approved customer policies.
+- PT53 policy bundles are explicit transport artifacts. They do not replace Production PostgreSQL as the live source of truth.
+- A recommended non-production refresh is Production `Export all` -> trusted JSON bundle -> Local/Dev/Test import preview -> lifecycle-preserving import only where `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true`. Do not enable that flag in Production.
+- AWS S3/Restic, once commissioned, is a disaster-recovery copy of production backup state, not a Local/Dev/Test synchronization source.
+
+## 13. Production boundaries at the PT53 deployment
 
 Commissioned:
 
@@ -487,7 +499,18 @@ Commissioned:
 - repo-managed Grafana dashboards;
 - Better Stack public monitors;
 - local PostgreSQL backup and real restore validation;
-- restic client-side encryption preparation.
+- restic client-side encryption preparation;
+- PT46 Commerce Launch Gate and PT51 external dependency evidence registry;
+- PT47 employee-controlled `Order Confirmed` communication;
+- PT48 discontinued-product retirement/replacement workflow;
+- PT49 formal-quote staff-review gate;
+- PT50 internal-only installer candidate registry;
+- PT53 policy export/import portability.
+
+Deployed with smoke validation and awaiting the final recorded production browser-acceptance checkpoint:
+
+- PT52 accessibility/keyboard/mobile hardening;
+- PT53 policy portability UI/flow.
 
 Not yet commissioned:
 
@@ -495,7 +518,13 @@ Not yet commissioned:
 - Better Stack report-delivery heartbeat submission (direct report email/timers are already commissioned);
 - explicit communications retention/purge policy, including attachment and backup lifecycle;
 - remaining observability service systemd hardening beyond the already hardened FastAPI service;
-- payment-provider checkout;
+- live automated-tax production commissioning;
+- exact Affinity24 gateway discovery and concrete production payment adapter/checkout;
+- coordinated attorney review of customer-facing legal policies;
+- shipping-insurance provider/legal/claims commissioning;
+- public support phone publication after the authoritative number is supplied;
+- customer-facing installer/referral program pending legal review;
+- public transactional launch.
 
 ### FastAPI systemd sandbox
 

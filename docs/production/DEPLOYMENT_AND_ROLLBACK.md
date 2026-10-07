@@ -18,12 +18,7 @@ Production configuration remains external to releases:
 
 The FastAPI service receives only `backend.env`. The root-only `migration.env` is consumed by the deployment helper for Alembic and deployment-time catalog reconciliation and is not part of the runtime service environment.
 
-PT35 sales-geography commissioning uses non-secret values in `backend.env`. The
-approved initial launch policy is `US` with the 48 contiguous states plus
-Washington, DC. Before commissioning PT35, any explicit `DACQUA_SALES_AREA_*`
-values in production must match `docs/PT35_SALES_GEOGRAPHY_ACTIVATION.md`; the
-Operations readiness snapshot reports `Action required` if the enabled runtime
-configuration drifts from that approved set.
+PT35 sales-geography commissioning uses non-secret values in `backend.env`. The approved launch geography is `US` with the 48 contiguous states plus Washington, DC. Any explicit `DACQUA_SALES_AREA_*` values in production must continue to match `docs/PT35_SALES_GEOGRAPHY_ACTIVATION.md`; the Operations readiness snapshot reports `Action required` if runtime configuration drifts from that approved set.
 
 ## Release invariants
 

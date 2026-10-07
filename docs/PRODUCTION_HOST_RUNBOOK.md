@@ -26,6 +26,6 @@ The server hostname remains `dacqua-platform-prod-01`. Workstation SSH
 configuration may use the convenience alias `dacqua-prod`; the alias is not a
 server hostname or application configuration value.
 
-Current application checkpoint: PT18. Email/DNS/vendor-routing documentation is validated through 2026-09-30.
+Current deployed application checkpoint: PT53 on 2026-10-06 at revision `0dfc6329a4a8e9584fba4b00cba66512438fd21b`. PT47-PT51 production browser acceptance is complete; PT52/PT53 deployment smoke validation passed and final browser acceptance is pending. Use `docs/production/` for authoritative current state.
 
 Do not use superseded bootstrap instructions as production commands.

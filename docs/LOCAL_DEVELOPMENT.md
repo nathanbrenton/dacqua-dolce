@@ -131,3 +131,16 @@ After a rebuild:
 
 Canonical dev/test identities use `@dacquadolce.test`; production identities
 are never populated from that fixture set.
+
+
+## PT53 policy portability in Local/Dev/Test
+
+Policy data is environment-local PostgreSQL state. Application deployment does not copy policy rows between environments. Production PostgreSQL is authoritative for live approved policy versions.
+
+For a deliberate non-production mirror of Production policy lifecycle state, set this only in the Local/Dev/Test backend runtime:
+
+    DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true
+
+Then use Operations Policy Management to load a Production `Export all` bundle, preview it, resolve conflicts, and apply the lifecycle-preserving import. Repeating the same import should be idempotent.
+
+Do **not** enable lifecycle-preserving import in Production. Production imports should use the default safe draft-only behavior, and Production should never be treated as a passive mirror of Local/Dev/Test.

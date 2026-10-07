@@ -1,7 +1,7 @@
 # Client Notes Implementation Matrix
 
-Status: PT15.5 baseline
-Date: 2026-09-27
+Status: living requirements / implementation matrix through PT53
+Current reconciliation: 2026-10-06
 
 This matrix is the durable boundary between client-supported requirements and implementation assumptions. New explicit client answers supersede older interpretations. Items marked **Needs Client Confirmation** or **Needs Manufacturer/Technical Verification** must not be converted into public claims or irreversible workflow decisions without new evidence.
 
@@ -13,10 +13,10 @@ This matrix is the durable boundary between client-supported requirements and im
 | CAM terminology | Implemented | Crystal Aggregate Matrix is approved customer-facing terminology. |
 | Customer Requests | Implemented | Active, Closed, All; persisted status changes and private internal notes; no inferred account relationship. |
 | Accounts & Address Book | Implemented | Persisted customer identity/contact/address/order-count information. |
-| Customer Inbox | Implemented | Inbox, System, Archived, All; structured system-message classification; PostgreSQL remains authoritative. |
+| Customer Inbox | Implemented | Inbox, Archived, All; delivery/system issues remain separately discoverable; PostgreSQL remains authoritative. |
 | Welcome email | Implemented | One restrained post-verification welcome message with duplicate-send protection. |
 | Pricing & Inventory | Implemented / Actionable Now | Backend-authoritative pricing and inventory exist. PT15.1 improves operational clarity without manufacturing prices or sale eligibility. |
-| User Access & Roles | Implemented / Actionable Now | Persisted roles, MFA posture and privileged role management exist. Developer role remains local-only. |
+| User Access & Roles | Implemented / Actionable Now | Persisted roles, MFA posture and privileged role management exist. Developer is protected/out-of-band and cannot be assigned/revoked through the web GUI. |
 | Audit Log | Implemented / Actionable Now | Privileged recent-event history exists. PT15.1 adds human-readable labels, actor email when retained user identity is available, and action/entity filtering while continuing to exclude sensitive metadata, IP addresses and user agents. |
 | Recommend a System positioning | Implemented | Hero CTA enters the concise Recommend a System section. The detailed questionnaire is secondary guided assistance revealed only on request. Section language begins with `Start with your water treatment goals.` and avoids assuming homeownership or customer inexperience. |
 | Recommendation-to-request language continuity | Implemented | Quote, guided-recommendation, and general-consultation prompts ask about water goals, water-use needs, source water, and installation constraints without assuming a home/household or first-time buyer. |
@@ -439,3 +439,20 @@ taxability remain follow-up commissioning work.
   independent checkout guards.
 - PT46 does not invent an invite-list system; any future invite-only access
   control is separate from the commerce phase gate.
+
+
+## PT47-PT53 reconciliation
+
+| Client / operating direction | Current classification | Implementation |
+| --- | --- | --- |
+| Initial Supplier Confirmed customer communication is employee-controlled | Implemented / production accepted | PT47 adds explicit staff `Order Confirmed` send after Supplier Confirmed; successful delivery is one-time, failed/suppressed attempts can be retried, and communication/audit evidence is preserved. |
+| Discontinued products remain public temporarily, can recommend replacements, then leave client-facing listings | Implemented / production accepted | PT48 adds configurable public-retirement timestamp and explicit public Replacement relationships without destructive product deletion. |
+| Whole-house/assisted-sale quotes require staff contact/review; unusual large/complex quotes may be flagged manually | Implemented / production accepted | PT49 adds revision-specific review evidence and blocks presentation until required review is completed; no dollar threshold is invented. |
+| Installer candidates may be researched internally before public program/legal approval | Implemented / production accepted | PT50 adds internal-only candidate records with conservative status lifecycle. No public recommendation/approval/licensing/partnership claim exists. |
+| External launch blockers need explicit internal evidence/status tracking | Implemented / production accepted | PT51 tracks tax, payment/Affinity24, legal, shipping insurance, public phone, and installer-program evidence without altering the Commerce Launch Gate. |
+| Accessibility/mobile hardening | Deployed; final production browser acceptance pending | PT52 adds skip navigation, SPA focus management, modal/Inbox focus continuity, restored mobile nav links, focus rings, and coarse-pointer touch targets. |
+| Production policies should be portable to Local/Dev/Test without cloning customer data | Deployed; final production browser acceptance pending | PT53 adds Export All / approved-effective export, preview-before-import, idempotent add/skip/conflict handling, safe draft-only default import, and explicit non-production lifecycle-preserving mirror mode. Production PostgreSQL remains authoritative. |
+
+### Current delegated/default soft-launch direction
+
+No new invite/access-control subsystem is planned yet. Keep the existing PT46 launch controls, permit normal site/account validation, and use soft launch to test everything except real transactional payment/checkout. Revisit invite controls only if an actual access problem appears.

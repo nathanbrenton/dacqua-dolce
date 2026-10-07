@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the technical source of truth for D'Acqua Dolce email/DNS routing, human business mail, application transactional/customer correspondence, and the still-pending infrastructure-monitoring mail boundary.
+This document is the technical source of truth for D'Acqua Dolce email/DNS routing, human business mail, application transactional/customer correspondence, and the commissioned direct infrastructure-monitoring mail boundary. Better Stack successful-delivery heartbeat integration remains separate/pending.
 
 It describes the validated final implementation only. It intentionally omits transient troubleshooting, failed commands, incorrect diagnostics, temporary test assumptions, and superseded implementation paths.
 
