@@ -13,6 +13,7 @@ type SupportRequestFormProps = {
   productId?: string | null;
   productName?: string | null;
   defaultKind?: SupportRequestKind;
+  onNavigate?: (path: string) => void;
 };
 
 export function SupportRequestForm({
@@ -20,6 +21,7 @@ export function SupportRequestForm({
   productId = null,
   productName = null,
   defaultKind = "general_support",
+  onNavigate,
 }: SupportRequestFormProps) {
   const [kind, setKind] = useState<SupportRequestKind>(defaultKind);
   const [name, setName] = useState("");
@@ -32,6 +34,8 @@ export function SupportRequestForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [receiptId, setReceiptId] = useState<string | null>(null);
+  const [toastVisible, setToastVisible] = useState(false);
 
   useEffect(() => {
     setEmail(account?.email ?? "");
@@ -57,7 +61,9 @@ export function SupportRequestForm({
         message,
         website: website || null,
       }, turnstileToken ?? undefined);
-      setNotice(`${result.message} Reference: ${result.id}`);
+      setNotice(result.message);
+      setReceiptId(result.id);
+      setToastVisible(true);
       setMessage("");
       setWebsite("");
     } catch (caught) {
@@ -158,11 +164,35 @@ export function SupportRequestForm({
       <TurnstileChallenge action="support" onToken={setTurnstileToken} resetKey={turnstileResetKey} />
 
       {error !== null ? <p className="support-request-error" role="alert">{error}</p> : null}
-      {notice !== null ? <p className="support-request-notice" role="status">{notice}</p> : null}
+      {notice !== null ? (
+        <div className="support-request-confirmation" role="status">
+          <h3>Support request received</h3>
+          <p>{notice}</p>
+          <p>Reference: <strong>{receiptId}</strong></p>
+          <a
+            className="primary-button support-request-home-link"
+            href="/"
+            onClick={(event) => {
+              if (onNavigate) {
+                event.preventDefault();
+                onNavigate("/");
+              }
+            }}
+          >
+            Return to homepage
+          </a>
+        </div>
+      ) : null}
 
-      <button type="submit" className="primary-button" disabled={busy}>
+      {notice === null ? <button type="submit" className="primary-button" disabled={busy}>
         {busy ? "Sending…" : "Send support request"}
-      </button>
+      </button> : null}
+      {toastVisible ? (
+        <div className="support-success-toast" role="status" aria-live="polite">
+          <span>✓ Support request received</span>
+          <button type="button" aria-label="Dismiss notification" onClick={() => setToastVisible(false)}>×</button>
+        </div>
+      ) : null}
     </form>
   );
 }

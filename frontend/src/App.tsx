@@ -680,10 +680,21 @@ export function App() {
       />
 
       {path === "/support" ? (
-        <SupportPage
-          account={account}
-          onNavigate={navigate}
-        />
+        <div className="support-page-route">
+          <SupportPage
+            account={account}
+            onNavigate={navigate}
+          />
+          <CustomerSiteFooter
+            logoVariant={logoVariant}
+            controlsOpen={developerControlsOpen}
+            onToggleControls={() => {
+              setDeveloperControlsOpen((current) => !current);
+            }}
+            backendState={backendState}
+            onNavigate={navigate}
+          />
+        </div>
       ) : path === "/privacy" ? (
         <PolicyStatusPage
           kind="privacy"

@@ -6878,3 +6878,55 @@ summary {
     transition: none;
   }
 }
+
+/* PT32 follow-up: Support form fields use semantic theme tokens, never warning tones. */
+.support-request-form input:not([type="hidden"]),
+.support-request-form select,
+.support-request-form textarea {
+  color: var(--field-text);
+  background-color: var(--field-surface);
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-field);
+  padding: 11px 13px;
+}
+.support-request-form input:focus-visible,
+.support-request-form select:focus-visible,
+.support-request-form textarea:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.support-page-route { min-height: 100vh; background: var(--surface-0); }
+.support-page-route > .site-footer { margin: 0 var(--shell-padding); }
+.support-page-route .support-page-shell { min-height: auto; }
+.support-request-confirmation {
+  padding: 24px;
+  border: 1px solid var(--field-border);
+  border-radius: 16px;
+  background: var(--surface-2);
+  overflow-wrap: anywhere;
+}
+.support-request-confirmation h3 { margin: 0 0 8px; }
+.support-request-confirmation p { margin: 10px 0; }
+.support-request-home-link { display: inline-flex; margin-top: 12px; text-decoration: none; }
+.support-success-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 14px 18px;
+  border: 1px solid var(--field-border);
+  border-radius: 14px;
+  background: var(--surface-elevated);
+  color: var(--ink);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 22%);
+}
+.support-success-toast button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.3rem;
+}
