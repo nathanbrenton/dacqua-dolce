@@ -1,8 +1,8 @@
 # PT33-A — Reusable Business Provisioning Specification v2
 
-**State:** Draft specification for review; no infrastructure or application change.  
-**Source revision:** `50dab782dd3ec4309ee970ddc31977877afcfead`.  
-**Source Git status:** `## main...origin/main`.  
+**State:** Draft specification for review; no infrastructure or application change.
+**Source revision:** `50dab782dd3ec4309ee970ddc31977877afcfead`.
+**Source Git status:** `## main...origin/main`.
 **Evidence:** `dacqua-pt33a-current-context.zip`, selected tracked Git files; not a complete application review or host inspection.
 
 ## Mission and workflow separation
