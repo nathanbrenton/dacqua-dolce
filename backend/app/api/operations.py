@@ -1,9 +1,11 @@
+import json
 import uuid
 from datetime import UTC, datetime
 from math import isfinite
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, status
+from pydantic import BaseModel, Field
 from sqlalchemy import String, cast, func, not_, or_, select
 from sqlalchemy.orm import selectinload
 
@@ -13,6 +15,7 @@ from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
 from app.models.catalog import (
     Product,
+    ProductFamilyOrder,
     ProductDocumentType,
     ProductInventory,
     ProductPrice,
@@ -138,6 +141,7 @@ from app.services.cancellations import (
     review_order_cancellation,
 )
 from app.services.catalog_publication import product_is_publicly_visible
+from app.services.product_family_order import available_families, complete_order, stored_order
 from app.services.commerce import (
     active_reserved_quantity,
 )
@@ -3663,6 +3667,61 @@ def list_stock_notifications(
         )
         for subscription, product in rows
     ]
+
+
+class FamilyOrderRead(BaseModel):
+    families: list[str]
+    revision: int
+
+
+class FamilyOrderWrite(BaseModel):
+    families: list[str] = Field(min_length=1, max_length=200)
+    revision: int = Field(ge=1)
+
+
+@router.get("/catalog/family-order", response_model=FamilyOrderRead)
+def read_family_order(db: DatabaseSession, current_user: CurrentUser) -> FamilyOrderRead:
+    require_operations(db, user=current_user)
+    row = db.get(ProductFamilyOrder, 1)
+    products = db.scalars(select(Product)).all()
+    names = available_families(products)
+    return FamilyOrderRead(
+        families=complete_order(names, stored_order(row.families_json if row else None)),
+        revision=row.revision if row else 1,
+    )
+
+
+@router.put("/catalog/family-order", response_model=FamilyOrderRead)
+def save_family_order(
+    payload: FamilyOrderWrite,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> FamilyOrderRead:
+    require_pricing_inventory_write(db, user=current_user)
+    row = db.scalar(select(ProductFamilyOrder).where(ProductFamilyOrder.id == 1).with_for_update())
+    if row is None:
+        raise HTTPException(status_code=409, detail="Family order has not been initialized. Apply migrations.")
+    names = available_families(db.scalars(select(Product)).all())
+    if len(payload.families) != len(set(payload.families)) or set(payload.families) != set(names):
+        raise HTTPException(status_code=422, detail="Submit every current product family exactly once. Reload to include catalog changes.")
+    if payload.revision != row.revision:
+        raise HTTPException(status_code=409, detail="The display order changed. Reload before saving.")
+    old_order = complete_order(names, stored_order(row.families_json))
+    if old_order == payload.families:
+        return FamilyOrderRead(families=old_order, revision=row.revision)
+    row.families_json = json.dumps(payload.families)
+    row.revision += 1
+    db.flush()
+    record_audit_event(
+        db,
+        action="catalog.family_order_changed",
+        entity_type="product_family_order",
+        entity_id="1",
+        actor_user_id=current_user.id,
+        metadata={"previous_order": old_order, "new_order": payload.families, "revision": row.revision},
+    )
+    db.commit()
+    return FamilyOrderRead(families=payload.families, revision=row.revision)
 
 
 @router.get("/catalog", response_model=list[OperationsProductRead])

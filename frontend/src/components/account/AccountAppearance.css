@@ -39,25 +39,7 @@
   margin: 0;
 }
 
-.account-toast {
-  position: fixed;
-  z-index: 1100;
-  left: 50%;
-  bottom: max(20px, env(safe-area-inset-bottom));
-  width: max-content;
-  max-width: min(32rem, calc(100vw - 32px));
-  padding: 12px 18px;
-  color: var(--action-text);
-  background: var(--action);
-  border: 1px solid var(--action);
-  border-radius: var(--radius-button);
-  box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
-  font-size: 0.86rem;
-  font-weight: 700;
-  line-height: 1.4;
-  text-align: center;
-  transform: translateX(-50%);
-}
+
 
 .account-shell[data-appearance="light"] {
   color-scheme: light;

@@ -289,3 +289,7 @@ The protected backend runtime env, host-local public site-key file, cloud
 provider configuration and production database all remain necessary rebuild
 inputs alongside the exact Git revision. No automatic production/local database
 sync is implied.
+
+## Product display ordering migration (pending deployment)
+
+See `PRODUCT_ORDERING_AND_TOASTS.md` before deploying revision `c1e4f9b73a62`. This adds mutable merchandising state to PostgreSQL. Database backup before migration is required by the canonical procedure. Application release rollback does not reverse schema migration; explicit Alembic downgrade drops saved family ordering data and is not an ordinary rollback procedure.

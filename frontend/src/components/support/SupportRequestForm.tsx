@@ -6,6 +6,7 @@ import {
   type SupportRequestKind,
 } from "../../api/support";
 import { UsPhoneInput } from "../forms/UsPhoneInput";
+import { useToast } from "../toast/ToastProvider";
 import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChallenge";
 
 type SupportRequestFormProps = {
@@ -35,7 +36,7 @@ export function SupportRequestForm({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
-  const [toastVisible, setToastVisible] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     setEmail(account?.email ?? "");
@@ -63,7 +64,7 @@ export function SupportRequestForm({
       }, turnstileToken ?? undefined);
       setNotice(result.message);
       setReceiptId(result.id);
-      setToastVisible(true);
+      toast.success("Support request received");
       setMessage("");
       setWebsite("");
     } catch (caught) {
@@ -187,12 +188,7 @@ export function SupportRequestForm({
       {notice === null ? <button type="submit" className="primary-button" disabled={busy}>
         {busy ? "Sending…" : "Send support request"}
       </button> : null}
-      {toastVisible ? (
-        <div className="support-success-toast" role="status" aria-live="polite">
-          <span>✓ Support request received</span>
-          <button type="button" aria-label="Dismiss notification" onClick={() => setToastVisible(false)}>×</button>
-        </div>
-      ) : null}
+
     </form>
   );
 }

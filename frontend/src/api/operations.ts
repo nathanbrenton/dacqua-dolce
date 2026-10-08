@@ -1315,3 +1315,13 @@ export function updateCustomerEquipment(
     payload,
   );
 }
+
+export type ProductFamilyOrder = { families: string[]; revision: number };
+
+export function getProductFamilyOrder(): Promise<ProductFamilyOrder> {
+  return getJson("/api/operations/catalog/family-order");
+}
+
+export function saveProductFamilyOrder(payload: ProductFamilyOrder): Promise<ProductFamilyOrder> {
+  return writeJson("/api/operations/catalog/family-order", "PUT", payload);
+}

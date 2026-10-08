@@ -12,6 +12,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
+import { ToastProvider } from "./components/toast/ToastProvider";
 import "./theme/tokens.css";
 import "./styles.css";
 
@@ -23,6 +24,6 @@ if (rootElement === null) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <ToastProvider><App /></ToastProvider>
   </StrictMode>,
 );

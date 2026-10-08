@@ -170,6 +170,14 @@ class ProductCategory(Base):
     products: Mapped[list[Product]] = relationship(back_populates="category")
 
 
+class ProductFamilyOrder(Base):
+    """Editable storefront family order; singleton version serializes admin changes."""
+    __tablename__ = "product_family_order"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    families_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class Product(Base):
     __tablename__ = "products"
     __table_args__ = (

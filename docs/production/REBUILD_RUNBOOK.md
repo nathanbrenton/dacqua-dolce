@@ -1147,3 +1147,7 @@ The protected backend runtime env, host-local public site-key file, cloud
 provider configuration and production database all remain necessary rebuild
 inputs alongside the exact Git revision. No automatic production/local database
 sync is implied.
+
+## Product display order during restore/rebuild (pending deployment)
+
+See `PRODUCT_ORDERING_AND_TOASTS.md`. A fresh database migration seeds Refine, Essence, Origin, Harmony; a full PostgreSQL restore preserves the business's saved mutable ordering. Treat the latter as authoritative and verify it after restoration, rather than replaying seed defaults over restored data. This feature is not described as commissioned until production deployment acceptance.

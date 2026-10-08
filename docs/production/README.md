@@ -52,3 +52,7 @@ The older top-level `docs/PRODUCTION_*.md` files remain compatibility pointers a
 ## Grafana production dashboards
 
 The repo-managed Grafana dashboard set, provisioning layout, installation procedure, access method, and validation commands are documented in `GRAFANA_DASHBOARDS.md`.
+
+## Product ordering and shared toast milestone (pending production)
+
+See `PRODUCT_ORDERING_AND_TOASTS.md` for the local-first database ordering change, migration `c1e4f9b73a62`, staff/public acceptance, toast integration, deferred styling and schema-aware rollback. This milestone is not marked production-commissioned until actual deployment acceptance.

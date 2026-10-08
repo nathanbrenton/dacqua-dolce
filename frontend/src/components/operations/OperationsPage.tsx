@@ -71,6 +71,8 @@ import {
 import {
   FooterCopyright,
 } from "../brand/FooterCopyright";
+import { ProductFamilyOrderPanel } from "./ProductFamilyOrderPanel";
+
 import {
   CommunicationsInbox,
 } from "./CommunicationsInbox";
@@ -318,6 +320,7 @@ const AUDIT_ACTION_LABELS: Record<string, string> = {
   "authentication.session_revoked": "Session revoked",
   "cart.item_added": "Cart item added",
   "cart.item_removed": "Cart item removed",
+  "catalog.family_order_changed": "Product display order changed",
   "catalog.inventory_changed": "Inventory changed",
   "catalog.pricing_changed": "Pricing policy changed",
   "catalog.relationship_created": "Product relationship created",
@@ -350,6 +353,7 @@ const AUDIT_ENTITY_LABELS: Record<string, string> = {
   customer_profile: "Customer profile",
   order: "Order",
   product: "Product",
+  product_family_order: "Product display order",
   product_relationship: "Product relationship",
   quote_request: "Customer request",
   formal_quote: "Formal quote",
@@ -3521,6 +3525,8 @@ export function OperationsPage({
             rather than a workaround.
           </p>
         </div>
+
+        <ProductFamilyOrderPanel />
 
         <section
           className="operations-availability-demand"

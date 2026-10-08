@@ -17,6 +17,7 @@ from app.models.catalog import (
     ApprovedProductClaim,
     PricingPolicyMode,
     Product,
+    ProductFamilyOrder,
     ProductDocument,
     ProductInventory,
     ProductLifecycleStatus,
@@ -49,6 +50,7 @@ from app.schemas.catalog import (
 from app.schemas.sales_area import SalesAreaRead
 from app.services.audit import record_audit_event
 from app.services.catalog_publication import product_is_publicly_visible
+from app.services.product_family_order import complete_order, available_families, sort_products, stored_order
 from app.services.commerce import active_reserved_quantity
 from app.services.pricing import (
     resolve_pricing,
@@ -410,6 +412,10 @@ def list_public_products(
             .where(Product.active.is_(True))
             .order_by(Product.name)
         ).all()
+
+        stored = db.get(ProductFamilyOrder, 1)
+        families = complete_order(available_families(products), stored_order(stored.families_json if stored else None))
+        products = sort_products(products, families)
 
         result: list[CatalogProductRead] = []
 

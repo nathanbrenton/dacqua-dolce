@@ -778,3 +778,7 @@ Operations can export either all policy versions or approved/effective versions 
 Default import is `draft_only`. Lifecycle-preserving import is intended only for non-production mirrors and requires `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true` in that destination. Keep that variable unset/false in Production. Imports never delete destination-only versions and never overwrite same kind/version content conflicts.
 
 Restic/S3 is not a policy synchronization channel. It is disaster recovery for production backup state once the off-host repository is commissioned.
+
+## Product family display order (pending production acceptance)
+
+See `PRODUCT_ORDERING_AND_TOASTS.md` for Admin/Developer merchandising controls, refresh/save/reset semantics, audit trail, stale revision handling, and database persistence. The new ordering feature remains pending production validation; do not assume it is available on the currently deployed release.

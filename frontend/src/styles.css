@@ -6908,25 +6908,3 @@ summary {
 .support-request-confirmation h3 { margin: 0 0 8px; }
 .support-request-confirmation p { margin: 10px 0; }
 .support-request-home-link { display: inline-flex; margin-top: 12px; text-decoration: none; }
-.support-success-toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  max-width: min(420px, calc(100vw - 40px));
-  padding: 14px 18px;
-  border: 1px solid var(--field-border);
-  border-radius: 14px;
-  background: var(--surface-elevated);
-  color: var(--ink);
-  box-shadow: 0 12px 36px rgb(0 0 0 / 22%);
-}
-.support-success-toast button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font-size: 1.3rem;
-}

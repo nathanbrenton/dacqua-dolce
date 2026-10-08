@@ -6,6 +6,7 @@ import {
 } from "react";
 
 import "./AccountAppearance.css";
+import { useToast } from "../toast/ToastProvider";
 
 import {
   createAddress,
@@ -585,22 +586,12 @@ export function AccountPage({
   const addressSectionRef =
     useRef<HTMLElement | null>(null);
 
+  const toast = useToast();
   useEffect(() => {
-    if (saveNotice === null) {
-      return;
+    if (saveNotice !== null) {
+      toast.success(saveNotice);
     }
-
-    const timeout = window.setTimeout(
-      () => {
-        setSaveNotice(null);
-      },
-      3500,
-    );
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [saveNotice]);
+  }, [saveNotice, toast]);
 
   useEffect(() => {
     if (
@@ -1070,15 +1061,7 @@ export function AccountPage({
         </p>
       ) : null}
 
-      {saveNotice !== null ? (
-        <div
-          className="account-toast"
-          role="status"
-          aria-live="polite"
-        >
-          {saveNotice}
-        </div>
-      ) : null}
+
 
       <div className="account-grid">
         <SecurityPanel

@@ -8,6 +8,7 @@ from app.models.catalog import (
     PricingPolicyMode,
     Product,
     ProductCategory,
+    ProductFamilyOrder,
     ProductDocument,
     ProductDocumentType,
     ProductImage,
