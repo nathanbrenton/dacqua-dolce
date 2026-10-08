@@ -1113,3 +1113,35 @@ shared/state paths rather than inside a timestamped release.
 Approved customer policy versions are production PostgreSQL data. They are recovered with the production database, not reconstructed from Git or `production_catalog.json`. PT53 JSON export/import is for deliberate portability and test-environment synchronization, not for replacing database restore during disaster recovery.
 
 For Local/Dev/Test refreshes, export all policy versions from Production and import after preview. Lifecycle-preserving import requires `DACQUA_POLICY_IMPORT_ALLOW_LIFECYCLE_PRESERVATION=true` only in the non-production destination. Keep that setting disabled in Production.
+
+
+## PT32 Turnstile build and acknowledgement recovery
+
+The frontend site key is public but host-local: `/etc/dacqua-dolce/turnstile-site-key`
+(root-owned regular file, mode `0600`, a single site-key line). The exact-revision
+deploy script reads this file and passes `VITE_TURNSTILE_SITE_KEY` into the Vite
+build. The private Cloudflare secret belongs only in `/etc/dacqua-dolce/backend.env`
+as `DACQUA_TURNSTILE_SECRET`, along with `DACQUA_TURNSTILE_ENABLED` and
+`DACQUA_TURNSTILE_EXPECTED_HOSTNAME=dacquadolce.com`. Do not put the secret
+in frontend build variables or Git. A rebuild without the host-local site key
+will create a frontend with no widget; a deployment with server enforcement set
+true fails before creating a release if the key/secret/hostname is missing.
+
+**Activation sequence:** provision the site key and backend secret with
+`DACQUA_TURNSTILE_ENABLED=false`; stage and deploy a reviewed exact revision;
+verify the production frontend renders the widget and that quote/support forms
+continue to work; enable server enforcement as a separate operator-approved
+configuration step and restart the API. Be aware that existing old frontend
+releases may not contain the widget: rollback to such a release must coordinate
+server enforcement disabling as a separately approved break-glass procedure.
+
+The separately commissioned Postmark transactional stream is
+`website-acknowledgements`, configured by
+`DACQUA_QUOTE_ACK_MESSAGE_STREAM=website-acknowledgements`. Leave
+`DACQUA_QUOTE_ACK_ENABLED=false` until test delivery, staff notification,
+recipient/global limit evidence, and suppressions are verified; then enable
+independently. Existing `outbound` critical mail is not moved.
+The protected backend runtime env, host-local public site-key file, cloud
+provider configuration and production database all remain necessary rebuild
+inputs alongside the exact Git revision. No automatic production/local database
+sync is implied.

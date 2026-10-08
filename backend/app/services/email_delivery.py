@@ -37,6 +37,7 @@ def deliver_email(
     communication_thread: CommunicationThread | None = None,
     author_user_id: uuid.UUID | None = None,
     archive_sensitive_values: tuple[str, ...] = (),
+    message_stream: str = "outbound",
 ) -> EmailDelivery:
     delivery = EmailDelivery(
         category=category,
@@ -88,6 +89,7 @@ def deliver_email(
         result = PostmarkEmailProvider(
             server_token=token,
             sender_name=settings.email_sender_name,
+            message_stream=message_stream,
         ).send(message)
     except Exception as exc:
         # Never persist provider payloads or

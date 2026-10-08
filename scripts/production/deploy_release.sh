@@ -11,6 +11,8 @@ RELEASES="${APP_ROOT}/releases"
 SHARED="${APP_ROOT}/shared"
 CURRENT="${APP_ROOT}/current"
 ENV_FILE="/etc/dacqua-dolce/backend.env"
+# Public build-time key, deliberately separate from protected backend secrets.
+TURNSTILE_SITE_KEY_FILE="/etc/dacqua-dolce/turnstile-site-key"
 MIGRATION_ENV_FILE="/etc/dacqua-dolce/migration.env"
 READINESS_URL="http://127.0.0.1:8000/readiness"
 READINESS_ATTEMPTS=30
@@ -209,6 +211,36 @@ fi
 
 echo "PASS: production environment identity = production"
 
+# Stage the optional public Turnstile site key for the immutable frontend build.
+# The build key may be present before server enforcement is activated.
+TURNSTILE_SITE_KEY=""
+if [ -e "${TURNSTILE_SITE_KEY_FILE}" ]; then
+  if [ ! -f "${TURNSTILE_SITE_KEY_FILE}" ] \
+    || [ -L "${TURNSTILE_SITE_KEY_FILE}" ] \
+    || [ ! -r "${TURNSTILE_SITE_KEY_FILE}" ]; then
+    fail "Turnstile site-key file is not a readable regular file"
+  fi
+  IFS= read -r TURNSTILE_SITE_KEY < "${TURNSTILE_SITE_KEY_FILE}" || true
+  if ! [[ "${TURNSTILE_SITE_KEY}" =~ ^[A-Za-z0-9_-]{8,128}$ ]]; then
+    fail "Turnstile site-key file has an invalid format"
+  fi
+fi
+
+case "${DACQUA_TURNSTILE_ENABLED:-false}" in
+  true|True|TRUE|1)
+    if [ -z "${TURNSTILE_SITE_KEY}" ]; then
+      fail "Turnstile enabled but frontend site-key file is missing"
+    fi
+    if [ -z "${DACQUA_TURNSTILE_SECRET:-}" ] \
+      || [ "${DACQUA_TURNSTILE_EXPECTED_HOSTNAME:-}" != "dacquadolce.com" ]; then
+      fail "Turnstile enabled but backend secret/expected hostname is unconfigured"
+    fi
+    ;;
+  false|False|FALSE|0) ;;
+  *) fail "Invalid DACQUA_TURNSTILE_ENABLED value" ;;
+esac
+
+
 for required_value in \
   "${DACQUA_DATABASE_URL}" \
   "${DACQUA_MFA_ENCRYPTION_KEY}" \
@@ -300,6 +332,7 @@ cd "${RELEASE}/frontend"
 npm ci
 VITE_APP_ENVIRONMENT=production \
 VITE_DEVELOPER_MODE=false \
+VITE_TURNSTILE_SITE_KEY="${TURNSTILE_SITE_KEY}" \
   npm run build
 
 if [ -x /usr/local/sbin/dacqua-postgres-backup ]; then

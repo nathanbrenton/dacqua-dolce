@@ -45,6 +45,7 @@ from app.services.email_delivery import (
     deliver_email,
 )
 from app.services.public_availability import resolve_public_availability
+from app.services.quote_acknowledgements import deliver_quote_acknowledgement
 from app.services.recommendations import (
     RECOMMENDATION_POLICY_VERSION,
     evaluate_recommendation,
@@ -52,6 +53,7 @@ from app.services.recommendations import (
 from app.services.sessions import (
     hash_session_token,
 )
+from app.services.turnstile import verify_public_form_turnstile
 
 router = APIRouter(
     prefix="/quotes",
@@ -112,28 +114,11 @@ def send_quote_emails(
 
     product_label = product.name if product is not None else "General consultation"
 
-    deliver_email(
+    deliver_quote_acknowledgement(
         db,
         settings=email_settings,
-        message=EmailMessage(
-            sender=(email_settings.email_from),
-            recipient=quote.email,
-            subject=("We received your D'Acqua Dolce request"),
-            body_text=(
-                "Thank you for contacting "
-                "D'Acqua Dolce.\n\n"
-                "Your request has been "
-                "received.\n"
-                f"Reference: {quote.id}\n"
-                f"System: {product_label}\n\n"
-                "A team member can follow "
-                "up using the contact "
-                "information you provided."
-            ),
-        ),
-        category=("quote_customer_receipt"),
-        related_entity_type=("quote_request"),
-        related_entity_id=str(quote.id),
+        quote_id=str(quote.id),
+        recipient=quote.email,
         customer_user_id=quote.user_id,
     )
 
@@ -261,6 +246,8 @@ def create_quote_request(
             detail=("Too many quote requests. Try again later."),
             headers={"Retry-After": str(decision.retry_after_seconds)},
         )
+
+    verify_public_form_turnstile(request, action="quote")
 
     product_uuid: uuid.UUID | None = None
 

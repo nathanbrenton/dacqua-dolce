@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     csrf_token_max_age_seconds: int = 12 * 60 * 60
     csrf_protection_enabled: bool = True
 
+    turnstile_enabled: bool = False
+    turnstile_secret: str | None = None
+    turnstile_expected_hostname: str | None = None
+
     request_user_agent_max_length: int = 512
 
     security_hsts_enabled: bool = True

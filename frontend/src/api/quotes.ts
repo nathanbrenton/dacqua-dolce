@@ -72,6 +72,7 @@ export type QuoteRequestResponse = {
 
 export async function submitQuoteRequest(
   payload: QuoteRequestPayload,
+  turnstileToken?: string,
 ): Promise<QuoteRequestResponse> {
   const csrfToken = await getCsrfToken();
 
@@ -84,6 +85,7 @@ export async function submitQuoteRequest(
       headers: {
         "Content-Type": "application/json",
         "X-CSRF-Token": csrfToken,
+      ...(turnstileToken ? { "X-Turnstile-Token": turnstileToken } : {}),
       },
       body: JSON.stringify(payload),
     },

@@ -6,6 +6,7 @@ import {
   type SupportRequestKind,
 } from "../../api/support";
 import { UsPhoneInput } from "../forms/UsPhoneInput";
+import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChallenge";
 
 type SupportRequestFormProps = {
   account: AuthenticationStatus | null;
@@ -26,6 +27,8 @@ export function SupportRequestForm({
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [website, setWebsite] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -36,6 +39,10 @@ export function SupportRequestForm({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (turnstileConfigured && !turnstileToken) {
+      setError("Complete the verification challenge.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -49,7 +56,7 @@ export function SupportRequestForm({
         product_id: productId,
         message,
         website: website || null,
-      });
+      }, turnstileToken ?? undefined);
       setNotice(`${result.message} Reference: ${result.id}`);
       setMessage("");
       setWebsite("");
@@ -61,6 +68,8 @@ export function SupportRequestForm({
       );
     } finally {
       setBusy(false);
+      setTurnstileToken(null);
+      setTurnstileResetKey((value) => value + 1);
     }
   }
 
@@ -145,6 +154,8 @@ export function SupportRequestForm({
           onChange={(event) => setMessage(event.target.value)}
         />
       </label>
+
+      <TurnstileChallenge action="support" onToken={setTurnstileToken} resetKey={turnstileResetKey} />
 
       {error !== null ? <p className="support-request-error" role="alert">{error}</p> : null}
       {notice !== null ? <p className="support-request-notice" role="status">{notice}</p> : null}

@@ -50,6 +50,28 @@ class EmailRuntimeSettings(BaseSettings):
 
     email_operator_to: str | None = None
 
+    # Anonymous quote acknowledgements require separately commissioned Postmark
+    # stream. Disabled by default (fail closed); operator alerts are unaffected.
+    quote_ack_enabled: bool = False
+    quote_ack_message_stream: str | None = None
+    quote_ack_recipient_cooldown_hours: int = Field(default=24, ge=1, le=720)
+    quote_ack_global_limit_per_hour: int = Field(default=20, ge=1, le=10000)
+
+    @field_validator("quote_ack_message_stream")
+    @classmethod
+    def validate_quote_ack_stream(cls, value: str | None) -> str | None:
+        if value is None or not value.strip():
+            return None
+        value = value.strip()
+        if not (1 <= len(value) <= 64) or not all(
+            character.isascii() and (character.isalnum() or character in "-_")
+            for character in value
+        ):
+            raise ValueError("Invalid Postmark acknowledgement stream ID.")
+        if value == "outbound":
+            raise ValueError("Acknowledgements must use a separate stream.")
+        return value
+
     password_reset_ttl_minutes: int = Field(
         default=30,
         ge=5,

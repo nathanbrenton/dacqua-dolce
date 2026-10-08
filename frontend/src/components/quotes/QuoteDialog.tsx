@@ -12,6 +12,7 @@ import {
 import {
   isCompleteUsPhone,
 } from "../../utils/phone";
+import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChallenge";
 import {
   UsPhoneInput,
 } from "../forms/UsPhoneInput";
@@ -100,6 +101,8 @@ export function QuoteDialog({
     useState<string | null>(null);
   const [successId, setSuccessId] =
     useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
   const [submitting, setSubmitting] =
     useState(false);
 
@@ -201,6 +204,10 @@ export function QuoteDialog({
       return;
     }
 
+    if (turnstileConfigured && !turnstileToken) {
+      setError("Complete the verification challenge.");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -224,7 +231,7 @@ export function QuoteDialog({
           phone: phone || null,
           message: message || null,
           recommendation_context: qualificationContext,
-        });
+        }, turnstileToken ?? undefined);
 
       setSuccessId(response.id);
     } catch (caught) {
@@ -235,6 +242,8 @@ export function QuoteDialog({
       );
     } finally {
       setSubmitting(false);
+      setTurnstileToken(null);
+      setTurnstileResetKey((value) => value + 1);
     }
   }
 
@@ -549,6 +558,7 @@ export function QuoteDialog({
             </small>
           </label>
 
+          <TurnstileChallenge action="quote" onToken={setTurnstileToken} resetKey={turnstileResetKey} />
           {error !== null ? (
             <p
               className="auth-error"

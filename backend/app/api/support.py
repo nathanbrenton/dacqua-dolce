@@ -22,6 +22,7 @@ from app.schemas.support import SupportRequestCreate, SupportRequestRead
 from app.services.audit import record_audit_event
 from app.services.auth_rate_limit import AuthenticationRateLimiter
 from app.services.sessions import hash_session_token
+from app.services.turnstile import verify_public_form_turnstile
 
 router = APIRouter(prefix="/support", tags=["support"])
 settings = get_settings()
@@ -108,6 +109,8 @@ def create_support_request(
                 "you provided."
             ),
         )
+
+    verify_public_form_turnstile(request, action="support")
 
     current_user = optional_user(request)
     if current_user is not None and payload.email != current_user.email:

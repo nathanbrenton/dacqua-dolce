@@ -15,10 +15,12 @@ class PostmarkEmailProvider:
         server_token: str,
         sender_name: str | None = None,
         timeout_seconds: float = 10.0,
+        message_stream: str = "outbound",
     ) -> None:
         self._server_token = server_token
         self._sender_name = sender_name
         self._timeout_seconds = timeout_seconds
+        self._message_stream = message_stream
 
     def _from_value(
         self,
@@ -92,7 +94,7 @@ class PostmarkEmailProvider:
             "To": message.recipient,
             "Subject": message.subject,
             "TextBody": message.body_text,
-            "MessageStream": "outbound",
+            "MessageStream": self._message_stream,
         }
 
         if message.body_html is not None:

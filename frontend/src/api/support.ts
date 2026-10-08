@@ -24,6 +24,7 @@ export type SupportRequestResponse = {
 
 export async function submitSupportRequest(
   payload: SupportRequestPayload,
+  turnstileToken?: string,
 ): Promise<SupportRequestResponse> {
   const csrfToken = await getCsrfToken();
   const response = await fetch("/api/support", {
@@ -33,6 +34,7 @@ export async function submitSupportRequest(
     headers: {
       "Content-Type": "application/json",
       "X-CSRF-Token": csrfToken,
+      ...(turnstileToken ? { "X-Turnstile-Token": turnstileToken } : {}),
     },
     body: JSON.stringify(payload),
   });
