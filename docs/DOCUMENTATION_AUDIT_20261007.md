@@ -44,7 +44,7 @@ Documentation now incorporates:
 - Customer Inbox Website/Email source labeling, non-clickable inbound/customer URLs, and narrow advisory Postmark SpamAssassin/SPF evidence when provider headers exist;
 - public support-form CSRF/rate-limit/honeypot controls;
 - field-specific FastAPI/Pydantic validation errors for Quote/Inquiry and Support rather than raw `422` fallback;
-- optional Cloudflare Turnstile and a dedicated Spam/Quarantine workflow retained as uncommissioned follow-up decisions.
+- At the time of this audit, optional Cloudflare Turnstile and a dedicated Spam/Quarantine workflow were retained as uncommissioned follow-up decisions. **Subsequent PT32 update (2026-10-08 UTC):** Cloudflare Managed Turnstile has been commissioned for public Support and Quote/Inquiry forms; the dedicated Spam/Quarantine workflow remains a separate future consideration. See `production/PT32_COMMISSIONING_AND_RECOVERY.md`.
 
 ## Infrastructure/rebuild corrections
 

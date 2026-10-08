@@ -1,14 +1,12 @@
 # PT32 Phase A — anonymous quote acknowledgement isolation
 
 The public Support form does **not** send automatic acknowledgement mail.
-The Quote/Inquiry form records the quote and sends any operator notification
-separately; acknowledgement decisions are independently enforced.
+The Quote/Inquiry form records the originating request independently from customer acknowledgement delivery. Optional operator notifications are disabled in commissioned production by leaving `DACQUA_EMAIL_OPERATOR_TO` empty; customer acknowledgement decisions remain independently enforced.
 
 Runtime settings in the protected production environment (never Git):
 
-- `DACQUA_QUOTE_ACK_ENABLED=false` (default; fail closed)
-- `DACQUA_QUOTE_ACK_MESSAGE_STREAM=` (must be a **separately commissioned**
-  Postmark transactional stream ID; cannot be `outbound`)
+- `DACQUA_QUOTE_ACK_ENABLED=true` (commissioned production; code/config template defaults **false** until provider validation)
+- `DACQUA_QUOTE_ACK_MESSAGE_STREAM=website-acknowledgements` (commissioned **Transactional** stream; never `outbound`)
 - `DACQUA_QUOTE_ACK_RECIPIENT_COOLDOWN_HOURS=24`
 - `DACQUA_QUOTE_ACK_GLOBAL_LIMIT_PER_HOUR=20`
 
@@ -36,7 +34,7 @@ an acknowledgement can be sent without surviving local evidence; do not
 promise exactly-once delivery.
 
 These settings do not change IP throttling, CSRF, honeypot, or phone rules.
-Phase B Turnstile and a resilient outbox remain separate future work.
+Phase B Managed Turnstile is commissioned in production; see `PT32_TURNSTILE.md`. A durable asynchronous email outbox remains future work.
 
 Before promotion: run full backend tests, Ruff, frontend build, and
 integration acceptance against a configured PostgreSQL test environment.

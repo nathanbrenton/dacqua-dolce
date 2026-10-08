@@ -1,5 +1,7 @@
 # D'Acqua Dolce Production Architecture Overview
 
+PT32 commissioned production: Cloudflare Managed Turnstile validates Support and Quote/Inquiry submissions server-side; customer Quote/Inquiry acknowledgements use a separate Postmark Transactional stream with database-serialized recipient/global suppression; Operators work from the authenticated Customer Inbox rather than automatic backup-Gmail notices. See `PT32_COMMISSIONING_AND_RECOVERY.md`.
+
 ## 1. Purpose
 
 D'Acqua Dolce is a public water-filtration commerce and customer-lifecycle application. Production is currently deployed as a single-host P0 architecture on Vultr, with strict loopback boundaries around the application, database, and observability services.

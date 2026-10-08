@@ -1,5 +1,7 @@
 # D'Acqua Dolce Production Rebuild Runbook
 
+For commissioned public forms, read `PT32_COMMISSIONING_AND_RECOVERY.md` together with this runbook. In particular, restore build-time Turnstile site-key input and the runtime secret, verify the *live* NGINX CSP, configure the dedicated Postmark acknowledgement stream, and leave optional operator notifications disabled (`DACQUA_EMAIL_OPERATOR_TO=`).
+
 ## Status and scope
 
 This is the authoritative rebuild baseline for the current D'Acqua Dolce production architecture and current repository/rebuild target through the 2026-10-07 PT54, catalog-reconciliation, Customer Inbox security, and public support-form hardening work.
@@ -591,7 +593,7 @@ Populate only the protected runtime environment:
     DACQUA_EMAIL_SUPPORT_FROM=support@dacquadolce.com
     DACQUA_EMAIL_REPLY_FROM_ADDRESSES=sales@dacquadolce.com,contact@dacquadolce.com,info@dacquadolce.com,support@dacquadolce.com
     DACQUA_EMAIL_SENDER_NAME="D'Acqua Dolce"
-    DACQUA_EMAIL_OPERATOR_TO=<business-operator-address>
+    DACQUA_EMAIL_OPERATOR_TO=  # disabled: Operations Inbox is the staff work queue
     DACQUA_PASSWORD_RESET_TTL_MINUTES=30
     DACQUA_EMAIL_VERIFICATION_TTL_MINUTES=1440
 

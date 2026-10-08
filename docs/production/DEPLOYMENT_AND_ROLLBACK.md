@@ -20,6 +20,8 @@ The FastAPI service receives only `backend.env`. The root-only `migration.env` i
 
 PT35 sales-geography commissioning uses non-secret values in `backend.env`. The approved launch geography is `US` with the 48 contiguous states plus Washington, DC. Any explicit `DACQUA_SALES_AREA_*` values in production must continue to match `docs/PT35_SALES_GEOGRAPHY_ACTIVATION.md`; the Operations readiness snapshot reports `Action required` if runtime configuration drifts from that approved set.
 
+For commissioned PT32 browser forms, use the readiness retry and CSP verification procedure in `PT32_COMMISSIONING_AND_RECOVERY.md` after activation. A transient `502` immediately after `systemctl restart` can precede completed Uvicorn worker startup; a persistent failure requires logs and rollback evaluation.
+
 ## Release invariants
 
 A successfully activated release must satisfy all of the following:

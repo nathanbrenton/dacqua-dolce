@@ -4,6 +4,8 @@
 
 D'Acqua Dolce is a mobile-first water-filtration commerce and customer-lifecycle platform.
 
+Production PT32 operational status and rebuild: [`docs/production/PT32_COMMISSIONING_AND_RECOVERY.md`](docs/production/PT32_COMMISSIONING_AND_RECOVERY.md). Customer inquiries are handled through Operations Inbox, and redundant operator notification mail is intentionally disabled.
+
 ## Application stack
 
 ### Frontend

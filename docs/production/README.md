@@ -14,6 +14,7 @@ Production releases are timestamped immutable artifacts created by the standard 
 - `DEPLOYMENT_AND_ROLLBACK.md` — authoritative application release, catalog reconciliation, activation, retention, migration-compatibility, validation, and rollback workflow.
 - `COMMUNICATIONS_AND_POSTMARK.md` — commissioned Cloudflare split-routing + Proton human/business mail + Postmark application mail + direct Postfix/OpenDKIM observability mail, PostgreSQL communications archive, authentication records, rebuild sequence, and production validation.
 - `GRAFANA_DASHBOARDS.md` — repo-managed dashboard provisioning, access, and validation.
+- `PT32_COMMISSIONING_AND_RECOVERY.md` — commissioned Turnstile, Postmark acknowledgements, Operations-only staff queue, detailed validation and recovery steps.
 - `PENDING_INTEGRATIONS.md` — intentionally unfinished production items that must not be mistaken for commissioned infrastructure/application capability.
 
 ## Efficient rebuild composition

@@ -1,5 +1,7 @@
 # D'Acqua Dolce Communications, DNS, Proton, and Postmark Production Runbook
 
+The current production policy leaves `DACQUA_EMAIL_OPERATOR_TO=` empty so the authenticated Operations Customer Inbox, not a backup Gmail mailbox, is the authoritative staff queue. Public Quote/Inquiry customer receipts are independently enabled and use Postmark Transactional stream ID `website-acknowledgements`; Support has no automatic receipt. For provider-dashboard commissioning, suppression and delivery evidence, see `PT32_COMMISSIONING_AND_RECOVERY.md`.
+
 ## Purpose
 
 This document is the technical source of truth for D'Acqua Dolce email/DNS routing, human business mail, application transactional/customer correspondence, and the commissioned direct infrastructure-monitoring mail boundary. Better Stack successful-delivery heartbeat integration remains separate/pending.
@@ -415,7 +417,7 @@ No provider commissioning is required for the current support-form controls. The
 - inbound/customer-supplied URLs are plain text in Operations;
 - a filled honeypot returns the ordinary success shape but creates no communication record.
 
-The process-local support rate limiter is currently 8 submissions per 15 minutes per application-observed client IP. Verify the Nginx/Uvicorn client-IP boundary before relying on it as a standalone abuse control. Cloudflare Turnstile is not commissioned and is documented under pending integrations.
+The process-local support rate limiter is currently 8 submissions per 15 minutes per application-observed client IP. Verify the Nginx/Uvicorn client-IP boundary before relying on it as a standalone abuse control. Cloudflare Managed Turnstile is commissioned for Support and Quote/Inquiry forms; see PT32_TURNSTILE.md and PT32_COMMISSIONING_AND_RECOVERY.md.
 
 ### 9.3 Rebuild Cloudflare DNS without breaking split mail routing
 

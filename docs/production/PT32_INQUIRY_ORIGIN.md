@@ -1,7 +1,7 @@
 # PT32 — Inquiry-origin classification
 
 New forms send an explicit origin: `expert_inquiry`, `product_inquiry`, or `recommendation_inquiry`.
-The server verifies the origin is consistent with product and recommendation inputs, stores it in PostgreSQL, and uses it for operator-subject wording and Operations originating request classification. The existing `quote_requests` entity and formal quote lifecycle remain unchanged.
+The server verifies the origin is consistent with product and recommendation inputs, stores it in PostgreSQL, and uses it for optional operator-subject wording and Operations originating request classification. Expert inquiries may include water-property/recommendation-context details without becoming recommendation-origin inquiries. The declared source is display provenance, not an authorization credential. The existing `quote_requests` entity and formal quote lifecycle remain unchanged.
 
 Migration `b32e10c7a9d4` adds `quote_requests.inquiry_context`, defaulting to `legacy_quote_request` for all existing rows. Historical subject lines and prior communication records are never rewritten. Legacy API clients remain accepted with legacy classification; newer browser requests send their source explicitly.
 

@@ -2,6 +2,8 @@
 
 This is the concise operator reference for the current production/rebuild platform through the 2026-10-07 PT54, catalog, Customer Inbox, and public-support hardening work. The active application revision changes over time; use immutable release metadata/deployment output for the running SHA. This reference is not a substitute for the full rebuild procedure.
 
+PT32 live operations: Operations Customer Inbox is the primary inquiry queue; `DACQUA_EMAIL_OPERATOR_TO=` disables redundant operator messages, while customer receipts remain enabled in dedicated Postmark stream `website-acknowledgements`. See `PT32_COMMISSIONING_AND_RECOVERY.md` for inspection queries, NGINX CSP and readiness-retry verification.
+
 ## SSH
 
 From the authorized macOS workstation:

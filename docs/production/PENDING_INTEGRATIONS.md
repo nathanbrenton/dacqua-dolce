@@ -138,12 +138,11 @@ PT53 provides explicit policy export/import rather than database synchronization
 
 The current application source/rebuild target includes support-path abuse resistance (CSRF, an 8-per-15-minute process-local IP limiter, normalized payloads, authenticated-email enforcement for signed-in users, and an invisible honeypot). Website submissions are labeled as Website rather than Email in Customer Inbox. Confirm active release metadata during production operations rather than inferring deployment from Git alone.
 
+Commissioned in production: Cloudflare Managed Turnstile for public Support and Quote/Inquiry with server-side Siteverify, protected site-key/secret handling, and verified live NGINX CSP. See `PT32_TURNSTILE.md` and `PT32_COMMISSIONING_AND_RECOVERY.md`.
+
 Still optional/pending if abuse volume justifies it:
 
-- Cloudflare Turnstile (Managed mode or another explicitly approved challenge) with **server-side** token verification;
-- protected production secret/config handling for the Turnstile secret and public site-key configuration;
-- Nginx Content Security Policy review for the required challenge script/frame origins;
-- validation of forwarded-client-IP trust before relying on application IP limits;
+- periodic validation of forwarded-client-IP trust before relying on application IP limits;
 - a dedicated staff Spam/Quarantine workflow if the business needs something beyond Archive;
 - deliberate Postmark inbound spam-threshold or sender/domain blocking changes after false-positive review.
 

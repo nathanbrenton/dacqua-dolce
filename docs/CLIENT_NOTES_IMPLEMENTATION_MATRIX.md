@@ -409,7 +409,7 @@ PT20.2 remains the provider-specific hosted-payment milestone: confirm the concr
 | `Big Blue` naming | Pending Jamie/client confirmation | Do not publish until the client confirms whether this is the correct manufacturer/trademark terminology. |
 | Formal Order Reviewed step | Implemented (PT54) | Staff checklist must complete before employee-controlled Order Confirmed. Cannot-fulfill cases can be held pending customer response with no automatic substitution. |
 | Suspicious Customer Inbox content | Implemented hardening | Website vs Email source is explicit; inbound/customer URLs are non-clickable; Postmark spam/SPF evidence is advisory only when provider headers exist. |
-| Public website support spam | Implemented first layer | CSRF + process-local rate limiting + invisible honeypot; optional managed Turnstile challenge remains uncommissioned/pending if abuse continues. |
+| Public website support spam | Implemented first layer | CSRF + process-local rate limiting + invisible honeypot; Cloudflare Managed Turnstile is commissioned for public Support and Quote/Inquiry forms, with server-side Siteverify. |
 | Customer-facing validation failures | Implemented | Quote/Inquiry and Support parse FastAPI/Pydantic structured 422 errors into field-specific messages rather than exposing only the HTTP status. |
 
 ## PT43 — Manufacturer claims provenance + warranty support

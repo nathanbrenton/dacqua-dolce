@@ -32,6 +32,10 @@ The backend development database URL therefore uses port `15432` when the
 backend runs directly on macOS. Keep real credentials in the untracked
 `backend/.env`; use `backend/.env.example` only as a template.
 
+## PT32 local validation and safe boundaries
+
+On **macOS** in the repository root, use `bash scripts/alembic_local.sh current` to inspect the local Alembic revision; `bash scripts/alembic_local.sh upgrade head` applies migrations to the guarded `127.0.0.1:15432/dacqua_dolce_dev` target using the migrator account. Confirm the database target before upgrading. With a configured local test database, run `backend/.venv/bin/python -m pytest backend -q --tb=short`, `backend/.venv/bin/python -m ruff check backend`, and `npm --prefix frontend run build`. The frontend `npm test` script is currently a placeholder and is **not** a passing test suite. Never use production Postmark tokens or production Turnstile secrets for local acceptance; use test doubles or deliberately commissioned nonproduction provider credentials. Read `docs/production/PT32_COMMISSIONING_AND_RECOVERY.md` for production differences.
+
 ## Start the backend
 
 From `backend/`:
