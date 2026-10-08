@@ -236,6 +236,43 @@ def get_recommendation(
     return evaluate_recommendation(payload)
 
 
+def resolve_inquiry_context(
+    *,
+    product_id: str | None,
+    recommendation_context: object | None,
+    inquiry_context: str,
+) -> str:
+    """Classify declared inquiry origin while rejecting incompatible product data.
+
+    Origin is display/audit metadata, not an authorization credential.
+    Water-property answers are permitted in expert consultations.
+    """
+    if product_id is not None:
+        allowed = {"legacy_quote_request", "product_inquiry"}
+        inferred = "product_inquiry"
+    elif recommendation_context is not None:
+        allowed = {
+            "legacy_quote_request",
+            "expert_inquiry",
+            "recommendation_inquiry",
+        }
+        inferred = (
+            "expert_inquiry"
+            if inquiry_context == "expert_inquiry"
+            else "recommendation_inquiry"
+        )
+    else:
+        allowed = {"legacy_quote_request", "expert_inquiry"}
+        inferred = "expert_inquiry"
+
+    if inquiry_context not in allowed:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Inquiry context does not match the request.",
+        )
+    return inferred if inquiry_context != "legacy_quote_request" else "legacy_quote_request"
+
+
 @router.post(
     "",
     response_model=QuoteRequestRead,
@@ -269,20 +306,10 @@ def create_quote_request(
                 detail=("Invalid product identifier."),
             ) from exc
 
-    # Never allow a client to relabel a product/recommendation request as general.
-    inferred_context = (
-        "product_inquiry" if payload.product_id is not None
-        else "recommendation_inquiry" if payload.recommendation_context is not None
-        else "expert_inquiry"
-    )
-    if payload.inquiry_context not in {"legacy_quote_request", inferred_context}:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Inquiry context does not match the request.",
-        )
-    inquiry_context = (
-        inferred_context if payload.inquiry_context != "legacy_quote_request"
-        else "legacy_quote_request"
+    inquiry_context = resolve_inquiry_context(
+        product_id=payload.product_id,
+        recommendation_context=payload.recommendation_context,
+        inquiry_context=payload.inquiry_context,
     )
 
     current_user = optional_user(request)
