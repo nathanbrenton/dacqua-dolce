@@ -1,0 +1,241 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PT33-A proposed manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "business",
+    "instance",
+    "network",
+    "database",
+    "providers",
+    "backup",
+    "data"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "business": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display_name",
+        "profile"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,31}$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profile": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]+$"
+        }
+      }
+    },
+    "instance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "environment",
+        "service_user",
+        "systemd_unit",
+        "service_root",
+        "config_root",
+        "state_root"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{2,47}$"
+        },
+        "environment": {
+          "enum": [
+            "development",
+            "staging",
+            "production"
+          ]
+        },
+        "service_user": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_-]{1,30}$"
+        },
+        "systemd_unit": {
+          "type": "string",
+          "pattern": "^[a-z0-9_.@-]+\\.service$"
+        },
+        "service_root": {
+          "type": "string",
+          "pattern": "^/srv/[a-z0-9/-]+$"
+        },
+        "config_root": {
+          "type": "string",
+          "pattern": "^/etc/[a-z0-9/-]+$"
+        },
+        "state_root": {
+          "type": "string",
+          "pattern": "^/var/lib/[a-z0-9/-]+$"
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_host",
+        "aliases",
+        "bind_host",
+        "port",
+        "session_cookie_name",
+        "csrf_cookie_name"
+      ],
+      "properties": {
+        "canonical_host": {
+          "type": "string",
+          "minLength": 4
+        },
+        "aliases": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 4
+          }
+        },
+        "bind_host": {
+          "const": "127.0.0.1"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        },
+        "session_cookie_name": {
+          "type": "string",
+          "minLength": 3
+        },
+        "csrf_cookie_name": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "migrator_role",
+        "runtime_role",
+        "migrator_secret_ref",
+        "runtime_secret_ref"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,62}$"
+        },
+        "migrator_role": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,62}$"
+        },
+        "runtime_role": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,62}$"
+        },
+        "migrator_secret_ref": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,62}$"
+        },
+        "runtime_secret_ref": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{2,62}$"
+        }
+      }
+    },
+    "providers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turnstile_site_key_ref",
+        "turnstile_secret_ref",
+        "postmark_token_ref",
+        "email_from"
+      ],
+      "properties": {
+        "turnstile_site_key_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "turnstile_secret_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "postmark_token_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "email_from": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace",
+        "credential_ref"
+      ],
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "minLength": 3
+        },
+        "credential_ref": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "seed_profile"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "fresh",
+            "restore"
+          ]
+        },
+        "seed_profile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

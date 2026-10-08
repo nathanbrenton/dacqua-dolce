@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "business": {
+    "id": "sample-business",
+    "display_name": "Sample Business",
+    "profile": "water_filtration"
+  },
+  "instance": {
+    "id": "sample-business-staging",
+    "environment": "staging",
+    "service_user": "sample_app",
+    "systemd_unit": "sample-business-api.service",
+    "service_root": "/srv/sample-business",
+    "config_root": "/etc/sample-business",
+    "state_root": "/var/lib/sample-business"
+  },
+  "network": {
+    "canonical_host": "staging.example.test",
+    "aliases": [],
+    "bind_host": "127.0.0.1",
+    "port": 8100,
+    "session_cookie_name": "sample_session",
+    "csrf_cookie_name": "sample_csrf"
+  },
+  "database": {
+    "name": "sample_business",
+    "migrator_role": "sample_migrator",
+    "runtime_role": "sample_runtime",
+    "migrator_secret_ref": "sample_migrator_pass",
+    "runtime_secret_ref": "sample_runtime_pass"
+  },
+  "providers": {
+    "turnstile_site_key_ref": null,
+    "turnstile_secret_ref": null,
+    "postmark_token_ref": null,
+    "email_from": null
+  },
+  "backup": {
+    "namespace": "sample-business-staging",
+    "credential_ref": "sample_backup_pass"
+  },
+  "data": {
+    "mode": "fresh",
+    "seed_profile": null
+  }
+}

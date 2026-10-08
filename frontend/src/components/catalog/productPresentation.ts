@@ -42,6 +42,24 @@ export function getProductPresentation(
     };
   }
 
+  // Customer-facing Essence descriptor. The underlying SKU, product name,
+  // automatic media-rinse capability, and specifications are not changed.
+  if (product.sku === "DD15CATRV") {
+    return {
+      categoryName: product.identity.category,
+      familyName: "Essence",
+      variantLabel: "Carbon Filter",
+      systemType: product.system_type,
+      technologyLabel: null,
+      catalogSummary: null,
+      education: null,
+      technologyFacts: [],
+      technologyGuidance: null,
+      installationFacts: [],
+      ownershipGuidance: null,
+    };
+  }
+
   if (product.sku === HARMONY_CLEAR_SKU) {
     return {
       categoryName: product.identity.category,
