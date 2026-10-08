@@ -382,13 +382,28 @@ const AUTO_REFRESH_MS = 60_000;
 
 function relatedRecordLabel(
   type: string | null,
+  originatingRequestType: string | null,
 ): string | null {
   if (type === null) {
     return null;
   }
 
+  // Only persisted originating-request provenance determines inquiry badges.
+  // Do not infer classification from subject lines or message content.
+  if (type === "quote_request") {
+    switch (originatingRequestType) {
+      case "website_expert_inquiry":
+        return "Expert inquiry";
+      case "website_product_inquiry":
+        return "Product inquiry";
+      case "website_recommendation_inquiry":
+        return "Recommendation inquiry";
+      default:
+        return "Quote request";
+    }
+  }
+
   const labels: Record<string, string> = {
-    quote_request: "Quote request",
     user: "Customer account",
     order: "Customer order",
   };
@@ -1045,10 +1060,12 @@ export function CommunicationsInbox() {
                 )}
                 {relatedRecordLabel(
                   threadDetail.related_entity_type,
+                  threadDetail.originating_request?.request_type ?? null,
                 ) !== null ? (
                   <small className="operations-inbox-related">
                     {relatedRecordLabel(
                       threadDetail.related_entity_type,
+                      threadDetail.originating_request?.request_type ?? null,
                     )}
                   </small>
                 ) : null}
