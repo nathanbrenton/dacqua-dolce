@@ -57,6 +57,7 @@ export type RecommendationDecision = {
 };
 
 export type QuoteRequestPayload = {
+  inquiry_context: "expert_inquiry" | "product_inquiry" | "recommendation_inquiry";
   product_id: string | null;
   name: string;
   email: string;

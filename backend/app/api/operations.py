@@ -1678,7 +1678,11 @@ def _communication_originating_request_read(
             return None
 
         return OperationsCommunicationOriginatingRequestRead(
-            request_type="website_quote_request",
+            request_type=(
+                "website_" + quote.inquiry_context
+                if quote.inquiry_context != "legacy_quote_request"
+                else "website_quote_request"
+            ),
             name=quote.name,
             email=quote.email,
             phone=quote.phone,

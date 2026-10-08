@@ -225,6 +225,12 @@ export function QuoteDialog({
 
       const response =
         await submitQuoteRequest({
+          inquiry_context:
+            inquiryContext === "product"
+              ? "product_inquiry"
+              : inquiryContext === "recommendation"
+                ? "recommendation_inquiry"
+                : "expert_inquiry",
           product_id: productId,
           name,
           email,

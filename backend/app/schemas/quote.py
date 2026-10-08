@@ -136,6 +136,13 @@ class RecommendationDecision(BaseModel):
 
 
 class QuoteRequestCreate(BaseModel):
+    inquiry_context: Literal[
+        "expert_inquiry",
+        "product_inquiry",
+        "recommendation_inquiry",
+        "legacy_quote_request",
+    ] = "legacy_quote_request"
+
     product_id: str | None = None
 
     name: str = Field(

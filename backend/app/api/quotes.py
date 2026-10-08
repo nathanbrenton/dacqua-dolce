@@ -113,6 +113,15 @@ def send_quote_emails(
     email_settings = get_email_runtime_settings()
 
     product_label = product.name if product is not None else "General consultation"
+    subject = (
+        "New D'Acqua Dolce expert inquiry"
+        if quote.inquiry_context == "expert_inquiry"
+        else "New D'Acqua Dolce product inquiry"
+        if quote.inquiry_context == "product_inquiry"
+        else "New D'Acqua Dolce recommendation inquiry"
+        if quote.inquiry_context == "recommendation_inquiry"
+        else "New D'Acqua Dolce quote request"
+    )
 
     deliver_quote_acknowledgement(
         db,
@@ -128,7 +137,7 @@ def send_quote_emails(
         return
 
     message_lines = [
-        "New D'Acqua Dolce quote request",
+        subject,
         "",
         f"Reference: {quote.id}",
         f"System: {product_label}",
@@ -206,7 +215,7 @@ def send_quote_emails(
         message=EmailMessage(
             sender=(email_settings.email_from),
             recipient=operator_to,
-            subject=("New D'Acqua Dolce quote request"),
+            subject=subject,
             body_text="\n".join(message_lines),
         ),
         category=("quote_operator_notification"),
@@ -259,6 +268,22 @@ def create_quote_request(
                 status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
                 detail=("Invalid product identifier."),
             ) from exc
+
+    # Never allow a client to relabel a product/recommendation request as general.
+    inferred_context = (
+        "product_inquiry" if payload.product_id is not None
+        else "recommendation_inquiry" if payload.recommendation_context is not None
+        else "expert_inquiry"
+    )
+    if payload.inquiry_context not in {"legacy_quote_request", inferred_context}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Inquiry context does not match the request.",
+        )
+    inquiry_context = (
+        inferred_context if payload.inquiry_context != "legacy_quote_request"
+        else "legacy_quote_request"
+    )
 
     current_user = optional_user(request)
 
@@ -319,6 +344,7 @@ def create_quote_request(
         )
 
         quote = QuoteRequest(
+            inquiry_context=inquiry_context,
             product_id=product_uuid,
             user_id=(current_user.id if current_user is not None else None),
             name=payload.name,
@@ -352,6 +378,7 @@ def create_quote_request(
             entity_id=str(quote.id),
             actor_user_id=(current_user.id if current_user is not None else None),
             metadata={
+                "inquiry_context": inquiry_context,
                 "product_id": (str(product_uuid) if product_uuid is not None else None),
                 "account_identifier": (privacy_safe_identifier(payload.email)),
                 "recommendation_decision_code": (

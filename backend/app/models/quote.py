@@ -56,6 +56,10 @@ class CommercialChargeKind(StrEnum):
 class QuoteRequest(Base):
     __tablename__ = "quote_requests"
 
+    inquiry_context: Mapped[str] = mapped_column(
+        String(40), nullable=False, server_default="legacy_quote_request"
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
