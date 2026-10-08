@@ -1,0 +1,24 @@
+{
+  "evidence_version": 1,
+  "host_id": "dacqua-platform-prod-01",
+  "source": "manual_terminal_inspection_reviewed",
+  "inspection_date_utc": "2026-10-08",
+  "collected_at_utc": null,
+  "resource_scope": "debian_production_manual_read_only",
+  "reserved": {
+    "service_users": ["dacqua-app"],
+    "systemd_units": ["dacqua-dolce-api.service", "dacqua-dolce-healthcheck.service", "dacqua-postgres-backup.service", "dacqua-postgres-restore-check.service", "dacqua-observability-daily-report.service", "dacqua-observability-weekly-report.service"],
+    "paths": ["/srv/dacqua-dolce", "/etc/dacqua-dolce", "/var/lib/dacqua-dolce"],
+    "ports": [22,25,80,443,3000,5432,8000,8891,9090,9093,9096,9100,9115,12345,3100],
+    "database_names": ["dacqua_dolce","postgres","template0","template1"],
+    "database_roles": ["dacqua_dolce_app","dacqua_dolce_migrator","postgres"]
+  },
+  "coverage": {
+    "service_users": "partial",
+    "systemd_units": "partial",
+    "paths": "partial",
+    "ports": "partial",
+    "database_names": "observed",
+    "database_roles": "partial"
+  }
+}
