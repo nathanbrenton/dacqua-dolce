@@ -422,6 +422,10 @@ def list_public_products(
         for product in products:
             if not product_is_publicly_visible(product):
                 continue
+            # DD5ROAE remains a directly addressable, separately identifiable SKU,
+            # but its configuration is selected within the single Origin card.
+            if product.sku == "DD5ROAE":
+                continue
 
             active_images = [image for image in product.images if image.active]
 

@@ -779,6 +779,11 @@ Default import is `draft_only`. Lifecycle-preserving import is intended only for
 
 Restic/S3 is not a policy synchronization channel. It is disaster recovery for production backup state once the off-host repository is commissioned.
 
-## Product family display order (pending production acceptance)
+## Product family display order (production-deployed)
 
-See `PRODUCT_ORDERING_AND_TOASTS.md` for Admin/Developer merchandising controls, refresh/save/reset semantics, audit trail, stale revision handling, and database persistence. The new ordering feature remains pending production validation; do not assume it is available on the currently deployed release.
+See `PRODUCT_ORDERING_AND_TOASTS.md` for Admin/Developer merchandising controls, refresh/save/reset semantics, audit trail, stale revision handling, and database persistence. The ordering release was deployed at `3651d78ad414581e08f8908b4a142af6d2996a1f` with production health/security checks passed; individual browser-level acceptance remains a separate check.
+
+
+## Origin configuration presentation and mobile catalog refinement (local candidate)
+
+See [`ORIGIN_CONFIGURATION_AND_MOBILE.md`](ORIGIN_CONFIGURATION_AND_MOBILE.md) for exact SKU/public listing behavior, local validation, deployment catalog reconciliation, inquiry labels, URL/scroll behavior, and non-destructive rollback. The current change is not yet committed or production deployed.

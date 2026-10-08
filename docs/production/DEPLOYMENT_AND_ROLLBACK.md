@@ -290,6 +290,11 @@ provider configuration and production database all remain necessary rebuild
 inputs alongside the exact Git revision. No automatic production/local database
 sync is implied.
 
-## Product display ordering migration (pending deployment)
+## Product display ordering migration (deployed)
 
 See `PRODUCT_ORDERING_AND_TOASTS.md` before deploying revision `c1e4f9b73a62`. This adds mutable merchandising state to PostgreSQL. Database backup before migration is required by the canonical procedure. Application release rollback does not reverse schema migration; explicit Alembic downgrade drops saved family ordering data and is not an ordinary rollback procedure.
+
+
+## Origin configuration presentation and mobile catalog refinement (local candidate)
+
+See [`ORIGIN_CONFIGURATION_AND_MOBILE.md`](ORIGIN_CONFIGURATION_AND_MOBILE.md) for exact SKU/public listing behavior, local validation, deployment catalog reconciliation, inquiry labels, URL/scroll behavior, and non-destructive rollback. The current change is not yet committed or production deployed.

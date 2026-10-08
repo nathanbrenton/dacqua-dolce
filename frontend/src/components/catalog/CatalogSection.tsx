@@ -81,13 +81,11 @@ export function CatalogSection({
         </p>
 
         <h2 id="systems-heading">
-          Designed around the water you live with.
+          Better water, designed around your life.
         </h2>
 
         <p>
-          Product specifications, availability,
-          pricing visibility, and purchase actions
-          come from the authoritative catalog.
+          Explore our water treatment systems and pricing below.
         </p>
       </div>
 
@@ -95,11 +93,11 @@ export function CatalogSection({
         className="catalog-purchase-boundary"
         aria-label="Purchase and installation boundary"
       >
-        <strong>Equipment-only launch</strong>
+        <strong>Installation &amp; Services</strong>
         <p>
-          Initial sales cover equipment only. Installation is arranged separately;
-          installation services and installer referrals are not currently offered
-          through the site.
+          Equipment is currently offered without installation. Installation services
+          and installer referrals may be available in the future. Please contact us
+          to discuss your needs.
         </p>
       </aside>
 

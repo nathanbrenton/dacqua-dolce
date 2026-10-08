@@ -22,7 +22,7 @@ import { getProductPresentation } from "./productPresentation";
 type ProductDetailPageProps = {
   slug: string;
   account: AuthenticationStatus | null;
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, preserveScroll?: boolean) => void;
   onRequestSignIn: () => void;
 };
 
@@ -87,19 +87,32 @@ export function ProductDetailPage({
     useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
+    // Keep the existing Origin details mounted during a configuration change.
+    // Replacing the entire page with a loading placeholder collapses its height
+    // and can move the viewport even when navigation preserves scroll position.
+    const originSwitch = product !== null
+      && (product.sku === "DD5RO" || product.sku === "DD5ROAE")
+      && (slug.toLowerCase() === "dd5ro" || slug.toLowerCase() === "dd5roae");
+    let active = true;
+    if (!originSwitch) {
+      setLoading(true);
+    }
     setError(null);
-    setSelectedImageIndex(0);
-    setSelectedVariantId(null);
-    setNotificationEmail(account?.email ?? "");
-    setNotificationState("idle");
-    setNotificationMessage(null);
 
     void getCatalogProduct(slug)
       .then((result) => {
+        if (!active) return;
         setProduct(result);
+        setSelectedImageIndex(0);
+        setSelectedVariantId(null);
+        setNotificationEmail(account?.email ?? "");
+        setNotificationState("idle");
+        setNotificationMessage(null);
+        setCommerceError(null);
+        setQuoteOpen(false);
       })
       .catch((caught) => {
+        if (!active) return;
         setError(
           caught instanceof Error
             ? caught.message
@@ -107,8 +120,12 @@ export function ProductDetailPage({
         );
       })
       .finally(() => {
-        setLoading(false);
+        if (active) setLoading(false);
       });
+    // Stale requests must not overwrite a newer selection.
+    return () => { active = false; };
+    // product is intentionally excluded: refetch only for route/account changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, account]);
 
   const selectedVariant = useMemo(() => {
@@ -176,6 +193,15 @@ export function ProductDetailPage({
   const availability = selectedVariant?.availability ?? product.availability;
   const productId = product.id;
   const presentation = getProductPresentation(product);
+  // Customer-facing inquiry and support labels use the same identity as the
+  // product page. Preserve the underlying product.id for submission/history.
+  // The two Origin SKUs remain distinct despite sharing a public family card.
+  const isOrigin = product.sku === "DD5RO" || product.sku === "DD5ROAE";
+  const contactProductName = isOrigin
+    ? `Origin — ${product.sku === "DD5ROAE" ? "Remineralization" : "Standard"}`
+    : selectedVariant !== null
+      ? `${product.name} — ${selectedVariant.display_name}`
+      : product.name;
 
   async function handleStockNotification() {
     if (notificationEmail.trim() === "") {
@@ -293,11 +319,7 @@ export function ProductDetailPage({
       <QuoteDialog
         open={quoteOpen}
         productId={product.id}
-        productName={
-          selectedVariant !== null
-            ? `${product.name} — ${selectedVariant.display_name}`
-            : product.name
-        }
+        productName={contactProductName}
         inquiryContext="product"
         initialEmail={
           account?.email ?? null
@@ -411,7 +433,12 @@ export function ProductDetailPage({
                 System overview
               </h2>
               <p className="product-detail-description">
-                {presentation.catalogSummary ?? product.description}
+                {product.sku === "DD5RO"
+                  ? (presentation.catalogSummary ?? product.description).replace(
+                      " For everyday drinking water, consider Origin Alkaline Plus.",
+                      "",
+                    )
+                  : (presentation.catalogSummary ?? product.description)}
               </p>
             </section>
 
@@ -483,6 +510,43 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
+
+            {(product.sku === "DD5RO" || product.sku === "DD5ROAE") ? (
+              <section
+                className="product-variant-selector"
+                aria-labelledby="origin-configuration-heading"
+              >
+                <p className="eyebrow">Configuration</p>
+                <h2
+                  id="origin-configuration-heading"
+                  className="product-detail-section-title"
+                >
+                  Choose your Origin system
+                </h2>
+                <label>
+                  <span>REVERSE OSMOSIS CONFIGURATION</span>
+                  <select
+                    value={product.sku}
+                    onChange={(event) => {
+                      const path = event.target.value === "DD5ROAE"
+                        ? "/systems/dd5roae"
+                        : "/systems/dd5ro";
+                      if (path !== product.public_path) {
+                        onNavigate(path, true);
+                      }
+                    }}
+                  >
+                    <option value="DD5RO">Standard Reverse Osmosis</option>
+                    <option value="DD5ROAE">With Alkaline Remineralization</option>
+                  </select>
+                </label>
+                <p className="product-ownership-guidance">
+                  Interested in additional remineralization? Consider Origin with
+                  the alkaline remineralization cartridge, which adds a
+                  remineralization stage to the reverse osmosis system.
+                </p>
+              </section>
+            ) : null}
 
             {product.variants.length > 0 ? (
               <section
@@ -909,11 +973,7 @@ export function ProductDetailPage({
                 <SupportRequestForm
                   account={account}
                   productId={product.id}
-                  productName={
-                    selectedVariant !== null
-                      ? `${product.name} — ${selectedVariant.display_name}`
-                      : product.name
-                  }
+                  productName={contactProductName}
                   defaultKind="warranty"
                 />
               </details>

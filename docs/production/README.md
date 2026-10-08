@@ -53,6 +53,11 @@ The older top-level `docs/PRODUCTION_*.md` files remain compatibility pointers a
 
 The repo-managed Grafana dashboard set, provisioning layout, installation procedure, access method, and validation commands are documented in `GRAFANA_DASHBOARDS.md`.
 
-## Product ordering and shared toast milestone (pending production)
+## Product ordering and shared toast milestone (production-deployed)
 
-See `PRODUCT_ORDERING_AND_TOASTS.md` for the local-first database ordering change, migration `c1e4f9b73a62`, staff/public acceptance, toast integration, deferred styling and schema-aware rollback. This milestone is not marked production-commissioned until actual deployment acceptance.
+See `PRODUCT_ORDERING_AND_TOASTS.md` for the local-first database ordering change, migration `c1e4f9b73a62`, staff/public acceptance, toast integration, deferred styling and schema-aware rollback. The production deployment completed at revision `3651d78ad414581e08f8908b4a142af6d2996a1f`; the initial deployment checks passed. Shared toast visual consistency remains deferred.
+
+
+## Origin configuration presentation and mobile catalog refinement (local candidate)
+
+See [`ORIGIN_CONFIGURATION_AND_MOBILE.md`](ORIGIN_CONFIGURATION_AND_MOBILE.md) for exact SKU/public listing behavior, local validation, deployment catalog reconciliation, inquiry labels, URL/scroll behavior, and non-destructive rollback. The current change is not yet committed or production deployed.

@@ -316,6 +316,7 @@ export function App() {
       window.location.pathname,
     );
 
+  const preserveRouteFocusRef = useRef(false);
   const routeFocusReadyRef =
     useRef(false);
 
@@ -455,6 +456,10 @@ export function App() {
       routeFocusReadyRef.current = true;
       return;
     }
+    if (preserveRouteFocusRef.current) {
+      preserveRouteFocusRef.current = false;
+      return;
+    }
 
     const frame = window.requestAnimationFrame(() => {
       document
@@ -469,6 +474,7 @@ export function App() {
 
   function navigate(
     nextPath: string,
+    preserveScroll = false,
   ) {
     if (
       window.location.pathname
@@ -481,13 +487,18 @@ export function App() {
       );
     }
 
+    // Only the Origin configuration switch opts into scroll/focus preservation.
+    // Normal page-to-page navigation retains the existing top/focus behavior.
+    preserveRouteFocusRef.current = preserveScroll;
     setPath(nextPath);
     setDeveloperControlsOpen(false);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "instant",
-    });
+    if (!preserveScroll) {
+      window.scrollTo({
+        top: 0,
+        behavior: "instant",
+      });
+    }
   }
 
   async function signOut() {

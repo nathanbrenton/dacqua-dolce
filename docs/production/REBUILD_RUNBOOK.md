@@ -1148,6 +1148,11 @@ provider configuration and production database all remain necessary rebuild
 inputs alongside the exact Git revision. No automatic production/local database
 sync is implied.
 
-## Product display order during restore/rebuild (pending deployment)
+## Product display order during restore/rebuild (deployed)
 
-See `PRODUCT_ORDERING_AND_TOASTS.md`. A fresh database migration seeds Refine, Essence, Origin, Harmony; a full PostgreSQL restore preserves the business's saved mutable ordering. Treat the latter as authoritative and verify it after restoration, rather than replaying seed defaults over restored data. This feature is not described as commissioned until production deployment acceptance.
+See `PRODUCT_ORDERING_AND_TOASTS.md`. A fresh database migration seeds Refine, Essence, Origin, Harmony; a full PostgreSQL restore preserves the business's saved mutable ordering. Treat the latter as authoritative and verify it after restoration, rather than replaying seed defaults over restored data. The feature was deployed at `3651d78ad414581e08f8908b4a142af6d2996a1f`; verify mutable ordering after restore rather than resetting it to defaults.
+
+
+## Origin configuration presentation and mobile catalog refinement (local candidate)
+
+See [`ORIGIN_CONFIGURATION_AND_MOBILE.md`](ORIGIN_CONFIGURATION_AND_MOBILE.md) for exact SKU/public listing behavior, local validation, deployment catalog reconciliation, inquiry labels, URL/scroll behavior, and non-destructive rollback. The current change is not yet committed or production deployed.

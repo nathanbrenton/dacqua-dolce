@@ -24,6 +24,24 @@ const HARMONY_CLEAR_SKU = "DD15CAT-TTACPTV";
 export function getProductPresentation(
   product: CatalogProduct,
 ): ProductPresentation {
+  // Origin configurations share one customer-facing category/family/descriptor.
+  // Retain the actual SKU and per-SKU details for images, specs, pricing and quotes.
+  if (product.sku === "DD5RO" || product.sku === "DD5ROAE") {
+    return {
+      categoryName: "Under-Sink Filtration",
+      familyName: "Origin",
+      variantLabel: "Reverse Osmosis",
+      systemType: product.system_type,
+      technologyLabel: null,
+      catalogSummary: null,
+      education: null,
+      technologyFacts: [],
+      technologyGuidance: null,
+      installationFacts: [],
+      ownershipGuidance: null,
+    };
+  }
+
   if (product.sku === HARMONY_CLEAR_SKU) {
     return {
       categoryName: product.identity.category,
