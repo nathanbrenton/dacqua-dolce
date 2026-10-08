@@ -1,0 +1,16 @@
+{
+  "inventory_version": 1,
+  "reserved": {
+    "business_ids": ["dacqua-dolce"],
+    "instance_ids": ["dacqua-dolce-production"],
+    "service_users": ["dacqua-app"],
+    "systemd_units": ["dacqua-dolce-api.service"],
+    "paths": ["/srv/dacqua-dolce", "/etc/dacqua-dolce", "/var/lib/dacqua-dolce"],
+    "database_names": ["dacqua_dolce"],
+    "database_roles": [],
+    "hostnames": ["dacquadolce.com"],
+    "ports": [8000],
+    "cookie_names": ["dacqua_session", "dacqua_csrf"],
+    "backup_namespaces": ["dacqua_dolce"]
+  }
+}
