@@ -4,7 +4,7 @@
 
 ## System of record
 
-Product-family display sequence is mutable **PostgreSQL state**, not a frontend constant or a Git-managed catalog preference. The Alembic revision `c1e4f9b73a62` (parent `b32e10c7a9d4`) creates `product_family_order` with one row (`id=1`), positive integer `revision`, and `families_json` (JSON-encoded text). It seeds revision `1` and `["Refine", "Essence", "Origin", "Harmony"]` on a fresh migration. Reapplying ordinary application deployments does not reset a saved order.
+Product-family display sequence is mutable **PostgreSQL state**, not a frontend constant or a Git-managed catalog preference. The Alembic revision `c1e4f9b73a62` (parent `b32e10c7a9d4`) creates `product_family_order` with one row (`id=1`), positive integer `revision`, and `families_json` (JSON-encoded text). The original migration seeds revision `1` with `["Refine", "Essence", "Origin", "Harmony"]`; follow-up revision `d921ae0c7254` updates only an untouched revision-1 seed to `["Refine", "Essence", "Harmony", "Origin"]`. Existing revision-2+ staff preferences remain unchanged. Reapplying ordinary deployments does not reset a saved order.
 
 The backend helper `backend/app/services/product_family_order.py` derives family identity from `product_family` (falling back to product name), computes active family names from existing product records, merges new/unlisted families into the effective sequence, and sorts public catalog results first by saved family position, then family/name/id as deterministic tie-breakers. The saved family order does **not** change product pricing, lifecycle, inventory, order records, or variant groupings. Families outside the default four may be present and should be explicitly reviewed after catalog updates.
 
@@ -42,7 +42,7 @@ git diff --check
 git --no-pager status --short --branch
 ```
 
-Local browser checks: verify initial sequence Refine > Essence > Origin > Harmony; save a different order, reload and confirm persistence; verify public catalog; restore default and Save; ensure variant details/prices/inventory are unchanged; test unauthenticated and nonprivileged write denial; verify concurrent stale revision produces `409`; inspect notification timing/dismissal on customer Support, Account, and Operations. Record the outstanding CSS harmonization separately.
+Local browser checks: verify initial sequence Refine > Essence > Harmony > Origin; save a different order, reload and confirm persistence; verify public catalog; restore default and Save; ensure variant details/prices/inventory are unchanged; test unauthenticated and nonprivileged write denial; verify concurrent stale revision produces `409`; inspect notification timing/dismissal on customer Support, Account, and Operations. Record the outstanding CSS harmonization separately.
 
 ## Production release and rollback boundary
 

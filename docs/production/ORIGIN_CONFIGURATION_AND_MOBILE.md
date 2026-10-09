@@ -53,3 +53,11 @@ Follow `DEPLOYMENT_AND_ROLLBACK.md` and `REBUILD_RUNBOOK.md` without substitutin
 - Product-family/order-related unified toast visual uniformity across theme/font variants is explicitly deferred.
 - Product inquiry honeypot parity and cross-worker/distributed rate limiting are separate hardening work; do not mislabel them as delivered.
 - Formal cartridge add-on commerce, verified compatibility/pricing, and any promised installation services await separate product/client authorization.
+
+## Follow-up: default Origin configuration
+
+The public catalog now displays `DD5ROAE` as the single Origin card so the
+alkaline-remineralization configuration is selected by default. `DD5RO` remains
+accessible through the existing detail-page configuration selector and direct
+`/systems/dd5ro` URL. Both retain their own SKU, price, images, specifications
+and inquiry identity. Do not change or retire either catalog record.

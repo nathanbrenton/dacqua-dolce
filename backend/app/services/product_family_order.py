@@ -1,7 +1,7 @@
 """Deterministic product family merchandising sort, independent of catalog records."""
 import json
 
-DEFAULT_FAMILY_ORDER = ("Refine", "Essence", "Origin", "Harmony")
+DEFAULT_FAMILY_ORDER = ("Refine", "Essence", "Harmony", "Origin")
 
 
 def family_name(product: object) -> str:
