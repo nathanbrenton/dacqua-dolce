@@ -7,6 +7,7 @@ import argparse
 import datetime as dt
 import json
 from pathlib import Path
+from evidence_contract import validate_v2
 
 CATEGORIES = {
     'service_user': ('service_users', lambda m: [m['instance']['service_user']]),
@@ -18,7 +19,9 @@ CATEGORIES = {
 }
 REQUIRED = {'host_id','source','inspection_date_utc','collected_at_utc','evidence_version','resource_scope','reserved','coverage'}
 
-def assess(manifest, evidence, now=None, max_age_days=1):
+def assess(manifest, evidence, now=None, max_age_days=1, max_age_hours=24):
+    if isinstance(evidence, dict) and evidence.get('evidence_version') == 2:
+        return assess_v2(manifest, evidence, now=now, max_age_hours=max_age_hours)
     if not isinstance(evidence,dict) or set(evidence)!=REQUIRED:
         raise ValueError('evidence fields missing or unexpected')
     if evidence['evidence_version'] != 1 or evidence['resource_scope'] != 'debian_production_manual_read_only':
@@ -64,14 +67,60 @@ def assess(manifest, evidence, now=None, max_age_days=1):
             'external_providers':'UNVERIFIED','nginx_effective_configuration':'UNVERIFIED',
             'backup_and_dns':'UNVERIFIED','ready_to_apply':False}
 
+def assess_v2(manifest, evidence, now=None, max_age_hours=24):
+    freshness = validate_v2(evidence, now=now, max_age_hours=max_age_hours)
+    if evidence['target_instance_id'] != manifest['instance']['id']:
+        raise ValueError('evidence target instance does not match manifest')
+    conflicts, unknown, checked = [], [], []
+    for _, (section, requested_values) in CATEGORIES.items():
+        entry = evidence['sections'][section]
+        stored = entry['values']
+        for value in requested_values(manifest):
+            if section == 'paths':
+                collision = any(value == other or value.startswith(other.rstrip('/') + '/')
+                                or other.startswith(value.rstrip('/') + '/') for other in stored)
+            else:
+                collision = value in stored
+            finding = {'category': section, 'value': value}
+            if collision:
+                conflicts.append(finding)
+            elif entry['status'] != 'complete':
+                unknown.append({**finding, 'reason': entry['status']})
+            else:
+                checked.append({**finding, 'finding': 'not_observed_in_declared_scope'})
+    # Conservative hostname collision signals; never imply effective routing
+    # verification, even if a name was absent from the sanitized observations.
+    nginx = evidence['sections'].get('nginx_server_names')
+    if nginx:
+        for hostname in [manifest['network']['canonical_host'], *manifest['network']['aliases']]:
+            wanted = hostname.lower().rstrip('.')
+            observed = nginx['values']
+            matches = [name for name in observed if name == wanted or
+                       (name.startswith('*.') and wanted.endswith(name[1:]) and
+                        wanted != name[2:])]
+            if matches:
+                conflicts.append({'category': 'nginx_server_names', 'value': hostname})
+            else:
+                unknown.append({'category': 'nginx_server_names', 'value': hostname,
+                                'reason': nginx['status']})
+    return {'evidence_host': evidence['host_id'], 'scope': evidence['resource_scope'],
+            'evidence_date_utc': evidence['collected_at_utc'][:10],
+            'timestamp_precision': freshness['timestamp_precision'],
+            'evidence_age_hours': freshness['age_hours'], 'collisions': conflicts,
+            'not_observed': checked, 'unverified': unknown,
+            'external_providers': 'UNVERIFIED', 'nginx_effective_configuration': 'UNVERIFIED',
+            'backup_and_dns': 'UNVERIFIED', 'ready_to_apply': False}
+
+
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--manifest',type=Path,required=True)
     p.add_argument('--evidence',type=Path,required=True)
     p.add_argument('--output',type=Path,help='Optional new report file; refuses overwrite')
+    p.add_argument('--max-age-hours', type=float, default=24, help='v2 expiry policy (default: 24 hours)')
     a=p.parse_args(argv)
     try:
-        result=assess(json.loads(a.manifest.read_text()),json.loads(a.evidence.read_text()))
+        result=assess(json.loads(a.manifest.read_text()),json.loads(a.evidence.read_text()),max_age_hours=a.max_age_hours)
         out=json.dumps(result,sort_keys=True,indent=2)+'\n'
         if a.output:
             with a.output.open('x') as f:f.write(out)
