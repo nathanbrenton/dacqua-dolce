@@ -392,6 +392,11 @@ def get_public_sales_area() -> SalesAreaRead:
     )
 
 
+
+def catalog_card_visible_sku(sku: str) -> bool:
+    """List one Origin card: DD5ROAE is default; DD5RO remains detail-only."""
+    return sku != "DD5RO"
+
 @router.get(
     "/products",
     response_model=CatalogProductListResponse,
@@ -422,9 +427,9 @@ def list_public_products(
         for product in products:
             if not product_is_publicly_visible(product):
                 continue
-            # DD5ROAE remains a directly addressable, separately identifiable SKU,
-            # but its configuration is selected within the single Origin card.
-            if product.sku == "DD5ROAE":
+            # DD5RO remains directly addressable in the Origin configuration
+            # selector; the single public card defaults to remineralization.
+            if not catalog_card_visible_sku(product.sku):
                 continue
 
             active_images = [image for image in product.images if image.active]

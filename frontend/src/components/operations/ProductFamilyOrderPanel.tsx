@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "../toast/ToastProvider";
 import { getProductFamilyOrder, saveProductFamilyOrder, type ProductFamilyOrder } from "../../api/operations";
 
-const defaults = ["Refine", "Essence", "Origin", "Harmony"];
+const defaults = ["Refine", "Essence", "Harmony", "Origin"];
 
 export function ProductFamilyOrderPanel() {
   const [server, setServer] = useState<ProductFamilyOrder | null>(null);
