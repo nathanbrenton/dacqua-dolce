@@ -8,6 +8,22 @@ from app.core.request_context import get_request_id
 from app.models.audit import AuditEvent
 
 
+def sanitize_audit_entity_id(value: str) -> str:
+    """Preserve canonical UUID entity identifiers without bypassing free-text redaction.
+
+    UUIDs are nonsecret record identifiers. Card-number redaction can otherwise
+    mistake adjacent UUID digit groups for a PAN and destroy referential audit data.
+    Everything that is not a complete canonical UUID keeps normal sanitization.
+    """
+    try:
+        parsed = uuid.UUID(value)
+    except (ValueError, AttributeError, TypeError):
+        return sanitize_text(value, max_length=120)
+    if str(parsed) == value.lower():
+        return str(parsed)
+    return sanitize_text(value, max_length=120)
+
+
 def record_audit_event(
     db: Session,
     *,
@@ -39,10 +55,7 @@ def record_audit_event(
             max_length=120,
         ),
         entity_id=(
-            sanitize_text(
-                entity_id,
-                max_length=120,
-            )
+            sanitize_audit_entity_id(entity_id)
             if entity_id is not None
             else None
         ),
