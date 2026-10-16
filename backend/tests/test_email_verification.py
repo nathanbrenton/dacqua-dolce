@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -27,6 +28,8 @@ from app.services.email_verification import (
     generate_verification_token,
     hash_verification_token,
     issue_email_verification,
+    RESEND_OVERLAP_MINUTES,
+    MAX_ACTIVE_VERIFICATION_LINKS,
 )
 
 client = TestClient(app)
@@ -176,18 +179,19 @@ def test_verification_complete_api_uses_email_runtime_settings() -> None:
 
         db.commit()
 
+    # Simulate Mail opening the link in a separate browser session.
+    other_browser = TestClient(app)
+    other_csrf_response = other_browser.get("/api/auth/csrf")
+    assert other_csrf_response.status_code == 200
+    other_csrf = other_csrf_response.json()["csrf_token"]
     with patch(
         "app.api.authentication.get_email_runtime_settings",
         return_value=email_settings,
     ):
-        response = client.post(
+        response = other_browser.post(
             "/api/auth/email-verification/complete",
-            json={
-                "token": raw_token,
-            },
-            headers={
-                "X-CSRF-Token": csrf(),
-            },
+            json={"token": raw_token},
+            headers={"X-CSRF-Token": other_csrf},
         )
 
     assert response.status_code == 200
@@ -326,7 +330,7 @@ def test_verification_is_single_use() -> None:
             db.commit()
 
 
-def test_resend_supersedes_previous_token() -> None:
+def test_resend_preserves_recent_link_temporarily() -> None:
     email = (
         f"verify-resend-{uuid4()}"
         "@example.test"
@@ -396,13 +400,131 @@ def test_resend_supersedes_previous_token() -> None:
         assert first_record is not None
         assert second_record is not None
 
+        assert first_record.superseded_at is None
+        assert second_record.superseded_at is None
+        assert first_record.expires_at < second_record.expires_at
         assert (
-            first_record.superseded_at
-            is not None
-        )
-        assert (
-            second_record.superseded_at
-            is None
+            (first_record.expires_at - second_record.created_at).total_seconds()
+            <= (RESEND_OVERLAP_MINUTES * 60)
         )
 
+        # A previously delivered link can still complete verification.
+        assert complete_email_verification(
+            db,
+            raw_token=first,
+            request_ip_address=None,
+            request_user_agent=None,
+        )
+        assert second_record.superseded_at is not None
+        assert not complete_email_verification(
+            db,
+            raw_token=second,
+            request_ip_address=None,
+            request_user_agent=None,
+        )
+        db.rollback()
+
+
+def test_resend_caps_active_links_and_preserves_diagnostics() -> None:
+    email = f"verify-overlap-{uuid4()}@example.test"
+
+    with SessionLocal() as db:
+        user = User(email=email, email_verified_at=None)
+        user.roles.append(UserRole(role=RoleName.customer))
+        db.add(user)
+        db.flush()
+
+        settings = get_email_runtime_settings()
+        tokens = [
+            issue_email_verification(
+                db,
+                user=user,
+                settings=settings,
+                requested_ip_address=None,
+                requested_user_agent=None,
+            )
+            for _ in range(MAX_ACTIVE_VERIFICATION_LINKS + 1)
+        ]
+        assert all(tokens)
+
+        records = [
+            db.scalar(select(EmailVerificationToken).where(
+                EmailVerificationToken.token_hash == hash_verification_token(raw)
+            ))
+            for raw in tokens
+        ]
+        assert all(record is not None for record in records)
+        assert records[0].superseded_at is not None
+        assert all(record.superseded_at is None for record in records[1:])
+
+        reasons: dict[str, str] = {}
+        assert not complete_email_verification(
+            db,
+            raw_token=tokens[0],
+            request_ip_address=None,
+            request_user_agent=None,
+            failure_details=reasons,
+        )
+        assert reasons == {"reason": "superseded"}
+
+        reasons.clear()
+        assert not complete_email_verification(
+            db,
+            raw_token="unrecognized-verification-token",
+            request_ip_address=None,
+            request_user_agent=None,
+            failure_details=reasons,
+        )
+        assert reasons == {"reason": "unrecognized"}
+
+        assert complete_email_verification(
+            db,
+            raw_token=tokens[-1],
+            request_ip_address=None,
+            request_user_agent=None,
+        )
+        reasons.clear()
+        assert not complete_email_verification(
+            db,
+            raw_token=tokens[-1],
+            request_ip_address=None,
+            request_user_agent=None,
+            failure_details=reasons,
+        )
+        assert reasons == {"reason": "already_used"}
+        db.rollback()
+
+
+def test_verification_rejects_expired_link_with_safe_reason() -> None:
+    email = f"verify-expired-{uuid4()}@example.test"
+
+    with SessionLocal() as db:
+        user = User(email=email, email_verified_at=None)
+        user.roles.append(UserRole(role=RoleName.customer))
+        db.add(user)
+        db.flush()
+        raw = issue_email_verification(
+            db,
+            user=user,
+            settings=get_email_runtime_settings(),
+            requested_ip_address=None,
+            requested_user_agent=None,
+        )
+        assert raw is not None
+        record = db.scalar(select(EmailVerificationToken).where(
+            EmailVerificationToken.token_hash == hash_verification_token(raw)
+        ))
+        assert record is not None
+        record.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+        db.flush()
+
+        reasons: dict[str, str] = {}
+        assert not complete_email_verification(
+            db,
+            raw_token=raw,
+            request_ip_address=None,
+            request_user_agent=None,
+            failure_details=reasons,
+        )
+        assert reasons == {"reason": "expired"}
         db.rollback()

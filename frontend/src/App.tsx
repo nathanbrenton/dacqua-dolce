@@ -9,6 +9,7 @@ import {
 import {
   getCurrentAccount,
   logoutAccount,
+  requestEmailVerification,
   type AuthenticationStatus,
 } from "./api/authentication";
 import {
@@ -772,6 +773,14 @@ export function App() {
           token={decodeURIComponent(
             verifyEmailToken,
           )}
+          canResend={
+            pendingAuthentication
+              ?.email_verification_required === true
+          }
+          onResend={requestEmailVerification}
+          onRequestSignIn={() => {
+            setAuthDialogOpen(true);
+          }}
           onNavigate={navigate}
           onVerified={
             refreshAuthenticationAfterVerification
