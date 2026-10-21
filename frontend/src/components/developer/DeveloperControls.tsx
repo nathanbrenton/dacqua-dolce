@@ -1,3 +1,4 @@
+import { CAN_PREVIEW_PRODUCT_IMAGERY } from "../catalog/PreviewProductImage";
 import {
   DEFAULT_APPEARANCE,
   isAppearanceMode,
@@ -25,6 +26,8 @@ import {
 type DeveloperControlsProps = {
   open: boolean;
   onClose: () => void;
+  imagePreviewEnabled: boolean;
+  onImagePreviewChange: (enabled: boolean) => void;
   theme: ThemeId;
   onThemeChange: (theme: ThemeId) => void;
   appearance: AppearanceMode;
@@ -44,6 +47,8 @@ type DeveloperControlsProps = {
 export function DeveloperControls({
   open,
   onClose,
+  imagePreviewEnabled,
+  onImagePreviewChange,
   theme,
   onThemeChange,
   appearance,
@@ -76,6 +81,20 @@ export function DeveloperControls({
           ×
         </button>
       </div>
+
+      {CAN_PREVIEW_PRODUCT_IMAGERY ? (
+        <div className="developer-imagery-preview">
+          <label className="developer-imagery-preview-checkbox">
+            <input
+              type="checkbox"
+              checked={imagePreviewEnabled}
+              onChange={(event) => onImagePreviewChange(event.target.checked)}
+            />
+            Show AI product-image previews
+          </label>
+          <p>Unapproved AI concepts. Original photos return when unchecked or when a preview is missing.</p>
+        </div>
+      ) : null}
 
       <label htmlFor="developer-theme">
         Color theme

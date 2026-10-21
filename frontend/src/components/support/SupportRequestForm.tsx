@@ -145,7 +145,7 @@ export function SupportRequestForm({
           maxLength={14}
           pattern={"[(][0-9]{3}[)] [0-9]{3}-[0-9]{4}"}
           title="Enter a 10-digit US phone number."
-          placeholder="(949) 555-1234"
+          placeholder="(951) 555-0142"
           value={phone}
           onValueChange={setPhone}
         />

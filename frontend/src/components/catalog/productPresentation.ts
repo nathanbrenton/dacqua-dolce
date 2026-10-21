@@ -1,4 +1,5 @@
 import type { CatalogProduct } from "../../api/catalog";
+import { getConfiguration, getConfigurationFamily } from "./productConfigurations";
 
 export type ProductPresentationFact = {
   label: string;
@@ -19,94 +20,38 @@ export type ProductPresentation = {
   ownershipGuidance: string | null;
 };
 
-const HARMONY_CLEAR_SKU = "DD15CAT-TTACPTV";
-
-export function getProductPresentation(
-  product: CatalogProduct,
-): ProductPresentation {
-  // Origin configurations share one customer-facing category/family/descriptor.
-  // Retain the actual SKU and per-SKU details for images, specs, pricing and quotes.
-  if (product.sku === "DD5RO" || product.sku === "DD5ROAE") {
+export function getProductPresentation(product: CatalogProduct): ProductPresentation {
+  const family = getConfigurationFamily(product.sku);
+  const configuration = getConfiguration(product.sku);
+  if (family !== null && configuration !== null) {
+    const isHarmony = family.name === "Harmony";
+    const isPassThrough = product.sku === "DD15CLEARPTV";
     return {
-      categoryName: "Under-Sink Filtration",
-      familyName: "Origin",
-      variantLabel: "Reverse Osmosis",
+      categoryName: family.name === "Origin" ? "Point-of-Use Filtration" : "Whole-Home Water Treatment",
+      familyName: family.name,
+      variantLabel: configuration.label,
       systemType: product.system_type,
-      technologyLabel: null,
+      technologyLabel: isHarmony ? "Featuring CLEAR Technology" : null,
       catalogSummary: null,
-      education: null,
-      technologyFacts: [],
-      technologyGuidance: null,
-      installationFacts: [],
-      ownershipGuidance: null,
-    };
-  }
-
-  // Customer-facing Essence descriptor. The underlying SKU, product name,
-  // automatic media-rinse capability, and specifications are not changed.
-  if (product.sku === "DD15CATRV") {
-    return {
-      categoryName: product.identity.category,
-      familyName: "Essence",
-      variantLabel: "Carbon Filter",
-      systemType: product.system_type,
-      technologyLabel: null,
-      catalogSummary: null,
-      education: null,
-      technologyFacts: [],
-      technologyGuidance: null,
-      installationFacts: [],
-      ownershipGuidance: null,
-    };
-  }
-
-  if (product.sku === HARMONY_CLEAR_SKU) {
-    return {
-      categoryName: product.identity.category,
-      familyName: product.identity.family,
-      variantLabel: "Water Conditioner",
-      systemType: "Water Conditioner",
-      technologyLabel: "Featuring CLEAR Technology",
-      catalogSummary:
-        "Non-backwashing whole-home water conditioning featuring CLEAR Technology, with no electrical power or backwash drain required.",
-      education:
-        "CLEAR is D'Acqua Dolce's branded terminology for its anti-scale water-conditioning approach. Manufacturer performance statements are presented separately only when an approved source is recorded.",
-      technologyFacts: [
-        {
-          label: "CLEAR",
-          value: "Crystal Lattice Enabling Anti-Scale Reduction",
-        },
-        {
-          label: "CAM",
-          value: "Crystal Aggregate Matrix",
-        },
-        {
-          label: "CAM Induction",
-          value: "Internal conditioning component",
-        },
-      ],
-      technologyGuidance:
-        "The CLEAR name describes D'Acqua Dolce's anti-scale conditioning approach. Calcium and magnesium remain in the treated water; the terminology does not claim conventional hardness removal or a reduction in measured hardness concentration. CAM Induction is the public name for the internal conditioning component associated with CLEAR; its name does not by itself establish a physical mechanism.",
-      installationFacts: [
-        {
-          label: "Operation",
-          value: "Non-backwashing",
-        },
-        {
-          label: "Electrical power",
-          value: "Not required",
-        },
-        {
-          label: "Backwash drain",
-          value: "Not required",
-        },
-        {
-          label: "Recommended pairing",
-          value: "Duo cartridge filtration",
-        },
-      ],
-      ownershipGuidance:
-        "Harmony may be purchased individually. The preferred filtration configuration pairs it with a Duo cartridge system containing replaceable sediment and carbon filters. Replace cartridges every six months where applicable, with actual life affected by water quality, use, and system conditions; follow a pressure/clog gauge when equipped.",
+      education: isHarmony
+        ? "CLEAR is D'Acqua Dolce's branded water-conditioning approach. It is not conventional water softening; calcium and magnesium are not removed as hardness minerals."
+        : null,
+      technologyFacts: isHarmony ? [
+        { label: "CLEAR", value: "Crystal Lattice Enabling Anti-Scale Reduction" },
+        { label: "CAM", value: "Crystal Aggregate Matrix" },
+        { label: "CAM Induction", value: "Internal conditioning component" },
+      ] : [],
+      technologyGuidance: isHarmony
+        ? "CLEAR terminology describes the conditioning approach, not a verified reduction of measured hardness. Cartridge-specific filtration performance depends on the selected media and water conditions."
+        : null,
+      installationFacts: isHarmony ? [
+        { label: "Filtration", value: configuration.details },
+      ] : [],
+      ownershipGuidance: isHarmony
+        ? (isPassThrough
+          ? "This configuration contains no Pureline cartridge filters and should not be described as providing cartridge-based taste, odor, or compound filtration."
+          : "Pureline cartridges are replaceable. Selection and replacement intervals depend on water quality, use, and cartridge specifications.")
+        : null,
     };
   }
 

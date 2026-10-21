@@ -56,3 +56,51 @@ def test_siteverify_evidence(response, accepted):
             assert error.value.status_code == 400
     assert client.post.call_count == 1
     assert client.post.call_args.kwargs["data"]["response"] == "token"
+
+
+def test_production_requires_token_even_if_toggle_disabled():
+    production = settings(False)
+    production.is_production = True
+    with patch("app.services.turnstile.get_settings", return_value=production):
+        with pytest.raises(HTTPException) as error:
+            verify_public_form_turnstile(req(), action="quote")
+    assert error.value.status_code == 400
+
+
+def test_production_requires_secret_even_if_toggle_disabled():
+    production = settings(False)
+    production.is_production = True
+    production.turnstile_secret = None
+    with patch("app.services.turnstile.get_settings", return_value=production):
+        with pytest.raises(HTTPException) as error:
+            verify_public_form_turnstile(req("token"), action="quote")
+    assert error.value.status_code == 503
+
+
+def test_production_disabled_toggle_still_validates_cloudflare():
+    production = settings(False)
+    production.is_production = True
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.post.return_value.json.return_value = {
+        "success": True,
+        "hostname": production.turnstile_expected_hostname,
+        "action": "quote",
+    }
+    with (
+        patch("app.services.turnstile.get_settings", return_value=production),
+        patch("app.services.turnstile.httpx.Client", return_value=client),
+    ):
+        verify_public_form_turnstile(req("token"), action="quote")
+    assert client.post.call_count == 1
+
+
+def test_development_disabled_toggle_still_skips_verification():
+    development = settings(False)
+    development.is_production = False
+    with (
+        patch("app.services.turnstile.get_settings", return_value=development),
+        patch("app.services.turnstile.httpx.Client") as client,
+    ):
+        verify_public_form_turnstile(req(), action="quote")
+    client.assert_not_called()

@@ -7,11 +7,14 @@ import { DEVELOPER_MODE } from "../../config/environment";
 import {
   getCatalogProducts,
   type CatalogProduct,
+  type CatalogImage,
 } from "../../api/catalog";
-import { ResponsiveProductImage } from "./ResponsiveProductImage";
+import { PreviewProductImage } from "./PreviewProductImage";
 import { getProductPresentation } from "./productPresentation";
+import { CONFIGURATION_FAMILIES } from "./productConfigurations";
 
 type CatalogSectionProps = {
+  imagePreviewEnabled: boolean;
   onNavigate: (path: string) => void;
 };
 
@@ -30,7 +33,25 @@ function formatPrice(
 
 
 
+/**
+ * Temporary storefront family imagery, reused from the pre-PT41 catalog.
+ * Never attach these historical photos to new SKUs as verified product images.
+ * The earlier Harmony photo does NOT depict a verified Pureline Duo assembly.
+ * Remove each fallback when its current default SKU has approved imagery.
+ */
+const FAMILY_CARD_IMAGE_FALLBACKS: Readonly<Record<string, CatalogImage>> = {
+  Refine: {
+    path: "/products/media/refine-1-5-cf.jpeg",
+    alt_text: "Earlier Refine water-softener system with brine tank; representative image",
+  },
+  Harmony: {
+    path: "/products/media/1-5cf-pass-through-with-prefilter-dimensions.webp",
+    alt_text: "Earlier Harmony water conditioner with prefilter; illustrative, not the Pureline Duo configuration",
+  },
+};
+
 export function CatalogSection({
+  imagePreviewEnabled,
   onNavigate,
 }: CatalogSectionProps) {
   const [products, setProducts] =
@@ -57,6 +78,30 @@ export function CatalogSection({
         setLoading(false);
       });
   }, []);
+
+  // Preserve the backend's configurable family ordering, while rendering one
+  // card per family. A card's destination always belongs to a real SKU.
+  const groupedProducts: CatalogProduct[] = [];
+  const shownFamilies = new Set<string>();
+  for (const item of products) {
+    const family = CONFIGURATION_FAMILIES.find(
+      (entry) => entry.name === item.product_family);
+    if (family === undefined) {
+      groupedProducts.push(item);
+      continue;
+    }
+    if (shownFamilies.has(family.name)) continue;
+    shownFamilies.add(family.name);
+    const candidates = products.filter((product) =>
+      family.configurations.some((configuration) => configuration.sku === product.sku));
+    // Before the PT41 database rollout, show the existing family card; after
+    // rollout, prefer the explicitly configured SKU for each family.
+    groupedProducts.push(
+      candidates.find((product) => product.sku === family.defaultSku)
+      ?? candidates[0]
+      ?? item,
+    );
+  }
 
   const developerMode = DEVELOPER_MODE;
 
@@ -88,18 +133,6 @@ export function CatalogSection({
           Explore our water treatment systems and pricing below.
         </p>
       </div>
-
-      <aside
-        className="catalog-purchase-boundary"
-        aria-label="Purchase and installation boundary"
-      >
-        <strong>Installation &amp; Services</strong>
-        <p>
-          Equipment is currently offered without installation. Installation services
-          and installer referrals may be available in the future. Please contact us
-          to discuss your needs.
-        </p>
-      </aside>
 
       {loading ? (
         <p
@@ -138,9 +171,16 @@ export function CatalogSection({
 
       {products.length > 0 ? (
         <div className="product-grid">
-          {products.map((product) => {
-            const presentation =
-              getProductPresentation(product);
+          {groupedProducts.map((product) => {
+            const presentation = getProductPresentation(product);
+            const family = CONFIGURATION_FAMILIES.find((entry) =>
+              entry.configurations.some((configuration) => configuration.sku === product.sku));
+            // The API image always takes precedence. Fallbacks are for cards only;
+            // no unverified media is attached to a new product-detail record.
+            const illustrativeImage = product.primary_image === null
+              ? FAMILY_CARD_IMAGE_FALLBACKS[family?.name ?? ""] ?? null
+              : null;
+            const cardImage = product.primary_image ?? illustrativeImage;
 
             return (
             <article
@@ -157,19 +197,12 @@ export function CatalogSection({
                   );
                 }}
               >
-                {product.primary_image
-                  !== null ? (
-                  <ResponsiveProductImage
-                    image={
-                      product.primary_image
-                    }
-                  />
-                ) : (
-                  <span
-                    className="product-media-placeholder"
-                    aria-hidden="true"
-                  />
-                )}
+                <PreviewProductImage
+                  sku={product.sku}
+                  original={cardImage}
+                  enabled={imagePreviewEnabled}
+                  presentation="landing"
+                />
               </button>
 
               <div className="product-card-body">
@@ -194,8 +227,20 @@ export function CatalogSection({
                 </div>
 
                 <p className="product-description">
-                  {presentation.catalogSummary ?? product.description}
+                  {family?.summary ?? presentation.catalogSummary ?? product.description}
                 </p>
+
+                {illustrativeImage !== null ? (
+                  <p className="product-image-note">
+                    Representative image; selected configuration may differ.
+                  </p>
+                ) : null}
+
+                {family !== undefined ? (
+                  <p className="product-configuration-count">
+                    {family.configurations.length} configurations available
+                  </p>
+                ) : null}
 
                 {product.availability.lifecycle_status === "soon_discontinued" ? (
                   <p className="product-lifecycle-label">Soon to be discontinued</p>

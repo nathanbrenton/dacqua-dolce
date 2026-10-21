@@ -110,6 +110,48 @@ type OperationsPageProps = {
   onToggleDeveloperControls: () => void;
 };
 
+type OperationsWorkspace =
+  | "overview"
+  | "requests"
+  | "orders"
+  | "catalog"
+  | "customers"
+  | "communications"
+  | "installers"
+  | "staff"
+  | "audit";
+
+const OPERATIONS_WORKSPACES: ReadonlyArray<{
+  id: OperationsWorkspace;
+  label: string;
+  description: string;
+}> = [
+  { id: "overview", label: "Overview", description: "Priorities & readiness" },
+  { id: "requests", label: "Requests", description: "Quotes & triage" },
+  { id: "orders", label: "Orders", description: "Fulfillment" },
+  { id: "catalog", label: "Catalog", description: "Pricing & inventory" },
+  { id: "customers", label: "Customers", description: "Accounts & equipment" },
+  { id: "communications", label: "Communications", description: "Inbox & delivery" },
+  { id: "installers", label: "Installers", description: "Internal research" },
+  { id: "staff", label: "Staff", description: "User access & roles" },
+  { id: "audit", label: "Audit", description: "Activity & troubleshooting" },
+];
+
+const OPERATIONS_TARGET_WORKSPACES: Record<string, OperationsWorkspace> = {
+  "launch-readiness": "overview",
+  "assisted-sales-insights": "overview",
+  "launch-policies": "overview",
+  "email-delivery-issues": "communications",
+  "communications-history": "communications",
+  "quote-queue": "requests",
+  "order-history": "orders",
+  "catalog-governance": "catalog",
+  "customer-roster": "customers",
+  "installer-candidates": "installers",
+  "account-administration": "staff",
+  "audit-events": "audit",
+};
+
 const OPERATIONS_ROLES = new Set([
   "employee",
   "manager",
@@ -708,6 +750,54 @@ export function OperationsPage({
     () => roles.some((role) => ADMINISTRATION_ROLES.has(role)),
     [roles],
   );
+
+  const [activeWorkspace, setActiveWorkspace] =
+    useState<OperationsWorkspace>("overview");
+
+  const visibleWorkspaces = useMemo(() =>
+    OPERATIONS_WORKSPACES.filter(({ id }) =>
+      (id !== "staff" || administrationAllowed)
+      && (id !== "audit" || auditLogAllowed),
+    ),
+    [administrationAllowed, auditLogAllowed],
+  );
+
+  useEffect(() => {
+    if (
+      (activeWorkspace === "staff" && !administrationAllowed)
+      || (activeWorkspace === "audit" && !auditLogAllowed)
+    ) {
+      setActiveWorkspace("overview");
+    }
+  }, [activeWorkspace, administrationAllowed, auditLogAllowed]);
+
+  // Preserve the mounted forms and drafts when navigating away. Open the
+  // selected workspace's disclosure so a tab never lands on a closed row.
+  useEffect(() => {
+    if (activeWorkspace === "overview") {
+      return;
+    }
+    const panel = document.getElementById(
+      `operations-panel-${activeWorkspace}`,
+    );
+    const disclosure = panel?.querySelector("details.operations-disclosure");
+    if (disclosure instanceof HTMLDetailsElement) {
+      disclosure.open = true;
+    }
+  }, [activeWorkspace]);
+
+  function chooseWorkspace(next: OperationsWorkspace): void {
+    if (!visibleWorkspaces.some(({ id }) => id === next)) {
+      return;
+    }
+    setActiveWorkspace(next);
+    window.requestAnimationFrame(() => {
+      document.getElementById("operations-primary-nav")?.scrollIntoView({
+        behavior: "auto",
+        block: "start",
+      });
+    });
+  }
 
   const [summary, setSummary] =
     useState<OperationsSummary | null>(null);
@@ -2491,6 +2581,10 @@ export function OperationsPage({
     targetId: string,
     selector?: string,
   ) {
+    const workspace = OPERATIONS_TARGET_WORKSPACES[targetId];
+    if (workspace && visibleWorkspaces.some(({ id }) => id === workspace)) {
+      setActiveWorkspace(workspace);
+    }
     window.requestAnimationFrame(() => {
       const fallback = document.getElementById(targetId);
       const target = selector
@@ -2620,9 +2714,30 @@ export function OperationsPage({
         </div>
       </header>
 
-      <div className="operations-workspace-label">
-        <p className="eyebrow">Operations</p>
-      </div>
+      <nav
+        id="operations-primary-nav"
+        className="operations-primary-nav"
+        aria-label="Operations workspaces"
+      >
+        <div className="operations-nav-heading">
+          <strong>Operations</strong>
+          <span>{visibleWorkspaces.find(({ id }) => id === activeWorkspace)?.description}</span>
+        </div>
+        <div className="operations-nav-links">
+          {visibleWorkspaces.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              className={activeWorkspace === id ? "is-active" : ""}
+              aria-pressed={activeWorkspace === id}
+              aria-controls={`operations-panel-${id}`}
+              onClick={() => chooseWorkspace(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
       {error !== null ? (
         <p className="operations-alert operations-error" role="alert">
@@ -2638,6 +2753,12 @@ export function OperationsPage({
 
       {loading ? <p role="status">Loading operations…</p> : null}
 
+      <section
+        id="operations-panel-overview"
+        className="operations-workspace-panel"
+        aria-label="Overview"
+        hidden={activeWorkspace !== "overview"}
+      >
       {summary !== null ? (
         <section
           className="operations-metrics"
@@ -2679,6 +2800,34 @@ export function OperationsPage({
               <small>Open</small>
             </button>
           ))}
+        </section>
+      ) : null}
+
+      {nextAction !== null ? (
+        <section
+          className="operations-next-action"
+          aria-labelledby="operations-next-action-title"
+        >
+          <span>Next action</span>
+
+          <div>
+            <strong id="operations-next-action-title">
+              {nextAction.title}
+            </strong>
+            <p>{nextAction.detail}</p>
+          </div>
+
+          {nextAction.href !== null ? (
+            <a
+              href={nextAction.href}
+              onClick={(event) => {
+                event.preventDefault();
+                scrollToOperationsTarget(nextAction.href.slice(1));
+              }}
+            >
+              Open queue
+            </a>
+          ) : null}
         </section>
       ) : null}
 
@@ -2860,34 +3009,14 @@ export function OperationsPage({
         </div>
       </details>
 
-      {nextAction !== null ? (
-        <section
-          className="operations-next-action"
-          aria-labelledby="operations-next-action-title"
-        >
-          <span>Next action</span>
+      </section>
 
-          <div>
-            <strong id="operations-next-action-title">
-              {nextAction.title}
-            </strong>
-            <p>{nextAction.detail}</p>
-          </div>
-
-          {nextAction.href !== null ? (
-            <a
-              href={nextAction.href}
-              onClick={(event) => {
-                event.preventDefault();
-                scrollToOperationsTarget(nextAction.href.slice(1));
-              }}
-            >
-              Open queue
-            </a>
-          ) : null}
-        </section>
-      ) : null}
-
+      <section
+        id="operations-panel-communications"
+        className="operations-workspace-panel"
+        aria-label="Communications"
+        hidden={activeWorkspace !== "communications"}
+      >
       {failedDeliveries.length > 0 ? (
         <details
           id="email-delivery-issues"
@@ -2944,6 +3073,14 @@ export function OperationsPage({
         </div>
       </details>
 
+      </section>
+
+      <section
+        id="operations-panel-requests"
+        className="operations-workspace-panel"
+        aria-label="Customer requests"
+        hidden={activeWorkspace !== "requests"}
+      >
       <details
         id="quote-queue"
         className="operations-section operations-disclosure"
@@ -3283,6 +3420,14 @@ export function OperationsPage({
         </div>
       </details>
 
+      </section>
+
+      <section
+        id="operations-panel-orders"
+        className="operations-workspace-panel"
+        aria-label="Customer orders"
+        hidden={activeWorkspace !== "orders"}
+      >
       <details
         id="order-history"
         className="operations-section operations-disclosure"
@@ -3503,6 +3648,14 @@ export function OperationsPage({
         </div>
       </details>
 
+      </section>
+
+      <section
+        id="operations-panel-catalog"
+        className="operations-workspace-panel"
+        aria-label="Catalog governance"
+        hidden={activeWorkspace !== "catalog"}
+      >
       <details
         id="catalog-governance"
         className="operations-section operations-disclosure"
@@ -4657,6 +4810,14 @@ export function OperationsPage({
         </div>
       </details>
 
+      </section>
+
+      <section
+        id="operations-panel-customers"
+        className="operations-workspace-panel"
+        aria-label="Customer accounts"
+        hidden={activeWorkspace !== "customers"}
+      >
       <details
         id="customer-roster"
         className="operations-section operations-disclosure"
@@ -4948,6 +5109,14 @@ export function OperationsPage({
         </div>
       </details>
 
+      </section>
+
+      <section
+        id="operations-panel-installers"
+        className="operations-workspace-panel"
+        aria-label="Installer research"
+        hidden={activeWorkspace !== "installers"}
+      >
       <details
         id="installer-candidates"
         className="operations-section operations-disclosure"
@@ -5056,6 +5225,14 @@ export function OperationsPage({
         </div>
       </details>
 
+      </section>
+
+      <section
+        id="operations-panel-staff"
+        className="operations-workspace-panel"
+        aria-label="Staff access"
+        hidden={activeWorkspace !== "staff"}
+      >
       {administrationAllowed ? (
         <details
           id="account-administration"
@@ -5420,6 +5597,14 @@ export function OperationsPage({
         </details>
       ) : null}
 
+      </section>
+
+      <section
+        id="operations-panel-audit"
+        className="operations-workspace-panel"
+        aria-label="Audit log"
+        hidden={activeWorkspace !== "audit"}
+      >
       {auditLogAllowed ? (
         <div
           id="audit-events"
@@ -5856,6 +6041,8 @@ export function OperationsPage({
           </details>
         </div>
       ) : null}
+
+      </section>
 
       <footer className="site-footer operations-footer">
         <DeveloperFooterLogo

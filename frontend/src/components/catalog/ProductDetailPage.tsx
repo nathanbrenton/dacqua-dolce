@@ -9,17 +9,39 @@ import {
   getCatalogProduct,
   subscribeStockNotification,
   type CatalogProductDetail,
+  type CatalogImage,
 } from "../../api/catalog";
 import type { AuthenticationStatus } from "../../api/authentication";
 import {
   addCartItem,
 } from "../../api/cart";
 import { QuoteDialog } from "../quotes/QuoteDialog";
+import { InstallationServicesNotice } from "./InstallationServicesNotice";
 import { SupportRequestForm } from "../support/SupportRequestForm";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
+import { PreviewProductImage, CAN_PREVIEW_PRODUCT_IMAGERY, getAdditionalPreviewImages } from "./PreviewProductImage";
 import { getProductPresentation } from "./productPresentation";
+import { ClackFittingThumbnailSelect } from "./ClackFittingThumbnailSelect";
+import { getConfigurablePreviewGallery } from "./ConfigurablePreviewGallery";
+import { getConfigurationFamily } from "./productConfigurations";
+import { CLACK_CONNECTION_SIZES, clackFittingsForSize, shortClackFittingLabel, offersClackInstallationFittings } from "./clackInstallationFittings";
+
+// These are the same temporary, representative photos used on the landing
+// cards. They are NOT approved SKU-specific product images. Verified catalog
+// images always take precedence. Replace with approved photos when available.
+const DETAIL_IMAGE_FALLBACKS: Readonly<Record<string, CatalogImage>> = {
+  Refine: {
+    path: "/products/media/refine-1-5-cf.jpeg",
+    alt_text: "Earlier Refine softener with brine tank; representative image",
+  },
+  Harmony: {
+    path: "/products/media/1-5cf-pass-through-with-prefilter-dimensions.webp",
+    alt_text: "Earlier Harmony conditioner with prefilter; representative image, not a verified Pureline assembly",
+  },
+};
 
 type ProductDetailPageProps = {
+  imagePreviewEnabled: boolean;
   slug: string;
   account: AuthenticationStatus | null;
   onNavigate: (path: string, preserveScroll?: boolean) => void;
@@ -56,6 +78,7 @@ function relationshipLabel(value: string): string {
 }
 
 export function ProductDetailPage({
+  imagePreviewEnabled,
   slug,
   account,
   onNavigate,
@@ -71,10 +94,17 @@ export function ProductDetailPage({
     useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] =
     useState(0);
+  const [selectedDemoImageId, setSelectedDemoImageId] = useState<string | null>(null);
+  const [originalThumbnailSelected, setOriginalThumbnailSelected] = useState(false);
   const [selectedVariantId, setSelectedVariantId] =
     useState<string | null>(null);
   const [quoteOpen, setQuoteOpen] =
     useState(false);
+  const [selectedFittingSize, setSelectedFittingSize] = useState("");
+  const [selectedFittingType, setSelectedFittingType] = useState("");
+  // Aesthetic Lab preselection is visual only; never silently include an
+  // unpriced part in a quote/cart until a visitor explicitly picks its type.
+  const [fittingExplicitlyChosen, setFittingExplicitlyChosen] = useState(false);
   const [commerceError, setCommerceError] =
     useState<string | null>(null);
   const [addingToCart, setAddingToCart] =
@@ -87,14 +117,12 @@ export function ProductDetailPage({
     useState<string | null>(null);
 
   useEffect(() => {
-    // Keep the existing Origin details mounted during a configuration change.
-    // Replacing the entire page with a loading placeholder collapses its height
-    // and can move the viewport even when navigation preserves scroll position.
-    const originSwitch = product !== null
-      && (product.sku === "DD5RO" || product.sku === "DD5ROAE")
-      && (slug.toLowerCase() === "dd5ro" || slug.toLowerCase() === "dd5roae");
+    // Preserve layout and scroll position across selections within a family.
+    const family = product === null ? null : getConfigurationFamily(product.sku);
+    const sameFamilySwitch = family !== null && family.configurations.some(
+      (configuration) => configuration.sku.toLowerCase() === slug.toLowerCase());
     let active = true;
-    if (!originSwitch) {
+    if (!sameFamilySwitch) {
       setLoading(true);
     }
     setError(null);
@@ -104,7 +132,12 @@ export function ProductDetailPage({
         if (!active) return;
         setProduct(result);
         setSelectedImageIndex(0);
+        setSelectedDemoImageId(null);
+        setOriginalThumbnailSelected(false);
         setSelectedVariantId(null);
+        setSelectedFittingSize("");
+        setSelectedFittingType("");
+        setFittingExplicitlyChosen(false);
         setNotificationEmail(account?.email ?? "");
         setNotificationState("idle");
         setNotificationMessage(null);
@@ -128,6 +161,26 @@ export function ProductDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, account]);
 
+  useEffect(() => {
+    // No gallery selection can persist after opting out of AI previews.
+    setSelectedDemoImageId(null);
+    setOriginalThumbnailSelected(false);
+  }, [imagePreviewEnabled]);
+
+  useEffect(() => {
+    if (product === null || !offersClackInstallationFittings(product.sku)) return;
+    if (imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY) {
+      // Optional, display-only premium brass default in local dev preview.
+      setSelectedFittingSize('1"');
+      setSelectedFittingType("Brass Press/Sweat Assembly LF");
+    } else {
+      // Outside the visual lab, preserve the site's original blank selectors.
+      setSelectedFittingSize("");
+      setSelectedFittingType("");
+    }
+    setFittingExplicitlyChosen(false);
+  }, [imagePreviewEnabled, product?.sku]);
+
   const selectedVariant = useMemo(() => {
     if (product === null || product.variants.length === 0) {
       return null;
@@ -145,6 +198,15 @@ export function ProductDetailPage({
     ),
     [product, selectedImageIndex, selectedVariant],
   );
+
+  const illustrativeImage = selectedImage === null && product !== null
+    ? DETAIL_IMAGE_FALLBACKS[getConfigurationFamily(product.sku)?.name ?? ""] ?? null
+    : null;
+  const demoImages = product !== null && imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY
+    ? getAdditionalPreviewImages(product.sku)
+    : [];
+  const demoGalleryEnabled = demoImages.length > 0;
+  const selectedDemoImage = demoImages.find((image) => image.id === selectedDemoImageId) ?? null;
 
   if (loading) {
     return (
@@ -193,15 +255,27 @@ export function ProductDetailPage({
   const availability = selectedVariant?.availability ?? product.availability;
   const productId = product.id;
   const presentation = getProductPresentation(product);
-  // Customer-facing inquiry and support labels use the same identity as the
-  // product page. Preserve the underlying product.id for submission/history.
-  // The two Origin SKUs remain distinct despite sharing a public family card.
-  const isOrigin = product.sku === "DD5RO" || product.sku === "DD5ROAE";
-  const contactProductName = isOrigin
-    ? `Origin — ${product.sku === "DD5ROAE" ? "Remineralization" : "Standard"}`
-    : selectedVariant !== null
-      ? `${product.name} — ${selectedVariant.display_name}`
-      : product.name;
+  const configurationLoading = product.slug.toLowerCase() !== slug.toLowerCase();
+  const configurationFamily = getConfigurationFamily(product.sku);
+  const fittingEligible = offersClackInstallationFittings(product.sku);
+  const fittingOptions = selectedFittingSize === "" ? [] : clackFittingsForSize(selectedFittingSize);
+  const matchingFitting = fittingEligible
+    ? fittingOptions.find((fitting) => fitting.label === selectedFittingType)
+    : undefined;
+  // Preserve the user's actual connection size in the internal quote note,
+  // including the Clack fitting shared between 1.25-inch and 1.5-inch systems.
+  const selectedFitting = matchingFitting === undefined
+    ? null : { ...matchingFitting, size: selectedFittingSize };
+  const fittingForInquiry = fittingExplicitlyChosen ? selectedFitting : null;
+  const configurableGallery = imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY
+    ? getConfigurablePreviewGallery(product.sku, selectedFitting?.orderNo ?? null)
+    : [];
+  const configurableActive = configurableGallery.find((tile) => tile.id === selectedDemoImageId)
+    ?? configurableGallery[0] ?? null;
+  // Cart and quote requests use the selected product record, never a family ID.
+  const contactProductName = selectedVariant !== null
+    ? `${product.name} — ${selectedVariant.display_name}`
+    : product.name;
 
   async function handleStockNotification() {
     if (notificationEmail.trim() === "") {
@@ -256,6 +330,7 @@ export function ProductDetailPage({
   }
 
   async function handlePrimaryAction() {
+    if (configurationLoading) return;
     setCommerceError(null);
 
     if (
@@ -289,6 +364,12 @@ export function ProductDetailPage({
       pricing.action
       === "ADD_TO_CART"
     ) {
+      // Fittings are not priced cart line items yet; never silently add an
+      // unpriced selected fitting to a base-product purchase.
+      if (fittingForInquiry !== null) {
+        setQuoteOpen(true);
+        return;
+      }
       if (account === null) {
         onRequestSignIn();
         return;
@@ -325,6 +406,7 @@ export function ProductDetailPage({
           account?.email ?? null
         }
         recommendationContext={null}
+        installationFitting={fittingForInquiry}
         onClose={() => {
           setQuoteOpen(false);
         }}
@@ -348,20 +430,127 @@ export function ProductDetailPage({
         <section className="product-detail">
           <div className="product-detail-gallery">
             <div className="product-detail-main-image">
-              {selectedImage !== null ? (
+              {configurableActive !== null ? (
+                configurableActive.path !== null ? (
+                  <PreviewProductImage
+                    sku={product.sku}
+                    original={selectedImage ?? illustrativeImage}
+                    enabled={imagePreviewEnabled}
+                    override={{
+                      id: configurableActive.id,
+                      path: configurableActive.path,
+                      label: configurableActive.label,
+                      alt: configurableActive.alt,
+                    }}
+                    loading="eager"
+                  />
+                ) : (
+                  <div className="product-fitting-preview-empty" role="status">
+                    <strong>Choose a hookup fitting</strong>
+                    <span>Select connection size and fitting type to display its individual hardware image.</span>
+                  </div>
+                )
+              ) : demoGalleryEnabled && originalThumbnailSelected && product.images.length > 0 ? (
                 <ResponsiveProductImage
-                  image={selectedImage}
+                  image={product.images[selectedImageIndex] ?? product.images[0]}
                   loading="eager"
                 />
               ) : (
-                <div
-                  className="product-media-placeholder"
-                  aria-hidden="true"
+                <PreviewProductImage
+                  sku={product.sku}
+                  original={selectedImage ?? illustrativeImage}
+                  enabled={imagePreviewEnabled}
+                  override={selectedDemoImage}
+                  loading="eager"
                 />
               )}
             </div>
+            {illustrativeImage !== null ? (
+              <p className="product-image-note">
+                Representative image; selected configuration may differ.
+              </p>
+            ) : null}
 
-            {product.images.length > 1 ? (
+            {configurableGallery.length > 0 ? (
+              <div className="product-thumbnails product-preview-thumbnails" aria-label={`${configurationFamily?.name ?? "Product"} AI preview gallery`}>
+                {configurableGallery.map((tile) => (
+                  <button
+                    key={tile.id}
+                    type="button"
+                    className={configurableActive?.id === tile.id ? "is-active" : undefined}
+                    aria-label={`Show ${tile.label}`}
+                    aria-pressed={configurableActive?.id === tile.id}
+                    onClick={() => {
+                      setSelectedDemoImageId(tile.id);
+                      setOriginalThumbnailSelected(false);
+                    }}
+                  >
+                    {tile.path !== null ? (
+                      <img src={tile.path} alt={tile.alt} loading="lazy" />
+                    ) : (
+                      <span className="product-fitting-thumb-empty" aria-hidden="true">
+                        Select fitting
+                      </span>
+                    )}
+                    <span className="product-preview-thumb-caption">{tile.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : demoGalleryEnabled ? (
+              <div className="product-thumbnails product-preview-thumbnails" aria-label="AI concept gallery and existing photographs">
+                <button
+                  type="button"
+                  className={selectedDemoImage === null && !originalThumbnailSelected ? "is-active" : undefined}
+                  aria-label="Show main system image"
+                  aria-pressed={selectedDemoImage === null && !originalThumbnailSelected}
+                  onClick={() => {
+                    setSelectedDemoImageId(null);
+                    setOriginalThumbnailSelected(false);
+                  }}
+                >
+                  <PreviewProductImage
+                    sku={product.sku}
+                    original={selectedImage ?? illustrativeImage}
+                    enabled={imagePreviewEnabled}
+                    loading="lazy"
+                  />
+                  <span className="product-preview-thumb-caption">System</span>
+                </button>
+                {demoImages.map((image) => (
+                  <button
+                    key={image.id}
+                    type="button"
+                    className={selectedDemoImage?.id === image.id ? "is-active" : undefined}
+                    aria-label={`Show ${image.label}`}
+                    aria-pressed={selectedDemoImage?.id === image.id}
+                    onClick={() => {
+                      setSelectedDemoImageId(image.id);
+                      setOriginalThumbnailSelected(false);
+                    }}
+                  >
+                    <img src={image.path} alt={image.alt} loading="lazy" />
+                    <span className="product-preview-thumb-caption">{image.label}</span>
+                  </button>
+                ))}
+                {product.images.map((image, index) => (
+                  <button
+                    key={`catalog-${image.path}`}
+                    type="button"
+                    className={originalThumbnailSelected && selectedImageIndex === index ? "is-active" : undefined}
+                    aria-label={`Show original catalog image ${index + 1}`}
+                    aria-pressed={originalThumbnailSelected && selectedImageIndex === index}
+                    onClick={() => {
+                      setSelectedDemoImageId(null);
+                      setOriginalThumbnailSelected(true);
+                      setSelectedImageIndex(index);
+                    }}
+                  >
+                    <ResponsiveProductImage image={image} />
+                    <span className="product-preview-thumb-caption">Original {index + 1}</span>
+                  </button>
+                ))}
+              </div>
+            ) : product.images.length > 1 ? (
               <div
                 className="product-thumbnails"
                 aria-label="Product images"
@@ -510,40 +699,125 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
+            <InstallationServicesNotice />
 
-            {(product.sku === "DD5RO" || product.sku === "DD5ROAE") ? (
+            {configurationFamily !== null ? (
               <section
                 className="product-variant-selector"
-                aria-labelledby="origin-configuration-heading"
+                aria-labelledby="family-configuration-heading"
               >
                 <p className="eyebrow">Configuration</p>
-                <h2
-                  id="origin-configuration-heading"
-                  className="product-detail-section-title"
-                >
-                  Choose your Origin system
+                <h2 id="family-configuration-heading" className="product-detail-section-title">
+                  Choose your {configurationFamily.name} system
                 </h2>
                 <label>
-                  <span>REVERSE OSMOSIS CONFIGURATION</span>
+                  <span>AVAILABLE CONFIGURATIONS</span>
                   <select
                     value={product.sku}
                     onChange={(event) => {
-                      const path = event.target.value === "DD5ROAE"
-                        ? "/systems/dd5roae"
-                        : "/systems/dd5ro";
-                      if (path !== product.public_path) {
-                        onNavigate(path, true);
-                      }
+                      const path = `/systems/${event.target.value.toLowerCase()}`;
+                      if (path !== product.public_path) onNavigate(path, true);
                     }}
                   >
-                    <option value="DD5RO">Standard Reverse Osmosis</option>
-                    <option value="DD5ROAE">With Alkaline Remineralization</option>
+                    {configurationFamily.configurations.map((configuration) => (
+                      <option key={configuration.sku} value={configuration.sku}>
+                        {configuration.label}
+                      </option>
+                    ))}
                   </select>
                 </label>
+                {configurationLoading ? (
+                  <p role="status">Updating configuration…</p>
+                ) : null}
                 <p className="product-ownership-guidance">
-                  Interested in additional remineralization? Consider Origin with
-                  the alkaline remineralization cartridge, which adds a
-                  remineralization stage to the reverse osmosis system.
+                  {configurationFamily.configurations.find(
+                    (configuration) => configuration.sku === product.sku)?.details}
+                </p>
+              </section>
+            ) : null}
+
+
+            {fittingEligible ? (
+              <section
+                className="product-variant-selector product-installation-fittings"
+                aria-labelledby="clack-installation-fittings-heading"
+              >
+                <p className="eyebrow">Installation connection</p>
+                <h2 id="clack-installation-fittings-heading" className="product-detail-section-title">
+                  Select your connection fitting
+                </h2>
+                <label>
+                  <span>CONNECTION SIZE (OPTIONAL)</span>
+                  <select
+                    value={selectedFittingSize}
+                    onChange={(event) => {
+                      const nextSize = event.target.value;
+                      setSelectedFittingSize(nextSize);
+                      const possible = clackFittingsForSize(nextSize);
+                      const suggested = possible.find((item) => item.orderNo === "V3007-22LF")
+                        ?? possible.find((item) => item.label.startsWith("Brass Sweat"));
+                      setSelectedFittingType(imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY
+                        ? (suggested?.label ?? "") : "");
+                      setFittingExplicitlyChosen(false);
+                      if (configurableGallery.length > 0) setSelectedDemoImageId("system");
+                    }}
+                  >
+                    <option value="">Choose connection size</option>
+                    {CLACK_CONNECTION_SIZES.map((size) => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="product-fitting-type-field">
+                  <span id="clack-fitting-type-label">FITTING TYPE (OPTIONAL)</span>
+                  {imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY ? (
+                    <ClackFittingThumbnailSelect
+                      options={fittingOptions}
+                      value={selectedFittingType}
+                      disabled={selectedFittingSize === ""}
+                      onChange={(nextType) => {
+                        setSelectedFittingType(nextType);
+                        setFittingExplicitlyChosen(nextType !== "");
+                        if (configurableGallery.length > 0) {
+                          setSelectedDemoImageId(nextType === "" ? "system" : "hookup");
+                          setOriginalThumbnailSelected(false);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <select
+                      aria-labelledby="clack-fitting-type-label"
+                      value={selectedFittingType}
+                      onChange={(event) => {
+                        setSelectedFittingType(event.target.value);
+                        setFittingExplicitlyChosen(event.target.value !== "");
+                      }}
+                      disabled={selectedFittingSize === ""}
+                    >
+                      <option value="">{selectedFittingSize === "" ? "Choose size first" : "Choose fitting type"}</option>
+                      {fittingOptions.map((fitting) => (
+                        <option key={fitting.orderNo} value={fitting.label}>
+                          {shortClackFittingLabel(fitting)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                {selectedFitting !== null ? (
+                  <p className="product-ownership-guidance">
+                    {fittingExplicitlyChosen ? "Selected" : "Visual preview default"}: {selectedFitting.size} — {shortClackFittingLabel(selectedFitting)}.
+                  </p>
+                ) : null}
+                {imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY && !fittingExplicitlyChosen ? (
+                  <p className="product-ownership-guidance">
+                    This brass fitting is a visual preview suggestion, not a universal compatibility or quality claim.
+                    Choose a fitting explicitly to include it in a quote request.
+                  </p>
+                ) : null}
+                <p className="product-ownership-guidance">
+                  Not sure which fitting you need? Leave either field blank and our team
+                  can help. Compatibility, availability and final cost require confirmation;
+                  installation labor is not included.
                 </p>
               </section>
             ) : null}
@@ -717,6 +991,7 @@ export function ProductDetailPage({
                 className="detail-primary-action"
                 disabled={
                   addingToCart
+                  || configurationLoading
                   || ((availability.status === "out_of_stock" || availability.status === "discontinued")
                     && !availability.can_inquire)
                 }
@@ -728,7 +1003,9 @@ export function ProductDetailPage({
                   ? "Adding…"
                   : (availability.status === "out_of_stock" || availability.status === "discontinued")
                     ? (availability.can_inquire ? "Send inquiry" : "Unavailable")
-                    : pricing.action_label}
+                    : pricing.action === "ADD_TO_CART" && fittingForInquiry !== null
+                      ? "Request fitting quote"
+                      : pricing.action_label}
               </button>
             </div>
 

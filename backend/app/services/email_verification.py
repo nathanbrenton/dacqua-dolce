@@ -15,6 +15,19 @@ from app.models.identity import User, UserStatus
 from app.services.audit import record_audit_event
 from app.services.email_delivery import deliver_email
 
+# Keep recently emailed links functional if messages arrive out of order.
+# Limits are enforced at issuance; verification still consumes one token once.
+RESEND_OVERLAP_MINUTES = 15
+MAX_ACTIVE_VERIFICATION_LINKS = 3
+
+
+def _utc(value: datetime) -> datetime:
+    # PostgreSQL returns timezone-aware values; tolerate UTC-naive test DBs.
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 GENERIC_VERIFICATION_MESSAGE = (
     "If email verification is needed, "
     "a verification link will be sent."
@@ -50,26 +63,30 @@ def issue_email_verification(
     now = datetime.now(UTC)
 
     existing = db.scalars(
-        select(
-            EmailVerificationToken
-        ).where(
-            EmailVerificationToken.user_id
-            == user.id,
-            EmailVerificationToken.used_at.is_(
-                None
-            ),
-            EmailVerificationToken
-            .superseded_at.is_(None),
+        select(EmailVerificationToken).where(
+            EmailVerificationToken.user_id == user.id,
+            EmailVerificationToken.used_at.is_(None),
+            EmailVerificationToken.superseded_at.is_(None),
+            EmailVerificationToken.expires_at > now,
+        ).order_by(
+            EmailVerificationToken.created_at.desc(),
         )
     ).all()
 
-    for token in existing:
-        token.superseded_at = now
+    overlap_cutoff = now + timedelta(minutes=RESEND_OVERLAP_MINUTES)
+    # Keep at most two older links temporarily valid. A fourth issuance
+    # retires the oldest one. No resend can extend an older link's expiry.
+    for index, token in enumerate(existing):
+        if index >= MAX_ACTIVE_VERIFICATION_LINKS - 1:
+            token.superseded_at = now
+        else:
+            token.expires_at = min(_utc(token.expires_at), overlap_cutoff)
 
     raw_token = generate_verification_token()
 
     token_record = EmailVerificationToken(
         user_id=user.id,
+        created_at=now,
         token_hash=hash_verification_token(
             raw_token
         ),
@@ -185,42 +202,40 @@ def complete_email_verification(
     request_ip_address: str | None,
     request_user_agent: str | None,
     settings: EmailRuntimeSettings | None = None,
+    failure_details: dict[str, str] | None = None,
 ) -> bool:
     now = datetime.now(UTC)
 
+    def reject(reason: str) -> bool:
+        # Only a fixed reason code; never record raw tokens or token hashes.
+        if failure_details is not None:
+            failure_details["reason"] = reason
+        return False
+
     token_record = db.scalar(
-        select(
-            EmailVerificationToken
-        ).where(
-            EmailVerificationToken.token_hash
-            == hash_verification_token(
-                raw_token
-            ),
-            EmailVerificationToken.used_at.is_(
-                None
-            ),
-            EmailVerificationToken
-            .superseded_at.is_(None),
-            EmailVerificationToken.expires_at
-            > now,
-        )
+        select(EmailVerificationToken).where(
+            EmailVerificationToken.token_hash == hash_verification_token(raw_token),
+        ).with_for_update()
     )
 
     if token_record is None:
-        return False
+        return reject("unrecognized")
+    if token_record.used_at is not None:
+        return reject("already_used")
+    if token_record.superseded_at is not None:
+        return reject("superseded")
+    if _utc(token_record.expires_at) <= now:
+        return reject("expired")
 
-    user = db.get(
-        User,
-        token_record.user_id,
+    # Lock the account as well so two different outstanding links cannot
+    # independently verify the same user or send duplicate welcome emails.
+    user = db.scalar(
+        select(User).where(User.id == token_record.user_id).with_for_update()
     )
-
-    if (
-        user is None
-        or user.status != UserStatus.active
-    ):
-        token_record.superseded_at = now
-        db.flush()
-        return False
+    if user is None or user.status != UserStatus.active:
+        return reject("account_unavailable")
+    if user.email_verified_at is not None:
+        return reject("already_verified")
 
     user.email_verified_at = now
     token_record.used_at = now

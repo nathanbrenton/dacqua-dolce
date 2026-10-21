@@ -619,10 +619,13 @@ def verify_email_address(
         ),
     )
 
+    verification_failure: dict[str, str] = {}
+
     try:
         completed = complete_email_verification(
             db,
             raw_token=payload.token,
+            failure_details=verification_failure,
             request_ip_address=(
                 request_ip(request)
             ),
@@ -694,6 +697,9 @@ def verify_email_address(
                 ),
                 "error_code": (
                     "verification_link_invalid_or_expired"
+                ),
+                "failure_reason": verification_failure.get(
+                    "reason", "unclassified"
                 ),
             },
         )

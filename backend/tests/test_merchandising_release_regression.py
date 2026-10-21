@@ -14,10 +14,13 @@ def _product(name):
     return SimpleNamespace(name=name, product_family=name, id=name)
 
 
-def test_origin_remineralization_is_public_catalog_default():
-    assert catalog_card_visible_sku("DD5ROAE") is True
-    assert catalog_card_visible_sku("DD5RO") is False
-    assert catalog_card_visible_sku("DD15CATRV") is True
+def test_every_pt41_sku_is_eligible_for_family_grouping():
+    for sku in (
+        "DD15SOFT", "DD20SOFT", "DD15CATRV", "DD20CATRV",
+        "DD15CLEARPL1", "DD15CLEARPL2", "DD15CLEARPL3", "DD15CLEARPTV",
+        "DD5RO", "DD6ROAE",
+    ):
+        assert catalog_card_visible_sku(sku) is True
 
 
 def test_fallback_order_matches_staff_restore_default():

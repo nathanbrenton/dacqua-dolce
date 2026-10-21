@@ -1143,7 +1143,7 @@ export function AccountPage({
                   + "US phone number."
                 }
                 placeholder={
-                  "(949) 555-1234"
+                  "(951) 555-0142"
                 }
                 value={
                   profile.phone ?? ""

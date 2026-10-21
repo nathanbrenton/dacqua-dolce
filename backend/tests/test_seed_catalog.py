@@ -21,55 +21,49 @@ from app.services.catalog_seed import (
 
 def test_production_catalog_manifest_is_valid() -> None:
     catalog = load_catalog_manifest(DEFAULT_CATALOG_PATH)
-
     assert catalog["schema_version"] == 1
     assert len(catalog["manufacturers"]) == 1
     assert len(catalog["categories"]) == 2
-    assert len(catalog["products"]) == 7
-    assert len(catalog["images"]) == 14
-    assert len(catalog["variants"]) == 2
-    assert len(catalog["specifications"]) == 45
+    assert len(catalog["products"]) == 10
+    assert len(catalog["variants"]) == 0
+    assert all(row["online_sale_approved"] is False for row in catalog["products"])
 
-    assert all(
-        product["online_sale_approved"] is False
-        for product in catalog["products"]
-    )
+    products = {row["sku"]: row for row in catalog["products"]}
+    assert set(products) == {
+        "DD15SOFT", "DD20SOFT", "DD15CATRV", "DD20CATRV",
+        "DD15CLEARPL1", "DD15CLEARPL2", "DD15CLEARPL3",
+        "DD15CLEARPTV", "DD5RO", "DD6ROAE",
+    }
+    assert {p["product_family"] for p in products.values()} == {
+        "Refine", "Essence", "Harmony", "Origin",
+    }
+    assert all(p["active"] is True for p in products.values())
+    assert all(p["assisted_sale_required"] is (p["category_slug"] == "whole-home-filtration")
+               for p in products.values())
+    assert products["DD6ROAE"]["name"] == "Origin - Six Stage with Alkaline Enhancer"
+    assert products["DD15CLEARPTV"]["name"] == "Harmony - Pass-Through Valve"
+    # PT41 product copy: point-of-use terminology is authoritative for both Origin SKUs.
+    assert {products[sku]["product_family"] for sku in ("DD5RO", "DD6ROAE")} == {"Origin"}
+    assert all("point-of-use" in products[sku]["description"].lower()
+               for sku in ("DD5RO", "DD6ROAE"))
+    assert all("under-sink" not in products[sku]["description"].lower()
+               for sku in ("DD5RO", "DD6ROAE"))
 
-    products = {product["sku"]: product for product in catalog["products"]}
-
-    assert all(
-        product["assisted_sale_required"] is True
-        for product in catalog["products"]
-        if product["category_slug"] == "whole-home-filtration"
-    )
-    assert all(
-        product["assisted_sale_required"] is False
-        for product in catalog["products"]
-        if product["category_slug"] == "reverse-osmosis"
-    )
-
-    assert products["DD15CAT-TTACPTV"]["product_family"] == "Harmony"
-    assert products["DD15CAT-TTACPTV"]["system_type"] == "Water Conditioner"
-    assert products["DD15CAT-TTACRV"]["active"] is False
-    assert products["DD15CAT-TTACRV"]["name"] == "Harmony - Regenerating"
-    assert products["DD15CATPTV"]["product_family"] == "Essence"
-    assert products["DD15CATRV"]["product_family"] == "Essence"
-    assert products["DD15CATRV"]["name"] == "Essence - Automatic Rinse"
-    assert products["DD5RO"]["product_family"] == "Origin"
-    assert products["DD5RO"]["name"] == "Origin - Ultra-Pure"
-    assert products["DD5ROAE"]["product_family"] == "Origin"
-    assert products["DD5ROAE"]["name"] == "Origin - Alkaline Plus"
-    assert products["REFINE"]["product_family"] == "Refine"
-    assert products["REFINE"]["system_type"] == "Water Softener"
-
-    refine_variants = [
-        variant for variant in catalog["variants"]
-        if variant["product_sku"] == "REFINE"
+    specifications = {(s["product_sku"], s["spec_key"]): s["value_text"]
+                      for s in catalog["specifications"]}
+    assert specifications[("DD5RO", "stage_count")] == "5"
+    assert specifications[("DD6ROAE", "stage_count")] == "6"
+    assert specifications[("DD15CLEARPL1", "cartridge_count")] == "1"
+    assert specifications[("DD15CLEARPL2", "cartridge_count")] == "2"
+    assert specifications[("DD15CLEARPL3", "cartridge_count")] == "3"
+    assert specifications[("DD15CLEARPTV", "cartridge_count")] == "0"
+    assert all(row["product_sku"] in {"DD15CATRV", "DD5RO", "DD6ROAE"}
+               for row in catalog["images"])
+    assert [image["storage_path"] for image in catalog["images"]
+            if image["product_sku"] == "DD6ROAE"] == [
+        "/products/media/reverse-osmosis-with-remineralizer-dimensions.webp"
     ]
-    assert [variant["display_name"] for variant in refine_variants] == [
-        "1.5 cu ft",
-        "2.0 cu ft",
-    ]
+
 
 
 def test_manifest_rejects_unknown_product_reference() -> None:

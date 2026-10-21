@@ -102,3 +102,46 @@ def test_email_verification_runtime_error_is_safely_audited(
     }
     assert "raw-verification-secret" not in str(event)
     assert "secret-bearing" not in str(event)
+
+
+def test_invalid_token_has_specific_safe_audit_reason(monkeypatch: Any) -> None:
+    database = FailureAuditDatabase()
+    recorded: list[dict[str, object]] = []
+
+    monkeypatch.setattr(
+        authentication, "rate_limit_or_reject", lambda **kwargs: None
+    )
+    monkeypatch.setattr(
+        authentication, "get_email_runtime_settings", lambda: object()
+    )
+
+    def fake_completion(*args: object, **kwargs: Any) -> bool:
+        kwargs["failure_details"]["reason"] = "superseded"
+        return False
+
+    monkeypatch.setattr(
+        authentication, "complete_email_verification", fake_completion
+    )
+
+    def capture_audit(*args: object, **kwargs: object) -> object:
+        recorded.append(dict(kwargs))
+        return object()
+
+    monkeypatch.setattr(
+        authentication, "record_audit_event", capture_audit
+    )
+
+    with pytest.raises(authentication.HTTPException) as raised:
+        authentication.verify_email_address(
+            SimpleNamespace(token="not-a-public-secret"),  # type: ignore[arg-type]
+            build_request(),
+            database,  # type: ignore[arg-type]
+            SimpleNamespace(request_user_agent_max_length=512),  # type: ignore[arg-type]
+        )
+
+    assert raised.value.status_code == 400
+    assert len(recorded) == 1
+    meta = recorded[0]["metadata"]
+    assert isinstance(meta, dict)
+    assert meta["failure_reason"] == "superseded"
+    assert "not-a-public-secret" not in str(recorded)

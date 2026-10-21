@@ -394,8 +394,8 @@ def get_public_sales_area() -> SalesAreaRead:
 
 
 def catalog_card_visible_sku(sku: str) -> bool:
-    """List one Origin card: DD5ROAE is default; DD5RO remains detail-only."""
-    return sku != "DD5RO"
+    """Expose every real SKU; the storefront groups configurations into family cards."""
+    return bool(sku)
 
 @router.get(
     "/products",
@@ -427,8 +427,8 @@ def list_public_products(
         for product in products:
             if not product_is_publicly_visible(product):
                 continue
-            # DD5RO remains directly addressable in the Origin configuration
-            # selector; the single public card defaults to remineralization.
+            # Each SKU is a distinct public product; family cards are a
+            # frontend presentation choice, not a hidden API SKU filter.
             if not catalog_card_visible_sku(product.sku):
                 continue
 

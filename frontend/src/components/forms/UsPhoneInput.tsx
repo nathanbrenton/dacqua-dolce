@@ -73,6 +73,7 @@ export function UsPhoneInput({
   value,
   onValueChange,
   maxLength: _maxLength,
+  placeholder = "(951) 555-0142",
   ...inputProps
 }: UsPhoneInputProps) {
   const inputRef =
@@ -295,6 +296,7 @@ export function UsPhoneInput({
   return (
     <input
       {...inputProps}
+      placeholder={placeholder}
       ref={inputRef}
       type="tel"
       value={displayedValue}

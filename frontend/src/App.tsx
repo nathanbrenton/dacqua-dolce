@@ -9,6 +9,7 @@ import {
 import {
   getCurrentAccount,
   logoutAccount,
+  requestEmailVerification,
   type AuthenticationStatus,
 } from "./api/authentication";
 import {
@@ -306,6 +307,9 @@ export function App() {
     setRecommendationContext,
   ] = useState<RecommendationContext | null>(null);
 
+  // Volatile by design: OFF after every refresh; never persisted.
+  const [imagePreviewEnabled, setImagePreviewEnabled] = useState(false);
+
   const [
     developerControlsOpen,
     setDeveloperControlsOpen,
@@ -487,7 +491,7 @@ export function App() {
       );
     }
 
-    // Only the Origin configuration switch opts into scroll/focus preservation.
+    // Family configuration switches opt into scroll/focus preservation.
     // Normal page-to-page navigation retains the existing top/focus behavior.
     preserveRouteFocusRef.current = preserveScroll;
     setPath(nextPath);
@@ -611,6 +615,8 @@ export function App() {
       </a>
 
       <DeveloperControls
+        imagePreviewEnabled={imagePreviewEnabled}
+        onImagePreviewChange={setImagePreviewEnabled}
         open={developerControlsOpen}
         onClose={() => {
           setDeveloperControlsOpen(false);
@@ -772,6 +778,14 @@ export function App() {
           token={decodeURIComponent(
             verifyEmailToken,
           )}
+          canResend={
+            pendingAuthentication
+              ?.email_verification_required === true
+          }
+          onResend={requestEmailVerification}
+          onRequestSignIn={() => {
+            setAuthDialogOpen(true);
+          }}
           onNavigate={navigate}
           onVerified={
             refreshAuthenticationAfterVerification
@@ -794,6 +808,7 @@ export function App() {
         !== null ? (
         <div className="product-detail-route">
           <ProductDetailPage
+            imagePreviewEnabled={imagePreviewEnabled}
             slug={decodeURIComponent(
               detailSlug,
             )}
@@ -973,6 +988,7 @@ export function App() {
           </section>
 
           <CatalogSection
+            imagePreviewEnabled={imagePreviewEnabled}
             onNavigate={navigate}
           />
 

@@ -12,6 +12,7 @@ import {
 import {
   isCompleteUsPhone,
 } from "../../utils/phone";
+import { shortClackFittingLabel, type ClackInstallationFitting } from "../catalog/clackInstallationFittings";
 import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChallenge";
 import {
   UsPhoneInput,
@@ -60,6 +61,7 @@ type QuoteDialogProps = {
   inquiryContext: QuoteInquiryContext;
   initialEmail: string | null;
   recommendationContext: RecommendationContext | null;
+  installationFitting?: ClackInstallationFitting | null;
   onClose: () => void;
 };
 
@@ -70,6 +72,7 @@ export function QuoteDialog({
   inquiryContext,
   initialEmail,
   recommendationContext,
+  installationFitting = null,
   onClose,
 }: QuoteDialogProps) {
   const dialogRef =
@@ -208,6 +211,17 @@ export function QuoteDialog({
       setError("Complete the verification challenge.");
       return;
     }
+    // The public quote API currently supports a free-text message, not
+    // structured or priced fitting line items. Include the selected fitting
+    // explicitly so operations can review and confirm it before quoting.
+    const fittingNote = installationFitting === null
+      ? ""
+      : `Requested Clack fitting: ${installationFitting.size} — ${installationFitting.label}; Clack order no. ${installationFitting.orderNo}. Compatibility, availability and final price to be confirmed.`;
+    const combinedMessage = [fittingNote, message.trim()].filter(Boolean).join("\n\n");
+    if (combinedMessage.length > 4000) {
+      setError("Shorten your message to include the selected fitting details.");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -235,7 +249,7 @@ export function QuoteDialog({
           name,
           email,
           phone: phone || null,
-          message: message || null,
+          message: combinedMessage || null,
           recommendation_context: qualificationContext,
         }, turnstileToken ?? undefined);
 
@@ -326,6 +340,12 @@ export function QuoteDialog({
             {dialogTitle}
           </h2>
 
+          {installationFitting !== null && isProductInquiry ? (
+            <p className="quote-dialog-context">
+              Requested connection fitting: {installationFitting.size} — {shortClackFittingLabel(installationFitting)}.
+              Final cost and availability pending confirmation.
+            </p>
+          ) : null}
           {isProductInquiry ? (
             <p className="quote-dialog-context">
               Your request will stay associated with this system.
@@ -433,7 +453,7 @@ export function QuoteDialog({
                 + "US phone number."
               }
               placeholder={
-                "(949) 555-1234"
+                "(951) 555-0142"
               }
               value={phone}
               onValueChange={setPhone}

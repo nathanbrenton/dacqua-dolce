@@ -10,7 +10,9 @@ VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 def verify_public_form_turnstile(request: Request, *, action: str) -> None:
     settings = get_settings()
-    if not settings.turnstile_enabled:
+    # Public production forms must fail closed even if the optional toggle was
+    # accidentally left unset. Development/test environments may opt out.
+    if not (settings.turnstile_enabled or getattr(settings, "is_production", False)):
         return
     if not settings.turnstile_secret or not settings.turnstile_expected_hostname:
         raise HTTPException(status_code=503, detail="Form verification is unavailable.")
