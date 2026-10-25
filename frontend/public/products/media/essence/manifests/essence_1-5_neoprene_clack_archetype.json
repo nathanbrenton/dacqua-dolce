@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-essence-single-tank",
+  "assets": {
+    "archival_master": {
+      "bytes": 1909792,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/essence/v2026-10-23-essence-single-tank/essence_1-5_neoprene_clack_archetype.png",
+      "sha256": "cdf3bfd15bcd90143efc8c47616d515cb6193166d996a4dca28ffa918737b782",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 123706,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_1-5_neoprene_clack_archetype.webp",
+      "sha256": "b81bba65928b137321d1d97ab2e860695e3958d2740393e96167ba102b3c650a",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 170119,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_1-5_neoprene_clack_archetype.png",
+      "sha256": "e86843863b22ca2cdfa3170cf68bfe8d82863ec7b1e661e826871a4194bd601b",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1181830,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_1-5_neoprene_clack_archetype.webp",
+      "sha256": "890b19f5c82b9bd1cc701b8569af5794fa55e23cf385e4ce8cc5dd8bbe3583e2",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1909792,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_1-5_neoprene_clack_archetype.png",
+      "sha256": "cdf3bfd15bcd90143efc8c47616d515cb6193166d996a4dca28ffa918737b782",
+      "width": 1122
+    }
+  },
+  "collection": "essence",
+  "configuration": "essence_1-5_neoprene_clack_archetype",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1909792,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "essence_1-5_neoprene_clack_archetype.png",
+    "sha256": "cdf3bfd15bcd90143efc8c47616d515cb6193166d996a4dca28ffa918737b782",
+    "width": 1122
+  }
+}

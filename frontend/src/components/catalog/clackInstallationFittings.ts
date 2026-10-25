@@ -19,18 +19,15 @@ export const CLACK_INSTALLATION_FITTINGS: readonly ClackInstallationFitting[] = 
   { size: '1"', label: 'Plastic Male NPT Elbow Assembly', orderNo: 'V3007' },
   { size: '1"', label: 'Brass Press/Sweat Assembly LF', orderNo: 'V3007-22LF' },
   { size: '1.25" / 1.5"', label: 'Brass Sweat (Solder) Assembly LF', orderNo: 'V3007-09LF' },
-  { size: '1.25"', label: 'Plastic Male NPT Assembly', orderNo: 'V3007-05' },
+  { size: '1.25"', label: 'Plastic Male NPT Assembly (1.25" only; 1.5" compatibility unverified)', orderNo: 'V3007-05' },
 ];
 
 // Separate connection sizes avoid cramped labels and clarify the shared
 // 1.25-inch / 1.5-inch brass fitting (V3007-09LF).
-export const CLACK_CONNECTION_SIZES = ['3/4"', '1"', '1.25"', '1.5"'] as const;
+export const CLACK_CONNECTION_SIZES = ['3/4"', '1"', '1.25" / 1.5"'] as const;
 
 export function clackFittingsForSize(size: string): readonly ClackInstallationFitting[] {
-  return CLACK_INSTALLATION_FITTINGS.filter((fitting) =>
-    fitting.size === size ||
-    (fitting.size === '1.25" / 1.5"' && (size === '1.25"' || size === '1.5"'))
-  );
+  return CLACK_INSTALLATION_FITTINGS.filter((fitting) => fitting.size === size || (size === '1.25" / 1.5"' && fitting.size === '1.25"'));
 }
 
 /** Short customer-facing fitting names; the full model number is internal. */
@@ -39,6 +36,7 @@ export function shortClackFittingLabel(fitting: ClackInstallationFitting): strin
   if (fitting.label.startsWith('Brass Press/Sweat')) return 'Brass press / sweat';
   if (fitting.label.startsWith('SharkBite')) return 'SharkBite®';
   if (fitting.label.includes('Elbow')) return 'Plastic NPT elbow';
+  if (fitting.orderNo === 'V3007-05') return 'Plastic male NPT (1.25\" only)';
   return 'Plastic male NPT';
 }
 

@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-22-complete-systems",
+  "assets": {
+    "archival_master": {
+      "bytes": 1471369,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/v2026-10-22-complete-systems/refine_1-5_neoprene_performance_realistic_with-brine-tank.png",
+      "sha256": "7588a1b23f3688f8136c126ebc90fa019134032ea9cd30bb89c035de26e7b3f3",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 122174,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_1-5_neoprene_performance_realistic_with-brine-tank.webp",
+      "sha256": "2c083c3322c7fd06e3dc1fb0ba64e6a9c17dd9465cc479dcb14054b6c0a4bdcf",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 159325,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_1-5_neoprene_performance_realistic_with-brine-tank.png",
+      "sha256": "c74d7288c32089530077c470f0a5d6e5920a17844405d1e423cb59f3267203b8",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1084672,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_1-5_neoprene_performance_realistic_with-brine-tank.webp",
+      "sha256": "51fa81c1ab841081ab747ece9186bb4be9027c18dea6f37b0ec89ad7926620f3",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1471369,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_1-5_neoprene_performance_realistic_with-brine-tank.png",
+      "sha256": "7588a1b23f3688f8136c126ebc90fa019134032ea9cd30bb89c035de26e7b3f3",
+      "width": 1122
+    }
+  },
+  "collection": "refine",
+  "configuration": "refine_1-5_neoprene_performance_realistic_with-brine-tank",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1471369,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "refine_1-5_neoprene_performance_realistic_with-brine-tank.png",
+    "sha256": "7588a1b23f3688f8136c126ebc90fa019134032ea9cd30bb89c035de26e7b3f3",
+    "width": 1122
+  }
+}

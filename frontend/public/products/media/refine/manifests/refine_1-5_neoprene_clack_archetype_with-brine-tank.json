@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-22-complete-systems",
+  "assets": {
+    "archival_master": {
+      "bytes": 1655745,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/v2026-10-22-complete-systems/refine_1-5_neoprene_clack_archetype_with-brine-tank.png",
+      "sha256": "bb7032177dd32a99a486647a4cd67a2e0c22166c34c3e6f30a675166c9846105",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 119138,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_1-5_neoprene_clack_archetype_with-brine-tank.webp",
+      "sha256": "8cf1e5689e7ad1a555dbc5d5f8563e3a5a142c0d4576cd655e4eb18602eb97db",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 149831,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_1-5_neoprene_clack_archetype_with-brine-tank.png",
+      "sha256": "0017fe6057c4e0edc51d19b387e80702a07400b9bed41720fc4244fd78269d86",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1053688,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_1-5_neoprene_clack_archetype_with-brine-tank.webp",
+      "sha256": "bfa9eaeb8563e5e8d9cb6b9311c6f6cb349da7a808f84367519e9b5884be2fd4",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1655745,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_1-5_neoprene_clack_archetype_with-brine-tank.png",
+      "sha256": "bb7032177dd32a99a486647a4cd67a2e0c22166c34c3e6f30a675166c9846105",
+      "width": 1122
+    }
+  },
+  "collection": "refine",
+  "configuration": "refine_1-5_neoprene_clack_archetype_with-brine-tank",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1655745,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "refine_1-5_neoprene_clack_archetype_with-brine-tank.png",
+    "sha256": "bb7032177dd32a99a486647a4cd67a2e0c22166c34c3e6f30a675166c9846105",
+    "width": 1122
+  }
+}

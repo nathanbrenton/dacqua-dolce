@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 1509148,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_1-5_stainless_pass-through_pureline-2.png",
+      "sha256": "36af328c3366f21fcca0fcfe2fbb8efb847f388caf7a9ada0a57524c4e30d8d3",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 113000,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_stainless_pass-through_pureline-2.webp",
+      "sha256": "8841eb708a14e59286d13d32e7ddf803ced6de580e168944c768b74402127c02",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 145929,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_stainless_pass-through_pureline-2.png",
+      "sha256": "09dcb9063d0ff65f5724d40f04aaa2267b31b7a01f7568cbb2695e4f8354da4a",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 917430,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_stainless_pass-through_pureline-2.webp",
+      "sha256": "dc0a98a9fad821533483698303d457dd20a88c3ab5541c4c24b146de664879b3",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1509148,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_stainless_pass-through_pureline-2.png",
+      "sha256": "36af328c3366f21fcca0fcfe2fbb8efb847f388caf7a9ada0a57524c4e30d8d3",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_1-5_stainless_pass-through_pureline-2",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1509148,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_1-5_stainless_pass-through_pureline-2.png",
+    "sha256": "36af328c3366f21fcca0fcfe2fbb8efb847f388caf7a9ada0a57524c4e30d8d3",
+    "width": 1122
+  }
+}

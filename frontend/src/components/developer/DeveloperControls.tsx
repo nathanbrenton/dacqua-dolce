@@ -90,9 +90,9 @@ export function DeveloperControls({
               checked={imagePreviewEnabled}
               onChange={(event) => onImagePreviewChange(event.target.checked)}
             />
-            Show AI product-image previews
+            Use Archetype photoset (Realistic when unchecked)
           </label>
-          <p>Unapproved AI concepts. Original photos return when unchecked or when a preview is missing.</p>
+          <p>Global photography style only. This does not change the hardware valve selected on a product page. Harmony uses its approved pass-through photographs for either setting.</p>
         </div>
       ) : null}
 

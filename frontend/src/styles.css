@@ -7220,3 +7220,31 @@ summary {
   color: #bad4d2;
 }
 @media (max-width: 540px) { .clack-thumbnail-menu { max-height: 45vh; } }
+
+/* PT53: jacket selector uses an inline accessible checkbox, never a full-width selector. */
+.product-variant-selector label.product-photo-jacket-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  padding: 0.45rem 0;
+}
+.product-variant-selector .product-photo-jacket-label input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex: 0 0 auto;
+  accent-color: var(--accent, #246f74);
+}
+
+/* PT53 acceptance: position-specific Pureline options live inside Choose your Harmony system. */
+.product-pureline-configurator { display: grid; gap: 12px; min-width: 0; padding-top: 14px; border-top: 1px solid var(--hairline); }
+.product-pureline-heading { font-family: var(--display-font); font-size: clamp(1.1rem, 1.8vw, 1.35rem); margin: 0; }
+.product-pureline-housing { display: grid; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--hairline); border-radius: var(--radius-field); background: var(--surface-1); }
+.product-pureline-position { margin: 0; font-weight: 700; }
+.product-pureline-housing label { width: 100%; max-width: 360px; }
+.product-pureline-housing input { min-height: 44px; width: 100%; border: 1px solid var(--line); border-radius: var(--radius-field); background: var(--surface); color: var(--ink); padding: 10px 12px; font: inherit; }
+@media (max-width: 540px) { .product-pureline-housing { padding: 12px; } }
+
+/* Visible missing-media state, rather than unexplained white image boxes. */
+.product-media-missing { display: grid; place-items: center; min-height: 100px; padding: 12px; color: var(--ink-muted); text-align: center; font-size: .84rem; border: 1px dashed var(--hairline); }

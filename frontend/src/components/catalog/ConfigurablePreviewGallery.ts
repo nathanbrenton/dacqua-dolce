@@ -2,7 +2,7 @@ import { clackConceptImageForOrderNo } from "./clackConceptImage";
 
 /** Unapproved, LOCAL Vite-only product photography previews. */
 export type ConfigurablePreviewTile = {
-  id: "system" | "jacket" | "folded" | "hookup" | "brine" | "dimensions" | "filter" | "storage" | "alkaline";
+  id: "system" | "jacket" | "hookup" | "brine" | "dimensions" | "filter" | "storage" | "alkaline";
   label: string;
   path: string | null;
   alt: string;
@@ -39,7 +39,7 @@ const PRODUCT_PREVIEW_SETS: Readonly<Record<string, ProductPreviewSet>> = {
 };
 
 /** Deliberately no fabric-size claim: this is a shared accessory appearance reference. */
-const FOLDED_JACKET_CONCEPT = "/__dd_image_preview/shared/neoprene-jacket-15-folded.png";
+
 
 export function getConfigurablePreviewGallery(
   sku: string,
@@ -81,9 +81,6 @@ export function getConfigurablePreviewGallery(
         alt: `Unapproved AI concept of Refine ${suffix} with a fitted black neoprene sleeve on the softener tank and separate brine tank` },
       { id: "brine", label: "Brine tank", path: `${prefix}brine-tank.png`,
         alt: "Unapproved AI studio concept of the separate black Refine brine tank" },
-      { id: "folded", label: `Folded jacket · ${suffix}`,
-        path: sku === "DD15SOFT" ? FOLDED_JACKET_CONCEPT : `${prefix}neoprene-jacket-20-folded.png`,
-        alt: `Black neoprene jacket accessory concept for ${suffix}; dimensions and sizing to verify` },
       { id: "hookup", label: "Selected hookup", path: fittingPath,
         alt: selectedFittingOrderNo === null
           ? "Select a hookup size and fitting type to preview hardware"
@@ -95,8 +92,6 @@ export function getConfigurablePreviewGallery(
       alt: `Unapproved image concept showing bare stainless Essence tank, ${suffix}` },
     { id: "jacket", label: `Jacket fitted · ${suffix}`, path: product.jacket,
       alt: `Unapproved image concept showing Essence ${suffix} tank wearing neoprene jacket` },
-    { id: "folded", label: "Folded neoprene jacket", path: FOLDED_JACKET_CONCEPT,
-      alt: "Representative folded black neoprene jacket concept; actual size varies with tank" },
     { id: "hookup", label: "Selected hookup", path: fittingPath,
       alt: selectedFittingOrderNo === null
         ? "Select a hookup size and type to preview hardware"

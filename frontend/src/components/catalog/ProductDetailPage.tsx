@@ -19,10 +19,14 @@ import { QuoteDialog } from "../quotes/QuoteDialog";
 import { InstallationServicesNotice } from "./InstallationServicesNotice";
 import { SupportRequestForm } from "../support/SupportRequestForm";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
-import { PreviewProductImage, CAN_PREVIEW_PRODUCT_IMAGERY, getAdditionalPreviewImages } from "./PreviewProductImage";
+import { PreviewProductImage } from "./PreviewProductImage";
+import { ApprovedMediaImage } from "./ApprovedMediaImage";
+import { resolveApprovedGallery, type TankFinish, type TreatmentValve } from "./productMediaRegistry";
+import { clackConceptImageForOrderNo } from "./clackConceptImage";
+import { HarmonyCartridgeConfigurator } from "./HarmonyCartridgeConfigurator";
+import { PURELINE_HOUSINGS, harmonyHousingCountForSku, type PurelineHousingPosition, type PurelineHousingChoice, type PurelineHousingSelections } from "./harmonyCartridges";
 import { getProductPresentation } from "./productPresentation";
 import { ClackFittingThumbnailSelect } from "./ClackFittingThumbnailSelect";
-import { getConfigurablePreviewGallery } from "./ConfigurablePreviewGallery";
 import { getConfigurationFamily } from "./productConfigurations";
 import { CLACK_CONNECTION_SIZES, clackFittingsForSize, shortClackFittingLabel, offersClackInstallationFittings } from "./clackInstallationFittings";
 
@@ -95,7 +99,12 @@ export function ProductDetailPage({
   const [selectedImageIndex, setSelectedImageIndex] =
     useState(0);
   const [selectedDemoImageId, setSelectedDemoImageId] = useState<string | null>(null);
-  const [originalThumbnailSelected, setOriginalThumbnailSelected] = useState(false);
+  // PT53 presentation selectors are independent of the commercial SKU and each other.
+  const [tankFinish, setTankFinish] = useState<TankFinish>("stainless");
+  const [selectedValve, setSelectedValve] = useState<TreatmentValve>("clack");
+  const [cartridgeSelections, setCartridgeSelections] = useState<PurelineHousingSelections>({});
+  // 2.0 cf Harmony photography is approved; separate commercial SKUs/prices are pending.
+  const [harmonyTankSize, setHarmonyTankSize] = useState<"1.5" | "2.0">("1.5");
   const [selectedVariantId, setSelectedVariantId] =
     useState<string | null>(null);
   const [quoteOpen, setQuoteOpen] =
@@ -132,12 +141,17 @@ export function ProductDetailPage({
         if (!active) return;
         setProduct(result);
         setSelectedImageIndex(0);
-        setSelectedDemoImageId(null);
-        setOriginalThumbnailSelected(false);
+        if (!sameFamilySwitch) {
+          setSelectedDemoImageId(null);
+          setTankFinish("stainless");
+          setSelectedValve("clack");
+          setCartridgeSelections({});
+          setHarmonyTankSize("1.5");
+          setSelectedFittingSize("");
+          setSelectedFittingType("");
+          setFittingExplicitlyChosen(false);
+        }
         setSelectedVariantId(null);
-        setSelectedFittingSize("");
-        setSelectedFittingType("");
-        setFittingExplicitlyChosen(false);
         setNotificationEmail(account?.email ?? "");
         setNotificationState("idle");
         setNotificationMessage(null);
@@ -161,26 +175,6 @@ export function ProductDetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, account]);
 
-  useEffect(() => {
-    // No gallery selection can persist after opting out of AI previews.
-    setSelectedDemoImageId(null);
-    setOriginalThumbnailSelected(false);
-  }, [imagePreviewEnabled]);
-
-  useEffect(() => {
-    if (product === null || !offersClackInstallationFittings(product.sku)) return;
-    if (imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY) {
-      // Optional, display-only premium brass default in local dev preview.
-      setSelectedFittingSize('1"');
-      setSelectedFittingType("Brass Press/Sweat Assembly LF");
-    } else {
-      // Outside the visual lab, preserve the site's original blank selectors.
-      setSelectedFittingSize("");
-      setSelectedFittingType("");
-    }
-    setFittingExplicitlyChosen(false);
-  }, [imagePreviewEnabled, product?.sku]);
-
   const selectedVariant = useMemo(() => {
     if (product === null || product.variants.length === 0) {
       return null;
@@ -202,12 +196,6 @@ export function ProductDetailPage({
   const illustrativeImage = selectedImage === null && product !== null
     ? DETAIL_IMAGE_FALLBACKS[getConfigurationFamily(product.sku)?.name ?? ""] ?? null
     : null;
-  const demoImages = product !== null && imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY
-    ? getAdditionalPreviewImages(product.sku)
-    : [];
-  const demoGalleryEnabled = demoImages.length > 0;
-  const selectedDemoImage = demoImages.find((image) => image.id === selectedDemoImageId) ?? null;
-
   if (loading) {
     return (
       <main
@@ -257,7 +245,10 @@ export function ProductDetailPage({
   const presentation = getProductPresentation(product);
   const configurationLoading = product.slug.toLowerCase() !== slug.toLowerCase();
   const configurationFamily = getConfigurationFamily(product.sku);
-  const fittingEligible = offersClackInstallationFittings(product.sku);
+  const valveSelectable = offersClackInstallationFittings(product.sku);
+  const isHarmony = configurationFamily?.name === "Harmony";
+  const isHarmonyTwoCf = isHarmony && harmonyTankSize === "2.0";
+  const fittingEligible = valveSelectable; // Available for both valve selections; final hardware fitment requires confirmation.
   const fittingOptions = selectedFittingSize === "" ? [] : clackFittingsForSize(selectedFittingSize);
   const matchingFitting = fittingEligible
     ? fittingOptions.find((fitting) => fitting.label === selectedFittingType)
@@ -265,17 +256,40 @@ export function ProductDetailPage({
   // Preserve the user's actual connection size in the internal quote note,
   // including the Clack fitting shared between 1.25-inch and 1.5-inch systems.
   const selectedFitting = matchingFitting === undefined
-    ? null : { ...matchingFitting, size: selectedFittingSize };
+    ? null : { ...matchingFitting, size: matchingFitting.size === '1.25"' ? matchingFitting.size : selectedFittingSize };
   const fittingForInquiry = fittingExplicitlyChosen ? selectedFitting : null;
-  const configurableGallery = imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY
-    ? getConfigurablePreviewGallery(product.sku, selectedFitting?.orderNo ?? null)
-    : [];
-  const configurableActive = configurableGallery.find((tile) => tile.id === selectedDemoImageId)
-    ?? configurableGallery[0] ?? null;
+  // The equipment cannot be treated as installation-ready without a fitting.
+  // A staff-assisted quote is allowed when the customer needs help choosing it.
+  const fittingSelectionPending = fittingEligible && fittingForInquiry === null;
+  const approvedGallery = resolveApprovedGallery(
+    product.sku, tankFinish, selectedValve,
+    imagePreviewEnabled ? "archetype" : "realistic",
+    selectedFitting?.orderNo ? clackConceptImageForOrderNo(selectedFitting.orderNo) : null,
+    harmonyTankSize,
+  ) ?? [];
+  const approvedActive = approvedGallery.find((photo) => photo.id === selectedDemoImageId)
+    ?? approvedGallery[0] ?? null;
+  const activeHousingSelections = PURELINE_HOUSINGS.slice(0, harmonyHousingCountForSku(product.sku))
+    .filter((housing) => Boolean(cartridgeSelections[housing]?.category));
+  const requestedCustomizations = [
+    ...(fittingSelectionPending ? ["Required installation fitting not yet selected; staff must confirm fitting size, type, compatibility, and price before ordering."] : []),
+    ...(isHarmonyTwoCf ? ["Harmony tank size: 2.0 cubic feet (2.0 cf commercial SKU and price pending)."] : []),
+    ...(tankFinish === "neoprene" && approvedGallery.length > 0 ? ["Optional neoprene jacket requested (additional cost, confirm availability and final price)."] : []),
+    ...(selectedValve !== "clack" && valveSelectable ? [`Control valve requested: ${selectedValve} (confirm compatibility and price).`] : []),
+    ...(selectedValve === "performance" && fittingForInquiry !== null ? [
+      "Fitting is a Clack reference selection; verify Performance valve compatibility and the correct connection part before quotation or fulfillment.",
+    ] : []),
+    ...activeHousingSelections.map((housing) => {
+      const selection = cartridgeSelections[housing]!;
+      return `Pureline housing ${PURELINE_HOUSINGS.indexOf(housing) + 1}: ${selection.category === "other" ? `Other — ${selection.otherDescription || "consultation requested"}` :
+        `${selection.category}${selection.cartridge ? ` — ${selection.cartridge}` : " (specific option pending)"}`} (confirm fit and price).`;
+    }),
+  ];
+  const customizationNote = requestedCustomizations.length > 0
+    ? `Unconfirmed system configuration:\n${requestedCustomizations.join("\n")}` : null;
   // Cart and quote requests use the selected product record, never a family ID.
-  const contactProductName = selectedVariant !== null
-    ? `${product.name} — ${selectedVariant.display_name}`
-    : product.name;
+  const contactProductName = `${selectedVariant !== null
+    ? `${product.name} — ${selectedVariant.display_name}` : product.name}${isHarmonyTwoCf ? " — 2.0 cf requested" : ""}`;
 
   async function handleStockNotification() {
     if (notificationEmail.trim() === "") {
@@ -333,6 +347,12 @@ export function ProductDetailPage({
     if (configurationLoading) return;
     setCommerceError(null);
 
+    // A 2.0 cf Harmony has no current saleable catalog SKU or authorized price.
+    if (isHarmonyTwoCf) {
+      setQuoteOpen(true);
+      return;
+    }
+
     if (
       availability.status === "out_of_stock"
       || availability.status === "discontinued"
@@ -366,7 +386,7 @@ export function ProductDetailPage({
     ) {
       // Fittings are not priced cart line items yet; never silently add an
       // unpriced selected fitting to a base-product purchase.
-      if (fittingForInquiry !== null) {
+      if (fittingEligible || fittingForInquiry !== null || customizationNote !== null) {
         setQuoteOpen(true);
         return;
       }
@@ -407,6 +427,7 @@ export function ProductDetailPage({
         }
         recommendationContext={null}
         installationFitting={fittingForInquiry}
+        configurationNote={customizationNote}
         onClose={() => {
           setQuoteOpen(false);
         }}
@@ -430,162 +451,47 @@ export function ProductDetailPage({
         <section className="product-detail">
           <div className="product-detail-gallery">
             <div className="product-detail-main-image">
-              {configurableActive !== null ? (
-                configurableActive.path !== null ? (
-                  <PreviewProductImage
-                    sku={product.sku}
-                    original={selectedImage ?? illustrativeImage}
-                    enabled={imagePreviewEnabled}
-                    override={{
-                      id: configurableActive.id,
-                      path: configurableActive.path,
-                      label: configurableActive.label,
-                      alt: configurableActive.alt,
-                    }}
-                    loading="eager"
-                  />
-                ) : (
-                  <div className="product-fitting-preview-empty" role="status">
-                    <strong>Choose a hookup fitting</strong>
-                    <span>Select connection size and fitting type to display its individual hardware image.</span>
-                  </div>
-                )
-              ) : demoGalleryEnabled && originalThumbnailSelected && product.images.length > 0 ? (
-                <ResponsiveProductImage
-                  image={product.images[selectedImageIndex] ?? product.images[0]}
-                  loading="eager"
-                />
+              {approvedActive !== null ? (
+                <ApprovedMediaImage photo={approvedActive} loading="eager" />
               ) : (
                 <PreviewProductImage
                   sku={product.sku}
                   original={selectedImage ?? illustrativeImage}
-                  enabled={imagePreviewEnabled}
-                  override={selectedDemoImage}
+                  enabled={false}
                   loading="eager"
                 />
               )}
             </div>
-            {illustrativeImage !== null ? (
-              <p className="product-image-note">
-                Representative image; selected configuration may differ.
-              </p>
-            ) : null}
-
-            {configurableGallery.length > 0 ? (
-              <div className="product-thumbnails product-preview-thumbnails" aria-label={`${configurationFamily?.name ?? "Product"} AI preview gallery`}>
-                {configurableGallery.map((tile) => (
-                  <button
-                    key={tile.id}
-                    type="button"
-                    className={configurableActive?.id === tile.id ? "is-active" : undefined}
-                    aria-label={`Show ${tile.label}`}
-                    aria-pressed={configurableActive?.id === tile.id}
-                    onClick={() => {
-                      setSelectedDemoImageId(tile.id);
-                      setOriginalThumbnailSelected(false);
-                    }}
+            {approvedGallery.length > 0 ? (
+              <div className="product-thumbnails product-preview-thumbnails" aria-label="Approved product photography gallery">
+                {approvedGallery.map((photo) => (
+                  <button key={photo.id} type="button"
+                    className={approvedActive?.id === photo.id ? "is-active" : undefined}
+                    aria-label={`Show ${photo.label}`}
+                    aria-pressed={approvedActive?.id === photo.id}
+                    onClick={() => setSelectedDemoImageId(photo.id)}
                   >
-                    {tile.path !== null ? (
-                      <img src={tile.path} alt={tile.alt} loading="lazy" />
-                    ) : (
-                      <span className="product-fitting-thumb-empty" aria-hidden="true">
-                        Select fitting
-                      </span>
-                    )}
-                    <span className="product-preview-thumb-caption">{tile.label}</span>
-                  </button>
-                ))}
-              </div>
-            ) : demoGalleryEnabled ? (
-              <div className="product-thumbnails product-preview-thumbnails" aria-label="AI concept gallery and existing photographs">
-                <button
-                  type="button"
-                  className={selectedDemoImage === null && !originalThumbnailSelected ? "is-active" : undefined}
-                  aria-label="Show main system image"
-                  aria-pressed={selectedDemoImage === null && !originalThumbnailSelected}
-                  onClick={() => {
-                    setSelectedDemoImageId(null);
-                    setOriginalThumbnailSelected(false);
-                  }}
-                >
-                  <PreviewProductImage
-                    sku={product.sku}
-                    original={selectedImage ?? illustrativeImage}
-                    enabled={imagePreviewEnabled}
-                    loading="lazy"
-                  />
-                  <span className="product-preview-thumb-caption">System</span>
-                </button>
-                {demoImages.map((image) => (
-                  <button
-                    key={image.id}
-                    type="button"
-                    className={selectedDemoImage?.id === image.id ? "is-active" : undefined}
-                    aria-label={`Show ${image.label}`}
-                    aria-pressed={selectedDemoImage?.id === image.id}
-                    onClick={() => {
-                      setSelectedDemoImageId(image.id);
-                      setOriginalThumbnailSelected(false);
-                    }}
-                  >
-                    <img src={image.path} alt={image.alt} loading="lazy" />
-                    <span className="product-preview-thumb-caption">{image.label}</span>
-                  </button>
-                ))}
-                {product.images.map((image, index) => (
-                  <button
-                    key={`catalog-${image.path}`}
-                    type="button"
-                    className={originalThumbnailSelected && selectedImageIndex === index ? "is-active" : undefined}
-                    aria-label={`Show original catalog image ${index + 1}`}
-                    aria-pressed={originalThumbnailSelected && selectedImageIndex === index}
-                    onClick={() => {
-                      setSelectedDemoImageId(null);
-                      setOriginalThumbnailSelected(true);
-                      setSelectedImageIndex(index);
-                    }}
-                  >
-                    <ResponsiveProductImage image={image} />
-                    <span className="product-preview-thumb-caption">Original {index + 1}</span>
+                    <ApprovedMediaImage photo={photo} thumbnail />
+                    <span className="product-preview-thumb-caption">{photo.label}</span>
                   </button>
                 ))}
               </div>
             ) : product.images.length > 1 ? (
-              <div
-                className="product-thumbnails"
-                aria-label="Product images"
-              >
-                {product.images.map(
-                  (image, index) => (
-                    <button
-                      type="button"
-                      key={image.path}
-                      className={
-                        index
-                        === selectedImageIndex
-                          ? "is-active"
-                          : undefined
-                      }
-                      aria-label={
-                        `Show image ${index + 1}`
-                      }
-                      aria-pressed={
-                        index
-                        === selectedImageIndex
-                      }
-                      onClick={() => {
-                        setSelectedImageIndex(
-                          index,
-                        );
-                      }}
-                    >
-                      <ResponsiveProductImage
-                        image={image}
-                      />
-                    </button>
-                  ),
-                )}
+              <div className="product-thumbnails" aria-label="Product images">
+                {product.images.map((image, index) => (
+                  <button type="button" key={image.path}
+                    className={index === selectedImageIndex ? "is-active" : undefined}
+                    aria-label={`Show image ${index + 1}`}
+                    aria-pressed={index === selectedImageIndex}
+                    onClick={() => setSelectedImageIndex(index)}
+                  >
+                    <ResponsiveProductImage image={image} />
+                  </button>
+                ))}
               </div>
+            ) : null}
+            {approvedGallery.length === 0 && illustrativeImage !== null ? (
+              <p className="product-image-note">Representative image; selected configuration may differ.</p>
             ) : null}
           </div>
 
@@ -667,6 +573,185 @@ export function ProductDetailPage({
               </aside>
             ) : null}
 
+            {configurationFamily !== null ? (
+              <section
+                className="product-variant-selector"
+                aria-labelledby="family-configuration-heading"
+              >
+                <p className="eyebrow">Configuration</p>
+                <h2 id="family-configuration-heading" className="product-detail-section-title">
+                  Choose your {configurationFamily.name} system
+                </h2>
+
+                {/* PT53: shared control order is size → valve → fittings → jacket.
+                    Pureline housing configuration is an additional Harmony-only choice. */}
+                {isHarmony ? (
+                  <label>
+                    <span>TANK SIZE</span>
+                    <select value={harmonyTankSize}
+                      onChange={(event) => {
+                        setHarmonyTankSize(event.target.value as "1.5" | "2.0");
+                        setSelectedDemoImageId("system");
+                      }}>
+                      <option value="1.5">1.5 Cubic Feet</option>
+                      <option value="2.0">2.0 Cubic Feet — request quote</option>
+                    </select>
+                  </label>
+                ) : (
+                  <label>
+                    <span>{configurationFamily.name === "Origin" ? "SYSTEM CONFIGURATION" : "TANK SIZE"}</span>
+                    <select
+                      value={product.sku}
+                      onChange={(event) => {
+                        const path = `/systems/${event.target.value.toLowerCase()}`;
+                        if (path !== product.public_path) onNavigate(path, true);
+                      }}
+                    >
+                      {configurationFamily.configurations.map((configuration) => (
+                        <option key={configuration.sku} value={configuration.sku}>
+                          {configuration.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {configurationFamily.name === "Origin" ? (
+                  <p className="product-ownership-guidance">
+                    {configurationFamily.configurations.find(
+                      (configuration) => configuration.sku === product.sku)?.details}
+                  </p>
+                ) : null}
+
+                {approvedGallery.length > 0 && valveSelectable ? (
+                  <label>
+                    <span>CONTROL VALVE</span>
+                    <select value={selectedValve}
+                      onChange={(event) => {
+                        setSelectedValve(event.target.value as TreatmentValve);
+                        setSelectedDemoImageId("system");
+                      }}>
+                      <option value="clack">Clack</option>
+                      <option value="performance">Performance</option>
+                    </select>
+                  </label>
+                ) : isHarmony && approvedGallery.length > 0 ? (
+                  <p className="product-ownership-guidance">Control valve: Pass-Through Valve with red caps.</p>
+                ) : null}
+                {fittingEligible ? (
+                  <div
+                    className="product-variant-selector product-installation-fittings"
+                    role="group"
+                    aria-label="Fitting selection"
+                  >
+                    <label>
+                      <span>FITTING SIZE</span>
+                      <select
+                        value={selectedFittingSize}
+                        onChange={(event) => {
+                          const nextSize = event.target.value;
+                          setSelectedFittingSize(nextSize);
+                          setSelectedFittingType("");
+                          setFittingExplicitlyChosen(false);
+                          setSelectedDemoImageId("system");
+                        }}
+                      >
+                        <option value="">Choose connection size</option>
+                        {CLACK_CONNECTION_SIZES.map((size) => (
+                          <option key={size} value={size}>{size}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="product-fitting-type-field">
+                      <span id="clack-fitting-type-label">FITTING TYPE</span>
+                      <ClackFittingThumbnailSelect
+                        options={fittingOptions}
+                        value={selectedFittingType}
+                        disabled={selectedFittingSize === ""}
+                        onChange={(nextType) => {
+                          setSelectedFittingType(nextType);
+                          setFittingExplicitlyChosen(nextType !== "");
+                          setSelectedDemoImageId(nextType === "" ? "system" : "hookup");
+                        }}
+                      />
+                    </div>
+                    {selectedFitting !== null ? (
+                      <p className="product-ownership-guidance">
+                        Selected: {selectedFitting.size} — {shortClackFittingLabel(selectedFitting)}.
+                      </p>
+                    ) : null}
+                    {selectedValve === "performance" ? (
+                      <p className="product-ownership-guidance">
+                        The fitting photographs show Clack reference hardware. We will confirm
+                        the appropriate Performance valve connections before finalizing your request.
+                      </p>
+                    ) : null}
+                    <p className="product-ownership-guidance">
+                      Fittings are required for installation. If you are unsure which size or type
+                      is needed, our team can help confirm the correct hardware, compatibility,
+                      availability, and final cost. Installation labor is not included.
+                    </p>
+                  </div>
+                ) : null}
+
+                {!isHarmony && approvedGallery.length > 0 ? (
+                  <label className="product-photo-jacket-label">
+                    <input type="checkbox" checked={tankFinish === "neoprene"}
+                      onChange={(event) => setTankFinish(event.target.checked ? "neoprene" : "stainless")} />
+                    Black Neoprene Jacket (+$100)
+                  </label>
+                ) : null}
+                {isHarmonyTwoCf ? (
+                  <p className="product-ownership-guidance" role="status">
+                    2.0 cf Harmony is available for inquiry. A dedicated catalog record and
+                    confirmed price are pending; the 1.5 cf price does not apply.
+                  </p>
+                ) : null}
+
+                {isHarmony ? (
+                  <>
+                    <label>
+                      <span>PURELINE CONFIGURATION</span>
+                      <select
+                        value={product.sku}
+                        onChange={(event) => {
+                          const path = `/systems/${event.target.value.toLowerCase()}`;
+                          if (path !== product.public_path) onNavigate(path, true);
+                        }}
+                      >
+                        {configurationFamily.configurations.map((configuration) => (
+                          <option key={configuration.sku} value={configuration.sku}>
+                            {configuration.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <p className="product-ownership-guidance">
+                      {configurationFamily.configurations.find(
+                        (configuration) => configuration.sku === product.sku)?.details}
+                    </p>
+                  </>
+                ) : null}
+                {configurationLoading ? (
+                  <p role="status">Updating configuration…</p>
+                ) : null}
+                {isHarmony ? (
+                  <HarmonyCartridgeConfigurator
+                    sku={product.sku}
+                    selections={cartridgeSelections}
+                    onChange={(housing: PurelineHousingPosition, choice: PurelineHousingChoice) =>
+                      setCartridgeSelections((old) => ({ ...old, [housing]: choice }))}
+                  />
+                ) : null}
+                {isHarmony && approvedGallery.length > 0 ? (
+                  <label className="product-photo-jacket-label">
+                    <input type="checkbox" checked={tankFinish === "neoprene"}
+                      onChange={(event) => setTankFinish(event.target.checked ? "neoprene" : "stainless")} />
+                    Black Neoprene Jacket (+$100)
+                  </label>
+                ) : null}
+              </section>
+            ) : null}
+
             {presentation.installationFacts.length > 0 ? (
               <section
                 className="product-installation"
@@ -696,129 +781,6 @@ export function ProductDetailPage({
                     {presentation.ownershipGuidance}
                   </p>
                 ) : null}
-              </section>
-            ) : null}
-
-            <InstallationServicesNotice />
-
-            {configurationFamily !== null ? (
-              <section
-                className="product-variant-selector"
-                aria-labelledby="family-configuration-heading"
-              >
-                <p className="eyebrow">Configuration</p>
-                <h2 id="family-configuration-heading" className="product-detail-section-title">
-                  Choose your {configurationFamily.name} system
-                </h2>
-                <label>
-                  <span>AVAILABLE CONFIGURATIONS</span>
-                  <select
-                    value={product.sku}
-                    onChange={(event) => {
-                      const path = `/systems/${event.target.value.toLowerCase()}`;
-                      if (path !== product.public_path) onNavigate(path, true);
-                    }}
-                  >
-                    {configurationFamily.configurations.map((configuration) => (
-                      <option key={configuration.sku} value={configuration.sku}>
-                        {configuration.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {configurationLoading ? (
-                  <p role="status">Updating configuration…</p>
-                ) : null}
-                <p className="product-ownership-guidance">
-                  {configurationFamily.configurations.find(
-                    (configuration) => configuration.sku === product.sku)?.details}
-                </p>
-              </section>
-            ) : null}
-
-
-            {fittingEligible ? (
-              <section
-                className="product-variant-selector product-installation-fittings"
-                aria-labelledby="clack-installation-fittings-heading"
-              >
-                <p className="eyebrow">Installation connection</p>
-                <h2 id="clack-installation-fittings-heading" className="product-detail-section-title">
-                  Select your connection fitting
-                </h2>
-                <label>
-                  <span>CONNECTION SIZE (OPTIONAL)</span>
-                  <select
-                    value={selectedFittingSize}
-                    onChange={(event) => {
-                      const nextSize = event.target.value;
-                      setSelectedFittingSize(nextSize);
-                      const possible = clackFittingsForSize(nextSize);
-                      const suggested = possible.find((item) => item.orderNo === "V3007-22LF")
-                        ?? possible.find((item) => item.label.startsWith("Brass Sweat"));
-                      setSelectedFittingType(imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY
-                        ? (suggested?.label ?? "") : "");
-                      setFittingExplicitlyChosen(false);
-                      if (configurableGallery.length > 0) setSelectedDemoImageId("system");
-                    }}
-                  >
-                    <option value="">Choose connection size</option>
-                    {CLACK_CONNECTION_SIZES.map((size) => (
-                      <option key={size} value={size}>{size}</option>
-                    ))}
-                  </select>
-                </label>
-                <div className="product-fitting-type-field">
-                  <span id="clack-fitting-type-label">FITTING TYPE (OPTIONAL)</span>
-                  {imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY ? (
-                    <ClackFittingThumbnailSelect
-                      options={fittingOptions}
-                      value={selectedFittingType}
-                      disabled={selectedFittingSize === ""}
-                      onChange={(nextType) => {
-                        setSelectedFittingType(nextType);
-                        setFittingExplicitlyChosen(nextType !== "");
-                        if (configurableGallery.length > 0) {
-                          setSelectedDemoImageId(nextType === "" ? "system" : "hookup");
-                          setOriginalThumbnailSelected(false);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <select
-                      aria-labelledby="clack-fitting-type-label"
-                      value={selectedFittingType}
-                      onChange={(event) => {
-                        setSelectedFittingType(event.target.value);
-                        setFittingExplicitlyChosen(event.target.value !== "");
-                      }}
-                      disabled={selectedFittingSize === ""}
-                    >
-                      <option value="">{selectedFittingSize === "" ? "Choose size first" : "Choose fitting type"}</option>
-                      {fittingOptions.map((fitting) => (
-                        <option key={fitting.orderNo} value={fitting.label}>
-                          {shortClackFittingLabel(fitting)}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                {selectedFitting !== null ? (
-                  <p className="product-ownership-guidance">
-                    {fittingExplicitlyChosen ? "Selected" : "Visual preview default"}: {selectedFitting.size} — {shortClackFittingLabel(selectedFitting)}.
-                  </p>
-                ) : null}
-                {imagePreviewEnabled && CAN_PREVIEW_PRODUCT_IMAGERY && !fittingExplicitlyChosen ? (
-                  <p className="product-ownership-guidance">
-                    This brass fitting is a visual preview suggestion, not a universal compatibility or quality claim.
-                    Choose a fitting explicitly to include it in a quote request.
-                  </p>
-                ) : null}
-                <p className="product-ownership-guidance">
-                  Not sure which fitting you need? Leave either field blank and our team
-                  can help. Compatibility, availability and final cost require confirmation;
-                  installation labor is not included.
-                </p>
               </section>
             ) : null}
 
@@ -954,7 +916,9 @@ export function ProductDetailPage({
             ) : null}
 
             <div className="detail-commerce">
-              {pricing.display_price
+              {isHarmonyTwoCf ? (
+                <p className="detail-policy">2.0 cf Harmony — price provided with quote</p>
+              ) : pricing.display_price
               && pricing.amount_minor
                 !== null
               && pricing.currency
@@ -971,6 +935,9 @@ export function ProductDetailPage({
                 </p>
               )}
 
+              {tankFinish === "neoprene" ? (
+                <p className="product-ownership-guidance">The displayed base price excludes the optional neoprene jacket; additional cost is confirmed in your quote.</p>
+              ) : null}
               <p className="detail-purchase-boundary">
                 Equipment only at launch. Installation is arranged separately from
                 D&apos;Acqua Dolce&apos;s equipment sale and is not included in this
@@ -992,7 +959,7 @@ export function ProductDetailPage({
                 disabled={
                   addingToCart
                   || configurationLoading
-                  || ((availability.status === "out_of_stock" || availability.status === "discontinued")
+                  || (!isHarmonyTwoCf && (availability.status === "out_of_stock" || availability.status === "discontinued")
                     && !availability.can_inquire)
                 }
                 onClick={() => {
@@ -1001,10 +968,11 @@ export function ProductDetailPage({
               >
                 {addingToCart
                   ? "Adding…"
+                  : isHarmonyTwoCf ? "Request 2.0 cf quote"
                   : (availability.status === "out_of_stock" || availability.status === "discontinued")
                     ? (availability.can_inquire ? "Send inquiry" : "Unavailable")
-                    : pricing.action === "ADD_TO_CART" && fittingForInquiry !== null
-                      ? "Request fitting quote"
+                    : pricing.action === "ADD_TO_CART" && (fittingEligible || fittingForInquiry !== null || customizationNote !== null)
+                      ? "Request configuration quote"
                       : pricing.action_label}
               </button>
             </div>
@@ -1226,6 +1194,8 @@ export function ProductDetailPage({
                 </ul>
               </section>
             ) : null}
+
+            <InstallationServicesNotice />
 
             <section
               className="product-support"

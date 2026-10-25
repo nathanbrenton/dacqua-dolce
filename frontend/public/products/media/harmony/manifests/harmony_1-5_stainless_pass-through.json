@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 499685,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_1-5_stainless_pass-through.png",
+      "sha256": "56952b46b3edd892eedfd3b504745a60c50b077e658fe59b3faae686fdc1fed4",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 23858,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_stainless_pass-through.webp",
+      "sha256": "d2d4d3e796ff3e22aa64ac5e389f7129836af7d79520bf23035f1a18a251290b",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 173491,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_stainless_pass-through.png",
+      "sha256": "3129a46cb625faa3af39d26cbfaf6ed4fb489d316c9428fc98684d82f773e855",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 172256,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_stainless_pass-through.webp",
+      "sha256": "073019a368c623f5d04f3798ade74f34e7bf8622d1b3e280c2c4561c2960e8df",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 499685,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_stainless_pass-through.png",
+      "sha256": "56952b46b3edd892eedfd3b504745a60c50b077e658fe59b3faae686fdc1fed4",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_1-5_stainless_pass-through",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 499685,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_1-5_stainless_pass-through.png",
+    "sha256": "56952b46b3edd892eedfd3b504745a60c50b077e658fe59b3faae686fdc1fed4",
+    "width": 1122
+  }
+}

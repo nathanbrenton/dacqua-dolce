@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-essence-single-tank",
+  "assets": {
+    "archival_master": {
+      "bytes": 1890945,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/essence/v2026-10-23-essence-single-tank/essence_1-5_neoprene_clack_realistic.png",
+      "sha256": "33be1fc0e5646566bab7c2f312dfe7c0a9b19ea9c68574b5ce446dd887740c6f",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 126488,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_1-5_neoprene_clack_realistic.webp",
+      "sha256": "4b008303ac8545d3be16904a7b0f5661c7e36e4dd2d3eb2e568159bb94481368",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 172798,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_1-5_neoprene_clack_realistic.png",
+      "sha256": "b216c71085472b3de3aed0fe3e37063b218f5290337e406e7f7e0258e5bde4f8",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1147914,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_1-5_neoprene_clack_realistic.webp",
+      "sha256": "4835887c18a3ea9621b98520ff25a71a025e524cf993353904cbda02db7afb7a",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1890945,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_1-5_neoprene_clack_realistic.png",
+      "sha256": "33be1fc0e5646566bab7c2f312dfe7c0a9b19ea9c68574b5ce446dd887740c6f",
+      "width": 1122
+    }
+  },
+  "collection": "essence",
+  "configuration": "essence_1-5_neoprene_clack_realistic",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1890945,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "essence_1-5_neoprene_clack_realistic.png",
+    "sha256": "33be1fc0e5646566bab7c2f312dfe7c0a9b19ea9c68574b5ce446dd887740c6f",
+    "width": 1122
+  }
+}

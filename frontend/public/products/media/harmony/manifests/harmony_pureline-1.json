@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 1065205,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_pureline-1.png",
+      "sha256": "64ddd77da8fe74e2a5d7c1d93ebbc7b81b0230b63de4ce5fb18fb94bb779b96b",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 76072,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_pureline-1.webp",
+      "sha256": "aa27ecfde59a3c54c3bfc138edaed1050eeb8b4259b8cadb78732b0fdf0d8e87",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 106699,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_pureline-1.png",
+      "sha256": "6079806f3523a2f5a16c59b031c9d78da2c6786397a5aa2fee52da07c02d07d8",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 540640,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_pureline-1.webp",
+      "sha256": "70e3470db3553246ab79126d04b04b4a64b073a5e99daac6b37b6fed34ce89c0",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1065205,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_pureline-1.png",
+      "sha256": "64ddd77da8fe74e2a5d7c1d93ebbc7b81b0230b63de4ce5fb18fb94bb779b96b",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_pureline-1",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1065205,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_pureline-1.png",
+    "sha256": "64ddd77da8fe74e2a5d7c1d93ebbc7b81b0230b63de4ce5fb18fb94bb779b96b",
+    "width": 1122
+  }
+}

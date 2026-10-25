@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 712436,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_1-5_neoprene_pass-through_pureline-3.png",
+      "sha256": "61a715415b767263ff3a0c2d967912bc5b3a8f00d097e9d652353078cf457728",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 65142,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_neoprene_pass-through_pureline-3.webp",
+      "sha256": "39d558c23454a5937931b6193e52c9c856e6035d7cb8daec871cbb0254a9f428",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 91812,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_neoprene_pass-through_pureline-3.png",
+      "sha256": "d6c6e6e74a507d1a61d0b3eac0bd6c23ef7bc8e0dba652403dc5521b625ad641",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 491892,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_neoprene_pass-through_pureline-3.webp",
+      "sha256": "e786ddfbbc991db62620bc4eec063ba029fda55d4cb8b766d21c53e5ed72fca8",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 712436,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_neoprene_pass-through_pureline-3.png",
+      "sha256": "61a715415b767263ff3a0c2d967912bc5b3a8f00d097e9d652353078cf457728",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_1-5_neoprene_pass-through_pureline-3",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 712436,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_1-5_neoprene_pass-through_pureline-3.png",
+    "sha256": "61a715415b767263ff3a0c2d967912bc5b3a8f00d097e9d652353078cf457728",
+    "width": 1122
+  }
+}

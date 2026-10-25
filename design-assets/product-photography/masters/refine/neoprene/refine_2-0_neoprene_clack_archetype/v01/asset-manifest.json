@@ -1,0 +1,56 @@
+{
+  "archive_version": "v01",
+  "canonical_basename": "refine_2-0_neoprene_clack_archetype.png",
+  "family": "refine",
+  "outputs": {
+    "master": {
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/neoprene/refine_2-0_neoprene_clack_archetype/v01/refine_2-0_neoprene_clack_archetype.png",
+      "sha256": "88dc26c8b66c03b6c1a46b92c4d144775bec896522ad7470983ef4cea0f4d2f0",
+      "size_bytes": 1912208,
+      "width": 1122
+    },
+    "thumbnail_png": {
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_archetype_thumb.png",
+      "sha256": "d3b7678dc0dbcafba2f18f71a06a2d42f6b1bbca20c0056de6730dbafc2f5dc0",
+      "size_bytes": 180670,
+      "width": 384
+    },
+    "thumbnail_webp": {
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_archetype_thumb.webp",
+      "sha256": "c322ced3336166d164340421876fa56d61ef5efd704b08d030dcf7a865a68089",
+      "size_bytes": 130244,
+      "width": 384
+    },
+    "web_png": {
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_archetype.png",
+      "sha256": "88dc26c8b66c03b6c1a46b92c4d144775bec896522ad7470983ef4cea0f4d2f0",
+      "size_bytes": 1912208,
+      "width": 1122
+    },
+    "web_webp": {
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_archetype.webp",
+      "sha256": "a5c5b7489dc6ddbf523a25aa12d3308f3adb0e6afe1f62cf40e744520b227401",
+      "size_bytes": 1193756,
+      "width": 1122
+    }
+  },
+  "project": "D'Acqua Dolce",
+  "schema_version": 1,
+  "size_cf": "2.0",
+  "source": {
+    "height": 1402,
+    "original_filename": "refine_2-0_neoprene_clack_archetype.png.png",
+    "sha256": "88dc26c8b66c03b6c1a46b92c4d144775bec896522ad7470983ef4cea0f4d2f0",
+    "size_bytes": 1912208,
+    "width": 1122
+  },
+  "tank_cover": "neoprene",
+  "usage": "AI-generated development photography; not approved production imagery",
+  "valve": "clack",
+  "variant": "archetype"
+}

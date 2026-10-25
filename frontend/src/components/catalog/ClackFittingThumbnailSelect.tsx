@@ -1,12 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ClackInstallationFitting } from "./clackInstallationFittings";
 import { shortClackFittingLabel } from "./clackInstallationFittings";
 import { clackConceptImageForOrderNo } from "./clackConceptImage";
 
-/** Local Aesthetic Lab only: image-backed picker shared by Essence and Refine.
- * A native <select> remains in the product page whenever previews are OFF.
- * The summary and each option are keyboard-focusable, with native disclosure
- * behavior and standard buttons (no inaccessible image elements inside <option>).
+/** Image-backed fitting selector independent of global photography style.
+ * Native disclosure + buttons keep the controls keyboard accessible.
  */
 type Props = {
   options: readonly ClackInstallationFitting[];
@@ -17,6 +15,7 @@ type Props = {
 
 export function ClackFittingThumbnailSelect({ options, value, disabled, onChange }: Props) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [brokenImages, setBrokenImages] = useState<ReadonlySet<string>>(() => new Set());
   const selected = options.find((item) => item.label === value) ?? null;
   useEffect(() => {
     if (disabled && detailsRef.current) detailsRef.current.open = false;
@@ -37,9 +36,10 @@ export function ClackFittingThumbnailSelect({ options, value, disabled, onChange
   };
   const thumb = (fitting: ClackInstallationFitting, thumbnailClass: string) => {
     const path = clackConceptImageForOrderNo(fitting.orderNo);
-    return path ? (
-      <img className={thumbnailClass} src={path} alt="" loading="lazy" width={44} height={44} />
-    ) : <span className={thumbnailClass} aria-hidden="true">—</span>;
+    return path && !brokenImages.has(path) ? (
+      <img className={thumbnailClass} src={path} alt="" loading="lazy" width={44} height={44}
+        onError={() => setBrokenImages((current) => new Set([...current, path]))} />
+    ) : <span className={`${thumbnailClass} clack-thumbnail-empty`} aria-hidden="true">—</span>;
   };
 
   return (
@@ -54,7 +54,7 @@ export function ClackFittingThumbnailSelect({ options, value, disabled, onChange
         )}
         <span className="clack-thumbnail-select-trigger-copy">
           <strong>{disabled ? "Choose connection size first" : selected ? shortClackFittingLabel(selected) : "Choose fitting type"}</strong>
-          {selected ? <small>{selected.orderNo}</small> : null}
+          {selected ? <small>Individual fitting photo</small> : null}
         </span>
         <span className="clack-thumbnail-caret" aria-hidden="true">⌄</span>
       </summary>
@@ -71,7 +71,7 @@ export function ClackFittingThumbnailSelect({ options, value, disabled, onChange
               {thumb(fitting, "clack-thumbnail-menu-image")}
               <span className="clack-thumbnail-menu-label">
                 <strong>{shortClackFittingLabel(fitting)}</strong>
-                <small>{fitting.orderNo}</small>
+                <small>{fitting.size}</small>
               </span>
             </button>
           ))}

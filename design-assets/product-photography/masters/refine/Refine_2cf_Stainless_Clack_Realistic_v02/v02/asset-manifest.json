@@ -1,0 +1,26 @@
+{
+  "family": "Refine",
+  "component": "stainless-tank-clack-valve",
+  "size": "2.0 cf",
+  "variant": "Realistic",
+  "version": "v02",
+  "source_image": "Refine_2cf_Stainless_Clack_Realistic_v02.png",
+  "source_sha256": "f13270421a972000544faba5303f6890432e7b02a2c929b81a79d5519c16545f",
+  "source_dimensions": [
+    1122,
+    1402
+  ],
+  "thumbnail_dimensions": [
+    384,
+    480
+  ],
+  "image_processor": "ImageMagick",
+  "paths": {
+    "master": "/Users/n8/Desktop/dacqua-dolce/design-assets/product-photography/masters/refine/Refine_2cf_Stainless_Clack_Realistic_v02/v02/Refine_2cf_Stainless_Clack_Realistic_v02.png",
+    "manifest": "/Users/n8/Desktop/dacqua-dolce/design-assets/product-photography/masters/refine/Refine_2cf_Stainless_Clack_Realistic_v02/v02/asset-manifest.json",
+    "web_png": "/Users/n8/Desktop/dacqua-dolce/frontend/public/products/media/refine/Refine_2cf_Stainless_Clack_Realistic_v02.png",
+    "thumb_png": "/Users/n8/Desktop/dacqua-dolce/frontend/public/products/media/refine/Refine_2cf_Stainless_Clack_Realistic_v02_thumb.png"
+  },
+  "web_webp_path": "frontend/public/products/media/refine/Refine_2cf_Stainless_Clack_Realistic_v02.webp",
+  "thumb_webp_path": "frontend/public/products/media/refine/Refine_2cf_Stainless_Clack_Realistic_v02_thumb.webp"
+}

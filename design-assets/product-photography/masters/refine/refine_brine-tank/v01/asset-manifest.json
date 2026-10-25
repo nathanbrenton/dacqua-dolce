@@ -1,0 +1,22 @@
+{
+  "source_filename": "brine-tank.png",
+  "canonical_filename": "refine_brine-tank.png",
+  "label": "Refine brine tank",
+  "version": "v01",
+  "source_path": "frontend/public/__dd_image_preview/refine/brine-tank.png",
+  "sha256": "af7bf38cad215944ffe4fdf5945b70b6c3aa06df62abcce7274b88043e38c6b8",
+  "source_dimensions": [
+    1122,
+    1402
+  ],
+  "thumbnail_dimensions": [
+    384,
+    480
+  ],
+  "master_path": "design-assets/product-photography/masters/refine/refine_brine-tank/v01/refine_brine-tank.png",
+  "web_png_path": "frontend/public/products/media/refine/refine_brine-tank.png",
+  "thumb_png_path": "frontend/public/products/media/refine/refine_brine-tank_thumb.png",
+  "web_webp_path": "frontend/public/products/media/refine/refine_brine-tank.webp",
+  "thumb_webp_path": "frontend/public/products/media/refine/refine_brine-tank_thumb.webp",
+  "notes": "Preserved existing __dd_image_preview source; standardized lowercase naming applied for media outputs."
+}

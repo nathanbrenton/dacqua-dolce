@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 818691,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_1-5_neoprene_pass-through.png",
+      "sha256": "b25a042cf2cd48a0b9b7d69ea5d9d0382e9d37b3a6549e0ca07943f65e88d532",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 31286,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_neoprene_pass-through.webp",
+      "sha256": "f4e426fc6be0e0d904bdaeeba1e37eaec7065ffec222d168570e289fc5e1c5fb",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 209732,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_neoprene_pass-through.png",
+      "sha256": "2b9db44bd86e07adfe7ad529029253c143761facc07fd4149b15a10c2080b5ad",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 283934,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_neoprene_pass-through.webp",
+      "sha256": "a2b686e81666a8080b81ff019a3c3d0d6cde3cef5c37b83ea471d2ca74e2ab26",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 818691,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_neoprene_pass-through.png",
+      "sha256": "b25a042cf2cd48a0b9b7d69ea5d9d0382e9d37b3a6549e0ca07943f65e88d532",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_1-5_neoprene_pass-through",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 818691,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_1-5_neoprene_pass-through.png",
+    "sha256": "b25a042cf2cd48a0b9b7d69ea5d9d0382e9d37b3a6549e0ca07943f65e88d532",
+    "width": 1122
+  }
+}

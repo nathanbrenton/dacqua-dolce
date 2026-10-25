@@ -1,0 +1,56 @@
+{
+  "archive_version": "v01",
+  "canonical_basename": "refine_2-0_neoprene_clack_realistic.png",
+  "family": "refine",
+  "outputs": {
+    "master": {
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/neoprene/refine_2-0_neoprene_clack_realistic/v01/refine_2-0_neoprene_clack_realistic.png",
+      "sha256": "f5f40a0650876a5678d95bc807fd7b4972daa702f36692c1c12ff558ff673c00",
+      "size_bytes": 1876775,
+      "width": 1122
+    },
+    "thumbnail_png": {
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_realistic_thumb.png",
+      "sha256": "6cbad108b42356be8ea7641798db7174d445bf3b959338835fbb14ffaace90ee",
+      "size_bytes": 179801,
+      "width": 384
+    },
+    "thumbnail_webp": {
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_realistic_thumb.webp",
+      "sha256": "7e9457faa03c116235b0a5ef29c5bf394f9e69de405a232f1b8ccb88328926ba",
+      "size_bytes": 129466,
+      "width": 384
+    },
+    "web_png": {
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_realistic.png",
+      "sha256": "f5f40a0650876a5678d95bc807fd7b4972daa702f36692c1c12ff558ff673c00",
+      "size_bytes": 1876775,
+      "width": 1122
+    },
+    "web_webp": {
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_clack_realistic.webp",
+      "sha256": "5eb8f6a1da0346d4f8e5f54d0a8f6acfd5edb622ec976bb18004a0caa7435b5d",
+      "size_bytes": 1164836,
+      "width": 1122
+    }
+  },
+  "project": "D'Acqua Dolce",
+  "schema_version": 1,
+  "size_cf": "2.0",
+  "source": {
+    "height": 1402,
+    "original_filename": "refine_2-0_neoprene_clack_realistic.png.png",
+    "sha256": "f5f40a0650876a5678d95bc807fd7b4972daa702f36692c1c12ff558ff673c00",
+    "size_bytes": 1876775,
+    "width": 1122
+  },
+  "tank_cover": "neoprene",
+  "usage": "AI-generated development photography; not approved production imagery",
+  "valve": "clack",
+  "variant": "realistic"
+}

@@ -1,0 +1,38 @@
+{
+  "asset_id": "refine.brine-tank-black.v01",
+  "description": "Existing isolated black brine tank concept image",
+  "product_family": "Refine",
+  "source": "frontend/public/__dd_image_preview/refine/brine-tank.png",
+  "source_status": "Existing Aesthetic Lab preview PNG; original AI-export master not independently verified",
+  "source_dimensions_px": {
+    "width": 1122,
+    "height": 1402
+  },
+  "source_sha256": "af7bf38cad215944ffe4fdf5945b70b6c3aa06df62abcce7274b88043e38c6b8",
+  "approval": "development and testing only; production image usage pending approval",
+  "webp_status": "not created; transcode separately after image approval",
+  "no_image_content_changes": true,
+  "files": {
+    "archived_preview_source": {
+      "path": "design-assets/product-photography/masters/refine/brine-tank-black/v01/brine-tank-black-source-from-preview.png",
+      "width_px": 1122,
+      "height_px": 1402,
+      "bytes": 1548302,
+      "sha256": "af7bf38cad215944ffe4fdf5945b70b6c3aa06df62abcce7274b88043e38c6b8"
+    },
+    "website_png_staging": {
+      "path": "frontend/public/products/media/refine/brine-tank-black-v01.png",
+      "width_px": 1122,
+      "height_px": 1402,
+      "bytes": 1548302,
+      "sha256": "af7bf38cad215944ffe4fdf5945b70b6c3aa06df62abcce7274b88043e38c6b8"
+    },
+    "thumbnail_png_staging": {
+      "path": "frontend/public/products/media/refine/brine-tank-black-v01-thumb.png",
+      "width_px": 384,
+      "height_px": 480,
+      "bytes": 170763,
+      "sha256": "981cff34b88bf762d14cd34ef5fdbd9033d9f6a026896839644326cee1b32c69"
+    }
+  }
+}

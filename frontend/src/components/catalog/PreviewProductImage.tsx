@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { CatalogImage } from "../../api/catalog";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
+import { approvedLandingPhoto } from "./productMediaRegistry";
+import { ApprovedMediaImage } from "./ApprovedMediaImage";
 
 /** Opt-in AI imagery; no image here is an approved catalog asset. */
 const HARMONY_PREVIEW: Readonly<Record<string, string>> = {
@@ -36,13 +38,6 @@ export type AdditionalPreviewImage = {
 };
 
 /** The same opt-in draft imagery is available from versioned static release assets. */
-const FOLDED_JACKET: AdditionalPreviewImage = {
-  id: "jacket-folded-15",
-  path: "/__dd_image_preview/shared/neoprene-jacket-15-folded.png",
-  label: "Neoprene jacket",
-  alt: "AI concept of folded black neoprene tank jacket for a 1.5 cubic-foot tank",
-};
-
 const HARMONY_JACKET_INSTALLED: AdditionalPreviewImage = {
   id: "jacket-installed-15-harmony",
   path: "/__dd_image_preview/shared/neoprene-jacket-15-installed-harmony.png",
@@ -70,7 +65,6 @@ export function getAdditionalPreviewImages(sku: string): AdditionalPreviewImage[
         alt: `Unapproved visual composite of black neoprene jacket fitted over ${size} cubic-foot Essence tank with square control head`,
       },
     ];
-    if (sku === "DD15CATRV") result.push(FOLDED_JACKET);
     return result;
   }
   if (!isHarmony && !isOtherOneFive) return [];
@@ -84,7 +78,6 @@ export function getAdditionalPreviewImages(sku: string): AdditionalPreviewImage[
       alt: `AI concept of Pureline support frame holding exactly ${count} blue 20-inch filter ${count === 1 ? "housing" : "housings"}, without conditioning tank`,
     });
   }
-  result.push(FOLDED_JACKET);
   // The installed jacket mockup shows Harmony's pass-through top, so using
   // it as a Refine/Essence tank photo would misrepresent their valve heads.
   if (isHarmony) result.push(HARMONY_JACKET_INSTALLED);
@@ -105,7 +98,8 @@ type PreviewProductImageProps = {
 export function PreviewProductImage({
   sku, original, enabled, loading = "lazy", presentation = "detail", override = null,
 }: PreviewProductImageProps) {
-  const previewPath = enabled && CAN_PREVIEW_PRODUCT_IMAGERY
+  const approved = approvedLandingPhoto(sku, enabled ? "archetype" : "realistic");
+  const previewPath = approved === null && enabled && CAN_PREVIEW_PRODUCT_IMAGERY
     ? (override?.path ?? (HARMONY_PREVIEW[sku] !== undefined
       ? presentation === "landing"
         ? HARMONY_PREVIEW[sku].replace(/\.png$/, "-hero.png")
@@ -128,6 +122,9 @@ export function PreviewProductImage({
     check.src = previewPath;
     return () => { cancelled = true; };
   }, [previewPath]);
+
+  // The integrated families always show approved photos; legacy Origin follows its existing data.
+  if (approved !== null) return <ApprovedMediaImage photo={approved} loading={loading} />;
 
   // Require a successful preload for the current SKU. Missing prototypes
   // fall back to the original image, including after switching configurations.

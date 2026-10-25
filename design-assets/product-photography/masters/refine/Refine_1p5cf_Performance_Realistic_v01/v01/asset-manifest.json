@@ -1,0 +1,41 @@
+{
+  "asset_name": "Refine_1p5cf_Performance_Realistic_v01",
+  "product_family": "Refine",
+  "tank_volume": "1.5 cf",
+  "valve": "Clack Performance",
+  "valve_render": "realistic",
+  "version": "v01",
+  "origin_file": "Refine_1p5cf_Performance_Realistic_v01.png",
+  "origin_sha256": "6e292981f6fec3e370a21ea1c43947c77a83b201a42330bcbc495b978be7f57b",
+  "origin_dimensions_px": {
+    "width": 1122,
+    "height": 1402
+  },
+  "status": "Development/test photography concept; no production/catalog assignment",
+  "notes": "Archival source is the exact downloaded AI-rendered PNG, not a camera RAW; website PNG is unmodified; WebP not created.",
+  "outputs": {
+    "master": {
+      "relative_path": "design-assets/product-photography/masters/refine/Refine_1p5cf_Performance_Realistic_v01/v01/Refine_1p5cf_Performance_Realistic_v01.png",
+      "width": 1122,
+      "height": 1402,
+      "bytes": 1600746,
+      "sha256": "6e292981f6fec3e370a21ea1c43947c77a83b201a42330bcbc495b978be7f57b"
+    },
+    "web": {
+      "relative_path": "frontend/public/products/media/refine/Refine_1p5cf_Performance_Realistic_v01.png",
+      "width": 1122,
+      "height": 1402,
+      "bytes": 1600746,
+      "sha256": "6e292981f6fec3e370a21ea1c43947c77a83b201a42330bcbc495b978be7f57b"
+    },
+    "thumbnail": {
+      "relative_path": "frontend/public/products/media/refine/Refine_1p5cf_Performance_Realistic_v01_thumb.png",
+      "width": 384,
+      "height": 480,
+      "bytes": 181119,
+      "sha256": "9288ebd83fd38bfcc59288d363796a53276353dba8da26e61fb3539459f9c9d7"
+    }
+  },
+  "web_webp_path": "frontend/public/products/media/refine/Refine_1p5cf_Performance_Realistic_v01.webp",
+  "thumb_webp_path": "frontend/public/products/media/refine/Refine_1p5cf_Performance_Realistic_v01_thumb.webp"
+}

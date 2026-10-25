@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-essence-single-tank",
+  "assets": {
+    "archival_master": {
+      "bytes": 1589000,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/essence/v2026-10-23-essence-single-tank/essence_2-0_stainless_performance_realistic.png",
+      "sha256": "b9e8501aacbacc74f2df5ac7e169babeafaf5e522f65f1d5633ae0045551954f",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 119816,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_2-0_stainless_performance_realistic.webp",
+      "sha256": "47831de05017744131aca109c91a85ae7e0f8df0ff405a0268a807d9ad185a40",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 143731,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_2-0_stainless_performance_realistic.png",
+      "sha256": "8d57a3019f8d77b79d9bc97d9460e50549d1e411be31893f2626366537a463c5",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 963010,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_2-0_stainless_performance_realistic.webp",
+      "sha256": "074da555ecdef185049517cc202c0600149b79c3339e56937d9ee266e4a7084d",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1589000,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_2-0_stainless_performance_realistic.png",
+      "sha256": "b9e8501aacbacc74f2df5ac7e169babeafaf5e522f65f1d5633ae0045551954f",
+      "width": 1122
+    }
+  },
+  "collection": "essence",
+  "configuration": "essence_2-0_stainless_performance_realistic",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1589000,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "essence_2-0_stainless_performance_realistic.png",
+    "sha256": "b9e8501aacbacc74f2df5ac7e169babeafaf5e522f65f1d5633ae0045551954f",
+    "width": 1122
+  }
+}

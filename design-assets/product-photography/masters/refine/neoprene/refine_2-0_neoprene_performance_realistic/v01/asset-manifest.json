@@ -1,0 +1,56 @@
+{
+  "archive_version": "v01",
+  "canonical_basename": "refine_2-0_neoprene_performance_realistic.png",
+  "family": "refine",
+  "outputs": {
+    "master": {
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/neoprene/refine_2-0_neoprene_performance_realistic/v01/refine_2-0_neoprene_performance_realistic.png",
+      "sha256": "ed20e5b2c6019b18eff75448e2184d6225717555da1b876763fb0810527a2dcd",
+      "size_bytes": 1945080,
+      "width": 1122
+    },
+    "thumbnail_png": {
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_performance_realistic_thumb.png",
+      "sha256": "d56f37a820640e9f5deb5134ba3588ea47ec1f29c1ac12db4d4fe30b51c142fd",
+      "size_bytes": 182800,
+      "width": 384
+    },
+    "thumbnail_webp": {
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_performance_realistic_thumb.webp",
+      "sha256": "fa2a2f075bf773d012fe6adfa537d6ab277399cba8d137927b8658c402290b27",
+      "size_bytes": 131830,
+      "width": 384
+    },
+    "web_png": {
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_performance_realistic.png",
+      "sha256": "ed20e5b2c6019b18eff75448e2184d6225717555da1b876763fb0810527a2dcd",
+      "size_bytes": 1945080,
+      "width": 1122
+    },
+    "web_webp": {
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_neoprene_performance_realistic.webp",
+      "sha256": "0e4305d8db54127e9d1589985caa7e0ef671382737fb4ff839c0de02fec58439",
+      "size_bytes": 1211698,
+      "width": 1122
+    }
+  },
+  "project": "D'Acqua Dolce",
+  "schema_version": 1,
+  "size_cf": "2.0",
+  "source": {
+    "height": 1402,
+    "original_filename": "refine_2-0_neoprene_performance_realistic.png.png",
+    "sha256": "ed20e5b2c6019b18eff75448e2184d6225717555da1b876763fb0810527a2dcd",
+    "size_bytes": 1945080,
+    "width": 1122
+  },
+  "tank_cover": "neoprene",
+  "usage": "AI-generated development photography; not approved production imagery",
+  "valve": "performance",
+  "variant": "realistic"
+}

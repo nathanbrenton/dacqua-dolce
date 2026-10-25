@@ -1,0 +1,26 @@
+{
+  "family": "Refine",
+  "component": "stainless-tank-clack-valve",
+  "size": "1.5 cf",
+  "variant": "Archetype",
+  "version": "v02",
+  "source_image": "Refine_1p5cf_Stainless_Clack_Archetype_v02.png",
+  "source_sha256": "1ea914db9b2263adcb1b93de7470aa33beb104c29345187433459bf83257ab35",
+  "source_dimensions": [
+    1122,
+    1402
+  ],
+  "thumbnail_dimensions": [
+    384,
+    480
+  ],
+  "image_processor": "ImageMagick",
+  "paths": {
+    "master": "/Users/n8/Desktop/dacqua-dolce/design-assets/product-photography/masters/refine/Refine_1p5cf_Stainless_Clack_Archetype_v02/v02/Refine_1p5cf_Stainless_Clack_Archetype_v02.png",
+    "manifest": "/Users/n8/Desktop/dacqua-dolce/design-assets/product-photography/masters/refine/Refine_1p5cf_Stainless_Clack_Archetype_v02/v02/asset-manifest.json",
+    "web_png": "/Users/n8/Desktop/dacqua-dolce/frontend/public/products/media/refine/Refine_1p5cf_Stainless_Clack_Archetype_v02.png",
+    "thumb_png": "/Users/n8/Desktop/dacqua-dolce/frontend/public/products/media/refine/Refine_1p5cf_Stainless_Clack_Archetype_v02_thumb.png"
+  },
+  "web_webp_path": "frontend/public/products/media/refine/Refine_1p5cf_Stainless_Clack_Archetype_v02.webp",
+  "thumb_webp_path": "frontend/public/products/media/refine/Refine_1p5cf_Stainless_Clack_Archetype_v02_thumb.webp"
+}

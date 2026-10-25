@@ -1,0 +1,55 @@
+{
+  "assets": {
+    "archival_master": {
+      "bytes": 1498284,
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/v2026-10-25-performance-archetype-buttons-v02/refine_1-5_stainless_performance_archetype.png",
+      "sha256": "bba72a138f530b1c454aecfe5e9d10f09fa092a385e75c587ec82bea4537b60e",
+      "width": 1122
+    },
+    "thumbnail_png": {
+      "bytes": 140452,
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_1-5_stainless_performance_archetype_thumb.png",
+      "sha256": "cc8a696ea0e6541ea886debed455c99909407dafeea0e97d76d3016fa352666b",
+      "width": 384
+    },
+    "thumbnail_webp": {
+      "bytes": 113886,
+      "height": 480,
+      "path": "frontend/public/products/media/refine/refine_1-5_stainless_performance_archetype_thumb.webp",
+      "sha256": "6e9eec3bebf068f86a13b0129418f17462d62266c783a496dd3ab261217d15a1",
+      "width": 384
+    },
+    "website_png": {
+      "bytes": 1498284,
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_1-5_stainless_performance_archetype.png",
+      "sha256": "bba72a138f530b1c454aecfe5e9d10f09fa092a385e75c587ec82bea4537b60e",
+      "width": 1122
+    },
+    "website_webp": {
+      "bytes": 884188,
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_1-5_stainless_performance_archetype.webp",
+      "sha256": "2a5fcc5220773475a96be6a378dd07795dd2316ba377090a56f378f1fccb87b4",
+      "width": 1122
+    }
+  },
+  "collection": "refine",
+  "configuration": "refine_1-5_stainless_performance_archetype",
+  "note": "Replaces isolated tank photo only; historical v01 and tank-plus-brine composite preserved.",
+  "registry": {
+    "configuration_key": "refine:1.5:stainless:performance:archetype",
+    "tank_src": "/products/media/refine/refine_1-5_stainless_performance_archetype.webp",
+    "tank_thumbnail": "/products/media/refine/refine_1-5_stainless_performance_archetype_thumb.webp"
+  },
+  "revision": "v2026-10-25-performance-archetype-buttons-v02",
+  "schema_version": 1,
+  "source": {
+    "filename": "refine_1-5_stainless_performance_archetype.png",
+    "height": 1402,
+    "sha256": "bba72a138f530b1c454aecfe5e9d10f09fa092a385e75c587ec82bea4537b60e",
+    "width": 1122
+  }
+}

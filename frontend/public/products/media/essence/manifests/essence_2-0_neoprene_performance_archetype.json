@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-essence-single-tank",
+  "assets": {
+    "archival_master": {
+      "bytes": 2047631,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/essence/v2026-10-23-essence-single-tank/essence_2-0_neoprene_performance_archetype.png",
+      "sha256": "e31e619df247e8f208f2f40f44becbc1a9898e2ced7865fbd9fc4355625f5e5e",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 134810,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_2-0_neoprene_performance_archetype.webp",
+      "sha256": "1b5f1dd3e3be898b43d504797c832bb14203d35a9bd4a3630272a63474f420e5",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 184843,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_2-0_neoprene_performance_archetype.png",
+      "sha256": "cc09c4262572285da2489e8c44a7475149c44336800325d387d7b1e131cae946",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1294086,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_2-0_neoprene_performance_archetype.webp",
+      "sha256": "e24475fcac035a4ce18b24ec847ee5fc408605dabd7af482e1a78d9b9dc30d9b",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 2047631,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_2-0_neoprene_performance_archetype.png",
+      "sha256": "e31e619df247e8f208f2f40f44becbc1a9898e2ced7865fbd9fc4355625f5e5e",
+      "width": 1122
+    }
+  },
+  "collection": "essence",
+  "configuration": "essence_2-0_neoprene_performance_archetype",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 2047631,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "essence_2-0_neoprene_performance_archetype.png.png",
+    "sha256": "e31e619df247e8f208f2f40f44becbc1a9898e2ced7865fbd9fc4355625f5e5e",
+    "width": 1122
+  }
+}

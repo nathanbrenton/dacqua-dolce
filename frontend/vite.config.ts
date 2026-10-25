@@ -68,37 +68,8 @@ export default defineConfig({
             });
             // DD_ESSENCE_PREVIEW_END
 
-            // DD_CLACK_FITTING_PREVIEW_BEGIN
-            server.middlewares.use((req, res, next) => {
-                const requestPath = ((req as unknown as { url?: string }).url ?? "").split("?")[0];
-                const selected = /^\/__dd_image_preview\/clack\/(V3007(?:-(?:02LF|03LF|04|05|09LF|12LF|13LF|18|22LF))?|all-10)\.png$/.exec(requestPath);
-                if (!selected) return next();
-                if ((req as unknown as { method?: string }).method !== "GET" && (req as unknown as { method?: string }).method !== "HEAD") {
-                    res.statusCode = 405;
-                    res.end();
-                    return;
-                }
-                const imageFile = join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "clack", `${selected[1]}.png`);
-                if (!existsSync(imageFile)) {
-                    res.statusCode = 404;
-                    res.end();
-                    return;
-                }
-                res.setHeader("Content-Type", "image/png");
-                res.setHeader("Cache-Control", "no-store");
-                if ((req as unknown as { method?: string }).method === "HEAD") {
-                    res.statusCode = 200;
-                    res.end();
-                    return;
-                }
-                const stream = createReadStream(imageFile);
-                stream.on("error", () => {
-                    if (!res.headersSent) res.statusCode = 500;
-                    res.end();
-                });
-                stream.pipe(res);
-            });
-            // DD_CLACK_FITTING_PREVIEW_END
+            // PT53: Fittings live in public/__dd_image_preview/clack/; Vite serves them directly.
+
 
         const dir = join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "harmony");
         server.middlewares.use((req, res, next) => {

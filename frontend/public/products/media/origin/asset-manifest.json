@@ -1,0 +1,53 @@
+{
+  "kind": "pt53-origin-restored",
+  "assets": {
+    "DD5RO-dimensions.png": {
+      "png_sha256": "885a82f92d3c7db11665808042d44061df0894acb3dce9269ddeb04d4ba39f5f",
+      "thumbnail_sha256": "098e119631b46ced288c99dc86f7b118d97b3f9336b920f85e78cf4301c0fcf3",
+      "web_path": "/products/media/origin/DD5RO-dimensions.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD5RO-dimensions-thumb.webp"
+    },
+    "DD5RO-filter.png": {
+      "png_sha256": "f279b97274ad86d56cefb2d5ae88250be2f9c3fac5bf2302b60033b1e997c26e",
+      "thumbnail_sha256": "4a613a9f5b989a2e33a8ac3b5ff31cf321db8859125bfb2c3546f9f555fa605f",
+      "web_path": "/products/media/origin/DD5RO-filter.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD5RO-filter-thumb.webp"
+    },
+    "DD5RO-hero.png": {
+      "png_sha256": "2192639c2d1f8977a3f7b3a603071da25538f127f102ba7cf94dd27d7cc9307b",
+      "thumbnail_sha256": "462b216d674fb1b3cc2a90725f5fd22a50120fc7edd783c3877ee132a533413e",
+      "web_path": "/products/media/origin/DD5RO-hero.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD5RO-hero-thumb.webp"
+    },
+    "DD6ROAE-alkaline-detail.png": {
+      "png_sha256": "e74be8f704daee5c7e992e2ea8d065360c14cb019bd3b9d2ac0094c070930548",
+      "thumbnail_sha256": "342657d451c85ca8b9c6b96f174b2c173bf23788b983111c9b3921ca6151dec1",
+      "web_path": "/products/media/origin/DD6ROAE-alkaline-detail.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD6ROAE-alkaline-detail-thumb.webp"
+    },
+    "DD6ROAE-dimensions.png": {
+      "png_sha256": "69bb0ab2736a49a2c0086de7e171ee644b0014d034d11d47d6944cf622118091",
+      "thumbnail_sha256": "38456ac6c190539c7ccb125a802c53183873c06fc5d2847ca0503a15a52cf620",
+      "web_path": "/products/media/origin/DD6ROAE-dimensions.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD6ROAE-dimensions-thumb.webp"
+    },
+    "DD6ROAE-filter.png": {
+      "png_sha256": "5436f9654229f78db216bb1b37b331475a777017349160b693a9c3794960da16",
+      "thumbnail_sha256": "144523290e0f00b9248f7b75cb148fab8935694774dc78f5862773259629da51",
+      "web_path": "/products/media/origin/DD6ROAE-filter.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD6ROAE-filter-thumb.webp"
+    },
+    "DD6ROAE-hero.png": {
+      "png_sha256": "c680601417edc84dc75f328cfdb394b7941543d539bf43ed7719f59163657062",
+      "thumbnail_sha256": "7dd71088a6638f35d08b4bd2c04556d34cac6a17cbbc40de08b72aad29959716",
+      "web_path": "/products/media/origin/DD6ROAE-hero.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/DD6ROAE-hero-thumb.webp"
+    },
+    "storage-tank.png": {
+      "png_sha256": "466f00125aae1d61fbd98e98eab4e609b7883e73387dd15200f1389a10d32296",
+      "thumbnail_sha256": "d3afa2786c8e5d97f6dda41f397382e37f5762bff5c9b39d4e54e6533fe63d2f",
+      "web_path": "/products/media/origin/storage-tank.png",
+      "thumbnail_path": "/products/media/origin/thumbnails/storage-tank-thumb.webp"
+    }
+  }
+}

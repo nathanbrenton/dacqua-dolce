@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-22-complete-systems",
+  "assets": {
+    "archival_master": {
+      "bytes": 1185310,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/v2026-10-22-complete-systems/refine_2-0_stainless_clack_realistic_with-brine-tank.png",
+      "sha256": "899706e29e1d509034340f17e7fe0381a2a8a79328a63592a442533c6a0ed610",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 107940,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_2-0_stainless_clack_realistic_with-brine-tank.webp",
+      "sha256": "86319103ea9bffa79c95df8879800364ceda40c15f34192e70a669eea96a3f9a",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 138892,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_2-0_stainless_clack_realistic_with-brine-tank.png",
+      "sha256": "f85d3e6b302fdb33d69021e5974c436fb99f72fedbf7744ef29ce719f44e3781",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 880814,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_stainless_clack_realistic_with-brine-tank.webp",
+      "sha256": "74d6e329d4a5f12373521086106da3af7594825d794cd1876948112d2896b8da",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1185310,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_stainless_clack_realistic_with-brine-tank.png",
+      "sha256": "899706e29e1d509034340f17e7fe0381a2a8a79328a63592a442533c6a0ed610",
+      "width": 1122
+    }
+  },
+  "collection": "refine",
+  "configuration": "refine_2-0_stainless_clack_realistic_with-brine-tank",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1185310,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "refine_2-0_stainless_clack_realistic_with-brine-tank.png",
+    "sha256": "899706e29e1d509034340f17e7fe0381a2a8a79328a63592a442533c6a0ed610",
+    "width": 1122
+  }
+}

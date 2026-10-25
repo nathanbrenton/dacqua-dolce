@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 1776165,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_2-0_neoprene_pass-through_pureline-3.png",
+      "sha256": "8570e04fec56dd27a4ec356657f0bd3f9351c7bb8ce10c7e032a11d5ed1291bb",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 138484,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_2-0_neoprene_pass-through_pureline-3.webp",
+      "sha256": "d26751fcfa70b919e17fefbcf089765103061a1a77b0d6c6218321698d7992be",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 189838,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_2-0_neoprene_pass-through_pureline-3.png",
+      "sha256": "d9d894e86e59b761e515a8627a0f6121e608e415b17b1c9188a8935cafd30282",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1270776,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_2-0_neoprene_pass-through_pureline-3.webp",
+      "sha256": "556ee140c273dfa0236a151c797411f488657c7f3cb2415a8a1d08695e442739",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1776165,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_2-0_neoprene_pass-through_pureline-3.png",
+      "sha256": "8570e04fec56dd27a4ec356657f0bd3f9351c7bb8ce10c7e032a11d5ed1291bb",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_2-0_neoprene_pass-through_pureline-3",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1776165,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_2-0_neoprene_pass-through_pureline-3.png",
+    "sha256": "8570e04fec56dd27a4ec356657f0bd3f9351c7bb8ce10c7e032a11d5ed1291bb",
+    "width": 1122
+  }
+}

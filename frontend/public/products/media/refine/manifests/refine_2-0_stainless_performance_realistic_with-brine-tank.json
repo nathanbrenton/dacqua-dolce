@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-22-complete-systems",
+  "assets": {
+    "archival_master": {
+      "bytes": 1528812,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/refine/v2026-10-22-complete-systems/refine_2-0_stainless_performance_realistic_with-brine-tank.png",
+      "sha256": "add22524fb4dbfdac71e04ad0b401a84929bf5c68c80f7e5ea9ff3f8a96c49db",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 110426,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_2-0_stainless_performance_realistic_with-brine-tank.webp",
+      "sha256": "1af1d29b8834275d1bbe395d869591854e165140da03b1516c444c9b2dd949c7",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 142031,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/refine/thumbnails/refine_2-0_stainless_performance_realistic_with-brine-tank.png",
+      "sha256": "3ccf1af1db96375f3edc5b87a612e6c51211d7d7f2d962fc83ef76ec1d214ce1",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 906322,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_stainless_performance_realistic_with-brine-tank.webp",
+      "sha256": "7374df6538c037415032e07573780eeb2049d5e4f796b9e32eb61cf40dfab717",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1528812,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/refine/refine_2-0_stainless_performance_realistic_with-brine-tank.png",
+      "sha256": "add22524fb4dbfdac71e04ad0b401a84929bf5c68c80f7e5ea9ff3f8a96c49db",
+      "width": 1122
+    }
+  },
+  "collection": "refine",
+  "configuration": "refine_2-0_stainless_performance_realistic_with-brine-tank",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1528812,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "refine_2-0_stainless_performance_realistic_with-brine-tank.png",
+    "sha256": "add22524fb4dbfdac71e04ad0b401a84929bf5c68c80f7e5ea9ff3f8a96c49db",
+    "width": 1122
+  }
+}

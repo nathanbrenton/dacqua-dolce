@@ -1,0 +1,41 @@
+{
+  "asset_name": "Refine_2cf_Performance_Simplified_v02",
+  "product_family": "Refine",
+  "tank_volume": "2.0 cf",
+  "valve": "Clack Performance",
+  "valve_render": "simplified",
+  "version": "v02",
+  "origin_file": "Refine_2cf_Performance_Simplified_v02.png",
+  "origin_sha256": "2e531c7d7465499f25a9f3dcacb96e19d308275787a0aeae2d67cea35bbdc5f5",
+  "origin_dimensions_px": {
+    "width": 1122,
+    "height": 1402
+  },
+  "status": "Development/test photography concept; no production/catalog assignment",
+  "notes": "Archival source is the exact downloaded AI-rendered PNG, not a camera RAW; website PNG is unmodified; WebP not created.",
+  "outputs": {
+    "master": {
+      "relative_path": "design-assets/product-photography/masters/refine/Refine_2cf_Performance_Simplified_v02/v02/Refine_2cf_Performance_Simplified_v02.png",
+      "width": 1122,
+      "height": 1402,
+      "bytes": 1316534,
+      "sha256": "2e531c7d7465499f25a9f3dcacb96e19d308275787a0aeae2d67cea35bbdc5f5"
+    },
+    "web": {
+      "relative_path": "frontend/public/products/media/refine/Refine_2cf_Performance_Simplified_v02.png",
+      "width": 1122,
+      "height": 1402,
+      "bytes": 1316534,
+      "sha256": "2e531c7d7465499f25a9f3dcacb96e19d308275787a0aeae2d67cea35bbdc5f5"
+    },
+    "thumbnail": {
+      "relative_path": "frontend/public/products/media/refine/Refine_2cf_Performance_Simplified_v02_thumb.png",
+      "width": 384,
+      "height": 480,
+      "bytes": 180896,
+      "sha256": "8c188f57be92ab1a61059dadcebf0ada61856073bd694ae53be2ac8d7bc1f9c5"
+    }
+  },
+  "web_webp_path": "frontend/public/products/media/refine/Refine_2cf_Performance_Simplified_v02.webp",
+  "thumb_webp_path": "frontend/public/products/media/refine/Refine_2cf_Performance_Simplified_v02_thumb.webp"
+}

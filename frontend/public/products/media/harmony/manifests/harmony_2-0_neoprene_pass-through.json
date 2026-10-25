@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 1768282,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_2-0_neoprene_pass-through.png",
+      "sha256": "86a6b7577bb18427875d5d8551eb235b9631741ffa8188d86be2ce0660fefcf5",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 119168,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_2-0_neoprene_pass-through.webp",
+      "sha256": "a5a336273fea3f2216829452ba9d1a13547890adbef4f9e6db63f457d787b3ec",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 154789,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_2-0_neoprene_pass-through.png",
+      "sha256": "d4cbd2c6f20aab40313ae37caba4d345d7580c2d5cbb07b2a0929c975c0b18e7",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 1089266,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_2-0_neoprene_pass-through.webp",
+      "sha256": "7e848d00d7e2bb97fe0050cf5a2ddebda7af63eac05f6d38d302d47badc97711",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1768282,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_2-0_neoprene_pass-through.png",
+      "sha256": "86a6b7577bb18427875d5d8551eb235b9631741ffa8188d86be2ce0660fefcf5",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_2-0_neoprene_pass-through",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1768282,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_2-0_neoprene_pass-through.png",
+    "sha256": "86a6b7577bb18427875d5d8551eb235b9631741ffa8188d86be2ce0660fefcf5",
+    "width": 1122
+  }
+}

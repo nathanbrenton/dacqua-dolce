@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-harmony-photography",
+  "assets": {
+    "archival_master": {
+      "bytes": 682690,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/harmony/v2026-10-23-harmony-photography/harmony_1-5_stainless_pass-through_pureline-1.png",
+      "sha256": "da088c003380545a6faec7d357f08182f672af387e6f3d3a05c9711ea1fa4d38",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 31276,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_stainless_pass-through_pureline-1.webp",
+      "sha256": "b2be92ede8716bf859d86ec06b6257bc6951793763f22bc02e8856156ce17e32",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 225517,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/harmony/thumbnails/harmony_1-5_stainless_pass-through_pureline-1.png",
+      "sha256": "b75202f82139244aae03ea1a71746c31d128426d42e661b7300c17cfafe57a94",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 231084,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_stainless_pass-through_pureline-1.webp",
+      "sha256": "2afe775b70ea790f336f0dc651073ce8a11b2a462d346ad01d9b3ac6f305d070",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 682690,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/harmony/harmony_1-5_stainless_pass-through_pureline-1.png",
+      "sha256": "da088c003380545a6faec7d357f08182f672af387e6f3d3a05c9711ea1fa4d38",
+      "width": 1122
+    }
+  },
+  "collection": "harmony",
+  "configuration": "harmony_1-5_stainless_pass-through_pureline-1",
+  "organizer_version": "1.0.1",
+  "schema_version": 1,
+  "source": {
+    "bytes": 682690,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "harmony_1-5_stainless_pass-through_pureline-1.png",
+    "sha256": "da088c003380545a6faec7d357f08182f672af387e6f3d3a05c9711ea1fa4d38",
+    "width": 1122
+  }
+}

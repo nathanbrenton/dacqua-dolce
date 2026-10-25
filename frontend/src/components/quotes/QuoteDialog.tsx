@@ -62,6 +62,7 @@ type QuoteDialogProps = {
   initialEmail: string | null;
   recommendationContext: RecommendationContext | null;
   installationFitting?: ClackInstallationFitting | null;
+  configurationNote?: string | null;
   onClose: () => void;
 };
 
@@ -73,6 +74,7 @@ export function QuoteDialog({
   initialEmail,
   recommendationContext,
   installationFitting = null,
+  configurationNote = null,
   onClose,
 }: QuoteDialogProps) {
   const dialogRef =
@@ -217,7 +219,7 @@ export function QuoteDialog({
     const fittingNote = installationFitting === null
       ? ""
       : `Requested Clack fitting: ${installationFitting.size} — ${installationFitting.label}; Clack order no. ${installationFitting.orderNo}. Compatibility, availability and final price to be confirmed.`;
-    const combinedMessage = [fittingNote, message.trim()].filter(Boolean).join("\n\n");
+    const combinedMessage = [fittingNote, configurationNote, message.trim()].filter(Boolean).join("\n\n");
     if (combinedMessage.length > 4000) {
       setError("Shorten your message to include the selected fitting details.");
       return;
@@ -340,6 +342,11 @@ export function QuoteDialog({
             {dialogTitle}
           </h2>
 
+          {configurationNote !== null && isProductInquiry ? (
+            <p className="product-ownership-guidance" style={{ whiteSpace: "pre-line" }}>
+              {configurationNote}
+            </p>
+          ) : null}
           {installationFitting !== null && isProductInquiry ? (
             <p className="quote-dialog-context">
               Requested connection fitting: {installationFitting.size} — {shortClackFittingLabel(installationFitting)}.

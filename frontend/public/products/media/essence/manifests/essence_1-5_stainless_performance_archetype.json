@@ -1,0 +1,57 @@
+{
+  "archive_version": "v2026-10-23-essence-single-tank",
+  "assets": {
+    "archival_master": {
+      "bytes": 1565949,
+      "format": "PNG",
+      "height": 1402,
+      "path": "design-assets/product-photography/masters/essence/v2026-10-23-essence-single-tank/essence_1-5_stainless_performance_archetype.png",
+      "sha256": "db81f1f62f1bde8af6eaa120aeb823850f32e08c7c932d28a155c84add44dd72",
+      "width": 1122
+    },
+    "thumbnail_lossless_webp": {
+      "bytes": 118682,
+      "format": "WEBP",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_1-5_stainless_performance_archetype.webp",
+      "sha256": "5a1224069619a38bcefabc5195b4dbe48b9b46dd419d77daa28b3013856cf286",
+      "width": 384
+    },
+    "thumbnail_png": {
+      "bytes": 140983,
+      "format": "PNG",
+      "height": 480,
+      "path": "frontend/public/products/media/essence/thumbnails/essence_1-5_stainless_performance_archetype.png",
+      "sha256": "df70bc58af332d1b29610dc8a637f1df7a2565a23fbcf9f0401e78f361104e99",
+      "width": 384
+    },
+    "website_lossless_webp": {
+      "bytes": 913888,
+      "format": "WEBP",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_1-5_stainless_performance_archetype.webp",
+      "sha256": "b491feed02cb45b0d0d2dfffafbda14c3864a7e7f1313858b0065c1e3c23650a",
+      "width": 1122
+    },
+    "website_png": {
+      "bytes": 1565949,
+      "format": "PNG",
+      "height": 1402,
+      "path": "frontend/public/products/media/essence/essence_1-5_stainless_performance_archetype.png",
+      "sha256": "db81f1f62f1bde8af6eaa120aeb823850f32e08c7c932d28a155c84add44dd72",
+      "width": 1122
+    }
+  },
+  "collection": "essence",
+  "configuration": "essence_1-5_stainless_performance_archetype",
+  "organizer_version": "1.0.0",
+  "schema_version": 1,
+  "source": {
+    "bytes": 1565949,
+    "format": "PNG",
+    "height": 1402,
+    "original_filename": "essence_1-5_stainless_performance_archetype.png",
+    "sha256": "db81f1f62f1bde8af6eaa120aeb823850f32e08c7c932d28a155c84add44dd72",
+    "width": 1122
+  }
+}

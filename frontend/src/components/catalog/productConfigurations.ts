@@ -36,10 +36,10 @@ export const CONFIGURATION_FAMILIES: readonly ConfigurationFamily[] = [
     defaultSku: "DD15CLEARPL2",
     summary: "Whole-home CLEAR water conditioning with Pureline options for taste, odor and applicable compounds.",
     configurations: [
-      { sku: "DD15CLEARPL1", label: "Pureline Solo", details: "One carbon cartridge" },
-      { sku: "DD15CLEARPL2", label: "Pureline Duo", details: "Two cartridges: sediment + carbon" },
-      { sku: "DD15CLEARPL3", label: "Pureline Trio", details: "Three cartridges: sediment + iron + carbon" },
-      { sku: "DD15CLEARPTV", label: "Pass-Through Valve", details: "No Big Blue cartridge filtration" },
+      { sku: "DD15CLEARPL1", label: "Pureline Solo", details: "One configurable Pureline cartridge housing" },
+      { sku: "DD15CLEARPL2", label: "Pureline Duo", details: "Two configurable Pureline cartridge housings" },
+      { sku: "DD15CLEARPL3", label: "Pureline Trio", details: "Three configurable Pureline cartridge housings" },
+      { sku: "DD15CLEARPTV", label: "Pass-Through Valve Only", details: "No Pureline cartridge housings" },
     ],
   },
   {
