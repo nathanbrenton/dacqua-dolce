@@ -16,6 +16,7 @@ import {
   addCartItem,
 } from "../../api/cart";
 import { QuoteDialog } from "../quotes/QuoteDialog";
+import type { ProductQuoteConfiguration } from "../../api/quotes";
 import { InstallationServicesNotice } from "./InstallationServicesNotice";
 import { SupportRequestForm } from "../support/SupportRequestForm";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
@@ -287,6 +288,29 @@ export function ProductDetailPage({
   ];
   const customizationNote = requestedCustomizations.length > 0
     ? `Unconfirmed system configuration:\n${requestedCustomizations.join("\n")}` : null;
+  // A structured, unpriced request is bound to the actual catalog SKU.
+  // A Harmony 2.0 selection remains an inquiry tied to its 1.5 SKU until
+  // a separately authorized saleable commercial product is introduced.
+  const productConfiguration: ProductQuoteConfiguration | null = configurationFamily === null
+    ? null : {
+      sku: product.sku,
+      tank_size_cf: configurationFamily.name === "Origin" ? null
+        : isHarmony ? harmonyTankSize
+        : product.sku.startsWith("DD20") ? "2.0" : "1.5",
+      finish: configurationFamily.name === "Origin" ? null : tankFinish,
+      valve: valveSelectable ? selectedValve : null,
+      fitting: fittingForInquiry === null ? null
+        : { size: fittingForInquiry.size, order_no: fittingForInquiry.orderNo },
+      housings: isHarmony ? activeHousingSelections.map((housing) => {
+        const choice = cartridgeSelections[housing]!;
+        return {
+          position: (PURELINE_HOUSINGS.indexOf(housing) + 1) as 1 | 2 | 3,
+          category: choice.category as "sediment" | "carbon" | "iron" | "other",
+          cartridge: choice.category === "other" ? null : choice.cartridge || null,
+          other_description: choice.category === "other" ? choice.otherDescription || null : null,
+        };
+      }) : [],
+    };
   // Cart and quote requests use the selected product record, never a family ID.
   const contactProductName = `${selectedVariant !== null
     ? `${product.name} — ${selectedVariant.display_name}` : product.name}${isHarmonyTwoCf ? " — 2.0 cf requested" : ""}`;
@@ -428,6 +452,7 @@ export function ProductDetailPage({
         recommendationContext={null}
         installationFitting={fittingForInquiry}
         configurationNote={customizationNote}
+        productConfiguration={productConfiguration}
         onClose={() => {
           setQuoteOpen(false);
         }}

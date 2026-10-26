@@ -56,6 +56,21 @@ export type RecommendationDecision = {
   };
 };
 
+/** PT54-A: customer selection, never a quoted price or inventory reservation. */
+export type ProductQuoteConfiguration = {
+  sku: string;
+  tank_size_cf: "1.5" | "2.0" | null;
+  finish: "stainless" | "neoprene" | null;
+  valve: "clack" | "performance" | null;
+  fitting: { size: string; order_no: string } | null;
+  housings: Array<{
+    position: 1 | 2 | 3;
+    category: "sediment" | "carbon" | "iron" | "other";
+    cartridge: string | null;
+    other_description: string | null;
+  }>;
+};
+
 export type QuoteRequestPayload = {
   inquiry_context: "expert_inquiry" | "product_inquiry" | "recommendation_inquiry";
   product_id: string | null;
@@ -64,6 +79,7 @@ export type QuoteRequestPayload = {
   phone: string | null;
   message: string | null;
   recommendation_context: RecommendationContext | null;
+  configuration?: ProductQuoteConfiguration | null;
 };
 
 export type QuoteRequestResponse = {

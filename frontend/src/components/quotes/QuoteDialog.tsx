@@ -8,6 +8,7 @@ import {
 import {
   submitQuoteRequest,
   type RecommendationContext,
+  type ProductQuoteConfiguration,
 } from "../../api/quotes";
 import {
   isCompleteUsPhone,
@@ -63,6 +64,7 @@ type QuoteDialogProps = {
   recommendationContext: RecommendationContext | null;
   installationFitting?: ClackInstallationFitting | null;
   configurationNote?: string | null;
+  productConfiguration?: ProductQuoteConfiguration | null;
   onClose: () => void;
 };
 
@@ -75,6 +77,7 @@ export function QuoteDialog({
   recommendationContext,
   installationFitting = null,
   configurationNote = null,
+  productConfiguration = null,
   onClose,
 }: QuoteDialogProps) {
   const dialogRef =
@@ -219,7 +222,12 @@ export function QuoteDialog({
     const fittingNote = installationFitting === null
       ? ""
       : `Requested Clack fitting: ${installationFitting.size} — ${installationFitting.label}; Clack order no. ${installationFitting.orderNo}. Compatibility, availability and final price to be confirmed.`;
-    const combinedMessage = [fittingNote, configurationNote, message.trim()].filter(Boolean).join("\n\n");
+    // PT54-A: the server renders a validated configuration summary. Existing
+    // legacy callers still send their fitting notes as before.
+    const combinedMessage = [
+      ...(productConfiguration === null ? [fittingNote, configurationNote] : []),
+      message.trim(),
+    ].filter(Boolean).join("\n\n");
     if (combinedMessage.length > 4000) {
       setError("Shorten your message to include the selected fitting details.");
       return;
@@ -253,6 +261,7 @@ export function QuoteDialog({
           phone: phone || null,
           message: combinedMessage || null,
           recommendation_context: qualificationContext,
+          configuration: productConfiguration,
         }, turnstileToken ?? undefined);
 
       setSuccessId(response.id);

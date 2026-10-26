@@ -28,6 +28,7 @@ from app.models.identity import (
     UserStatus,
 )
 from app.models.quote import QuoteRequest
+from app.services.product_configuration import configuration_inquiry_text
 from app.schemas.quote import (
     QuoteRequestCreate,
     QuoteRequestRead,
@@ -364,6 +365,33 @@ def create_quote_request(
                     detail="Customer inquiries are disabled for this product while unavailable.",
                 )
 
+        if payload.configuration is not None:
+            if product is None or payload.configuration.sku != product.sku:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Configured system must match the selected catalog product.",
+                )
+            if inquiry_context != "product_inquiry":
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Product configuration requires a product inquiry.",
+                )
+
+        # The request's product/option IDs are never used as a price authority.
+        # Canonical server-rendered notes let existing staff and email workflows
+        # see the selection without a schema migration or parallel pricing API.
+        configured_message = payload.message
+        if payload.configuration is not None:
+            summary = configuration_inquiry_text(payload.configuration)
+            configured_message = "\n\n".join(
+                section for section in [summary, payload.message] if section
+            )
+            if len(configured_message) > 4000:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Configuration and message exceed the 4000-character limit.",
+                )
+
         recommendation_decision = (
             evaluate_recommendation(payload.recommendation_context)
             if payload.recommendation_context is not None
@@ -377,7 +405,7 @@ def create_quote_request(
             name=payload.name,
             email=payload.email,
             phone=payload.phone,
-            message=payload.message,
+            message=configured_message,
             recommendation_context=(
                 payload.recommendation_context.model_dump(mode="json")
                 if payload.recommendation_context is not None
@@ -406,6 +434,7 @@ def create_quote_request(
             actor_user_id=(current_user.id if current_user is not None else None),
             metadata={
                 "inquiry_context": inquiry_context,
+                "structured_configuration_submitted": payload.configuration is not None,
                 "product_id": (str(product_uuid) if product_uuid is not None else None),
                 "account_identifier": (privacy_safe_identifier(payload.email)),
                 "recommendation_decision_code": (

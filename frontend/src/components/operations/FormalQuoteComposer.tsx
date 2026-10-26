@@ -22,6 +22,7 @@ type DraftLine = {
   variantId: string;
   quantity: string;
   unitAmount: string;
+  neopreneJacket: boolean;
 };
 
 type DraftCharge = {
@@ -40,6 +41,11 @@ type FormalQuoteComposerProps = {
     formalQuote: OperationsFormalQuote,
   ) => void;
 };
+
+const JACKET_ELIGIBLE_SKUS = new Set([
+  "DD15SOFT", "DD20SOFT", "DD15CATRV", "DD20CATRV",
+  "DD15CLEARPTV", "DD15CLEARPL1", "DD15CLEARPL2", "DD15CLEARPL3",
+]);
 
 const CHARGE_OPTIONS: Array<{
   value: CommercialChargeKind;
@@ -85,6 +91,7 @@ function defaultLine(
     variantId: "",
     quantity: "1",
     unitAmount: "",
+    neopreneJacket: false,
   };
 }
 
@@ -282,6 +289,7 @@ export function FormalQuoteComposer({
           variant_id: line.variantId || null,
           quantity,
           unit_amount_minor: dollarsToMinor(line.unitAmount),
+          neoprene_jacket: line.neopreneJacket,
         };
       });
 
@@ -532,6 +540,9 @@ export function FormalQuoteComposer({
             entered explicitly. Initial launch is equipment-only, so installation is intentionally
             not offered as a new quote adjustment. This workflow does not calculate carrier,
             insurance-provider, or jurisdiction-specific tax amounts automatically.
+            Black neoprene jackets are priced by the server at $100 per system, with a separate
+            itemized charge. Automated tax is blocked for that charge until taxability is reviewed;
+            staff must resolve tax before presenting a final quote.
           </p>
 
           {includesAssistedSaleProduct ? (
@@ -568,6 +579,7 @@ export function FormalQuoteComposer({
                         productId: event.target.value,
                         variantId: "",
                         unitAmount: "",
+                        neopreneJacket: false,
                       });
                     }}
                   >
@@ -645,6 +657,23 @@ export function FormalQuoteComposer({
                     </small>
                   ) : null}
                 </label>
+
+                {product && JACKET_ELIGIBLE_SKUS.has(product.sku) ? (
+                  <label className="operations-checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={line.neopreneJacket}
+                      onChange={(event) => {
+                        updateLine(line.key, { neopreneJacket: event.target.checked });
+                      }}
+                    />
+                    <span>Black Neoprene Jacket (+$100 per system)</span>
+                    <small className="field-helper">
+                      Quote the base equipment price above, excluding the jacket.
+                      Its charge is calculated separately and multiplied by quantity.
+                    </small>
+                  </label>
+                ) : null}
 
                 {lines.length > 1 ? (
                   <button

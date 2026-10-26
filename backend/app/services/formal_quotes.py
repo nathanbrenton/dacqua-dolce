@@ -40,6 +40,15 @@ FORMAL_QUOTE_VALIDITY_DAYS = 30
 
 STAFF_REVIEW_REASON_ASSISTED_SALE = "assisted_sale_product"
 STAFF_REVIEW_REASON_MANUAL_COMPLEX = "staff_flagged_complex"
+STAFF_REVIEW_REASON_JACKET_TAX = "jacket_tax_review_required"
+
+# Confirmed PT54 commercial option. This is NOT a catalog price override.
+BLACK_NEOPRENE_JACKET_UNIT_AMOUNT_MINOR = 10_000  # USD $100.00 per system
+NEOPRENE_ELIGIBLE_SKUS = frozenset({
+    "DD15SOFT", "DD20SOFT", "DD15CATRV", "DD20CATRV",
+    "DD15CLEARPTV", "DD15CLEARPL1", "DD15CLEARPL2", "DD15CLEARPL3",
+})
+JACKET_CHARGE_LABEL = "Black Neoprene Jacket"
 
 
 def formal_quote_staff_review_reasons(
@@ -57,6 +66,8 @@ def formal_quote_staff_review_reasons(
         reasons.append(STAFF_REVIEW_REASON_ASSISTED_SALE)
     if manual_staff_review_required:
         reasons.append(STAFF_REVIEW_REASON_MANUAL_COMPLEX)
+    if any(getattr(line, "neoprene_jacket", False) for line in lines):
+        reasons.append(STAFF_REVIEW_REASON_JACKET_TAX)
     return reasons
 
 
@@ -73,6 +84,41 @@ class FormalQuoteLineInput:
     variant_id: object | None
     quantity: int
     unit_amount_minor: int | None
+    neoprene_jacket: bool = False
+
+
+def black_neoprene_jacket_charge(
+    *,
+    product_sku: str,
+    line_number: int,
+    quantity: int,
+    selected: bool,
+) -> FormalQuoteChargeInput | None:
+    """Build an itemized server-priced jacket charge; never trust a client amount.
+
+    Keep this as an 'other_charge' so the existing tax automation deliberately
+    fails closed until jacket taxability is reviewed/classified separately.
+    """
+    if not selected:
+        return None
+    if product_sku not in NEOPRENE_ELIGIBLE_SKUS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="A black neoprene jacket is not offered for this catalog product.",
+        )
+    if not isinstance(quantity, int) or isinstance(quantity, bool) or not 1 <= quantity <= 100:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="A jacket selection requires a valid system quantity.",
+        )
+    return FormalQuoteChargeInput(
+        kind=CommercialChargeKind.other_charge,
+        label=(
+            f"{JACKET_CHARGE_LABEL} — line {line_number} "
+            f"({product_sku}, {quantity} × $100)"
+        ),
+        amount_minor=BLACK_NEOPRENE_JACKET_UNIT_AMOUNT_MINOR * quantity,
+    )
 
 
 def _customer_account_for_request(
@@ -327,6 +373,7 @@ def create_formal_quote_revision(
     )
     items: list[FormalQuoteItem] = []
     currencies: set[str] = set()
+    generated_jacket_charges: list[FormalQuoteChargeInput] = []
 
     for sort_order, line in enumerate(lines):
         item, currency = _line_snapshot(
@@ -337,6 +384,23 @@ def create_formal_quote_revision(
         item.sort_order = sort_order
         items.append(item)
         currencies.add(currency)
+        if line.neoprene_jacket:
+            if currency != "USD":
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="The $100 black neoprene jacket option requires a USD quote.",
+                )
+            product = db.get(Product, line.product_id)
+            # _line_snapshot already verifies that this product exists and is active.
+            assert product is not None
+            jacket_charge = black_neoprene_jacket_charge(
+                product_sku=product.sku,
+                line_number=sort_order + 1,
+                quantity=line.quantity,
+                selected=True,
+            )
+            assert jacket_charge is not None
+            generated_jacket_charges.append(jacket_charge)
 
     if len(currencies) != 1:
         raise HTTPException(
@@ -345,13 +409,23 @@ def create_formal_quote_revision(
         )
 
     subtotal = sum(item.line_total_minor for item in items)
+    if len(charges) + len(generated_jacket_charges) > 20:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Too many commercial adjustments, including selected jackets.",
+        )
     charge_rows: list[FormalQuoteCharge] = []
-    for sort_order, charge in enumerate(charges):
+    for sort_order, charge in enumerate([*charges, *generated_jacket_charges]):
         label = charge.label.strip()
         if not label:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Commercial charge labels cannot be blank.",
+            )
+        if sort_order < len(charges) and JACKET_CHARGE_LABEL.casefold() in label.casefold():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Choose the per-line jacket option instead of a manual jacket charge.",
             )
 
         positive_kinds = {

@@ -896,6 +896,7 @@ export function createFormalQuote(
       variant_id: string | null;
       quantity: number;
       unit_amount_minor: number | null;
+      neoprene_jacket: boolean;
     }>;
     charges: Array<{
       kind: CommercialChargeKind;

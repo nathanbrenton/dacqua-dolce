@@ -357,10 +357,14 @@ class OperationsCommunicationReplyRead(BaseModel):
 
 
 class FormalQuoteItemCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     product_id: uuid.UUID
     variant_id: uuid.UUID | None = None
     quantity: int = Field(default=1, ge=1, le=100)
     unit_amount_minor: int | None = Field(default=None, ge=0)
+    # Staff-confirmed physical option, priced by the backend (never by the client).
+    neoprene_jacket: bool = Field(default=False, strict=True)
 
 
 class FormalQuoteCreate(BaseModel):

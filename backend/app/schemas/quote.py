@@ -6,6 +6,8 @@ from pydantic import (
     field_validator,
 )
 
+from app.schemas.product_configuration import ProductConfigurationRequest
+
 from app.core.email import (
     normalize_email_address,
 )
@@ -166,6 +168,7 @@ class QuoteRequestCreate(BaseModel):
     )
 
     recommendation_context: RecommendationContext | None = None
+    configuration: ProductConfigurationRequest | None = None
 
     @field_validator("name")
     @classmethod

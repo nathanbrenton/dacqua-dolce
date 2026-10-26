@@ -4548,6 +4548,7 @@ def create_formal_quote(
                 variant_id=item.variant_id,
                 quantity=item.quantity,
                 unit_amount_minor=item.unit_amount_minor,
+                neoprene_jacket=item.neoprene_jacket,
             )
             for item in payload.items
         ],
