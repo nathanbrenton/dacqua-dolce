@@ -151,8 +151,12 @@ def apply_verified_payment_event(
         max_length=300,
         required=True,
     )
-    assert provider is not None
-    assert event_id is not None
+    # _clean_identifier(required=True) normally raises for missing values.
+    # Keep the invariant enforced even when Python assertions are optimized out.
+    if provider is None:
+        raise PaymentEventError("provider is required.")
+    if event_id is None:
+        raise PaymentEventError("provider_event_id is required.")
 
     if provider != payment_reference.provider.strip():
         raise PaymentEventError(

@@ -1,12 +1,16 @@
 """Regression gates for merchandising defaults and deployment-safe preferences."""
-from pathlib import Path
-from types import SimpleNamespace
 import importlib.util
 import sqlite3
+from pathlib import Path
+from types import SimpleNamespace
 
 from app.api.catalog import catalog_card_visible_sku
 from app.services.product_family_order import (
-    DEFAULT_FAMILY_ORDER, available_families, complete_order, sort_products, stored_order
+    DEFAULT_FAMILY_ORDER,
+    available_families,
+    complete_order,
+    sort_products,
+    stored_order,
 )
 
 
@@ -48,7 +52,9 @@ def test_migration_preserves_custom_revision_two_and_updates_untouched_seed(monk
     spec.loader.exec_module(migration)
     conn = sqlite3.connect(":memory:")
     try:
-        conn.execute("CREATE TABLE product_family_order (id INTEGER, revision INTEGER, families_json TEXT)")
+        conn.execute(
+            "CREATE TABLE product_family_order (id INTEGER, revision INTEGER, families_json TEXT)"
+        )
         old = '["Refine", "Essence", "Origin", "Harmony"]'
         new = '["Refine", "Essence", "Harmony", "Origin"]'
         custom = '["Essence", "Refine", "Harmony", "Origin"]'
@@ -56,9 +62,13 @@ def test_migration_preserves_custom_revision_two_and_updates_untouched_seed(monk
             conn.execute("DELETE FROM product_family_order")
             conn.execute("INSERT INTO product_family_order VALUES (1, ?, ?)", (rev, initial))
             # op.execute receives a SQLAlchemy TextClause; SQLite runs the same SQL.
-            monkeypatch.setattr(migration.op, "execute", lambda statement: conn.execute(str(statement)))
+            monkeypatch.setattr(
+                migration.op, "execute", lambda statement: conn.execute(str(statement))
+            )
             migration.upgrade()
-            observed = conn.execute("SELECT revision, families_json FROM product_family_order").fetchone()
+            observed = conn.execute(
+                "SELECT revision, families_json FROM product_family_order"
+            ).fetchone()
             assert observed == (rev, expected)
     finally:
         conn.close()

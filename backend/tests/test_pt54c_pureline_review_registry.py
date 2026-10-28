@@ -6,22 +6,44 @@ import json
 import pytest
 
 from app.schemas.product_configuration import CARTRIDGE_CHOICES
-from app.services.option_approval import review_pureline_cartridge
 from app.services import pureline_commercial_review as commercial
+from app.services.option_approval import review_pureline_cartridge
 
 
 def test_full_reference_catalog_remains_pending_only() -> None:
     records = commercial.load_pending_pureline_reviews()
     assert len(records) == 14
-    assert set(records) == {(category, label) for category, labels in CARTRIDGE_CHOICES.items() for label in labels}
-    assert all(item.approval_status == 'pending' and item.staff_review_required for item in records.values())
-    assert all(item.manufacturer_model is None and item.supplier_cost_usd is None and item.authorized_unit_price_usd is None for item in records.values())
-    assert all(not item.approved_positions and not item.compatible_housing_models for item in records.values())
+    assert set(records) == {
+        (category, label) for category, labels in CARTRIDGE_CHOICES.items() for label in labels
+    }
+    assert all(
+        item.approval_status == "pending" and item.staff_review_required
+        for item in records.values()
+    )
+    assert all(
+        item.manufacturer_model is None
+        and item.supplier_cost_usd is None
+        and item.authorized_unit_price_usd is None
+        for item in records.values()
+    )
+    assert all(
+        not item.approved_positions and not item.compatible_housing_models
+        for item in records.values()
+    )
 
 
-@pytest.mark.parametrize('category,label', [(category, label) for category, labels in CARTRIDGE_CHOICES.items() for label in sorted(labels)])
+@pytest.mark.parametrize(
+    "category,label",
+    [
+        (category, label)
+        for category, labels in CARTRIDGE_CHOICES.items()
+        for label in sorted(labels)
+    ],
+)
 @pytest.mark.parametrize('position', [1, 2, 3])
-def test_every_choice_and_position_remains_unapproved(category: str, label: str, position: int) -> None:
+def test_every_choice_and_position_remains_unapproved(
+    category: str, label: str, position: int
+) -> None:
     review = commercial.pending_cartridge_review(category, label, position=position)
     assert review.nominal_housing_length_inches == 20
     assert review.approval_status == 'pending'
@@ -42,7 +64,9 @@ def test_unknown_cartridge_is_rejected() -> None:
         commercial.pending_cartridge_review('carbon', 'not a listed product')
 
 
-def test_registry_rejects_injected_price_or_approval(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+def test_registry_rejects_injected_price_or_approval(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
     content = json.loads(commercial.REVIEW_FILE.read_text(encoding='utf-8'))
     for field, bad_value in [('authorized_unit_price_usd', '0.01'),
                              ('manufacturer_model', 'NOT-APPROVED'),

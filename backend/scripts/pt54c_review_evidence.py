@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
-from app.services.commercial_evidence_intake import as_json, load_intake, make_template, review_report  # noqa: E402
+from app.services.commercial_evidence_intake import (  # noqa: E402
+    as_json,
+    load_intake,
+    make_template,
+    review_report,
+)
 
 
 def external_path(value: str, *, must_exist: bool = False) -> Path:
@@ -25,7 +30,9 @@ def main() -> int:
     actions = parser.add_subparsers(dest="action", required=True)
     template = actions.add_parser("template", help="Make blank external evidence intake JSON")
     template.add_argument("--output", required=True)
-    review = actions.add_parser("review", help="Validate supplier evidence; produce staff review report")
+    review = actions.add_parser(
+        "review", help="Validate supplier evidence; produce staff review report"
+    )
     review.add_argument("--input", required=True)
     review.add_argument("--output", required=True)
     args = parser.parse_args()
@@ -42,7 +49,10 @@ def main() -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("x", encoding="utf-8") as file:  # never overwrite evidence
             file.write(as_json(value))
-        print(f"PASS: wrote external {'template' if args.action == 'template' else 'review'}: {output}")
+        print(
+            f"PASS: wrote external "
+            f"{'template' if args.action == 'template' else 'review'}: {output}"
+        )
         print("HOLD: no manufacturer fitments, option prices, or catalog SKUs authorized")
         return 0
     except (ValueError, FileExistsError, OSError) as exc:

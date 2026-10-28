@@ -24,12 +24,12 @@ from app.models.identity import (
     UserRole,
 )
 from app.services.email_verification import (
+    MAX_ACTIVE_VERIFICATION_LINKS,
+    RESEND_OVERLAP_MINUTES,
     complete_email_verification,
     generate_verification_token,
     hash_verification_token,
     issue_email_verification,
-    RESEND_OVERLAP_MINUTES,
-    MAX_ACTIVE_VERIFICATION_LINKS,
 )
 
 client = TestClient(app)

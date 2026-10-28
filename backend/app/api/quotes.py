@@ -28,7 +28,6 @@ from app.models.identity import (
     UserStatus,
 )
 from app.models.quote import QuoteRequest
-from app.services.product_configuration import configuration_inquiry_text
 from app.schemas.quote import (
     QuoteRequestCreate,
     QuoteRequestRead,
@@ -45,6 +44,7 @@ from app.services.commerce import active_reserved_quantity
 from app.services.email_delivery import (
     deliver_email,
 )
+from app.services.product_configuration import configuration_inquiry_text
 from app.services.public_availability import resolve_public_availability
 from app.services.quote_acknowledgements import deliver_quote_acknowledgement
 from app.services.recommendations import (

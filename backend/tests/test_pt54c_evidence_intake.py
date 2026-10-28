@@ -2,11 +2,15 @@
 from __future__ import annotations
 
 import copy
+
 import pytest
 
 from app.schemas.product_configuration import CARTRIDGE_CHOICES, FITTING_CHOICES, SKU_FAMILY
 from app.services.commercial_evidence_intake import (
-    expected_identities, load_intake, make_template, review_report, validate_intake,
+    expected_identities,
+    make_template,
+    review_report,
+    validate_intake,
 )
 
 
@@ -19,7 +23,11 @@ def find(data: dict, kind: str) -> dict:
 
 
 def source(item: dict) -> None:
-    item["evidence"].update(source_type="supplier_document", source_reference="SUPPLIER-EXAMPLE", source_date="2026-10-25")
+    item["evidence"].update(
+        source_type="supplier_document",
+        source_reference="SUPPLIER-EXAMPLE",
+        source_date="2026-10-25",
+    )
 
 
 def test_complete_template_is_pending_and_authorizes_nothing():
@@ -41,7 +49,10 @@ def test_complete_template_is_pending_and_authorizes_nothing():
 def test_supplier_fitment_claim_with_provenance_is_still_unapproved():
     data = editable()
     item = find(data, "fitting")
-    item["claim"].update(manufacturer="Example Manufacturer", compatibility_claim="supplier_claims_compatible")
+    item["claim"].update(
+        manufacturer="Example Manufacturer",
+        compatibility_claim="supplier_claims_compatible",
+    )
     source(item)
     report = review_report(data)
     row = next(r for r in report["records"] if r["kind"] == "fitting")
@@ -63,8 +74,13 @@ def test_unproven_claim_receives_blocker_and_is_not_authorized():
 def test_pureline_model_position_price_proposals_are_not_saleable():
     data = editable()
     item = find(data, "pureline_cartridge")
-    item["claim"].update(manufacturer_model="EXAMPLE-MODEL", claimed_housing_models=["EXAMPLE-HOUSING"],
-                         claimed_positions=[1, 3], supplier_cost_usd="8.55", proposed_selling_price_usd="29.95")
+    item["claim"].update(
+        manufacturer_model="EXAMPLE-MODEL",
+        claimed_housing_models=["EXAMPLE-HOUSING"],
+        claimed_positions=[1, 3],
+        supplier_cost_usd="8.55",
+        proposed_selling_price_usd="29.95",
+    )
     source(item)
     report = review_report(data)
     row = next(r for r in report["records"] if r["kind"] == "pureline_cartridge")
@@ -84,7 +100,9 @@ def test_harmony_skus_are_proposals_only():
     assert "PROPOSED-H20" not in SKU_FAMILY
 
 
-@pytest.mark.parametrize("value", ["-1", "10.999", "1e3", "NaN", 100, "1,000", "0x10", "", " 10.00"])
+@pytest.mark.parametrize(
+    "value", ["-1", "10.999", "1e3", "NaN", 100, "1,000", "0x10", "", " 10.00"]
+)
 def test_invalid_money_rejected(value):
     data = editable()
     find(data, "fitting")["claim"]["supplier_cost_usd"] = value

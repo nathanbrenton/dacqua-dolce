@@ -49,7 +49,9 @@ def test_both_valves_produce_explicit_staff_approval_hold_in_customer_inquiry() 
 @pytest.mark.parametrize("category,cartridge", [
     (category, value) for category, values in CARTRIDGE_CHOICES.items() for value in sorted(values)
 ])
-def test_named_pureline_choices_are_not_order_or_price_authorized(category: str, cartridge: str) -> None:
+def test_named_pureline_choices_are_not_order_or_price_authorized(
+    category: str, cartridge: str
+) -> None:
     decision = review_pureline_cartridge(category, cartridge)
     assert decision.approval_status == "unverified"
     assert not decision.compatibility_confirmed
@@ -76,5 +78,7 @@ def test_harmony_housing_reviews_are_separate_and_20_stays_quote_only() -> None:
     )
     text = configuration_inquiry_text(configuration)
     assert "no authorized saleable SKU or price" in text
-    assert text.index("Pureline housing 1 approval: UNVERIFIED") < text.index("Pureline housing 2 approval: UNVERIFIED")
+    assert text.index("Pureline housing 1 approval: UNVERIFIED") < text.index(
+        "Pureline housing 2 approval: UNVERIFIED"
+    )
     assert "before a formal offer" in text

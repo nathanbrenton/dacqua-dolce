@@ -15,8 +15,8 @@ from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
 from app.models.catalog import (
     Product,
-    ProductFamilyOrder,
     ProductDocumentType,
+    ProductFamilyOrder,
     ProductInventory,
     ProductPrice,
     ProductRelationship,
@@ -141,7 +141,6 @@ from app.services.cancellations import (
     review_order_cancellation,
 )
 from app.services.catalog_publication import product_is_publicly_visible
-from app.services.product_family_order import available_families, complete_order, stored_order
 from app.services.commerce import (
     active_reserved_quantity,
 )
@@ -199,6 +198,7 @@ from app.services.pricing import (
     select_effective_price,
     select_standard_price,
 )
+from app.services.product_family_order import available_families, complete_order, stored_order
 from app.services.return_policy_exceptions import (
     ReturnPolicyExceptionError,
     ReturnPolicyExceptionEvidence,
@@ -3700,12 +3700,24 @@ def save_family_order(
     require_pricing_inventory_write(db, user=current_user)
     row = db.scalar(select(ProductFamilyOrder).where(ProductFamilyOrder.id == 1).with_for_update())
     if row is None:
-        raise HTTPException(status_code=409, detail="Family order has not been initialized. Apply migrations.")
+        raise HTTPException(
+            status_code=409,
+            detail="Family order has not been initialized. Apply migrations.",
+        )
     names = available_families(db.scalars(select(Product)).all())
     if len(payload.families) != len(set(payload.families)) or set(payload.families) != set(names):
-        raise HTTPException(status_code=422, detail="Submit every current product family exactly once. Reload to include catalog changes.")
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Submit every current product family exactly once. "
+                "Reload to include catalog changes."
+            ),
+        )
     if payload.revision != row.revision:
-        raise HTTPException(status_code=409, detail="The display order changed. Reload before saving.")
+        raise HTTPException(
+            status_code=409,
+            detail="The display order changed. Reload before saving.",
+        )
     old_order = complete_order(names, stored_order(row.families_json))
     if old_order == payload.families:
         return FamilyOrderRead(families=old_order, revision=row.revision)
@@ -3718,7 +3730,11 @@ def save_family_order(
         entity_type="product_family_order",
         entity_id="1",
         actor_user_id=current_user.id,
-        metadata={"previous_order": old_order, "new_order": payload.families, "revision": row.revision},
+        metadata={
+            "previous_order": old_order,
+            "new_order": payload.families,
+            "revision": row.revision,
+        },
     )
     db.commit()
     return FamilyOrderRead(families=payload.families, revision=row.revision)

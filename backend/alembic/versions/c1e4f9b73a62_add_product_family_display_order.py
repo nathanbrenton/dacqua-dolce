@@ -4,7 +4,9 @@ Revision ID: c1e4f9b73a62
 Revises: b32e10c7a9d4
 """
 from collections.abc import Sequence
+
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "c1e4f9b73a62"

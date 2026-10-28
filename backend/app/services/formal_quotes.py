@@ -391,15 +391,23 @@ def create_formal_quote_revision(
                     detail="The $100 black neoprene jacket option requires a USD quote.",
                 )
             product = db.get(Product, line.product_id)
-            # _line_snapshot already verifies that this product exists and is active.
-            assert product is not None
+            # Validate explicitly: assertions are disabled under optimized Python.
+            if product is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="The selected formal quote product no longer exists.",
+                )
             jacket_charge = black_neoprene_jacket_charge(
                 product_sku=product.sku,
                 line_number=sort_order + 1,
                 quantity=line.quantity,
                 selected=True,
             )
-            assert jacket_charge is not None
+            if jacket_charge is None:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    detail="Unable to calculate the selected neoprene jacket charge.",
+                )
             generated_jacket_charges.append(jacket_charge)
 
     if len(currencies) != 1:

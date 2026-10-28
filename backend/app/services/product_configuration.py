@@ -1,12 +1,11 @@
 """Render validated, non-priced configuration inquiries for staff review."""
 
-from app.services.option_approval import review_fitting, review_pureline_cartridge
-
 from app.schemas.product_configuration import (
     FITTING_CHOICES,
     SKU_FAMILY,
     ProductConfigurationRequest,
 )
+from app.services.option_approval import review_fitting, review_pureline_cartridge
 
 
 def configuration_inquiry_text(configuration: ProductConfigurationRequest) -> str:
@@ -44,7 +43,9 @@ def configuration_inquiry_text(configuration: ProductConfigurationRequest) -> st
                 "and commercial price confirmation required before a formal offer."
             )
             if configuration.valve == "performance":
-                lines.append("Confirm Clack-reference fitting compatibility with Performance valve.")
+                lines.append(
+                    "Confirm Clack-reference fitting compatibility with Performance valve."
+                )
     else:
         if configuration.tank_size_cf == "2.0":
             lines.append(
@@ -62,5 +63,7 @@ def configuration_inquiry_text(configuration: ProductConfigurationRequest) -> st
                 f"{decision.approval_status.upper()}; staff must confirm model, "
                 "housing compatibility, availability, and price before a formal offer."
             )
-    lines.append("Confirm availability, compatibility, commercial terms, and pricing before ordering.")
+    lines.append(
+        "Confirm availability, compatibility, commercial terms, and pricing before ordering."
+    )
     return "\n".join(lines)

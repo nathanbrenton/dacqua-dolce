@@ -6,14 +6,13 @@ from pydantic import (
     field_validator,
 )
 
-from app.schemas.product_configuration import ProductConfigurationRequest
-
 from app.core.email import (
     normalize_email_address,
 )
 from app.core.phone import (
     normalize_us_phone,
 )
+from app.schemas.product_configuration import ProductConfigurationRequest
 
 TriState = Literal["yes", "no", "unsure"]
 

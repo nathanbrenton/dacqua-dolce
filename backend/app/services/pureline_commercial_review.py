@@ -6,9 +6,9 @@ a later reviewed catalog migration and explicit commercial approval is needed.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from functools import lru_cache
-import json
 from pathlib import Path
 from typing import Literal
 
@@ -98,7 +98,12 @@ def load_pending_pureline_reviews() -> dict[tuple[str, str], PendingCartridgeRev
     return records
 
 
-def pending_cartridge_review(category: str, requested_description: str, *, position: int | None = None) -> PendingCartridgeReview:
+def pending_cartridge_review(
+    category: str,
+    requested_description: str,
+    *,
+    position: int | None = None,
+) -> PendingCartridgeReview:
     """Review one descriptive option; housing position never implies approval."""
     if position is not None and (type(position) is not int or position not in (1, 2, 3)):
         raise ValueError("Unknown Pureline physical housing position")

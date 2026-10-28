@@ -1,6 +1,13 @@
 from types import SimpleNamespace
+
 import pytest
-from app.services.product_family_order import available_families, complete_order, sort_products, stored_order
+
+from app.services.product_family_order import (
+    available_families,
+    complete_order,
+    sort_products,
+    stored_order,
+)
 
 
 def product(name, family=None):
@@ -10,7 +17,9 @@ def product(name, family=None):
 def test_default_order_and_unknown_family_fallback():
     products = [product("Harmony"), product("Other"), product("Origin"), product("Refine")]
     order = complete_order(available_families(products), stored_order(None))
-    assert [p.name for p in sort_products(products, order)] == ["Refine", "Harmony", "Origin", "Other"]
+    assert [p.name for p in sort_products(products, order)] == [
+        "Refine", "Harmony", "Origin", "Other"
+    ]
 
 
 def test_variants_are_grouped_and_alphabetical_within_family():

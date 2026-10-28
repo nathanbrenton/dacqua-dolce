@@ -8,7 +8,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 SKU_FAMILY: dict[str, str] = {
     "DD15SOFT": "Refine", "DD20SOFT": "Refine",
     "DD15CATRV": "Essence", "DD20CATRV": "Essence",
