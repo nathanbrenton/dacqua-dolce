@@ -1,0 +1,91 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>D'Acqua Dolce · Media Manager (TEST)</title>
+<style>
+:root{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#143246;background:#f5f8fa;line-height:1.45}*{box-sizing:border-box}body{margin:0}.banner{background:#082b3d;color:#fff;padding:22px max(24px,calc((100vw - 1160px)/2))}.banner h1{margin:0;font-size:1.45rem}.banner p{margin:5px 0 0;color:#c3dce4;font-size:.93rem}.badge{display:inline-block;border-radius:99px;background:#e3f3d9;color:#21592e;padding:3px 9px;font-size:.73rem;font-weight:700}main{max-width:1160px;margin:25px auto;padding:0 20px;display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{border:1px solid #dae4e9;background:white;border-radius:14px;padding:22px;box-shadow:0 2px 9px #0e39510a}.wide{grid-column:1/-1}.panel h2{margin:0 0 8px;font-size:1.1rem}.hint{font-size:.86rem;color:#567181;margin:0 0 15px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fields label,.field{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:650;color:#304e5d}.fields input,.fields select,select,button,input[type=text]{padding:10px;border:1px solid #c8d6de;border-radius:8px;background:white;font:inherit;min-width:0;color:#143246}.fields [hidden]{display:none}.drop{margin-top:13px;border:2px dashed #bed0da;border-radius:11px;padding:17px;text-align:center;background:#f9fcfe}.drop:focus-within,.drop.dragover{border-color:#2786a1;background:#e9f8fc}.drop input{width:100%;max-width:300px;margin:6px auto}.actionrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}button{background:#12647c;color:#fff;border:1px solid #12647c;cursor:pointer;font-weight:650}button:hover{background:#0b495c}button.secondary{color:#14506b;background:#fff;border:1px solid #b7ccd5}button.warn{background:#923a23;border-color:#923a23}button:disabled{cursor:not-allowed;opacity:.45}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #80d0e7}.filename{font-family:ui-monospace,SFMono-Regular,monospace;background:#f1f6f7;padding:9px;border-radius:8px;font-size:.79rem;overflow-wrap:anywhere;margin-top:12px}.note{color:#496576;font-size:.85rem}.notice{border-radius:8px;padding:11px;background:#ebf5f8;color:#164f65;margin:12px 0;white-space:pre-wrap;overflow-wrap:anywhere}.notice.error{background:#fff0ea;color:#833e2a}.notice.success{background:#edf8ed;color:#215a38}.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px}.thumb{border:1px solid #dee8ed;padding:9px;border-radius:9px;overflow-wrap:anywhere}.thumb img{display:block;width:100%;height:170px;object-fit:contain;background:#f3f7f8;border-radius:6px}.thumb h3{font-size:.78rem;word-break:break-word;margin:7px 0}.thumb small{color:#627683}.list{max-height:215px;overflow:auto;padding:0;margin:10px 0}.list li{list-style:none;padding:9px 0;border-bottom:1px solid #eaf0f3;font-size:.82rem;overflow-wrap:anywhere}.confirm{padding:13px;background:#fff8f1;border:1px solid #f4dbbd;border-radius:10px;margin-top:15px}.confirm input[type=text]{width:100%;margin:7px 0}.confirm label{display:flex;gap:7px;align-items:flex-start;font-size:.86rem}#plan{white-space:pre-wrap;max-height:220px;overflow:auto;font-size:.8rem;background:#f6f9fa;border-radius:7px;padding:12px}.librarybar{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin:12px 0}.librarybar label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:650}.librarybar select{width:100%}.thumb button{background:transparent;color:#143246;border:0;padding:0;width:100%;cursor:zoom-in;text-align:left}.thumb button img{pointer-events:none}.thumb.missing{opacity:.55}.library-lightbox{border:0;border-radius:14px;padding:18px;max-width:90vw;max-height:90vh;box-shadow:0 25px 100px #0008}.library-lightbox::backdrop{background:#041a27c9}.library-lightbox img{display:block;max-width:85vw;max-height:75vh;object-fit:contain}.library-lightbox button{float:right;margin-bottom:8px}.library-caption{clear:both;margin:8px 0 0;max-width:80vw;overflow-wrap:anywhere}@media(max-width:650px){.librarybar{grid-template-columns:1fr}}.caption-editor{border:1px solid #d2e3e9;background:#f6fafc;padding:16px;border-radius:11px;margin-top:18px}.caption-editor h3{margin:0 0 6px;font-size:1rem}.caption-editor .fields{grid-template-columns:2fr 1fr}.caption-editor .fields label{min-width:0}.caption-editor input{width:100%}.caption-editor .note{margin-top:8px}.caption-editor #caption-text{width:100%}.caption-editor button{padding:10px 14px}@media(max-width:650px){.caption-editor .fields{grid-template-columns:1fr}}.photo-specs{background:#f5fafc;border:1px solid #cbdde5;border-radius:11px;padding:13px;margin-top:15px;color:#193f50}.photo-specs h3{font-size:.92rem;margin:0 0 8px}.photo-specs .spec-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.photo-specs .spec-cell{padding:9px;background:white;border:1px solid #e1eaee;border-radius:8px;min-width:0}.photo-specs .spec-cell strong{display:block;font-size:.8rem}.photo-specs .spec-cell span{display:block;font-size:.8rem;color:#496576;margin-top:3px}.photo-specs details{margin-top:10px}.photo-specs summary{cursor:pointer;font-weight:650;font-size:.85rem;color:#14506b}.photo-specs details p,.photo-specs details li{font-size:.82rem;color:#415c6b}.photo-specs details ul{padding-left:20px;margin:8px 0}.photo-specs code{overflow-wrap:anywhere;font-size:.78rem}.photo-specs .spec-warning{font-size:.8rem;margin:10px 0 0;color:#795c25}@media(max-width:420px){.photo-specs .spec-grid{grid-template-columns:1fr}}.footer{color:#68808c;padding:12px 24px 40px;text-align:center;font-size:.8rem}@media(max-width:760px){main{display:block;padding:0 12px;margin:14px auto}.panel{margin-bottom:14px}.fields{grid-template-columns:1fr 1fr}.banner{padding:20px 17px}}@media(max-width:420px){.fields{grid-template-columns:1fr}}
+</style><link rel="stylesheet" href="/site-theme-tokens.css"><link rel="stylesheet" href="/media-theme.css"></head><body>
+<header class="banner"><h1>D’Acqua Dolce · Media Manager <span class="badge">LOCAL TEST</span></h1><p>Ingest → Review → Prepare → Approve. Nothing reaches production automatically. <a href="http://127.0.0.1:18175/" style="color:#fff;text-decoration:underline;margin-left:12px">Client Change Center ↗</a></p></header>
+<main>
+<section class="panel wide"><h2>Current TEST library · Existing product photos</h2>
+<p class="hint">Read-only preview of the images currently selected by the local TEST website registry (including any F3-approved overlays). This is <strong>not</strong> a live production-server inventory: PROD is still on the older release. Per-customer fitting images are selected separately.</p>
+<div class="librarybar"><label>Product family<select id="library-family"><option value="">All families</option><option value="refine">Refine</option><option value="essence">Essence</option><option value="harmony">Harmony</option><option value="origin">Origin</option></select></label><label>Product / configuration<select id="library-config"><option value="">Loading library…</option></select></label></div>
+<div class="actionrow"><button id="library-refresh" class="secondary" type="button">Refresh current library</button><span id="library-overview" class="note">Reading approved local photo registry…</span></div>
+<div id="library-msg" role="status"></div><div id="library-gallery" class="gallery"></div>
+<div class="caption-editor" id="caption-editor"><h3>Edit thumbnail subtitle</h3>
+<p class="hint">Caption changes are saved to a tracked TEST JSON file. No image processing or direct production changes.</p>
+<div class="fields">
+<label>Photo<select id="caption-photo"><option value="">Choose a selected photo</option></select></label>
+<label>Apply to<select id="caption-scope"><option value="configuration">This configuration only</option><option value="family">Entire product family</option></select></label>
+</div>
+<label class="field" for="caption-text">New subtitle (maximum 96 characters)</label>
+<input id="caption-text" type="text" maxlength="96" autocomplete="off" spellcheck="true" placeholder="e.g. Treatment tank">
+<p class="note" id="caption-info"></p>
+<div class="actionrow"><button id="caption-save" type="button">Save subtitle to TEST</button><button id="caption-clear" class="secondary" type="button">Remove this override</button><span class="note" id="caption-version"></span></div>
+<div id="caption-msg" role="status" aria-live="polite"></div></div>
+<dialog id="library-lightbox" class="library-lightbox"><button id="library-close" class="secondary" type="button">Close preview</button><img id="library-large" alt="Selected existing product photograph"><p id="library-caption" class="library-caption"></p></dialog>
+</section>
+<section class="panel"><h2>1. Name &amp; ingest</h2><p class="hint">Select an archival photograph and assign the destination metadata. Filenames are generated rather than typed.</p>
+<div class="fields" id="fields">
+<label>Family<select id="family"><option value="refine">Refine</option><option value="essence">Essence</option><option value="harmony">Harmony</option><option value="origin">Origin</option></select></label>
+<label data-applies="tank">Tank size<select id="size"><option value="1-5">1.5 cu. ft.</option><option value="2-0">2.0 cu. ft.</option></select></label>
+<label data-applies="tank">Tank material<select id="material"><option value="stainless">Stainless</option><option value="neoprene">Neoprene</option></select></label>
+<label data-applies="valve">Photographed valve<select id="valve"><option value="clack5">Clack5</option><option value="clack3">Clack3</option><option value="performance">Performance</option></select></label>
+<label data-applies="valve">Image rendition<select id="style"><option value="archetype">Archetype</option><option value="realistic">Realistic</option></select></label>
+<label data-applies="origin">Origin variant<select id="variant"><option value="standard">Standard</option><option value="remineralization">Remineralization</option></select></label>
+<label>Image role<select id="role"><option>system</option><option>tank</option><option>valve</option><option>detail</option><option>angle</option><option>brine</option><option>pureline</option><option>cartridge</option><option>hookup</option><option>membrane</option><option>faucet</option></select></label>
+<label>Gallery position<input id="sequence" type="number" value="1" min="1" max="99" step="1"></label>
+<label>Photo revision<input id="version" type="number" value="1" min="1" max="99" step="1"></label>
+</div>
+<aside class="photo-specs" aria-labelledby="photo-specs-title">
+<h3 id="photo-specs-title">Photo requirements · Quick reference</h3>
+<div class="spec-grid">
+<div class="spec-cell"><strong>Accepted source types</strong><span>PNG (.png), JPEG (.jpg/.jpeg), WebP (.webp), TIFF (.tif/.tiff)</span></div>
+<div class="spec-cell"><strong>Preferred source canvas</strong><span>1122 × 1402 px or larger · portrait ~4:5 · not mandatory</span></div>
+<div class="spec-cell"><strong>GUI upload limit</strong><span>64 MiB per image · larger originals: use ingest-drop/</span></div>
+<div class="spec-cell"><strong>Generated web files</strong><span>PNG + lossless WebP · website max 1122 × 1402 px · thumbs max 384 × 480 px</span></div>
+</div>
+<details id="photo-specs-details"><summary>More: dimensions, naming, archival and processing rules</summary>
+<ul>
+<li><strong>Source validation:</strong> at least 16 px wide and 16 px high, at most 50 megapixels; supported folder-intake files are at most 256 MiB. The GUI enforces the lower 64 MiB limit.</li>
+<li><strong>Output dimensions are maximums:</strong> ImageMagick preserves the source aspect ratio, auto-orients, and does not crop or upscale. A smaller original stays smaller. A portrait ~4:5 source works best for existing product compositions.</li>
+<li><strong>Six artifacts per photo:</strong> unchanged archival master, website PNG, website lossless WebP, thumbnail PNG, thumbnail lossless WebP, and an integrity/metadata JSON manifest.</li>
+<li><strong>Filename convention:</strong> lowercase, underscores between fields, size <code>1-5</code>/<code>2-0</code>, two-digit gallery position and revision. The form generates the name automatically. New Clack photos must explicitly use <code>clack3</code> or <code>clack5</code>.</li>
+<li><strong>Refine/Essence example:</strong> <code>refine_1-5_neoprene_clack5_archetype_system_01_v03.png</code></li>
+<li><strong>Harmony example:</strong> <code>harmony_1-5_stainless_tank_02_v01.png</code> (no valve/style fields).</li>
+<li><strong>Origin example:</strong> <code>origin_remineralization_system_01_v02.png</code> (no tank/valve fields).</li>
+<li><strong>Safety:</strong> originals are preserved. Preparing a batch does not publish; TEST publication needs separate review and approval. Nothing deploys automatically to PROD.</li>
+</ul>
+</details>
+<p class="spec-warning"><strong>Tip:</strong> review the generated filename below before adding the photo; image roles and position control gallery placement, not the source filename.</p>
+</aside>
+<div class="drop" id="drop"><strong>Choose or drop an image</strong><input id="file" type="file" accept="image/png,image/jpeg,image/webp,image/tiff,.tif,.tiff"><p class="hint">PNG, JPEG, WebP, TIFF · 64 MiB maximum · no originals overwritten</p></div>
+<div class="filename" id="preview-name">Select a file to preview its canonical filename.</div>
+<div class="actionrow"><button id="upload" type="button">Add to intake</button><button id="refresh" class="secondary" type="button">Refresh inventory</button></div>
+<div id="ingest-msg" role="status"></div></section>
+<section class="panel"><h2>2. Prepare review batch</h2><p class="hint">Only staged derivatives can be published. Intake images remain unchanged.</p>
+<p class="note" id="overview">Reading TEST asset library…</p>
+<label class="field">Image to prepare<select id="intake-select"><option value="">All eligible intake photos</option></select></label>
+<div class="actionrow"><button id="prepare">Prepare selected photo(s)</button></div><div id="prepare-msg" role="status"></div>
+<h3 style="font-size:.9rem">Intake inventory</h3><ul id="intake-list" class="list"></ul>
+<h3 style="font-size:.9rem">Prepared batches</h3><label class="field">Review batch<select id="batch"><option value="">No batch selected</option></select></label></section>
+<section class="panel wide"><h2>3. Review &amp; inspect</h2><p class="hint">Check each image, filename, order and role before permitting publication.</p><div id="batch-msg" role="status"></div><div id="gallery" class="gallery"></div>
+<div class="actionrow"><button id="plan" class="secondary">Verify &amp; preview publication plan</button></div><pre id="plan-output"></pre></section>
+<section class="panel wide"><h2>4. Publish approved images to TEST</h2><p class="hint">Publication copies reviewed files into the local website source and updates its JSON gallery index. It does <strong>not</strong> deploy, commit Git, write to a database or change PROD.</p>
+<div class="confirm"><label class="field">Type the exact batch ID shown above<input id="confirm-name" type="text" autocomplete="off" spellcheck="false" placeholder="batch-YYYYMMDDTHHMMSS-..." /></label><label><input id="ack" type="checkbox"> I inspected the images and publication plan and approve this batch for local TEST.</label><div class="actionrow"><button id="publish" class="warn" disabled>Publish to local TEST source</button></div></div><div id="publish-msg" role="status"></div></section>
+</main><footer class="footer" id="media-manager-footer">
+  <div class="media-footer-brand">
+    <button type="button" id="media-theme-toggle" aria-haspopup="true" aria-controls="media-theme-lab" aria-expanded="false" title="Open Aesthetic Lab">
+      <img id="media-footer-logo" alt="D’Acqua Dolce logo — open Aesthetic Lab" src="/site-logo?id=metallic-aqua" width="148">
+      <span id="media-footer-logo-fallback" hidden>D’Acqua Dolce</span>
+    </button>
+    <span>LOCAL TEST · Standalone media editor · Not the public website</span>
+  </div>
+  <aside id="media-theme-lab" class="media-aesthetic-lab" aria-label="Aesthetic Lab" hidden>
+    <div class="media-lab-heading"><strong>Aesthetic Lab</strong><button type="button" id="media-theme-close" aria-label="Close Aesthetic Lab">×</button></div>
+    <label for="media-theme-color">Color theme</label><select id="media-theme-color"></select>
+    <label for="media-theme-appearance">Appearance</label><select id="media-theme-appearance"></select>
+    <label for="media-theme-typography">Typography</label><select id="media-theme-typography"></select>
+    <label for="media-theme-logo">Logo artwork</label><select id="media-theme-logo"></select>
+    <p>Editor appearance only. Does not modify the storefront, photos, captions, pricing or release settings.</p>
+    <button type="button" id="media-theme-reset">Restore default appearance</button>
+  </aside>
+</footer>
+<script src="/media-manager.js" defer></script><script src="/media-theme.js" defer></script></body></html>

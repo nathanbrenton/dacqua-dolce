@@ -7248,3 +7248,74 @@ summary {
 
 /* Visible missing-media state, rather than unexplained white image boxes. */
 .product-media-missing { display: grid; place-items: center; min-height: 100px; padding: 12px; color: var(--ink-muted); text-align: center; font-size: .84rem; border: 1px dashed var(--hairline); }
+
+
+/* PT54-G3 — Decorative fixed logo; original monochrome vector artwork.
+ * This element lives behind the page content and never intercepts input.
+ * A fixed element (rather than background-attachment: fixed) supports mobile Safari.
+ */
+#root {
+  isolation: isolate;
+}
+
+.site-background-logo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  user-select: none;
+  background-image: url("/brand/logos/dacqua-dolce-background-black.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: min(74vw, 1060px) auto;
+  opacity: 0.085;
+}
+
+html[data-appearance="dark"] .site-background-logo {
+  /* The original SVG remains black; invert its presentation for dark themes. */
+  filter: invert(1);
+  opacity: 0.10;
+}
+
+/* Support's full-page surface would otherwise conceal a behind-content watermark. */
+/* The logo is rendered before the current route at #root level. */
+.site-background-logo ~ :is(.support-page-route, .product-detail-route, .detail-shell) {
+  background: transparent;
+}
+
+.developer-controls .developer-background-logo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.developer-background-logo-toggle input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  accent-color: var(--control-highlight);
+}
+
+.developer-controls .developer-background-logo-note {
+  margin: 0 0 5px;
+  font-size: var(--type-small);
+  line-height: 1.4;
+  color: rgb(255 255 255 / 72%);
+}
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .site-background-logo {
+    background-size: min(94vw, 520px) auto;
+    background-position: center 46%;
+    opacity: 0.07;
+  }
+}
+
+@media (max-width: 950px) and (orientation: landscape) {
+  .site-background-logo {
+    background-size: min(76vw, 700px) auto;
+    opacity: 0.07;
+  }
+}

@@ -1,0 +1,21 @@
+/* PT54-G2: theme-inheriting, low-chroma product notices. */
+.product-content-notice {
+  box-sizing: border-box;
+  max-width: 100%;
+  margin-block: 0.875rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  color: inherit;
+}
+.product-content-notice p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.product-content-notice strong { font-weight: 700; }
+.product-content-notice--maintenance {
+  border-inline-start: 3px solid color-mix(in srgb, currentColor 55%, transparent);
+}

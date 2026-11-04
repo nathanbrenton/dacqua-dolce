@@ -7,6 +7,11 @@ import {
 } from "react";
 
 import {
+  getInitialBackgroundLogoVisible,
+  isBackgroundLogoAllowedPath,
+  saveBackgroundLogoVisible,
+} from "./theme/backgroundLogo";
+import {
   getCurrentAccount,
   logoutAccount,
   requestEmailVerification,
@@ -39,6 +44,7 @@ import {
 import {
   ProductDetailPage,
 } from "./components/catalog/ProductDetailPage";
+import { DEFAULT_PHOTO_SOURCE, type PhotoSource } from "./components/catalog/productMediaRegistry";
 import {
   DeveloperControls,
 } from "./components/developer/DeveloperControls";
@@ -307,13 +313,20 @@ export function App() {
     setRecommendationContext,
   ] = useState<RecommendationContext | null>(null);
 
-  // Volatile by design: OFF after every refresh; never persisted.
-  const [imagePreviewEnabled, setImagePreviewEnabled] = useState(false);
+  // Local Aesthetic Lab presentation only; never persisted or sent to commerce.
+  const [photoSource, setPhotoSource] = useState<PhotoSource>(DEFAULT_PHOTO_SOURCE);
 
   const [
     developerControlsOpen,
     setDeveloperControlsOpen,
   ] = useState(false);
+
+  const [
+    backgroundLogoVisible,
+    setBackgroundLogoVisible,
+  ] = useState<boolean>(
+    getInitialBackgroundLogoVisible,
+  );
 
   const [path, setPath] =
     useState(
@@ -354,6 +367,10 @@ export function App() {
       logoVariant,
     );
   }, [logoVariant]);
+
+  useEffect(() => {
+    saveBackgroundLogoVisible(backgroundLogoVisible);
+  }, [backgroundLogoVisible]);
 
   useEffect(() => {
     void getBackendHealth()
@@ -605,6 +622,10 @@ export function App() {
   const isHome =
     path === "/" || path === "";
 
+  // The preference is retained, but protected workspaces never receive the decoration.
+  const showBackgroundLogo =
+    backgroundLogoVisible && isBackgroundLogoAllowedPath(path);
+
   return (
     <>
       <a
@@ -614,9 +635,15 @@ export function App() {
         Skip to main content
       </a>
 
+      {showBackgroundLogo ? (
+        <div className="site-background-logo" aria-hidden="true" />
+      ) : null}
+
       <DeveloperControls
-        imagePreviewEnabled={imagePreviewEnabled}
-        onImagePreviewChange={setImagePreviewEnabled}
+        backgroundLogoVisible={backgroundLogoVisible}
+        onBackgroundLogoChange={setBackgroundLogoVisible}
+        photoSource={photoSource}
+        onPhotoSourceChange={setPhotoSource}
         open={developerControlsOpen}
         onClose={() => {
           setDeveloperControlsOpen(false);
@@ -808,7 +835,7 @@ export function App() {
         !== null ? (
         <div className="product-detail-route">
           <ProductDetailPage
-            imagePreviewEnabled={imagePreviewEnabled}
+                    photoSource={photoSource}
             slug={decodeURIComponent(
               detailSlug,
             )}
@@ -988,7 +1015,7 @@ export function App() {
           </section>
 
           <CatalogSection
-            imagePreviewEnabled={imagePreviewEnabled}
+                    photoSource={photoSource}
             onNavigate={navigate}
           />
 

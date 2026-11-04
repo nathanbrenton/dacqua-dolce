@@ -1,0 +1,218 @@
+{
+  "essence/essence_performance_1-5_chrome.png": {
+    "bytes": 1301581,
+    "height": 1402,
+    "sha256": "1c7007192761299395911ff754da0d9199ae2e5c3f17a8659d10176323f778f6",
+    "width": 1122
+  },
+  "essence/essence_performance_1-5_neoprene.png": {
+    "bytes": 1631885,
+    "height": 1402,
+    "sha256": "7077fee6f3be60bbb6f25e89f7523bbc3baf91ff319191113f9a08fa9db9edc6",
+    "width": 1122
+  },
+  "essence/essence_performance_2-0_chrome.png": {
+    "bytes": 1313131,
+    "height": 1402,
+    "sha256": "723f87931298c76e5a3f493c5a6fd3a247901a520db8c736f93baa1a9a1aa029",
+    "width": 1122
+  },
+  "essence/essence_performance_2-0_neoprene.png": {
+    "bytes": 1689259,
+    "height": 1402,
+    "sha256": "fda411ae41ae6b2331d2505613fdbce24ebb62296d3a67639864391f07fabf86",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_chrome.png": {
+    "bytes": 1152761,
+    "height": 1402,
+    "sha256": "19c42bc644e4ce8faf0cfb6642f9686af3fe72566ecb2a6820e4212312625bb4",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_chrome_pureline-1-solo.png": {
+    "bytes": 1117854,
+    "height": 1402,
+    "sha256": "4a416ea85935a2c84c843163d97817d0af4188c18be8aaddbe0589b716620598",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_chrome_pureline-2-duo.png": {
+    "bytes": 541722,
+    "height": 1402,
+    "sha256": "ce5adedef5edd74f6a6d19a81c8017fcde0c09c65ca043613971ce7e8bab0e7c",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_chrome_pureline-3-trio.png": {
+    "bytes": 589556,
+    "height": 1402,
+    "sha256": "66c25bf275367a2e53423d2d7409f4578dbb6ecf0c8188b105b81b15c17da059",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_neoprene.png": {
+    "bytes": 1483985,
+    "height": 1402,
+    "sha256": "2c409446c005f32cbd000408966cfc9980f8d652d1c3ff460eb2daec884bea64",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_neoprene_pureline-1-solo.png": {
+    "bytes": 675342,
+    "height": 1402,
+    "sha256": "19202c7f08723303c232af0628417b7257f23a5ddf2b51cfcc63622cefc5f622",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_neoprene_pureline-2-duo.png": {
+    "bytes": 797473,
+    "height": 1402,
+    "sha256": "ebbe55ff6cd2494185aeadbda4752a616034345cbe27b25ced0cbe75e4490dd7",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_1-5_neoprene_pureline-3-trio.png": {
+    "bytes": 853214,
+    "height": 1402,
+    "sha256": "86a8f0da092598da35ed69517822ef6c9546382db6505c21300db000664ec8e3",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_chrome.png": {
+    "bytes": 1164289,
+    "height": 1402,
+    "sha256": "64780aa7c0797869ac6eb113806cb287f537ca3e7978b6dfc45a92dc39a09c3b",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_chrome_pureline-1-solo.png": {
+    "bytes": 476104,
+    "height": 1402,
+    "sha256": "cff52e9695e0d19e13b8189bdbb5745daf5086eadaae087561b46b8d1f99b67e",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_chrome_pureline-2-duo.png": {
+    "bytes": 580258,
+    "height": 1402,
+    "sha256": "d6c15061648db88bfa5062234fecb7a655139a543916255a4d7a0489f6b6dfd0",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_chrome_pureline-3-trio.png": {
+    "bytes": 627494,
+    "height": 1402,
+    "sha256": "b2d35fe5f6b78b73e52674fbecfbba9168b5144c0c6995f6d5cc861325216633",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_neoprene.png": {
+    "bytes": 1541897,
+    "height": 1402,
+    "sha256": "79dc276e36ce998d004f8155434990ff82e80d6e1b6f7119ee84c12bb6ff0fda",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_neoprene_pureline-1-solo.png": {
+    "bytes": 750576,
+    "height": 1402,
+    "sha256": "9d18f86b31f4d944b394f32994b5be6b62703479f79b5032cce2ae3a06530055",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_neoprene_pureline-2-duo.png": {
+    "bytes": 873363,
+    "height": 1402,
+    "sha256": "ce98bf59d6e7e5e8ad073ca337adae3606c0f2c299651c7f69c3a714bf1d7ed4",
+    "width": 1122
+  },
+  "harmony/harmony_pass-through_2-0_neoprene_pureline-3-trio.png": {
+    "bytes": 956544,
+    "height": 1402,
+    "sha256": "1aacd91095d972ddd97619ab6e89dd88348e5d527cf193cbc13cf353f5a0b65f",
+    "width": 1122
+  },
+  "harmony/harmony_pureline-1-solo_back.png": {
+    "bytes": 1076914,
+    "height": 1402,
+    "sha256": "bf9dba139dd12a69844e561a9f1a46962d1defdddd076af5d60626dac2362bc1",
+    "width": 1122
+  },
+  "harmony/harmony_pureline-1-solo_front.png": {
+    "bytes": 1076495,
+    "height": 1402,
+    "sha256": "3eca1be642cc228d64e9aeebd4e68433bf2a5a972d32af33e6e74d2f477b5d73",
+    "width": 1122
+  },
+  "harmony/harmony_pureline-2-duo_back.png": {
+    "bytes": 1524019,
+    "height": 1402,
+    "sha256": "347618f92ebf271afbc2dec2cfd9296471f7972bc81237a6be19f9ed8427c16b",
+    "width": 1122
+  },
+  "harmony/harmony_pureline-2-duo_front.png": {
+    "bytes": 1311824,
+    "height": 1402,
+    "sha256": "e122204a6df63718d56a796e6e5900ad3b1c4cc4a5c30681dce1724ce6732dfb",
+    "width": 1122
+  },
+  "harmony/harmony_pureline-3-trio_back.png": {
+    "bytes": 1656314,
+    "height": 1402,
+    "sha256": "2d56ba844928161a1b5f245ea4192ffe540c458294dc114d15caf2340131081c",
+    "width": 1122
+  },
+  "harmony/harmony_pureline-3-trio_front.png": {
+    "bytes": 1247055,
+    "height": 1402,
+    "sha256": "04e241095aa0d03e4252c3800ad3cf3e630bd52bf0386168a2f0861944f98292",
+    "width": 1122
+  },
+  "refine/refine_brine-tank_front.png": {
+    "bytes": 1530338,
+    "height": 1402,
+    "sha256": "f215e71fe0507fe32c59282cbfdfa50cea9736dee77eee4428c71f0ca513b674",
+    "width": 1122
+  },
+  "refine/refine_brine-tank_side.png": {
+    "bytes": 601001,
+    "height": 1402,
+    "sha256": "e4b83049c1ec5c741c70a23dea8a20d631a53e678dfc6095e89feec41a26f1dd",
+    "width": 1122
+  },
+  "refine/refine_performance_1-5_chrome.png": {
+    "bytes": 1301581,
+    "height": 1402,
+    "sha256": "1c7007192761299395911ff754da0d9199ae2e5c3f17a8659d10176323f778f6",
+    "width": 1122
+  },
+  "refine/refine_performance_1-5_chrome_with-brine-tank.png": {
+    "bytes": 1514531,
+    "height": 1402,
+    "sha256": "23c86877b189aca60346090fa47fefc974c299d8da22e145c6973e1b93e4561c",
+    "width": 1122
+  },
+  "refine/refine_performance_1-5_neoprene.png": {
+    "bytes": 1631885,
+    "height": 1402,
+    "sha256": "7077fee6f3be60bbb6f25e89f7523bbc3baf91ff319191113f9a08fa9db9edc6",
+    "width": 1122
+  },
+  "refine/refine_performance_1-5_neoprene_with-brine-tank.png": {
+    "bytes": 1752250,
+    "height": 1402,
+    "sha256": "33095ad380ceac1a3c1b92698d345c2c108ae35130dbcc7a138b3f4e066e4eae",
+    "width": 1122
+  },
+  "refine/refine_performance_2-0_chrome.png": {
+    "bytes": 1313131,
+    "height": 1402,
+    "sha256": "723f87931298c76e5a3f493c5a6fd3a247901a520db8c736f93baa1a9a1aa029",
+    "width": 1122
+  },
+  "refine/refine_performance_2-0_chrome_with-brine-tank.png": {
+    "bytes": 1485742,
+    "height": 1402,
+    "sha256": "ea4e26d2c396f2fe45651b74d4a0f029d83e7ebc290f9a8263d323d32521260b",
+    "width": 1122
+  },
+  "refine/refine_performance_2-0_neoprene.png": {
+    "bytes": 1689259,
+    "height": 1402,
+    "sha256": "fda411ae41ae6b2331d2505613fdbce24ebb62296d3a67639864391f07fabf86",
+    "width": 1122
+  },
+  "refine/refine_performance_2-0_neoprene_with-brine-tank.png": {
+    "bytes": 1755850,
+    "height": 1402,
+    "sha256": "5cfe369ced708f592bc6900703f59f61857de0034bf998ccf18dda835e576eb3",
+    "width": 1122
+  }
+}

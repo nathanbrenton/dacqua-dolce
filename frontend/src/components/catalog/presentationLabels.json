@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "revision": 0,
+  "labels": {
+    "overview_heading": "System overview",
+    "tank_size_label": "TANK SIZE",
+    "system_configuration_label": "SYSTEM CONFIGURATION",
+    "fitting_size_label": "FITTING SIZE",
+    "fitting_type_label": "FITTING TYPE",
+    "connection_size_prompt": "Choose connection size",
+    "pureline_configuration_label": "PURELINE CONFIGURATION",
+    "system_size_heading": "Select system size",
+    "media_volume_label": "MEDIA VOLUME"
+  }
+}

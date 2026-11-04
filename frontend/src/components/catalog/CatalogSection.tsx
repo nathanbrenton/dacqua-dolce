@@ -12,9 +12,10 @@ import {
 import { PreviewProductImage } from "./PreviewProductImage";
 import { getProductPresentation } from "./productPresentation";
 import { CONFIGURATION_FAMILIES } from "./productConfigurations";
+import type { PhotoSource } from "./productMediaRegistry";
 
 type CatalogSectionProps = {
-  imagePreviewEnabled: boolean;
+  photoSource: PhotoSource;
   onNavigate: (path: string) => void;
 };
 
@@ -51,7 +52,7 @@ const FAMILY_CARD_IMAGE_FALLBACKS: Readonly<Record<string, CatalogImage>> = {
 };
 
 export function CatalogSection({
-  imagePreviewEnabled,
+  photoSource,
   onNavigate,
 }: CatalogSectionProps) {
   const [products, setProducts] =
@@ -200,8 +201,7 @@ export function CatalogSection({
                 <PreviewProductImage
                   sku={product.sku}
                   original={cardImage}
-                  enabled={imagePreviewEnabled}
-                  presentation="landing"
+                  photoSource={photoSource}
                 />
               </button>
 

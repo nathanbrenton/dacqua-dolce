@@ -1,4 +1,4 @@
-import { CAN_PREVIEW_PRODUCT_IMAGERY } from "../catalog/PreviewProductImage";
+import { AVAILABLE_PHOTO_SOURCES, type PhotoSource } from "../catalog/productMediaRegistry";
 import {
   DEFAULT_APPEARANCE,
   isAppearanceMode,
@@ -24,10 +24,12 @@ import {
 } from "../../theme/typography";
 
 type DeveloperControlsProps = {
+  backgroundLogoVisible: boolean;
+  onBackgroundLogoChange: (visible: boolean) => void;
   open: boolean;
   onClose: () => void;
-  imagePreviewEnabled: boolean;
-  onImagePreviewChange: (enabled: boolean) => void;
+  photoSource: PhotoSource;
+  onPhotoSourceChange: (source: PhotoSource) => void;
   theme: ThemeId;
   onThemeChange: (theme: ThemeId) => void;
   appearance: AppearanceMode;
@@ -45,10 +47,12 @@ type DeveloperControlsProps = {
 };
 
 export function DeveloperControls({
+  backgroundLogoVisible,
+  onBackgroundLogoChange,
   open,
   onClose,
-  imagePreviewEnabled,
-  onImagePreviewChange,
+  photoSource,
+  onPhotoSourceChange,
   theme,
   onThemeChange,
   appearance,
@@ -82,19 +86,24 @@ export function DeveloperControls({
         </button>
       </div>
 
-      {CAN_PREVIEW_PRODUCT_IMAGERY ? (
-        <div className="developer-imagery-preview">
-          <label className="developer-imagery-preview-checkbox">
-            <input
-              type="checkbox"
-              checked={imagePreviewEnabled}
-              onChange={(event) => onImagePreviewChange(event.target.checked)}
-            />
-            Use Archetype photoset (Realistic when unchecked)
-          </label>
-          <p>Global photography style only. This does not change the hardware valve selected on a product page. Harmony uses its approved pass-through photographs for either setting.</p>
-        </div>
-      ) : null}
+      <div className="developer-imagery-preview">
+        <label htmlFor="developer-photo-source">Photography source (display only)</label>
+        <select
+          id="developer-photo-source"
+          value={photoSource}
+          onChange={(event) => {
+            const next = event.target.value;
+            onPhotoSourceChange(next === "legacy-original" ? "legacy-original" : next === "product-photo" && AVAILABLE_PHOTO_SOURCES["product-photo"] ? "product-photo" : "ai-placeholder");
+          }}
+        >
+          <option value="ai-placeholder">Current AI placeholder photography</option>
+          <option value="legacy-original">Original / legacy catalog photography</option>
+          <option value="product-photo" disabled={!AVAILABLE_PHOTO_SOURCES["product-photo"]}>
+            Actual product photography (not supplied yet)
+          </option>
+        </select>
+        <p>Display preference only. Product configuration, fitting selections, quotes, pricing, inventory, carts, and orders are unaffected.</p>
+      </div>
 
       <label htmlFor="developer-theme">
         Color theme
@@ -172,6 +181,19 @@ export function DeveloperControls({
           </option>
         ))}
       </select>
+
+      <label className="developer-background-logo-toggle" htmlFor="developer-background-logo-visible">
+        <input
+          id="developer-background-logo-visible"
+          type="checkbox"
+          checked={backgroundLogoVisible}
+          onChange={(event) => onBackgroundLogoChange(event.target.checked)}
+        />
+        Background logo visible
+      </label>
+      <p className="developer-background-logo-note">
+        A fixed, decorative watermark on public pages. Hidden on Operations and Account pages.
+      </p>
 
       <label htmlFor="developer-logo">
         Logo artwork

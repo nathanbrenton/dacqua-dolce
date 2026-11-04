@@ -1,0 +1,710 @@
+{
+  "schema_version": 1,
+  "sets": {
+    "ai-placeholder": {
+      "active": true,
+      "entries": {
+        "essence:1.5:neoprene": [
+          {
+            "alt": "Essence — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/essence/essence_performance_1-5_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/essence/thumbnails/essence_performance_1-5_neoprene.webp"
+            }
+          }
+        ],
+        "essence:1.5:stainless": [
+          {
+            "alt": "Essence — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/essence/essence_performance_1-5_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/essence/thumbnails/essence_performance_1-5_chrome.webp"
+            }
+          }
+        ],
+        "essence:2.0:neoprene": [
+          {
+            "alt": "Essence — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/essence/essence_performance_2-0_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/essence/thumbnails/essence_performance_2-0_neoprene.webp"
+            }
+          }
+        ],
+        "essence:2.0:stainless": [
+          {
+            "alt": "Essence — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/essence/essence_performance_2-0_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/essence/thumbnails/essence_performance_2-0_chrome.webp"
+            }
+          }
+        ],
+        "harmony:1.5:neoprene:pass-through:0": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene.webp"
+            }
+          }
+        ],
+        "harmony:1.5:neoprene:pass-through:1": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene_pureline-1-solo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene_pureline-1-solo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_back.webp"
+            }
+          }
+        ],
+        "harmony:1.5:neoprene:pass-through:2": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene_pureline-2-duo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene_pureline-2-duo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_back.webp"
+            }
+          }
+        ],
+        "harmony:1.5:neoprene:pass-through:3": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene_pureline-3-trio.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene_pureline-3-trio.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_back.webp"
+            }
+          }
+        ],
+        "harmony:1.5:stainless:pass-through:0": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome.webp"
+            }
+          }
+        ],
+        "harmony:1.5:stainless:pass-through:1": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome_pureline-1-solo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome_pureline-1-solo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_back.webp"
+            }
+          }
+        ],
+        "harmony:1.5:stainless:pass-through:2": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome_pureline-2-duo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome_pureline-2-duo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_back.webp"
+            }
+          }
+        ],
+        "harmony:1.5:stainless:pass-through:3": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome_pureline-3-trio.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome_pureline-3-trio.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_1-5_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_1-5_chrome.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_back.webp"
+            }
+          }
+        ],
+        "harmony:2.0:neoprene:pass-through:0": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene.webp"
+            }
+          }
+        ],
+        "harmony:2.0:neoprene:pass-through:1": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene_pureline-1-solo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene_pureline-1-solo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_back.webp"
+            }
+          }
+        ],
+        "harmony:2.0:neoprene:pass-through:2": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene_pureline-2-duo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene_pureline-2-duo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_back.webp"
+            }
+          }
+        ],
+        "harmony:2.0:neoprene:pass-through:3": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene_pureline-3-trio.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene_pureline-3-trio.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_back.webp"
+            }
+          }
+        ],
+        "harmony:2.0:stainless:pass-through:0": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome.webp"
+            }
+          }
+        ],
+        "harmony:2.0:stainless:pass-through:1": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome_pureline-1-solo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome_pureline-1-solo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-1-solo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-1-solo_back.webp"
+            }
+          }
+        ],
+        "harmony:2.0:stainless:pass-through:2": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome_pureline-2-duo.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome_pureline-2-duo.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-2-duo_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-2-duo_back.webp"
+            }
+          }
+        ],
+        "harmony:2.0:stainless:pass-through:3": [
+          {
+            "alt": "Harmony — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome_pureline-3-trio.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome_pureline-3-trio.webp"
+            }
+          },
+          {
+            "alt": "Harmony — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pass-through_2-0_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pass-through_2-0_chrome.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · front",
+            "id": "pureline",
+            "label": "Pureline assembly · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_front.webp"
+            }
+          },
+          {
+            "alt": "Harmony — pureline assembly · rear",
+            "id": "pureline-back",
+            "label": "Pureline assembly · rear",
+            "media": {
+              "src": "/products/media/ai-placeholders/harmony/harmony_pureline-3-trio_back.webp",
+              "thumbnail": "/products/media/ai-placeholders/harmony/thumbnails/harmony_pureline-3-trio_back.webp"
+            }
+          }
+        ],
+        "refine:1.5:neoprene": [
+          {
+            "alt": "Refine — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_1-5_neoprene_with-brine-tank.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_1-5_neoprene_with-brine-tank.webp"
+            }
+          },
+          {
+            "alt": "Refine — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_1-5_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_1-5_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · front",
+            "id": "brine",
+            "label": "Brine tank · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_front.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · side",
+            "id": "brine-side",
+            "label": "Brine tank · side",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_side.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_side.webp"
+            }
+          }
+        ],
+        "refine:1.5:stainless": [
+          {
+            "alt": "Refine — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_1-5_chrome_with-brine-tank.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_1-5_chrome_with-brine-tank.webp"
+            }
+          },
+          {
+            "alt": "Refine — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_1-5_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_1-5_chrome.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · front",
+            "id": "brine",
+            "label": "Brine tank · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_front.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · side",
+            "id": "brine-side",
+            "label": "Brine tank · side",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_side.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_side.webp"
+            }
+          }
+        ],
+        "refine:2.0:neoprene": [
+          {
+            "alt": "Refine — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_2-0_neoprene_with-brine-tank.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_2-0_neoprene_with-brine-tank.webp"
+            }
+          },
+          {
+            "alt": "Refine — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_2-0_neoprene.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_2-0_neoprene.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · front",
+            "id": "brine",
+            "label": "Brine tank · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_front.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · side",
+            "id": "brine-side",
+            "label": "Brine tank · side",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_side.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_side.webp"
+            }
+          }
+        ],
+        "refine:2.0:stainless": [
+          {
+            "alt": "Refine — complete system",
+            "id": "system",
+            "label": "Complete system",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_2-0_chrome_with-brine-tank.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_2-0_chrome_with-brine-tank.webp"
+            }
+          },
+          {
+            "alt": "Refine — treatment tank",
+            "id": "tank",
+            "label": "Treatment tank",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_performance_2-0_chrome.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_performance_2-0_chrome.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · front",
+            "id": "brine",
+            "label": "Brine tank · front",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_front.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_front.webp"
+            }
+          },
+          {
+            "alt": "Refine — brine tank · side",
+            "id": "brine-side",
+            "label": "Brine tank · side",
+            "media": {
+              "src": "/products/media/ai-placeholders/refine/refine_brine-tank_side.webp",
+              "thumbnail": "/products/media/ai-placeholders/refine/thumbnails/refine_brine-tank_side.webp"
+            }
+          }
+        ]
+      }
+    },
+    "product-photo": {
+      "active": false,
+      "entries": {}
+    }
+  }
+}
