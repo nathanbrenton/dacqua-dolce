@@ -127,11 +127,11 @@ const OPERATIONS_WORKSPACES: ReadonlyArray<{
   description: string;
 }> = [
   { id: "overview", label: "Overview", description: "Priorities & readiness" },
+  { id: "communications", label: "Inbox", description: "Inbox & delivery" },
   { id: "requests", label: "Requests", description: "Quotes & triage" },
   { id: "orders", label: "Orders", description: "Fulfillment" },
   { id: "catalog", label: "Catalog", description: "Pricing & inventory" },
   { id: "customers", label: "Customers", description: "Accounts & equipment" },
-  { id: "communications", label: "Communications", description: "Inbox & delivery" },
   { id: "installers", label: "Installers", description: "Internal research" },
   { id: "staff", label: "Staff", description: "User access & roles" },
   { id: "audit", label: "Audit", description: "Activity & troubleshooting" },
