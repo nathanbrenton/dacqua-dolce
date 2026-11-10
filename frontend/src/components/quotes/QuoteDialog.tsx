@@ -187,13 +187,13 @@ export function QuoteDialog({
     ? productName
     : inquiryContext === "recommendation"
       ? "Help me choose a system."
-      : "Further improve your water";
+      : "How can we help with your water?";
 
   const messageHelper = isProductInquiry
-    ? "Water concerns, water-use patterns, source water if known, and installation constraints can help us prepare a more useful quote."
+    ? "Anything about your water, how you use it and where the system will go helps us prepare a more useful quote."
     : inquiryContext === "recommendation"
-      ? "Water priorities, source water if known, water-use patterns, and installation context can help us narrow the options."
-      : "Water priorities, water-use patterns, source water if known, and installation context can help us find a useful starting point.";
+      ? "Tell us what matters most about your water, how you use it and where the system will go, and we'll narrow the options."
+      : "Tell us what matters most about your water, how you use it and where a system would go, and we'll find a starting point.";
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -359,16 +359,16 @@ export function QuoteDialog({
           {installationFitting !== null && isProductInquiry ? (
             <p className="quote-dialog-context">
               Requested connection fitting: {installationFitting.size} — {shortClackFittingLabel(installationFitting)}.
-              Final cost and availability pending confirmation.
+              We&apos;ll confirm its cost and availability with your quote.
             </p>
           ) : null}
           {isProductInquiry ? (
             <p className="quote-dialog-context">
-              Your request will stay associated with this system.
+              We&apos;ll prepare your quote for this system.
             </p>
           ) : inquiryContext === "recommendation" ? (
             <p className="quote-dialog-context">
-              No system is selected yet. We’ll start with your water priorities and installation context.
+              No system selected yet. We’ll start from what matters to you and where a system would go.
             </p>
           ) : null}
         </div>
@@ -395,7 +395,8 @@ export function QuoteDialog({
           </strong>
 
           <p>
-            Your reference is{" "}
+            Thank you. Our team will review it and reply by email. Your
+            reference is{" "}
             <code>{successId}</code>.
           </p>
 
@@ -483,22 +484,20 @@ export function QuoteDialog({
           </label>
 
           <aside className="quote-purchase-boundary">
-            <strong>Equipment-only launch</strong>
+            <strong>Equipment only</strong>
             <p>
-              Installation is arranged separately from D&apos;Acqua Dolce&apos;s
-              equipment sale. We ask about installation constraints only to help
-              confirm product fit; this request does not include installation
-              services.
+              Installation is arranged separately and is not part of this
+              request. We ask about your installation only to confirm the
+              system will fit.
             </p>
           </aside>
 
           <fieldset className="quote-qualification">
-            <legend>Property basics</legend>
+            <legend>About your home</legend>
 
             <p className="field-helper">
-              Requests that require assisted sales are reviewed by a D'Acqua
-              Dolce employee before purchase. These basics help make that
-              conversation useful.
+              Our team reviews requests like this one before purchase. A few
+              basics help us give you a useful answer.
             </p>
 
             <label>
@@ -567,9 +566,8 @@ export function QuoteDialog({
 
             {sourceWater === "well" ? (
               <p className="field-helper">
-                Well-water recommendations require employee review and
-                third-party laboratory water-quality results before a final
-                system recommendation.
+                For well water, we need third-party laboratory results and a
+                review by our team before we make a final recommendation.
               </p>
             ) : null}
           </fieldset>

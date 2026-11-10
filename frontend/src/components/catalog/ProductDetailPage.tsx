@@ -22,7 +22,8 @@ import { SupportRequestForm } from "../support/SupportRequestForm";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
 import { PreviewProductImage } from "./PreviewProductImage";
 import { ApprovedMediaImage } from "./ApprovedMediaImage";
-import { resolveApprovedGallery, type TankFinish, type PhotoSource } from "./productMediaRegistry";
+import { approvedLandingPhoto, resolveApprovedGallery, type TankFinish, type PhotoSource } from "./productMediaRegistry";
+import { ProductImageLightbox } from "./ProductImageLightbox";
 import { clackConceptImageForOrderNo } from "./clackConceptImage";
 import { HarmonyCartridgeConfigurator } from "./HarmonyCartridgeConfigurator";
 import { PURELINE_HOUSINGS, harmonyHousingCountForSku, type PurelineHousingPosition, type PurelineHousingChoice, type PurelineHousingSelections } from "./harmonyCartridges";
@@ -102,6 +103,7 @@ export function ProductDetailPage({
   const [selectedImageIndex, setSelectedImageIndex] =
     useState(0);
   const [selectedDemoImageId, setSelectedDemoImageId] = useState<string | null>(null);
+  const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
   // PT53 presentation selectors are independent of the commercial SKU and each other.
   const [tankFinish, setTankFinish] = useState<TankFinish>("stainless");
   const [cartridgeSelections, setCartridgeSelections] = useState<PurelineHousingSelections>({});
@@ -270,6 +272,47 @@ export function ProductDetailPage({
   ) ?? [];
   const approvedActive = approvedGallery.find((photo) => photo.id === selectedDemoImageId)
     ?? approvedGallery[0] ?? null;
+  const displaySku = selectedVariant?.sku ?? product.sku;
+  // Public specifications plus variant values. A row that only repeats the
+  // SKU is dropped; the SKU is shown once, as the last reference row.
+  const specificationRows = (() => {
+    const variantValues = selectedVariant?.option_values ?? {};
+    const reservedKeys = new Set(["image_path", "image_alt"]);
+    const baseKeys = new Set(product.specifications.map((item) => item.spec_key));
+    const merged = product.specifications.map((specification) => ({
+      ...specification,
+      value_text: variantValues[specification.spec_key] ?? specification.value_text,
+      unit: variantValues[specification.spec_key] !== undefined ? null : specification.unit,
+    }));
+    for (const [key, value] of Object.entries(variantValues)) {
+      if (reservedKeys.has(key) || baseKeys.has(key)) {
+        continue;
+      }
+      merged.push({
+        spec_key: key,
+        label: humanizeOptionKey(key),
+        value_text: value,
+        unit: null,
+      });
+    }
+    return merged.filter((specification) =>
+      specification.value_text.trim().toUpperCase() !== displaySku.toUpperCase());
+  })();
+  const mainImageOriginal = selectedImage ?? illustrativeImage;
+  // Only offer the enlarged view when there is a photograph to enlarge.
+  const mainImageAvailable = approvedActive !== null
+    || mainImageOriginal !== null
+    || approvedLandingPhoto(product.sku, photoSource) !== null;
+  const mainImage = approvedActive !== null ? (
+    <ApprovedMediaImage photo={approvedActive} loading="eager" />
+  ) : (
+    <PreviewProductImage
+      sku={product.sku}
+      original={mainImageOriginal}
+      photoSource={photoSource}
+      loading="eager"
+    />
+  );
   const activeHousingSelections = PURELINE_HOUSINGS.slice(0, harmonyHousingCountForSku(product.sku))
     .filter((housing) => Boolean(cartridgeSelections[housing]?.category));
   const requestedCustomizations = [
@@ -456,6 +499,13 @@ export function ProductDetailPage({
         }}
       />
 
+      <ProductImageLightbox
+        open={imageLightboxOpen && mainImageAvailable}
+        onClose={() => setImageLightboxOpen(false)}
+      >
+        {mainImage}
+      </ProductImageLightbox>
+
       <main
         id="main-content"
         tabIndex={-1}
@@ -473,18 +523,25 @@ export function ProductDetailPage({
 
         <section className="product-detail">
           <div className="product-detail-gallery">
-            <div className="product-detail-main-image">
-              {approvedActive !== null ? (
-                <ApprovedMediaImage photo={approvedActive} loading="eager" />
-              ) : (
-                <PreviewProductImage
-                  sku={product.sku}
-                  original={selectedImage ?? illustrativeImage}
-                  photoSource={photoSource}
-                  loading="eager"
-                />
-              )}
-            </div>
+            {mainImageAvailable ? (
+              <button
+                type="button"
+                className="product-detail-main-image is-zoomable"
+                aria-label="View larger image"
+                aria-haspopup="dialog"
+                onClick={() => setImageLightboxOpen(true)}
+              >
+                {mainImage}
+                <span className="product-detail-zoom-hint" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20">
+                    <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+                    <path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                  </svg>
+                </span>
+              </button>
+            ) : (
+              <div className="product-detail-main-image">{mainImage}</div>
+            )}
             {approvedGallery.length > 0 ? (
               <div className="product-thumbnails product-preview-thumbnails" aria-label="Approved product photography gallery">
                 {approvedGallery.map((photo) => (
@@ -539,6 +596,18 @@ export function ProductDetailPage({
                 </p>
               ) : null}
             </div>
+
+            {presentation.promise !== null ? (
+              <p className="product-detail-promise">{presentation.promise}</p>
+            ) : null}
+
+            {presentation.highlights.length > 0 ? (
+              <ul className="product-detail-highlights" aria-label="At a glance">
+                {presentation.highlights.map((highlight) => (
+                  <li key={highlight}>{highlight}</li>
+                ))}
+              </ul>
+            ) : null}
 
             <section
               className="product-detail-overview"
@@ -671,17 +740,17 @@ export function ProductDetailPage({
                       </p>
                     ) : null}
                     <p className="product-ownership-guidance">
-                      Fittings are required for installation. If you are unsure which size or type
-                      is needed, our team can help confirm the correct hardware, compatibility,
-                      availability, and final cost. Installation labor is not included.
+                      Every installation needs connection fittings. Not sure which size or
+                      type you need? Leave this blank and we&apos;ll confirm the right
+                      hardware, availability and cost with your quote.
                     </p>
                   </div>
                 ) : null}
 
                 {isHarmonyTwoCf ? (
                   <p className="product-ownership-guidance" role="status">
-                    2.0 cf Harmony is available for inquiry. A dedicated catalog record and
-                    confirmed price are pending; the 1.5 cf price does not apply.
+                    The 2.0 cubic foot Harmony is available by quote. We confirm its price
+                    with your quote; the 1.5 cubic foot price does not apply.
                   </p>
                 ) : null}
 
@@ -724,75 +793,6 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
-            {presentation.education !== null ? (
-              <aside
-                className="product-technology-note"
-                aria-label="About CLEAR Technology"
-              >
-                <p className="eyebrow">
-                  CLEAR Technology
-                </p>
-                <p className="product-technology-explanation">
-                  {presentation.education}
-                </p>
-
-                {presentation.technologyFacts.length > 0 ? (
-                  <div className="product-technology-terms">
-                    <p className="product-technology-terms-title">
-                      CLEAR terminology
-                    </p>
-                    <dl>
-                      {presentation.technologyFacts.map((fact) => (
-                        <div key={fact.label}>
-                          <dt>{fact.label}</dt>
-                          <dd>{fact.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </div>
-                ) : null}
-
-                {presentation.technologyGuidance !== null ? (
-                  <p className="product-technology-guidance">
-                    {presentation.technologyGuidance}
-                  </p>
-                ) : null}
-              </aside>
-            ) : null}
-
-
-            {presentation.installationFacts.length > 0 ? (
-              <section
-                className="product-installation"
-                aria-labelledby="product-installation-heading"
-              >
-                <p className="eyebrow">
-                  Installation &amp; ownership
-                </p>
-                <h2
-                  id="product-installation-heading"
-                  className="product-detail-section-title"
-                >
-                  Designed for straightforward ownership.
-                </h2>
-
-                <dl className="product-facts">
-                  {presentation.installationFacts.map((fact) => (
-                    <div key={fact.label}>
-                      <dt>{fact.label}</dt>
-                      <dd>{fact.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-
-                {presentation.ownershipGuidance !== null ? (
-                  <p className="product-ownership-guidance">
-                    {presentation.ownershipGuidance}
-                  </p>
-                ) : null}
-              </section>
-            ) : null}
-
             {product.variants.length > 0 ? (
               <section
                 className="product-variant-selector"
@@ -826,15 +826,15 @@ export function ProductDetailPage({
 
             {availability.lifecycle_status === "soon_discontinued" ? (
               <aside className="product-availability product-lifecycle-notice">
-                <p className="eyebrow">Product lifecycle</p>
+                <p className="eyebrow">Availability</p>
                 <h2 className="product-detail-section-title">Soon to be discontinued</h2>
                 <p>Availability may be limited as this system approaches end of sale.</p>
               </aside>
             ) : availability.lifecycle_status === "discontinued" ? (
               <aside className="product-availability product-lifecycle-notice">
-                <p className="eyebrow">Product lifecycle</p>
+                <p className="eyebrow">Availability</p>
                 <h2 className="product-detail-section-title">Discontinued</h2>
-                <p>This system is no longer offered for normal purchase or formal quoting.</p>
+                <p>This system is no longer offered.</p>
               </aside>
             ) : null}
 
@@ -861,7 +861,7 @@ export function ProductDetailPage({
                   </p>
                 ) : (
                   <p>
-                    Timing will be updated when a reliable fulfillment estimate is available.
+                    We&apos;ll update the timing here as soon as we have a reliable estimate.
                   </p>
                 )}
 
@@ -913,8 +913,8 @@ export function ProductDetailPage({
                       </button>
                     </div>
                     <small>
-                      Availability notices are one-time transactional messages,
-                      sent only after staff confirms the system is available.
+                      We&apos;ll email you once, after we&apos;ve confirmed this system
+                      is available again.
                     </small>
                     {notificationMessage !== null ? (
                       <p role="status">{notificationMessage}</p>
@@ -940,18 +940,15 @@ export function ProductDetailPage({
                 </strong>
               ) : (
                 <p className="detail-policy">
-                  {pricing.action_label}
+                  {pricing.action === "REQUEST_QUOTE"
+                    ? "Priced by quote"
+                    : pricing.action_label}
                 </p>
               )}
 
               {tankFinish === "neoprene" ? (
-                <p className="product-ownership-guidance">The displayed base price excludes the optional neoprene jacket; additional cost is confirmed in your quote.</p>
+                <p className="product-ownership-guidance">The price shown does not include the optional neoprene jacket. We confirm the total in your quote.</p>
               ) : null}
-              <p className="detail-purchase-boundary">
-                Equipment only at launch. Installation is arranged separately from
-                D&apos;Acqua Dolce&apos;s equipment sale and is not included in this
-                purchase or quote request.
-              </p>
 
               {commerceError !== null ? (
                 <p
@@ -984,7 +981,88 @@ export function ProductDetailPage({
                       ? "Request configuration quote"
                       : pricing.action_label}
               </button>
+
+              {pricing.action === "REQUEST_QUOTE" || isHarmonyTwoCf ? (
+                <p className="detail-reassurance">
+                  A quote request is not an order. We confirm fit, availability and
+                  your final price with you before anything is purchased.
+                </p>
+              ) : null}
+
+              <InstallationServicesNotice />
             </div>
+
+            {presentation.education !== null ? (
+              <aside
+                className="product-technology-note"
+                aria-label="About CLEAR Technology"
+              >
+                <p className="eyebrow">
+                  CLEAR Technology
+                </p>
+                <h2 className="product-detail-section-title">
+                  How CLEAR works
+                </h2>
+                <p className="product-technology-explanation">
+                  {presentation.education}
+                </p>
+
+                {presentation.technologyFacts.length > 0 ? (
+                  <div className="product-technology-terms">
+                    <p className="product-technology-terms-title">
+                      CLEAR terminology
+                    </p>
+                    <dl>
+                      {presentation.technologyFacts.map((fact) => (
+                        <div key={fact.label}>
+                          <dt>{fact.label}</dt>
+                          <dd>{fact.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                ) : null}
+
+                {presentation.technologyGuidance !== null ? (
+                  <p className="product-technology-guidance">
+                    {presentation.technologyGuidance}
+                  </p>
+                ) : null}
+              </aside>
+            ) : null}
+
+
+            {presentation.installationFacts.length > 0 ? (
+              <section
+                className="product-installation"
+                aria-labelledby="product-installation-heading"
+              >
+                <p className="eyebrow">
+                  Care &amp; maintenance
+                </p>
+                <h2
+                  id="product-installation-heading"
+                  className="product-detail-section-title"
+                >
+                  Designed for straightforward ownership.
+                </h2>
+
+                <dl className="product-facts">
+                  {presentation.installationFacts.map((fact) => (
+                    <div key={fact.label}>
+                      <dt>{fact.label}</dt>
+                      <dd>{fact.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {presentation.ownershipGuidance !== null ? (
+                  <p className="product-ownership-guidance">
+                    {presentation.ownershipGuidance}
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
 
             {product.replacements.length > 0 ? (
               <section
@@ -999,8 +1077,7 @@ export function ProductDetailPage({
                   Recommended replacement
                 </h2>
                 <p className="product-options-intro">
-                  These current products are shown only when staff has explicitly
-                  approved the replacement relationship for public presentation.
+                  Our recommended current alternative to this system.
                 </p>
 
                 <div className="product-option-list">
@@ -1047,7 +1124,7 @@ export function ProductDetailPage({
                   Compatible additions
                 </h2>
                 <p className="product-options-intro">
-                  These additions are shown only when their relationship to this system has been explicitly approved for public presentation.
+                  Additions we offer for this system.
                 </p>
 
                 <div className="product-option-list">
@@ -1088,7 +1165,7 @@ export function ProductDetailPage({
                 className="product-manufacturer-claims"
                 aria-labelledby="product-manufacturer-claims-heading"
               >
-                <p className="eyebrow">Manufacturer provenance</p>
+                <p className="eyebrow">From the manufacturer</p>
                 <h2
                   id="product-manufacturer-claims-heading"
                   className="product-detail-section-title"
@@ -1096,8 +1173,8 @@ export function ProductDetailPage({
                   Manufacturer-stated claims
                 </h2>
                 <p className="product-claims-intro">
-                  These statements are presented as manufacturer-stated information,
-                  with the recorded source shown alongside each claim.
+                  These statements come from the manufacturer. The source is shown
+                  with each one.
                 </p>
                 <div className="product-claim-list">
                   {product.manufacturer_claims.map((claim) => (
@@ -1111,7 +1188,7 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
-            {product.specifications.length > 0 || selectedVariant !== null ? (
+            {specificationRows.length > 0 ? (
               <section
                 className="product-specifications"
                 aria-labelledby="product-specifications-heading"
@@ -1125,58 +1202,24 @@ export function ProductDetailPage({
                 </h2>
 
                 <dl className="product-facts">
-                  {(() => {
-                    const variantValues = selectedVariant?.option_values ?? {};
-                    const reservedKeys = new Set(["image_path", "image_alt"]);
-                    const baseKeys = new Set(product.specifications.map((item) => item.spec_key));
-                    const merged = product.specifications.map((specification) => ({
-                      ...specification,
-                      value_text: variantValues[specification.spec_key] ?? specification.value_text,
-                      unit: variantValues[specification.spec_key] !== undefined ? null : specification.unit,
-                    }));
-                    for (const [key, value] of Object.entries(variantValues)) {
-                      if (reservedKeys.has(key) || baseKeys.has(key)) {
-                        continue;
-                      }
-                      merged.push({
-                        spec_key: key,
-                        label: humanizeOptionKey(key),
-                        value_text: value,
-                        unit: null,
-                      });
-                    }
-                    return merged.map((specification) => (
-                      <div key={specification.spec_key}>
-                        <dt>{specification.label}</dt>
-                        <dd>
-                          {specification.value_text}
-                          {specification.unit !== null ? ` ${specification.unit}` : ""}
-                        </dd>
-                      </div>
-                    ));
-                  })()}
+                  {specificationRows.map((specification) => (
+                    <div key={specification.spec_key}>
+                      <dt>{specification.label}</dt>
+                      <dd>
+                        {specification.value_text}
+                        {specification.unit !== null ? ` ${specification.unit}` : ""}
+                      </dd>
+                    </div>
+                  ))}
+                  <div>
+                    <dt>SKU</dt>
+                    <dd>{displaySku}</dd>
+                  </div>
                 </dl>
               </section>
-            ) : null}
-
-            <section
-              className="product-reference"
-              aria-labelledby="product-reference-heading"
-            >
-              <p className="eyebrow">Reference</p>
-              <h2
-                id="product-reference-heading"
-                className="product-detail-section-title"
-              >
-                Product record
-              </h2>
-              <dl className="product-facts">
-                <div>
-                  <dt>SKU</dt>
-                  <dd>{selectedVariant?.sku ?? product.sku}</dd>
-                </div>
-              </dl>
-            </section>
+            ) : (
+              <p className="product-reference-line">SKU {displaySku}</p>
+            )}
 
             {product.documents.length > 0 ? (
               <section className="product-documents">
@@ -1204,8 +1247,6 @@ export function ProductDetailPage({
               </section>
             ) : null}
 
-            <InstallationServicesNotice />
-
             <section
               className="product-support"
               aria-labelledby="product-support-heading"
@@ -1218,11 +1259,11 @@ export function ProductDetailPage({
                 Support for your system.
               </h2>
               <p>
-                Warranty coverage applies to residential use only. Product-specific
-                warranty documents are shown only when the recorded manufacturer document
-                has passed the existing verification boundary. D&apos;Acqua Dolce can help
-                route warranty and product-support questions without adding or changing
-                manufacturer warranty terms.
+                Manufacturer warranty coverage applies to residential use only. When
+                the manufacturer&apos;s warranty document is available for this system,
+                you&apos;ll find it on this page. Have a warranty or product question?
+                Send it to us and we&apos;ll help; the manufacturer&apos;s warranty
+                terms apply as written.
               </p>
               <details className="product-support-request">
                 <summary>Start a warranty or support request</summary>

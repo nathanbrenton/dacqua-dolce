@@ -994,7 +994,8 @@ textarea:focus-visible {
   align-items: start;
 }
 
-/* Scroll large product images with the page, not beside a pinned details column. */
+/* Base layout scrolls with the page; desktop pinning is defined in the
+ * "Product detail — pinned gallery" section at the end of this file. */
 .product-detail-gallery {
   min-width: 0;
 }
@@ -7318,4 +7319,150 @@ html[data-appearance="dark"] .site-background-logo {
     background-size: min(76vw, 700px) auto;
     opacity: 0.07;
   }
+}
+
+/* Product detail — pinned gallery and enlargeable main image.
+ *
+ * The main image opens the enlarged viewer on every viewport. On desktop
+ * windows with enough height, the gallery stays in view while the product
+ * details scroll, and the main image shrinks so its thumbnails and image
+ * notice always fit inside the window. Narrow or short windows (including
+ * phones in either orientation) keep the original scrolling layout.
+ */
+button.product-detail-main-image {
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  cursor: zoom-in;
+}
+
+/* Fill the frame from its edges so the photograph is always scaled to fit
+ * whatever height the frame ends up with, and is never cropped. */
+.product-detail-main-image > :is(picture, img) {
+  position: absolute;
+  inset: 0;
+}
+
+.product-detail-zoom-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--ink);
+  background: rgb(255 255 255 / 86%);
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+@media (min-width: 901px) and (min-height: 600px) {
+  /* Tighter gap under the back link so more of the window goes to the image. */
+  .text-button:has(+ .product-detail) {
+    margin-bottom: clamp(12px, 2.5vh, 28px);
+  }
+
+  .product-detail-gallery {
+    /* Space above the gallery on first load: shell padding + back link + gap. */
+    --gallery-space-above: calc(
+      clamp(28px, 4vw, 58px) + 44px + clamp(12px, 2.5vh, 28px)
+    );
+    --gallery-space-below: clamp(14px, 2.5vh, 28px);
+    --gallery-space: calc(
+      var(--gallery-space-above) + var(--gallery-space-below)
+    );
+    position: sticky;
+    /* Once pinned, the gallery settles vertically centred in the window. */
+    top: calc(var(--gallery-space) / 2);
+    display: flex;
+    flex-direction: column;
+    /* Sized so the whole gallery is visible before any scrolling. */
+    max-height: calc(100vh - var(--gallery-space));
+    max-height: calc(100dvh - var(--gallery-space));
+  }
+
+  .product-detail-gallery > * {
+    flex: 0 0 auto;
+  }
+
+  /* Only the main image gives up height; it keeps 4:5 when there is room. */
+  .product-detail-gallery > .product-detail-main-image {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .product-detail-gallery .product-thumbnails {
+    grid-template-columns: repeat(auto-fill, clamp(76px, 11vh, 104px));
+  }
+
+  .product-detail-gallery .product-content-notice {
+    margin-block: 10px 0;
+    padding: 10px 14px;
+  }
+
+  .product-detail-gallery .product-content-notice p {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .product-detail-gallery .product-image-note {
+    margin-top: 8px;
+  }
+}
+
+/* Product detail — promise, at-a-glance points, and purchase reassurance. */
+.product-detail-promise {
+  max-width: 620px;
+  margin: 22px 0 0;
+  color: var(--ink);
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.product-detail-highlights {
+  display: grid;
+  gap: 10px;
+  max-width: 620px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-detail-highlights li {
+  position: relative;
+  padding-left: 22px;
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+
+.product-detail-highlights li::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: 0;
+  width: 10px;
+  height: 2px;
+  background: var(--control-highlight);
+}
+
+.detail-reassurance {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--type-small);
+  line-height: 1.55;
+}
+
+.detail-commerce .catalog-purchase-boundary {
+  margin: 0;
+}
+
+.product-reference-line {
+  margin: 48px 0 0;
+  padding-top: 20px;
+  color: var(--ink-muted);
+  font-size: var(--type-small);
+  border-top: 1px solid var(--hairline);
 }

@@ -131,7 +131,8 @@ export function CatalogSection({
         </h2>
 
         <p>
-          Explore our water treatment systems and pricing below.
+          Each system has a clear job. Not sure which one fits your home?
+          Recommend a System, just below, is the place to start.
         </p>
       </div>
 

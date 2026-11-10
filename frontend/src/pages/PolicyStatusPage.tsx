@@ -95,7 +95,7 @@ export function PolicyStatusPage({
       <p className="eyebrow">
         {allApproved
           ? "Published policies"
-          : "Pre-launch policy status"}
+          : "Policies"}
       </p>
 
       <h1>
@@ -107,7 +107,7 @@ export function PolicyStatusPage({
       {error !== null ? (
         <p role="alert">{error}</p>
       ) : loading ? (
-        <p role="status">Loading policy status…</p>
+        <p role="status">Loading policies…</p>
       ) : (
         <div className="policy-version-list">
           {policies.map((policy) => (
@@ -132,13 +132,11 @@ export function PolicyStatusPage({
               ) : (
                 <>
                   <p className="policy-status-lead">
-                    No approved version is currently published.
+                    This policy is being finalized and is not yet published.
                   </p>
 
                   <p>
-                    Final language requires explicit business and
-                    appropriate legal approval before this policy is
-                    published or attached to a customer quote.
+                    It will appear here once it has been approved.
                   </p>
                 </>
               )}
@@ -149,9 +147,8 @@ export function PolicyStatusPage({
 
       {!allApproved && !loading && error === null ? (
         <p className="policy-status-note">
-          Draft policy text is never published through this page.
-          Approved commercial versions are snapshotted onto formal
-          quotes before customer approval.
+          The terms that apply to your purchase are included with your
+          formal quote, for you to review before you approve it.
         </p>
       ) : null}
     </main>

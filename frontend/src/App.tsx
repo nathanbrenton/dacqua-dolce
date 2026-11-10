@@ -1041,11 +1041,11 @@ export function App() {
             </h2>
 
             <p>
-              Customer accounts provide
-              the foundation for service,
-              maintenance, documents,
-              warranty, and equipment
-              lifecycle features.
+              Warranty and product questions
+              go straight to our team, and
+              the conversation stays in one
+              place from the first message
+              to the last.
             </p>
 
             <button

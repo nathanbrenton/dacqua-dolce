@@ -8,11 +8,11 @@ export function InstallationServicesNotice() {
       className="catalog-purchase-boundary"
       aria-label="Installation and services"
     >
-      <strong>Installation &amp; Services</strong>
+      <strong>Equipment only</strong>
       <p>
-        Equipment is currently offered without installation. Installation services
-        and installer referrals may be available in the future. Please contact us
-        to discuss your needs.
+        Installation is arranged separately and is not included in this purchase
+        or quote. Installation services and installer referrals may be available
+        in the future; contact us to talk through your plans.
       </p>
     </aside>
   );

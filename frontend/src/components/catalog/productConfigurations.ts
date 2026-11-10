@@ -8,7 +8,12 @@ export type Configuration = {
 export type ConfigurationFamily = {
   name: string;
   defaultSku: string;
+  /** Catalog-card summary. */
   summary: string;
+  /** One-line promise shown under the family name on the product page. */
+  promise: string;
+  /** Short "at a glance" points; every point restates an approved catalog fact. */
+  highlights: readonly string[];
   configurations: readonly Configuration[];
 };
 
@@ -16,7 +21,13 @@ export const CONFIGURATION_FAMILIES: readonly ConfigurationFamily[] = [
   {
     name: "Refine",
     defaultSku: "DD15SOFT",
-    summary: "Whole-home water softening designed to address hard-water minerals, spotting and scale buildup.",
+    summary: "Softened water for the whole home, designed to address the hardness minerals behind scale and spotting.",
+    promise: "Softened water for the whole home.",
+    highlights: [
+      "Conventional softening with a brine tank.",
+      "Two tank sizes: 1.5 and 2.0 cubic feet.",
+      "Simple upkeep: check the salt about once a month.",
+    ],
     configurations: [
       { sku: "DD15SOFT", label: "1.5 Cubic Feet", details: "Whole-home water softener" },
       { sku: "DD20SOFT", label: "2.0 Cubic Feet", details: "Whole-home water softener" },
@@ -25,7 +36,13 @@ export const CONFIGURATION_FAMILIES: readonly ConfigurationFamily[] = [
   {
     name: "Essence",
     defaultSku: "DD15CATRV",
-    summary: "Whole-home carbon filtration to help address unwanted tastes, odors and applicable compounds.",
+    summary: "Whole-home carbon filtration to help address unwanted tastes, odors and certain compounds.",
+    promise: "Whole-home carbon filtration for taste and odor.",
+    highlights: [
+      "Treats the water for the whole home, not a single tap.",
+      "Rinses its own carbon media automatically.",
+      "Two tank sizes: 1.5 and 2.0 cubic feet.",
+    ],
     configurations: [
       { sku: "DD15CATRV", label: "1.5 Cubic Feet", details: "Automatic-rinse carbon filtration" },
       { sku: "DD20CATRV", label: "2.0 Cubic Feet", details: "Automatic-rinse carbon filtration" },
@@ -34,7 +51,13 @@ export const CONFIGURATION_FAMILIES: readonly ConfigurationFamily[] = [
   {
     name: "Harmony",
     defaultSku: "DD15CLEARPL2",
-    summary: "Whole-home CLEAR water conditioning with Pureline options for taste, odor and applicable compounds.",
+    summary: "Salt-free whole-home conditioning with CLEAR Technology, plus optional Pureline cartridge filtration for taste and odor.",
+    promise: "Whole-home conditioning without brine-tank salt.",
+    highlights: [
+      "CLEAR conditions hardness minerals so they are less likely to adhere as scale.",
+      "Conditioning, not softening: calcium and magnesium stay in your water.",
+      "Add Pureline cartridge filtration with one, two or three housings.",
+    ],
     configurations: [
       { sku: "DD15CLEARPL1", label: "Pureline Solo", details: "One configurable Pureline cartridge housing" },
       { sku: "DD15CLEARPL2", label: "Pureline Duo", details: "Two configurable Pureline cartridge housings" },
@@ -45,7 +68,12 @@ export const CONFIGURATION_FAMILIES: readonly ConfigurationFamily[] = [
   {
     name: "Origin",
     defaultSku: "DD6ROAE",
-    summary: "Six stage point-of-use drinking water system includes an optional Alkaline Enhancer for increased mineral content.",
+    summary: "Point-of-use reverse osmosis for drinking and cooking water, with an optional Alkaline Enhancer for added mineral content.",
+    promise: "Reverse osmosis for the water you drink and cook with.",
+    highlights: [
+      "Point-of-use filtration, installed where you use the water.",
+      "Choose five stages, or six with an Alkaline Enhancer remineralization cartridge.",
+    ],
     configurations: [
       { sku: "DD5RO", label: "Five Stage", details: "Five-stage reverse osmosis" },
       { sku: "DD6ROAE", label: "Six Stage + Alkaline Enhancer", details: "Six-stage reverse osmosis with remineralization" },

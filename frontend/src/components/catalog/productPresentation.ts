@@ -12,6 +12,8 @@ export type ProductPresentation = {
   variantLabel: string | null;
   systemType: string | null;
   technologyLabel: string | null;
+  promise: string | null;
+  highlights: readonly string[];
   catalogSummary: string | null;
   education: string | null;
   technologyFacts: readonly ProductPresentationFact[];
@@ -32,25 +34,36 @@ export function getProductPresentation(product: CatalogProduct): ProductPresenta
       variantLabel: configuration.label,
       systemType: product.system_type,
       technologyLabel: isHarmony ? "Featuring CLEAR Technology" : null,
+      promise: family.promise,
+      // The pass-through valve has no cartridge housings, so the Pureline
+      // point is replaced rather than promised.
+      highlights: isPassThrough
+        ? [
+          ...family.highlights.slice(0, 2),
+          "This configuration has no cartridge filtration. Choose Pureline Solo, Duo or Trio to add it.",
+        ]
+        : family.highlights,
       catalogSummary: null,
+      // Wording follows docs/PT14_CLIENT_PRODUCT_DIRECTION.md: the approved
+      // CLEAR explanation and acronym, with no hardness-reduction claim.
       education: isHarmony
-        ? "CLEAR is D'Acqua Dolce's branded water-conditioning approach. It is not conventional water softening; calcium and magnesium are not removed as hardness minerals."
+        ? "CLEAR is D'Acqua Dolce's water-conditioning technology. It restructures hardness minerals into microscopic crystalline forms so they are less likely to adhere as scale. This is conditioning, not softening: calcium and magnesium stay in your water."
         : null,
       technologyFacts: isHarmony ? [
         { label: "CLEAR", value: "Crystal Lattice Enabling Anti-Scale Reduction" },
-        { label: "CAM", value: "Crystal Aggregate Matrix" },
-        { label: "CAM Induction", value: "Internal conditioning component" },
+        { label: "CAM", value: "Crystal Aggregate Matrix: the microscopic crystalline form associated with CLEAR conditioning" },
+        { label: "CAM Induction", value: "The conditioning component inside the tank" },
       ] : [],
       technologyGuidance: isHarmony
-        ? "CLEAR terminology describes the conditioning approach, not a verified reduction of measured hardness. Cartridge-specific filtration performance depends on the selected media and water conditions."
+        ? "CLEAR does not lower your water's measured hardness. What Pureline cartridges filter depends on the cartridges you select and your water."
         : null,
       installationFacts: isHarmony ? [
         { label: "Filtration", value: configuration.details },
       ] : [],
       ownershipGuidance: isHarmony
         ? (isPassThrough
-          ? "This configuration contains no Pureline cartridge filters and should not be described as providing cartridge-based taste, odor, or compound filtration."
-          : "Pureline cartridges are replaceable. Selection and replacement intervals depend on water quality, use, and cartridge specifications.")
+          ? "This configuration has no Pureline cartridges, so it does not filter for taste, odor or compounds."
+          : "Pureline cartridges are replaceable. Plan to replace them at least every six months where applicable; actual service life depends on your water, your usage and the cartridge.")
         : null,
     };
   }
@@ -61,6 +74,8 @@ export function getProductPresentation(product: CatalogProduct): ProductPresenta
     variantLabel: product.identity.variant,
     systemType: product.system_type,
     technologyLabel: null,
+    promise: null,
+    highlights: [],
     catalogSummary: null,
     education: null,
     technologyFacts: [],

@@ -77,7 +77,7 @@ export function ClackFittingThumbnailSelect({ options, value, disabled, onChange
           ))}
           <button type="button" className="clack-thumbnail-menu-option" onClick={() => choice("")}>
             <span className="clack-thumbnail-menu-image clack-thumbnail-empty" aria-hidden="true">—</span>
-            <span className="clack-thumbnail-menu-label"><strong>No fitting selected</strong><small>Ask for advice</small></span>
+            <span className="clack-thumbnail-menu-label"><strong>Not sure yet</strong><small>We&apos;ll confirm it with your quote</small></span>
           </button>
         </div>
       ) : null}

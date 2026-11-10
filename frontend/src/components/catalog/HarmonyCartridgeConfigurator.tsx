@@ -16,7 +16,7 @@ export function HarmonyCartridgeConfigurator({ sku, selections, onChange }: Prop
   if (count === 0) return null;
   return (
     <div className="product-pureline-configurator" aria-label="Pureline cartridge configuration">
-      <h3 className="product-pureline-heading">Configure each Pureline housing</h3>
+      <h3 className="product-pureline-heading">Choose a cartridge for each housing</h3>
       {PURELINE_HOUSINGS.slice(0, count).map((housing, index) => {
         const choice = selections[housing] ?? { category: "", cartridge: "", otherDescription: "" };
         return (
@@ -51,7 +51,7 @@ export function HarmonyCartridgeConfigurator({ sku, selections, onChange }: Prop
               <label>
                 <span>DESIRED MEDIA OR CARTRIDGE (OPTIONAL)</span>
                 <input maxLength={120} type="text" value={choice.otherDescription}
-                  placeholder="Describe what you need; we'll confirm availability"
+                  placeholder="Tell us what you need and we'll confirm what's available"
                   onChange={(event) => onChange(housing, { ...choice, otherDescription: event.target.value })} />
               </label>
             ) : null}
@@ -59,8 +59,8 @@ export function HarmonyCartridgeConfigurator({ sku, selections, onChange }: Prop
         );
       })}
       <p className="product-ownership-guidance">
-        Positions can be configured independently. These are requests, not verified compatible
-        assemblies or priced cartridge SKUs. Fit, performance, pricing, and availability require confirmation.
+        Each housing can hold a different cartridge. Your choices are sent with your quote
+        request, and we confirm fit, pricing and availability with you before anything is final.
       </p>
     </div>
   );

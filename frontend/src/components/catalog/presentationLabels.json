@@ -7,7 +7,7 @@
     "system_configuration_label": "SYSTEM CONFIGURATION",
     "fitting_size_label": "FITTING SIZE",
     "fitting_type_label": "FITTING TYPE",
-    "connection_size_prompt": "Choose connection size",
+    "connection_size_prompt": "Not sure — help me choose",
     "pureline_configuration_label": "PURELINE CONFIGURATION",
     "system_size_heading": "Select system size",
     "media_volume_label": "MEDIA VOLUME"

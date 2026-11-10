@@ -30,19 +30,19 @@ const recommendationPaths = [
     title: "Limited utilities",
     cue: "Start here when power or a backwash drain is unavailable.",
     description:
-      "Harmony water conditioning featuring CLEAR Technology and cartridge filtration provides the starting point for this installation constraint.",
+      "Start with Harmony water conditioning featuring CLEAR Technology, paired with cartridge filtration.",
   },
   {
     title: "Salt-free conditioning",
     cue: "Start here when avoiding brine-tank salt is a priority.",
     description:
-      "When power and drain access are available, consider backwashing carbon filtration with Harmony conditioning as the starting point.",
+      "With power and a drain available, start with backwashing carbon filtration paired with Harmony conditioning.",
   },
   {
     title: "Softened water",
-    cue: "Start here when conventionally softened water is the specific goal.",
+    cue: "Start here when conventionally softened water is the goal.",
     description:
-      "When power and drain access are available, consider backwashing carbon filtration with a water softener. Reverse osmosis is also included in this recommendation path.",
+      "With power and a drain available, start with backwashing carbon filtration paired with a water softener. This path also includes reverse osmosis.",
   },
 ] as const;
 
@@ -251,7 +251,7 @@ export function SystemRecommendationSection({
           Start with your water treatment goals.
         </h2>
         <p>
-          These starting points help narrow the conversation. Final system selection should account for source-water conditions, installation requirements, water demand, and verified product capabilities.
+          Three common starting points. The right system also depends on your source water, your installation and how much water your home uses, so we confirm the details with you before anything is final.
         </p>
       </div>
 
@@ -273,7 +273,7 @@ export function SystemRecommendationSection({
           <p className="eyebrow">Installation planning</p>
           <h3 id="exterior-water-heading">Treat water where treatment adds value.</h3>
           <p>
-            Exterior irrigation, hose-bib, and pool-fill lines should generally bypass treated-water equipment when practical. Large pool-fill volumes can prematurely shorten filtration-media service life. Final routing still depends on the property and installation.
+            Where practical, irrigation, hose-bib and pool-fill lines should bypass treatment equipment. Filling a pool through the system can shorten the life of the filtration media. The final routing depends on your property and installation.
           </p>
         </aside>
 
@@ -281,7 +281,7 @@ export function SystemRecommendationSection({
           <p className="eyebrow">Softener ownership</p>
           <h3 id="softener-ownership-heading">Plan for simple routine checks.</h3>
           <p>
-            For conventional softeners, inspect brine-tank salt about monthly and replenish it as needed. After a power interruption, verify valve time-of-day on conventional softeners and backwashing carbon filters where applicable. Follow the instructions for the specific equipment.
+            With a conventional softener, check the brine-tank salt about once a month and top it up as needed. After a power interruption, check the time of day on the valve of a softener or backwashing carbon filter, where applicable. Always follow the instructions for your equipment.
           </p>
         </aside>
 
@@ -289,7 +289,7 @@ export function SystemRecommendationSection({
           <p className="eyebrow">Cartridge filtration</p>
           <h3 id="cartridge-ownership-heading">Plan for routine cartridge replacement.</h3>
           <p>
-            For systems that use replaceable cartridges, plan to replace them at least every six months where applicable. Actual service life varies with source-water quality, micron rating, usage, and system conditions.
+            If your system uses replaceable cartridges, plan to replace them at least every six months where applicable. Actual service life varies with your source water, the cartridge's micron rating, your usage and system conditions.
           </p>
         </aside>
       </div>
@@ -298,7 +298,7 @@ export function SystemRecommendationSection({
         <div>
           <p className="eyebrow">Guided assistance</p>
           <p>
-            A few additional questions can help narrow the starting point when you would like more guidance.
+            Want a more specific starting point? Answer a few questions and we'll narrow it down.
           </p>
         </div>
         <button
@@ -328,7 +328,7 @@ export function SystemRecommendationSection({
             Build a starting point from what you already know.
           </h3>
           <p>
-            Technical measurements are helpful when available, but they are not required to begin. These details help a D'Acqua Dolce employee confirm the right system before an early assisted sale.
+            Measurements help if you have them, but you don't need them to begin. Your answers help our team confirm the right system with you before you buy.
           </p>
         </div>
 
@@ -581,7 +581,7 @@ export function SystemRecommendationSection({
         >
           <p className="eyebrow">
             {recommendationResult?.human_review
-              ? "Staff review required"
+              ? "Our team will review this"
               : "Starting recommendation"}
           </p>
           {recommendationResult ? (
@@ -596,20 +596,20 @@ export function SystemRecommendationSection({
             </>
           ) : (
             <>
-              <h3>Reviewing your starting point…</h3>
-              <p>Applying the current D'Acqua Dolce recommendation rules.</p>
+              <h3>Working out your starting point…</h3>
+              <p>This updates as you answer.</p>
             </>
           )}
           {recommendationResult?.requires_third_party_lab ? (
             <p className="recommendation-result-note">
-              A third-party laboratory test and employee review are required before D'Acqua Dolce makes a final system recommendation for well water.
+              For well water, we need third-party laboratory results and a review by our team before we make a final recommendation.
             </p>
           ) : null}
           {recommendationResult?.sizing ? (
             <p className="recommendation-result-note">
               {recommendationResult.sizing.status === "inputs_complete"
-                ? "Sizing inputs are complete. Capacity selection will remain pending until verified sizing rules are available."
-                : "Capacity sizing will also consider bathrooms, occupants, and water-service pipe size. Add any known sizing details to strengthen the consultation."}
+                ? "We have what we need to size your system. Our team confirms the capacity with you."
+                : "Sizing also depends on your bathrooms, household size and water-service pipe size. Add what you know and we'll confirm the rest with you."}
             </p>
           ) : null}
           <button

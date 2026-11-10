@@ -65,7 +65,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home water softening designed to address hardness minerals that contribute to scale, spotting, and cleaning challenges. Select the system configuration with guidance on your water conditions.",
+      "description": "Whole-home water softening designed to address the hardness minerals behind scale, spotting and harder cleaning. We help you choose the size that fits your water and your home.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Refine - 15",
       "assisted_sale_required": true,
@@ -79,7 +79,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home water softening designed to address hardness minerals that contribute to scale, spotting, and cleaning challenges. Select the system configuration with guidance on your water conditions.",
+      "description": "Whole-home water softening designed to address the hardness minerals behind scale, spotting and harder cleaning. We help you choose the size that fits your water and your home.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Refine - 20",
       "assisted_sale_required": true,
@@ -93,7 +93,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home carbon filtration with automatic media rinsing, intended to help address unwanted taste, odor, and certain compounds where supported by the selected media and verified performance documentation.",
+      "description": "Whole-home carbon filtration with automatic media rinsing, intended to help address unwanted taste, odor and certain compounds. What it can address depends on the carbon media selected and your water.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Essence - 15",
       "assisted_sale_required": true,
@@ -107,7 +107,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "Whole-home carbon filtration with automatic media rinsing, intended to help address unwanted taste, odor, and certain compounds where supported by the selected media and verified performance documentation.",
+      "description": "Whole-home carbon filtration with automatic media rinsing, intended to help address unwanted taste, odor and certain compounds. What it can address depends on the carbon media selected and your water.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Essence - 20",
       "assisted_sale_required": true,
@@ -121,7 +121,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "CLEAR whole-home water conditioning paired with Pureline Solo: one replaceable carbon cartridge. Carbon filtration is intended to address applicable taste, odor, and compounds; specific removal claims require verified performance documentation.",
+      "description": "CLEAR whole-home water conditioning paired with Pureline Solo: one replaceable carbon cartridge. Carbon filtration is intended to help address taste, odor and certain compounds; what it can address depends on the cartridge selected and your water.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Harmony - Pureline Solo",
       "assisted_sale_required": true,
@@ -135,7 +135,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "CLEAR whole-home water conditioning paired with Pureline Duo: two replaceable cartridges, sediment followed by carbon. Filtration is intended to address applicable taste, odor, and compounds; specific removal claims require verified performance documentation.",
+      "description": "CLEAR whole-home water conditioning paired with Pureline Duo: two replaceable cartridges, sediment followed by carbon. Filtration is intended to help address taste, odor and certain compounds; what it can address depends on the cartridges selected and your water.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Harmony - Pureline Duo",
       "assisted_sale_required": true,
@@ -149,7 +149,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "CLEAR whole-home water conditioning paired with Pureline Trio: three replaceable cartridges for sediment, iron, and carbon. Filtration suitability depends on the water conditions and cartridge specifications; specific removal claims require verification.",
+      "description": "CLEAR whole-home water conditioning paired with Pureline Trio: three replaceable cartridges for sediment, iron and carbon. What the cartridges can address depends on their specifications and your water.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Harmony - Pureline Trio",
       "assisted_sale_required": true,
@@ -163,7 +163,7 @@
     {
       "active": true,
       "category_slug": "whole-home-filtration",
-      "description": "CLEAR whole-home water conditioning with a pass-through valve and no Pureline or Big Blue cartridge filters. This configuration does not provide cartridge-based treatment for taste, odor, or compounds.",
+      "description": "CLEAR whole-home water conditioning with a pass-through valve and no cartridge filters. This configuration conditions water only; it does not filter for taste, odor or compounds.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Harmony - Pass-Through Valve",
       "assisted_sale_required": true,
@@ -177,7 +177,7 @@
     {
       "active": true,
       "category_slug": "reverse-osmosis",
-      "description": "Five-stage point-of-use reverse osmosis filtration for drinking and cooking water. Actual performance depends on the source water, installed components, and maintenance.",
+      "description": "Five-stage point-of-use reverse osmosis filtration for drinking and cooking water. Performance depends on your source water, the installed components and regular maintenance.",
       "manufacturer_slug": "dacqua-dolce",
       "name": "Origin - Five Stage",
       "assisted_sale_required": false,

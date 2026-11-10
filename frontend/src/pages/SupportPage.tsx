@@ -21,9 +21,9 @@ export function SupportPage({ account, onNavigate }: SupportPageProps) {
         <p className="eyebrow">Warranty &amp; support</p>
         <h1>Support for your system.</h1>
         <p>
-          Send a warranty, product, or general support request. Website requests
-          stay with the support conversation so our team can continue from the same
-          record.
+          Tell us what&apos;s happening with your system, whether it&apos;s a
+          warranty question, a product question or anything else. Your request and
+          our replies stay in one conversation, so you never have to start over.
         </p>
         <p>
           Prefer email? <a href="mailto:support@dacquadolce.com">support@dacquadolce.com</a>
