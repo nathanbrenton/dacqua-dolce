@@ -135,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=18175)
     parser.add_argument('--root', type=Path,
-                        default=Path.home() / 'Desktop/dacqua-dolce_build-assets/change-center')
+                        default=Path(__file__).resolve().parents[3] / 'dacqua-dolce_build-assets/change-center')
     args = parser.parse_args(argv)
     if not 1024 <= args.port <= 65535:
         parser.error('Port must be between 1024 and 65535')

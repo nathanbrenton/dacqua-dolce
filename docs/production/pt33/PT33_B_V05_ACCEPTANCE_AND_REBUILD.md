@@ -43,7 +43,7 @@ Follow these references in order; the incremental technical notes are retained a
 Use the actual checkout and do not stage, commit, push or deploy while review is incomplete:
 
 ```bash
-cd "$HOME/Desktop/dacqua-dolce"
+cd "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce"
 python3 -m unittest discover -s scripts/pt33 -p 'test_*.py' -q
 git --no-pager status --short --branch
 python3 scripts/pt33/plan_business.py --help

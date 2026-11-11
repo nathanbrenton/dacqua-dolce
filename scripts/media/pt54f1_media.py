@@ -26,6 +26,11 @@ PATTERNS = (
     re.compile(rf'^(?P<family>origin)_(?P<variant>standard|remineralization)_(?P<role>{ROLE})_(?P<sequence>\d{{2}})_v(?P<version>\d{{2}})$'),
 )
 MAX_INBOX_FILES = 5000
+# The repository and the build-assets library sit side by side in one workspace
+# folder. Both are located from this file, so moving the workspace moves them too.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE_ROOT = REPO_ROOT.parent
+BUILD_ASSETS = WORKSPACE_ROOT / 'dacqua-dolce_build-assets'
 MAX_SOURCE_BYTES = 256 * 1024 * 1024  # Flag large files for human review, do not process.
 
 
@@ -195,11 +200,11 @@ def scan_inbox(inbox: Path) -> dict[str, Any]:
 
 
 def default_asset_root() -> Path:
-    return Path.home() / 'Desktop/dacqua-dolce_build-assets/product-photography'
+    return BUILD_ASSETS / 'product-photography'
 
 
 def initialize(asset_root: Path) -> None:
-    expected_parent = Path.home() / 'Desktop/dacqua-dolce_build-assets'
+    expected_parent = BUILD_ASSETS
     if asset_root != expected_parent / 'product-photography':
         raise ValueError('init is restricted to the existing D\'Acqua Dolce build-assets location')
     if not expected_parent.is_dir() or expected_parent.is_symlink():
@@ -240,7 +245,7 @@ def build_report(repo: Path, asset_root: Path) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['init', 'scan', 'parse'])
-    parser.add_argument('--repo', type=Path, default=Path.home() / 'Desktop/dacqua-dolce')
+    parser.add_argument('--repo', type=Path, default=REPO_ROOT)
     parser.add_argument('--asset-root', type=Path, default=default_asset_root())
     parser.add_argument('--filename', help='For parse action only')
     parser.add_argument('--no-write', action='store_true', help='Do not write a report file')
@@ -265,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(json.dumps(report, indent=2, sort_keys=True))
             else:
                 stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
-                out = args.report.expanduser() if args.report else Path.home() / f'Desktop/dacqua-dolce-pt54f1-scan-{stamp}.json'
+                out = args.report.expanduser() if args.report else WORKSPACE_ROOT / f'dacqua-dolce-pt54f1-scan-{stamp}.json'
                 if not out.parent.is_dir() or out.parent.is_symlink():
                     raise ValueError('Report destination directory must exist and not be a symlink')
                 with out.open('x', encoding='utf-8') as stream:

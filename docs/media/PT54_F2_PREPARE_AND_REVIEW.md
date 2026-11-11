@@ -2,7 +2,7 @@
 
 **TEST only. No publishing, database updates, logo/background changes, Git commits, or deployment.**
 
-F1 remains the read-only intake scanner. F2 introduces an isolated *preparation batch* after sources have been placed in `~/Desktop/dacqua-dolce_build-assets/product-photography/ingest-drop/` and named according to F1. Existing media, legacy filenames, and all 52 legacy JSON manifests stay unchanged.
+F1 remains the read-only intake scanner. F2 introduces an isolated *preparation batch* after sources have been placed in `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/product-photography/ingest-drop/` and named according to F1. Existing media, legacy filenames, and all 52 legacy JSON manifests stay unchanged.
 
 ## Deliverables per accepted source
 
@@ -24,7 +24,7 @@ Images may be smaller than the maxima; F2 does not distort or enlarge them. `-au
 After installing PT54-F2 and dropping at least one suitably named original into `ingest-drop/`:
 
 ```bash
-cd ~/Desktop/dacqua-dolce &&
+cd ~/Desktop/dacqua-dolce_ALL/dacqua-dolce &&
 python3 scripts/media/pt54f1_media.py scan --no-write --summary-only &&
 python3 scripts/media/pt54f2_prepare.py plan &&
 python3 scripts/media/pt54f2_prepare.py prepare &&

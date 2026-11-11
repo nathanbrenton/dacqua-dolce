@@ -13,7 +13,7 @@ This is the first structured, source-controlled presentation edit surface in the
 
 `frontend/src/components/catalog/presentationLabels.json` is the source-controlled TEST presentation document. Editing increments `revision`. The frontend imports it at build time, so changes can be previewed in TEST and are included only in a later reviewed Git commit / production deployment.
 
-The local editor backs up the prior JSON at `~/Desktop/dacqua-dolce_build-assets/change-center/presentation-backups/`. These backups do not enter the production release. Git diffs are the release-review record.
+The local editor backs up the prior JSON at `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/change-center/presentation-backups/`. These backups do not enter the production release. Git diffs are the release-review record.
 
 The editor uses the same HTTP port as F9, **18175**. Restart the Change Center Python server after installing F10. Refresh the TEST storefront to see saved labels. The Media Manager remains on port 18174.
 

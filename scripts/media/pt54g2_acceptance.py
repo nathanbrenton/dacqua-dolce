@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[2]
 G1 = Path(__file__).with_name('pt54g1_replace.py')
 INDEX = ROOT / 'frontend/src/components/catalog/photoSetIndex.json'
 MEDIA = ROOT / 'frontend/public/products/media'
-OUT = Path.home() / 'Desktop/dacqua-dolce_build-assets/product-photography/acceptance'
+OUT = ROOT.parent / 'dacqua-dolce_build-assets/product-photography/acceptance'
 FAMILIES = ('refine','essence','harmony')
 
 

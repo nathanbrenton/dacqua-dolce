@@ -16,7 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from pt54f1_media import default_asset_root, parse_asset_name, scan_inbox
+from pt54f1_media import REPO_ROOT, default_asset_root, parse_asset_name, scan_inbox
 from pt54f2_prepare import MAX_PIXELS, Rejected, inspect_candidate, prepare, verify as verify_batch
 from pt54f3_publish import load_index, plan, publish
 from pt54f5_library import current_library, library_image
@@ -350,7 +350,7 @@ class MediaManagerHandler(BaseHTTPRequestHandler):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--repo', type=Path, default=Path.home() / 'Desktop/dacqua-dolce')
+    parser.add_argument('--repo', type=Path, default=REPO_ROOT)
     parser.add_argument('--asset-root', type=Path, default=default_asset_root())
     parser.add_argument('--port', type=int, default=18174)
     args = parser.parse_args(argv)

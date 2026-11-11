@@ -6,8 +6,10 @@ fail() { printf 'PT35 REFUSED: %s\n' "$*" >&2; exit 1; }
 info() { printf 'PT35: %s\n' "$*"; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)" || fail 'cannot resolve repository root'
-CLUSTER="$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17"
-LOG="$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17.log"
+# The build-assets library sits beside the repository in the same workspace folder.
+BUILD_ASSETS="$(dirname "$ROOT")/dacqua-dolce_build-assets"
+CLUSTER="$BUILD_ASSETS/test-infrastructure/pt35-postgres17"
+LOG="$BUILD_ASSETS/test-infrastructure/pt35-postgres17.log"
 PORT=55433
 ADMIN=pt35_admin
 HOST=127.0.0.1

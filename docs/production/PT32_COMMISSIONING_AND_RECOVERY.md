@@ -112,7 +112,7 @@ If live CSP needs correction, make a **permissions-preserving root backup** of t
 
 ```bash
 # Mac — read-only preflight. The working tree must be clean; no secrets in Git.
-cd "$HOME/Desktop/dacqua-dolce"
+cd "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce"
 git status --short
 git rev-parse HEAD
 git rev-parse origin/main

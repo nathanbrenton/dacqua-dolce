@@ -10,16 +10,16 @@ Provides a lightweight register for future customer feedback and requested prese
 - **In review:** ready for a recorded human decision; may return to draft or be deferred/rejected.
 - **Approved:** requires explicit reviewer name and exact typed confirmation `APPROVE CR-00001` (matching the actual request ID). This is **recorded review evidence only**, not an authenticated authorization or implementation.
 - Approved records are locked until reopened, which clears their approval attribution.
-- **Export:** writes only approved requests, with audit history and a source revision, to a timestamped JSON file under `~/Desktop/dacqua-dolce_build-assets/change-center/exports/`. SHA-256 is printed. Export is not a Git commit or a deployable release.
+- **Export:** writes only approved requests, with audit history and a source revision, to a timestamped JSON file under `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/change-center/exports/`. SHA-256 is printed. Export is not a Git commit or a deployable release.
 
-Records live at `~/Desktop/dacqua-dolce_build-assets/change-center/requests.json` **outside Git**; backups are made before each update. No user-input path is interpreted as a filesystem path. The local server binds to `127.0.0.1`, checks host, Origin and per-server CSRF tokens, validates request size and fields, serializes writes, and uses atomic file replacement. Do not expose the service through a reverse proxy or bind a public network interface.
+Records live at `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/change-center/requests.json` **outside Git**; backups are made before each update. No user-input path is interpreted as a filesystem path. The local server binds to `127.0.0.1`, checks host, Origin and per-server CSRF tokens, validates request size and fields, serializes writes, and uses atomic file replacement. Do not expose the service through a reverse proxy or bind a public network interface.
 
 ## Launch
 
 From TEST macOS Terminal:
 
 ```sh
-cd ~/Desktop/dacqua-dolce && python3 scripts/change_center/pt54f9_server.py
+cd ~/Desktop/dacqua-dolce_ALL/dacqua-dolce && python3 scripts/change_center/pt54f9_server.py
 ```
 
 Open `http://127.0.0.1:18175/` in the same machine. Ctrl-C terminates the server. The Media Manager can run alongside it in a second Terminal.

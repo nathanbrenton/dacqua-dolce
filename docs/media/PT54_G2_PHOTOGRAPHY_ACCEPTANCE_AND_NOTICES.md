@@ -22,7 +22,7 @@ Exact text is centralized in `frontend/src/components/catalog/productNotices.jso
 
 ## Acceptance
 
-Run `python3 scripts/media/pt54g2_acceptance.py audit` to verify the actual G1/G1.1 ledger, published media, gallery selections, and retained legacy folders. Run `python3 scripts/media/pt54g2_acceptance.py record --accept-visual-review` to create a timestamped, offline, TEST-only acceptance JSON under `~/Desktop/dacqua-dolce_build-assets/product-photography/acceptance/`. Recording requires an explicit operator assertion of visual approval.
+Run `python3 scripts/media/pt54g2_acceptance.py audit` to verify the actual G1/G1.1 ledger, published media, gallery selections, and retained legacy folders. Run `python3 scripts/media/pt54g2_acceptance.py record --accept-visual-review` to create a timestamped, offline, TEST-only acceptance JSON under `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/product-photography/acceptance/`. Recording requires an explicit operator assertion of visual approval.
 
 There is **no destructive cleanup** in G2. Keeping unused historical gallery images physically available guards against unknown references and supports rollback. Physical deletion would require a separately reviewed reference scan, archival verification, and PROD plan after release.
 

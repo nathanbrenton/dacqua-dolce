@@ -14,7 +14,8 @@ class PT35SafetyTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='pt35-mock-')
         self.addCleanup(self.temp.cleanup)
-        self.base = Path(self.temp.name)
+        # Resolved, because the runner resolves the repository root physically.
+        self.base = Path(self.temp.name).resolve()
         self.home = self.base / 'home'
         self.root = self.base / 'repo'
         self.bin = self.base / 'bin'
@@ -22,7 +23,7 @@ class PT35SafetyTests(unittest.TestCase):
         self.runner = self.root / 'scripts/pt35/run_backend_regression.sh'
         self.runner.parent.mkdir(parents=True)
         shutil.copyfile(SOURCE, self.runner)
-        self.cluster = self.home / 'Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17'
+        self.cluster = self.base / 'dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17'
         self.cluster.mkdir(parents=True)
         (self.cluster / 'PG_VERSION').write_text('17\n')
         venv = self.root / 'backend/.venv/bin'

@@ -4,8 +4,8 @@
 
 F4 is a standalone **local macOS** web interface. It listens **only on 127.0.0.1** and operates on:
 
-- `~/Desktop/dacqua-dolce/` — the TEST source tree;
-- `~/Desktop/dacqua-dolce_build-assets/product-photography/` — the external archival/photo library.
+- `~/Desktop/dacqua-dolce_ALL/dacqua-dolce/` — the TEST source tree;
+- `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/product-photography/` — the external archival/photo library.
 
 It does **not** run inside FastAPI, connect to production, deploy, alter a database, stage or commit Git, change pricing/inventory, or access the public Operations panel. No updated product photos are necessary to install or open it.
 
@@ -14,7 +14,7 @@ It does **not** run inside FastAPI, connect to production, deploy, alter a datab
 From the local TEST macOS Terminal:
 
 ```sh
-cd ~/Desktop/dacqua-dolce && python3 scripts/media/pt54f4_manager.py
+cd ~/Desktop/dacqua-dolce_ALL/dacqua-dolce && python3 scripts/media/pt54f4_manager.py
 ```
 
 Open `http://127.0.0.1:18174/` in the same Mac's browser. Stop the server with **Control-C** in the launching Terminal. No npm development server is required for the Manager itself.
@@ -41,7 +41,7 @@ Open `http://127.0.0.1:18174/` in the same Mac's browser. Stop the server with *
 The F4 test suite uses generated solid-color PNGs in disposable temporary directories. It validates the full sequence upload -> prepare -> plan -> explicit publish and checks that missing approval cannot publish.
 
 ```sh
-cd ~/Desktop/dacqua-dolce
+cd ~/Desktop/dacqua-dolce_ALL/dacqua-dolce
 python3 -m unittest discover -s scripts/media/tests -p 'test_pt54f*.py' -v
 node --check scripts/media/pt54f4_ui.js
 ```

@@ -18,10 +18,10 @@ The workflow validates a business manifest, consumes one sanitized v2 host snaps
 
 ### 1. LOCAL macOS — prepare and test (no host access)
 
-Operate from the existing `~/Desktop/dacqua-dolce` repository. Keep the actual Git working tree and correct branch under review. Do not place production credentials in manifests; secret references are **logical names only**.
+Operate from the existing `~/Desktop/dacqua-dolce_ALL/dacqua-dolce` repository. Keep the actual Git working tree and correct branch under review. Do not place production credentials in manifests; secret references are **logical names only**.
 
 ```bash
-cd "$HOME/Desktop/dacqua-dolce"
+cd "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce"
 python3 -m unittest discover -s scripts/pt33 -p 'test_*.py' -v
 python3 scripts/pt33/plan_business.py --help
 python3 scripts/pt33/verify_business_resources.py --help
@@ -46,7 +46,7 @@ On failures, retain the section as `failed` or `partial`; do not assume nonexist
 Place **only reviewed, sanitized** v2 JSON outside public repositories. Use dedicated manifest/evidence/report paths. Example command, with placeholders replaced by actual safe files:
 
 ```bash
-cd "$HOME/Desktop/dacqua-dolce"
+cd "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce"
 python3 scripts/pt33/verify_business_resources.py --manifest /path/to/new-business-manifest.json --evidence /path/to/reviewed-v2-evidence.json --output /path/to/new-private-report.json --max-age-hours 24
 ```
 

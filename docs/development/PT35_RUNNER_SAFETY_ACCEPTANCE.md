@@ -1,6 +1,6 @@
 # PT35 — Isolated regression runner safety acceptance
 
-The guarded runner is restricted to a dedicated local macOS PostgreSQL 17 cluster at `~/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17`, on `127.0.0.1:55433`. The existing `dacqua_pt35_test` database must not be dropped. It creates a unique disposable database for each run, applies Alembic migrations, executes the backend suite, then cleans up.
+The guarded runner is restricted to a dedicated local macOS PostgreSQL 17 cluster at `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17`, on `127.0.0.1:55433`. The existing `dacqua_pt35_test` database must not be dropped. It creates a unique disposable database for each run, applies Alembic migrations, executes the backend suite, then cleans up.
 
 ## Contract tests
 

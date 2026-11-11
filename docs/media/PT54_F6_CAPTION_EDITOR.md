@@ -8,7 +8,7 @@ The Current TEST Library in `http://127.0.0.1:18174/` now includes an editable t
 
 The authoritative deployable source is `frontend/src/components/catalog/photoCaptionOverrides.json` (schema version 1). It is loaded by `productMediaRegistry.ts` after the approved-image overlay is resolved. No image is reprocessed; SKU, pricing, inventory, alt text, and database contents are unchanged.
 
-Each save creates a copy of the prior JSON in `~/Desktop/dacqua-dolce_build-assets/product-photography/receipts/caption-backups/` and atomically updates the tracked TEST JSON. Only the JSON (and F6 source changes) must be committed for the captions to travel to PROD in the *next explicitly approved release*. Browser changes in PROD will not appear until deployment.
+Each save creates a copy of the prior JSON in `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/product-photography/receipts/caption-backups/` and atomically updates the tracked TEST JSON. Only the JSON (and F6 source changes) must be committed for the captions to travel to PROD in the *next explicitly approved release*. Browser changes in PROD will not appear until deployment.
 
 Security: local loopback-only server, CSRF and Origin checks for POST, allowlisted selected-gallery configuration and photo identifiers, optimistic checksum-based collision detection, plain text maximum 96 characters, no symlinks or arbitrary file writes. Existing unedited captions remain unchanged.
 

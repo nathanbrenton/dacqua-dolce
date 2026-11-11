@@ -2,11 +2,17 @@
 // @ts-ignore -- Offline dev preview; @types/node is not declared in this frontend.
 import { createReadStream, existsSync } from "node:fs";
 // @ts-ignore -- Offline dev preview; @types/node is not declared in this frontend.
-import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 // @ts-ignore -- Offline dev preview; @types/node is not declared in this frontend.
 import { join } from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+
+// Optional local imagery preview folder. It sits beside the repository in the
+// workspace folder (two levels above this file); requests return 404 when it is absent.
+const imageryPreviewRoot: string = fileURLToPath(
+  new URL("../../dacqua-dolce-imagery-preview", import.meta.url),
+);
 
 export default defineConfig({
   plugins: [
@@ -21,7 +27,7 @@ export default defineConfig({
                 const selected = /^\/__dd_image_preview\/origin\/(DD(?:5RO|6ROAE)-(?:hero|dimensions|filter)|storage-tank|DD6ROAE-alkaline-detail)\.png$/.exec(requestPath);
                 if (!selected) return next();
                 if (((req as unknown as { method?: string }).method) !== "GET" && ((req as unknown as { method?: string }).method) !== "HEAD") { res.statusCode = 405; res.end(); return; }
-                const file = join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "origin", `${selected[1]}.png`);
+                const file = join(imageryPreviewRoot, "origin", `${selected[1]}.png`);
                 if (!existsSync(file)) { res.statusCode = 404; res.end(); return; }
                 res.setHeader("Content-Type", "image/png");
                 res.setHeader("Cache-Control", "no-store");
@@ -38,7 +44,7 @@ export default defineConfig({
                 const match = /^\/__dd_image_preview\/refine\/(DD(?:15|20)SOFT-(?:bare|jacket|dimensions)|brine-tank|neoprene-jacket-20-folded)\.png$/.exec(requestPath);
                 if (!match) return next();
                 if (((req as unknown as { method?: string }).method) !== "GET" && ((req as unknown as { method?: string }).method) !== "HEAD") { res.statusCode = 405; res.end(); return; }
-                const file = join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "refine", `${match[1]}.png`);
+                const file = join(imageryPreviewRoot, "refine", `${match[1]}.png`);
                 if (!existsSync(file)) { res.statusCode = 404; res.end(); return; }
                 res.setHeader("Content-Type", "image/png");
                 res.setHeader("Cache-Control", "no-store");
@@ -57,7 +63,7 @@ export default defineConfig({
                 if ((req as unknown as { method?: string }).method !== "GET" && (req as unknown as { method?: string }).method !== "HEAD") {
                     res.statusCode = 405; res.end(); return;
                 }
-                const file = join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "essence", `${match[1]}.png`);
+                const file = join(imageryPreviewRoot, "essence", `${match[1]}.png`);
                 if (!existsSync(file)) { res.statusCode = 404; res.end(); return; }
                 res.setHeader("Content-Type", "image/png");
                 res.setHeader("Cache-Control", "no-store");
@@ -71,7 +77,7 @@ export default defineConfig({
             // PT53: Fittings live in public/__dd_image_preview/clack/; Vite serves them directly.
 
 
-        const dir = join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "harmony");
+        const dir = join(imageryPreviewRoot, "harmony");
         server.middlewares.use((req, res, next) => {
           const path = ((req as unknown as { url?: string }).url ?? "").split("?")[0];
           const match = /^\/__dd_image_preview\/(DD15CLEAR(?:PTV|PL[123]))(-(hero|frame))?\.png$/.exec(path);
@@ -84,7 +90,7 @@ export default defineConfig({
           }
           const file = match
             ? join(dir, `${match[1]}${match[2] ?? ""}.png`)
-            : join(homedir(), "Desktop", "dacqua-dolce-imagery-preview", "shared", `${shared![1]}.png`);
+            : join(imageryPreviewRoot, "shared", `${shared![1]}.png`);
           if (!existsSync(file)) {
             res.statusCode = 404;
             res.end();

@@ -21,12 +21,12 @@ class ThemeTest(unittest.TestCase):
         self.repo = Path(self.tmp.name) / 'repo'
         theme = self.repo / 'frontend/src/theme'
         theme.mkdir(parents=True)
-        source = Path.home() / 'Desktop/dacqua-dolce/frontend/src/theme'
+        source = Path(__file__).resolve().parents[3] / 'frontend/src/theme'
         for name in ('themes.ts','appearance.ts','typography.ts','branding.ts','tokens.css'):
             (theme / name).write_bytes((source/name).read_bytes())
         self.assertTrue((self.repo / 'frontend/public/brand/logos').mkdir(parents=True, exist_ok=True) is None)
         # One known legitimate logo in an isolated fixture; never use public internet.
-        (self.repo/'frontend/public/brand/logos/dacqua-dolce-logo-metallic-aqua.webp').write_bytes(b'RIFFfixtureWEBP')
+        (self.repo/'frontend/public/brand/logos/dacqua-dolce-logo-metallic-aqua-transparent.webp').write_bytes(b'RIFFfixtureWEBP')
         (self.repo/'frontend/src/components/catalog').mkdir(parents=True)
         (self.repo/'frontend/src/components/catalog/publishedPhotoIndex.json').write_text('{}')
         self.asset = Path(self.tmp.name)/'photo-library'

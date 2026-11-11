@@ -13,7 +13,7 @@ Do not place provider IDs, tokens, API keys, environment values, customer data, 
 ## LOCAL macOS — Offline assessment
 
 ```bash
-cd "$HOME/Desktop/dacqua-dolce"
+cd "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce"
 python3 scripts/pt33/evaluate_production_evidence.py \
   --manifest docs/production/pt33/business-manifest.example.json \
   --evidence docs/production/pt33/production-evidence.2026-10-08.json

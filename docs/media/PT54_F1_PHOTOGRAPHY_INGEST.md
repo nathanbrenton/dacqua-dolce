@@ -4,7 +4,7 @@
 
 ## Source of truth and workflow
 
-- Editable originals and revised archival masters live **outside the Git checkout** in `~/Desktop/dacqua-dolce_build-assets/product-photography/`.
+- Editable originals and revised archival masters live **outside the Git checkout** in `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/product-photography/`.
 - `ingest-drop/` receives original image bytes; files are **never modified or auto-deleted**.
 - `staging/` is reserved for F2 previews and image derivatives; F1 does not use it.
 - `masters/` is reserved for approved archival revisions; F1 does not copy or rename masters.
@@ -48,7 +48,7 @@ Photo filenames must **not include mutable SKUs, price, stock, quote status, or 
 
 ## TEST (macOS) — Usage
 
-Run from `~/Desktop/dacqua-dolce` after installing F1's new repository files. Use Python 3; ImageMagick 7 is optional for format and dimensions but installed in the inventoried TEST environment.
+Run from `~/Desktop/dacqua-dolce_ALL/dacqua-dolce` after installing F1's new repository files. Use Python 3; ImageMagick 7 is optional for format and dimensions but installed in the inventoried TEST environment.
 
 ```bash
 python3 scripts/media/pt54f1_media.py init
@@ -57,6 +57,6 @@ python3 scripts/media/pt54f1_media.py scan
 python3 -m unittest discover -s scripts/media/tests -p 'test_pt54f1_media.py' -v
 ```
 
-If `init` has not been used, `scan` still audits existing legacy manifests and reports that the new intake folder is absent. `scan --no-write` prints its structured JSON report without writing a file. Default reports are written to `~/Desktop/dacqua-dolce-pt54f1-scan-<timestamp>.json`.
+If `init` has not been used, `scan` still audits existing legacy manifests and reports that the new intake folder is absent. `scan --no-write` prints its structured JSON report without writing a file. Default reports are written to `~/Desktop/dacqua-dolce_ALL/dacqua-dolce-pt54f1-scan-<timestamp>.json`.
 
 **PROD:** No PT54-F1 command is intended to run on production. The production revision remains `9e451f83de59e6f10ac3963c2a307e6b9d82e683` until a separate approved release.

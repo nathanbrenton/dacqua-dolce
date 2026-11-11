@@ -32,7 +32,7 @@ A passing PT36 synthetic exercise is a pipeline test, **not** certification of a
 
 ## Development checkpoint and template extraction
 
-At the start of PT36, the committed application repository checkpoint was `f2ce9b7` (`main` synchronized with `origin/main`). The PT36 helper and documentation were **local uncommitted additions** during this exercise; no later commit is asserted here. The source-to-template work should create a separate repository at `~/Desktop/business-template/`, not place version-controlled source beneath `~/Desktop/dacqua-dolce_build-assets/`. The latter remains an offline dependency/test-asset store. A new template must have its own root `LICENSE`, independent Git history, sanitized examples, and separate identity/secret/provider boundaries.
+At the start of PT36, the committed application repository checkpoint was `f2ce9b7` (`main` synchronized with `origin/main`). The PT36 helper and documentation were **local uncommitted additions** during this exercise; no later commit is asserted here. The source-to-template work should create a separate repository at `~/Desktop/business-template/`, not place version-controlled source beneath `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/`. The latter remains an offline dependency/test-asset store. A new template must have its own root `LICENSE`, independent Git history, sanitized examples, and separate identity/secret/provider boundaries.
 
 ## Release checklist
 

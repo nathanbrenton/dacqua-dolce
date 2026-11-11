@@ -24,6 +24,7 @@ from typing import Any
 from pt54f1_media import (
     MAX_SOURCE_BYTES,
     checksum,
+    REPO_ROOT,
     default_asset_root,
     inspect_image,
     parse_asset_name,
@@ -329,7 +330,7 @@ def verify(batch: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('plan', 'prepare', 'verify', 'verify-latest'))
-    parser.add_argument('--repo', type=Path, default=Path.home() / 'Desktop/dacqua-dolce')
+    parser.add_argument('--repo', type=Path, default=REPO_ROOT)
     parser.add_argument('--asset-root', type=Path, default=default_asset_root())
     parser.add_argument('--filename', help='Prepare exactly one source instead of the whole drop folder')
     parser.add_argument('--batch', type=Path, help='Explicit staged batch for verify action')

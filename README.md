@@ -103,7 +103,7 @@ The backend API is available at:
 
 Open a second terminal:
 
-    cd ~/Desktop/dacqua-dolce/frontend
+    cd ~/Desktop/dacqua-dolce_ALL/dacqua-dolce/frontend
     npm run dev
 
 Keep this terminal running.

@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from pt54f1_media import default_asset_root, safe_relative_path, within_root
+from pt54f1_media import REPO_ROOT, default_asset_root, safe_relative_path, within_root
 from pt54f2_prepare import Rejected, targets_for, verify as verify_f2
 
 INDEX_REL = Path('frontend/src/components/catalog/publishedPhotoIndex.json')
@@ -330,7 +330,7 @@ def publish(root: Path, repo: Path, batch: Path, approve: str) -> Path:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('plan', 'publish', 'verify'))
-    parser.add_argument('--repo', type=Path, default=Path.home() / 'Desktop/dacqua-dolce')
+    parser.add_argument('--repo', type=Path, default=REPO_ROOT)
     parser.add_argument('--asset-root', type=Path, default=default_asset_root())
     parser.add_argument('--batch', type=Path)
     parser.add_argument('--approve', help='Exact batch name; required for publication')

@@ -17,7 +17,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE_ROOT = Path.home() / 'Desktop' / 'new-photos'
-VAULT = Path.home() / 'Desktop' / 'dacqua-dolce_build-assets' / 'product-photography'
+VAULT = ROOT.parent / 'dacqua-dolce_build-assets' / 'product-photography'
 BATCH = VAULT / 'staging' / 'pt54g1-ai-placeholder-replacement'
 MASTERS = VAULT / 'masters' / 'pt54g1-ai-placeholder-20261103'
 MEDIA = ROOT / 'frontend/public/products/media/ai-placeholders'

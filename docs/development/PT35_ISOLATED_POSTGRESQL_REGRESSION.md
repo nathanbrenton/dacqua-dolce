@@ -8,7 +8,7 @@ The runner is a local developer utility. It does not inspect or authorize produc
 
 ## Trusted boundary
 
-- Dedicated data directory: `~/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17`
+- Dedicated data directory: `~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17`
 - TCP: `127.0.0.1:55433` (not public or production)
 - Database administrator: `pt35_admin` (created with the PT35 cluster)
 - Original reusable database: `dacqua_pt35_test` — **preserved and never reset by the runner**
@@ -25,10 +25,10 @@ The runner checks the cluster's `PG_VERSION`, its actual PostgreSQL-reported dat
 Run these only after confirming the target directory is absent. Do **not** repeat `initdb` on an existing cluster. Install Homebrew `postgresql@17` and the backend Python virtual environment/dependencies first.
 
 ```bash
-mkdir -p "$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure"
-chmod 700 "$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure"
-initdb -D "$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17" -U pt35_admin -A trust --encoding=UTF8 --no-instructions
-printf "\nport = 55433\nlisten_addresses = '127.0.0.1'\nunix_socket_directories = '/tmp'\n" >> "$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17/postgresql.conf"
+mkdir -p "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure"
+chmod 700 "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure"
+initdb -D "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17" -U pt35_admin -A trust --encoding=UTF8 --no-instructions
+printf "\nport = 55433\nlisten_addresses = '127.0.0.1'\nunix_socket_directories = '/tmp'\n" >> "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17/postgresql.conf"
 ```
 
 The known PT35 cluster has already been initialized and successfully tested; this setup block is for rebuilds, not routine use.
@@ -55,7 +55,7 @@ psql -h 127.0.0.1 -p 55433 -U pt35_admin -d postgres -X -Atc "SELECT datname FRO
 
 After verifying exact identity and confirming no process still uses a named disposable database, an operator can remove **only that specific `dacqua_pt35_run_...` database** using `dropdb -h 127.0.0.1 -p 55433 -U pt35_admin -- <reviewed_database_name>`. Never bulk-drop names or delete the PGDATA directory for routine cleanup.
 
-If testing failed, preserve the pytest output for diagnosis. If PostgreSQL shutdown failed, inspect using `pg_ctl -D "$HOME/Desktop/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17" status`; shut it down manually with the same `-D` path after checking identity. Do not operate on `/opt/homebrew/var/postgresql@17`.
+If testing failed, preserve the pytest output for diagnosis. If PostgreSQL shutdown failed, inspect using `pg_ctl -D "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/test-infrastructure/pt35-postgres17" status`; shut it down manually with the same `-D` path after checking identity. Do not operate on `/opt/homebrew/var/postgresql@17`.
 
 ## Scope of assurance
 

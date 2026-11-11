@@ -50,7 +50,7 @@ From `backend/`, a normal online development installation is:
 
 A local offline rebuild uses the preserved macOS-compatible wheelhouse:
 
-    .venv/bin/python3 -m pip install       --no-index       --find-links "$HOME/Desktop/dacqua-dolce_build-assets/python-wheels"       -c constraints-known-good.txt       -e '.[dev]'
+    .venv/bin/python3 -m pip install       --no-index       --find-links "$HOME/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/python-wheels"       -c constraints-known-good.txt       -e '.[dev]'
 
 The local wheelhouse contains platform-specific binaries and must be treated
 as a local development artifact.
@@ -100,11 +100,11 @@ through:
 
 Local downloaded/build dependencies are retained outside Git under:
 
-    ~/Desktop/dacqua-dolce_build-assets/
+    ~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/
 
 Python assets live under:
 
-    ~/Desktop/dacqua-dolce_build-assets/python-wheels/
+    ~/Desktop/dacqua-dolce_ALL/dacqua-dolce_build-assets/python-wheels/
 
 The archive should contain:
 
