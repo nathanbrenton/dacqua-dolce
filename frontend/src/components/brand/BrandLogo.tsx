@@ -19,6 +19,7 @@ export function BrandLogo({
   return (
     <img
       className={className}
+      data-logo-variant={variant}
       src={
         filtrationSystems
           ? logo.filtrationPath

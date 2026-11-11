@@ -7466,3 +7466,379 @@ button.product-detail-main-image {
   font-size: var(--type-small);
   border-top: 1px solid var(--hairline);
 }
+
+/* Transparent logos, home-page rhythm, and the problem-first section.
+ *
+ * Customer header and footer logos are transparent artwork, so the white
+ * plate behind them is removed and the header logo is shown a little larger.
+ * Operations keeps its plate. The black-line logo is inverted in dark
+ * appearance, exactly as the background watermark already is.
+ */
+.site-header .brand-logo-frame,
+.site-footer .footer-brand-frame {
+  padding: 0;
+  background: transparent;
+}
+
+.site-header .brand-logo {
+  width: clamp(184px, 19vw, 252px);
+}
+
+.site-header {
+  padding: 10px 0;
+}
+
+:root[data-appearance="dark"]
+:is(.site-header, .site-footer)
+img[data-logo-variant^="monochrome"] {
+  filter: invert(1);
+}
+
+@media (max-width: 720px) {
+  .site-header .brand-logo {
+    width: 164px;
+  }
+}
+
+/* Sections sit closer together; the hero is sized by its content. */
+@media (min-width: 721px) and (min-height: 501px) {
+  .hero {
+    min-height: 0;
+    padding: clamp(64px, 11vh, 128px) 0 clamp(56px, 9vh, 104px);
+  }
+}
+
+.problems-section,
+.catalog-section,
+.recommendation-section {
+  padding: clamp(52px, 6.5vw, 96px) 0;
+}
+
+.service-statement,
+.brand-statement {
+  padding: clamp(52px, 7vw, 104px) 0;
+}
+
+.section-heading {
+  margin-bottom: clamp(28px, 3.5vw, 44px);
+}
+
+.problems-section {
+  border-top: 1px solid var(--hairline);
+}
+
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.problem-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 26px 22px 22px;
+  background: var(--surface-1);
+  border-top: 1px solid var(--hairline);
+}
+
+.problem-card h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  font-weight: var(--display-weight);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+.problem-card p {
+  margin: 14px 0 0;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
+.problem-answer {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.problem-answer > p {
+  margin-top: 6px;
+}
+
+.problem-card .problem-need {
+  margin-top: 18px;
+  padding-top: 16px;
+  color: var(--ink);
+  font-weight: 700;
+  border-top: 1px solid var(--hairline);
+}
+
+.problem-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 12px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+/* The sixth cell: not a product, a way to reach a person. */
+.problem-card-help {
+  border-top-color: var(--control-highlight);
+}
+
+.problem-card-help .primary-button {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.problem-card-help p {
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1100px) {
+  .problem-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .problem-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .problem-card-help .primary-button {
+    align-self: stretch;
+  }
+}
+
+/* Phone polish — header menu, hero rhythm, and landscape handsets.
+ *
+ * Portrait phones (up to 720px wide) collapse the primary navigation behind
+ * a Menu button instead of a sideways-scrolling row. Landscape handsets are
+ * identified by their short viewport (up to 500px tall), not by width, and
+ * get layouts that fit one screen: a compact hero, shorter catalog photos,
+ * and a product page whose photograph stays in view beside the details.
+ */
+.site-nav-toggle {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0 12px;
+  }
+
+  .site-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 10px 14px;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-button);
+    font-size: var(--type-ui-base);
+  }
+
+  /* Three bars drawn from one element; becomes a cross when the menu is open. */
+  .site-nav-toggle-icon {
+    position: relative;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+  }
+
+  .site-nav-toggle-icon::before,
+  .site-nav-toggle-icon::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+  }
+
+  .site-nav-toggle-icon::before {
+    top: -6px;
+  }
+
+  .site-nav-toggle-icon::after {
+    top: 6px;
+  }
+
+  .site-nav-toggle[aria-expanded="true"] .site-nav-toggle-icon {
+    background: transparent;
+  }
+
+  .site-nav-toggle[aria-expanded="true"] .site-nav-toggle-icon::before {
+    top: 0;
+    transform: rotate(45deg);
+  }
+
+  .site-nav-toggle[aria-expanded="true"] .site-nav-toggle-icon::after {
+    top: 0;
+    transform: rotate(-45deg);
+  }
+
+  .site-header nav {
+    display: none;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .site-header nav[data-open="true"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 8px 0 4px;
+  }
+
+  .site-header nav > a {
+    min-height: 48px;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .site-header nav > button,
+  .site-header .account-controls {
+    margin-top: 12px;
+  }
+
+  .site-header .account-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .site-header nav button {
+    width: 100%;
+  }
+
+  .site-header .account-email {
+    display: block;
+    max-width: none;
+  }
+
+  /* The hero no longer has to fill the screen; it leads straight into systems. */
+  .hero {
+    min-height: 0;
+    padding: clamp(56px, 11vh, 96px) 0 clamp(48px, 9vh, 80px);
+  }
+
+  .hero-copy {
+    margin-top: 26px;
+  }
+
+  .catalog-section {
+    padding-top: clamp(48px, 10vw, 80px);
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero {
+    min-height: 0;
+    padding: 28px 0 36px;
+  }
+
+  .hero h1 br {
+    display: none;
+  }
+
+  .hero-copy {
+    max-width: 640px;
+    margin-top: 16px;
+  }
+
+  .hero-actions {
+    margin-top: 20px;
+  }
+
+  .catalog-section,
+  .recommendation-section,
+  .service-statement,
+  .brand-statement {
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+
+  /* A catalog photograph should not be taller than the screen showing it. */
+  .product-media {
+    aspect-ratio: auto;
+    height: min(62vh, 280px);
+  }
+
+  .detail-shell {
+    padding-top: 12px;
+  }
+
+  .text-button:has(+ .product-detail) {
+    margin-bottom: 8px;
+  }
+}
+
+/* Landscape handset product page: photograph and thumbnails stay in view on
+ * the left while details scroll on the right. The gallery column is stretched
+ * to the full row so its photograph and thumbnails can stick inside it; the
+ * image notice follows them in normal flow. */
+@media (min-width: 640px) and (max-height: 500px) and (orientation: landscape) {
+  .product-detail {
+    /* Space above the gallery on first load: shell padding + back link + gap. */
+    --landscape-above: 64px;
+    --landscape-pin: 10px;
+    --landscape-thumb: 52px;
+    /* Once pinned, photograph and thumbnails sit vertically centred. */
+    --landscape-top: calc((var(--landscape-above) + var(--landscape-pin)) / 2);
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .product-detail-gallery {
+    position: static;
+    display: block;
+    max-height: none;
+  }
+
+  .product-detail-gallery > .product-detail-main-image {
+    position: sticky;
+    top: var(--landscape-top);
+    z-index: 1;
+    aspect-ratio: auto;
+    /* Sized so photograph and thumbnails are both visible before scrolling. */
+    height: calc(
+      100vh - var(--landscape-above) - var(--landscape-thumb)
+      - 2 * var(--landscape-pin)
+    );
+    height: calc(
+      100dvh - var(--landscape-above) - var(--landscape-thumb)
+      - 2 * var(--landscape-pin)
+    );
+  }
+
+  .product-detail-gallery .product-thumbnails {
+    position: sticky;
+    top: calc(100vh - var(--landscape-thumb) - var(--landscape-top));
+    top: calc(100dvh - var(--landscape-thumb) - var(--landscape-top));
+    z-index: 1;
+    grid-template-columns: repeat(auto-fill, var(--landscape-thumb));
+    gap: 8px;
+    margin-top: var(--landscape-pin);
+    background: var(--surface-0);
+  }
+
+  .product-detail-gallery .product-preview-thumb-caption {
+    display: none;
+  }
+
+  .product-detail-copy {
+    padding-top: 0;
+  }
+}

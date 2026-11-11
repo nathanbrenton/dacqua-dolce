@@ -20,6 +20,7 @@ import {
 import {
   getBackendHealth,
 } from "./api/backend";
+import { DEVELOPER_MODE } from "./config/environment";
 import {
   type RecommendationContext,
 } from "./api/quotes";
@@ -48,6 +49,9 @@ import { DEFAULT_PHOTO_SOURCE, type PhotoSource } from "./components/catalog/pro
 import {
   DeveloperControls,
 } from "./components/developer/DeveloperControls";
+import {
+  WaterProblemsSection,
+} from "./components/home/WaterProblemsSection";
 import {
   QuoteDialog,
   type QuoteInquiryContext,
@@ -221,17 +225,19 @@ function CustomerSiteFooter({
 
         <FooterCopyright />
 
-        <div className="development-status">
-          <span
-            className={
-              `status-dot `
-              + `status-${backendState}`
-            }
-            aria-hidden="true"
-          />
+        {DEVELOPER_MODE ? (
+          <div className="development-status">
+            <span
+              className={
+                `status-dot `
+                + `status-${backendState}`
+              }
+              aria-hidden="true"
+            />
 
-          Local API: {backendState}
-        </div>
+            Local API: {backendState}
+          </div>
+        ) : null}
       </div>
     </footer>
   );
@@ -332,6 +338,10 @@ export function App() {
     useState(
       window.location.pathname,
     );
+
+  // Phone-width header: the primary navigation collapses behind a Menu button.
+  const [primaryNavOpen, setPrimaryNavOpen] =
+    useState(false);
 
   const preserveRouteFocusRef = useRef(false);
   const routeFocusReadyRef =
@@ -513,6 +523,7 @@ export function App() {
     preserveRouteFocusRef.current = preserveScroll;
     setPath(nextPath);
     setDeveloperControlsOpen(false);
+    setPrimaryNavOpen(false);
 
     if (!preserveScroll) {
       window.scrollTo({
@@ -880,8 +891,32 @@ export function App() {
               </span>
             </a>
 
+            <button
+              type="button"
+              className="site-nav-toggle"
+              aria-expanded={primaryNavOpen}
+              aria-controls="primary-navigation"
+              onClick={() => {
+                setPrimaryNavOpen((current) => !current);
+              }}
+            >
+              <span className="site-nav-toggle-icon" aria-hidden="true" />
+              {primaryNavOpen ? "Close" : "Menu"}
+            </button>
+
             <nav
+              id="primary-navigation"
               aria-label="Primary navigation"
+              data-open={primaryNavOpen ? "true" : "false"}
+              onClick={(event) => {
+                // Choosing any destination or action closes the phone menu.
+                if (
+                  event.target instanceof Element
+                  && event.target.closest("a, button") !== null
+                ) {
+                  setPrimaryNavOpen(false);
+                }
+              }}
             >
               <a href="#systems">
                 Systems
@@ -976,20 +1011,21 @@ export function App() {
 
           <section className="hero">
             <p className="eyebrow">
-              Premium Water Treatment
+              Premium Water Systems
             </p>
 
             <h1>
-              Water,
+              Water,{" "}
               <br />
               Elevated.
             </h1>
 
             <p className="hero-copy">
-              Thoughtfully designed
-              water treatment for everyday
-              life, supported throughout
-              the life of the system.
+              Thoughtfully designed systems
+              for the water problems homes
+              really have, supported
+              throughout the life of the
+              system.
             </p>
 
             <div className="hero-actions">
@@ -997,7 +1033,7 @@ export function App() {
                 className="primary-button"
                 href="#recommend-system"
               >
-                Recommend a System
+                Help Me Choose a System
               </a>
 
               <button
@@ -1013,6 +1049,13 @@ export function App() {
               </button>
             </div>
           </section>
+
+          <WaterProblemsSection
+            onNavigate={navigate}
+            onTalkToExpert={() => {
+              setQuoteInquiryContext("general");
+            }}
+          />
 
           <CatalogSection
                     photoSource={photoSource}

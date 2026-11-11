@@ -27,24 +27,70 @@ type BathroomCount = RecommendationContext["bathrooms"];
 
 const recommendationPaths = [
   {
-    title: "Limited utilities",
-    cue: "Start here when power or a backwash drain is unavailable.",
+    title: "Scale and spots, and you want soft water",
+    cue: "Start with whole-home carbon filtration paired with a water softener.",
     description:
-      "Start with Harmony water conditioning featuring CLEAR Technology, paired with cartridge filtration.",
+      "This path also includes reverse osmosis for drinking water. It needs an electrical outlet and a drain near where the system goes.",
   },
   {
-    title: "Salt-free conditioning",
-    cue: "Start here when avoiding brine-tank salt is a priority.",
+    title: "Scale, but no salt",
+    cue: "Start with whole-home carbon filtration paired with Harmony conditioning.",
     description:
-      "With power and a drain available, start with backwashing carbon filtration paired with Harmony conditioning.",
+      "Harmony featuring CLEAR Technology conditions without a brine tank. This path needs an electrical outlet and a drain near where the system goes.",
   },
   {
-    title: "Softened water",
-    cue: "Start here when conventionally softened water is the goal.",
+    title: "No outlet or drain near your water line",
+    cue: "Start with Harmony conditioning paired with cartridge filtration.",
     description:
-      "With power and a drain available, start with backwashing carbon filtration paired with a water softener. This path also includes reverse osmosis.",
+      "Some systems rinse themselves, so they need an electrical outlet and a drain nearby. If either one is missing, this is where to start.",
   },
 ] as const;
+
+/**
+ * Customer wording for each recommendation outcome. The API's own title and
+ * description are written for staff and stored with the decision record, so
+ * they stay unchanged; these replace them on the public page only.
+ */
+const CUSTOMER_RESULT_COPY: Record<
+  RecommendationDecision["code"],
+  { title: string; description: string }
+> = {
+  well_testing_required: {
+    title: "A water test comes first.",
+    description:
+      "For well water, we need third-party laboratory results and a review by our team before we recommend a system.",
+  },
+  source_water_review: {
+    title: "First, where does your water come from?",
+    description:
+      "Let us know whether your home is on city water or a private well, and we can suggest a starting point.",
+  },
+  limited_utilities: {
+    title: "Harmony with cartridge filtration",
+    description:
+      "Without an electrical outlet or a drain near where the system would go, Harmony conditioning with cartridge filtration is the place to start. Our team confirms the fit with you before you buy.",
+  },
+  installation_review: {
+    title: "Two details about your installation",
+    description:
+      "Is there an electrical outlet and a drain near where the system would go? Some systems rinse themselves and need both, so this decides which ones fit.",
+  },
+  salt_free: {
+    title: "Whole-home carbon filtration + Harmony",
+    description:
+      "For city water with an outlet and a drain nearby, this is the starting point when you want carbon filtration and salt-free scale conditioning. Our team confirms the fit with you before you buy.",
+  },
+  softened_with_ro: {
+    title: "Whole-home carbon filtration + water softener + reverse osmosis",
+    description:
+      "For city water with an outlet and a drain nearby, this is the starting point when you want softened water. Reverse osmosis is included in this path. Our team confirms the fit with you before you buy.",
+  },
+  treatment_preference_review: {
+    title: "One more choice to make",
+    description:
+      "The starting point depends on whether you prefer salt-free conditioning or conventionally softened water. Not sure? Continue with an expert and we will talk it through.",
+  },
+};
 
 function SelectField({
   label,
@@ -246,12 +292,12 @@ export function SystemRecommendationSection({
       aria-labelledby="recommend-system-heading"
     >
       <div className="section-heading">
-        <p className="eyebrow">Recommend a System</p>
+        <p className="eyebrow">Let us help you choose a system</p>
         <h2 id="recommend-system-heading">
-          Start with your water treatment goals.
+          Start with the problem you want solved.
         </h2>
         <p>
-          Three common starting points. The right system also depends on your source water, your installation and how much water your home uses, so we confirm the details with you before anything is final.
+          Three common situations, and where we would start. The right system also depends on your source water, your installation and how much water your home uses, so we confirm the details with you before anything is final.
         </p>
       </div>
 
@@ -281,7 +327,7 @@ export function SystemRecommendationSection({
           <p className="eyebrow">Softener ownership</p>
           <h3 id="softener-ownership-heading">Plan for simple routine checks.</h3>
           <p>
-            With a conventional softener, check the brine-tank salt about once a month and top it up as needed. After a power interruption, check the time of day on the valve of a softener or backwashing carbon filter, where applicable. Always follow the instructions for your equipment.
+            With a conventional softener, check the brine-tank salt about once a month and top it up as needed. After a power outage, check the time of day on the control valve of a softener or self-rinsing carbon filter, where applicable. Always follow the instructions for your equipment.
           </p>
         </aside>
 
@@ -334,13 +380,13 @@ export function SystemRecommendationSection({
 
         <div className="recommendation-form-grid">
           <SelectField
-            label="Source water"
+            label="Where does your water come from?"
             value={sourceWater}
             onChange={(value) => setSourceWater(value as SourceWater)}
             options={[
               { value: "unsure", label: "Not sure" },
-              { value: "municipal", label: "Municipal water" },
-              { value: "well", label: "Well water" },
+              { value: "municipal", label: "City (municipal) water" },
+              { value: "well", label: "Private well" },
             ]}
           />
 
@@ -360,7 +406,7 @@ export function SystemRecommendationSection({
           </label>
 
           <SelectField
-            label="Signs of hard water"
+            label="Seeing scale, spots or other signs of hard water?"
             value={hardWaterSigns}
             onChange={(value) => setHardWaterSigns(value as TriState)}
             options={yesNoUnsureOptions}
@@ -423,21 +469,21 @@ export function SystemRecommendationSection({
           </label>
 
           <SelectField
-            label="Read the water-quality report provided with your water bill"
+            label="Have you read the water-quality report from your water provider?"
             value={qualityReportRead}
             onChange={(value) => setQualityReportRead(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Noticed signs of chlorine or chloramine"
+            label="Noticed a chlorine taste or smell?"
             value={chlorineSigns}
             onChange={(value) => setChlorineSigns(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Concerns about iron or manganese"
+            label="Rust-colored or dark staining? (iron or manganese)"
             value={ironManganeseConcern}
             onChange={(value) => setIronManganeseConcern(value as TriState)}
             options={yesNoUnsureOptions}
@@ -486,42 +532,42 @@ export function SystemRecommendationSection({
           </label>
 
           <SelectField
-            label="Electrical power available near treatment equipment"
+            label="Is there an electrical outlet near where the system would go?"
             value={electricalAvailable}
             onChange={(value) => setElectricalAvailable(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Drain available near treatment equipment"
+            label="Is there a drain nearby? Some systems rinse themselves and need one."
             value={drainAvailable}
             onChange={(value) => setDrainAvailable(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Irrigation or hose-bib plumbing to consider"
+            label="Outdoor taps or irrigation on the same water line?"
             value={irrigationHoseBib}
             onChange={(value) => setIrrigationHoseBib(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Pool or autofill plumbing to consider"
+            label="A pool or automatic pool fill?"
             value={poolAutofill}
             onChange={(value) => setPoolAutofill(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Interested in drinking-water reverse osmosis"
+            label="Interested in reverse osmosis for drinking water?"
             value={drinkingWaterRo}
             onChange={(value) => setDrinkingWaterRo(value as TriState)}
             options={yesNoUnsureOptions}
           />
 
           <SelectField
-            label="Water test results available"
+            label="Do you have water test results?"
             value={waterTestResults}
             onChange={(value) => setWaterTestResults(value as TriState)}
             options={yesNoUnsureOptions}
@@ -548,13 +594,13 @@ export function SystemRecommendationSection({
           </label>
 
           <SelectField
-            label="Preferred treatment direction"
+            label="Which would you prefer?"
             value={treatmentPreference}
             onChange={(value) => setTreatmentPreference(value as TreatmentPreference)}
             options={[
               { value: "unsure", label: "Not sure yet" },
-              { value: "salt_free", label: "Scale/deposit mitigation without salt" },
-              { value: "softened", label: "Conventionally softened water" },
+              { value: "salt_free", label: "Scale conditioning without salt" },
+              { value: "softened", label: "Softened water (uses salt)" },
             ]}
           />
 
@@ -586,8 +632,8 @@ export function SystemRecommendationSection({
           </p>
           {recommendationResult ? (
             <>
-              <h3>{recommendationResult.title}</h3>
-              <p>{recommendationResult.description}</p>
+              <h3>{CUSTOMER_RESULT_COPY[recommendationResult.code]?.title ?? recommendationResult.title}</h3>
+              <p>{CUSTOMER_RESULT_COPY[recommendationResult.code]?.description ?? recommendationResult.description}</p>
             </>
           ) : recommendationError ? (
             <>

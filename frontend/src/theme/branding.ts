@@ -2,35 +2,35 @@ export const LOGO_VARIANTS = [
   {
     id: "monochrome",
     label: "Monochrome",
-    path: "/brand/logos/dacqua-dolce-logo-monochrome.webp",
+    path: "/brand/logos/dacqua-dolce-logo-monochrome-transparent.webp",
     filtrationPath:
-      "/brand/logos/dacqua-dolce-logo-monochrome-filtration-systems.webp",
+      "/brand/logos/dacqua-dolce-logo-monochrome-filtration-systems-transparent.webp",
     alt: "D'Acqua Dolce",
   },
   {
     id: "metallic-aqua",
     label: "Metallic / Aqua",
-    path: "/brand/logos/dacqua-dolce-logo-metallic-aqua.webp",
+    path: "/brand/logos/dacqua-dolce-logo-metallic-aqua-transparent.webp",
     filtrationPath:
-      "/brand/logos/dacqua-dolce-logo-metallic-aqua-filtration-systems.webp",
+      "/brand/logos/dacqua-dolce-logo-metallic-aqua-filtration-systems-transparent.webp",
     alt: "D'Acqua Dolce",
   },
   {
     id: "monochrome-filtration",
     label: "Monochrome + Filtration Systems",
     path:
-      "/brand/logos/dacqua-dolce-logo-monochrome-filtration-systems.webp",
+      "/brand/logos/dacqua-dolce-logo-monochrome-filtration-systems-transparent.webp",
     filtrationPath:
-      "/brand/logos/dacqua-dolce-logo-monochrome-filtration-systems.webp",
+      "/brand/logos/dacqua-dolce-logo-monochrome-filtration-systems-transparent.webp",
     alt: "D'Acqua Dolce Filtration Systems",
   },
   {
     id: "metallic-aqua-filtration",
     label: "Metallic / Aqua + Filtration Systems",
     path:
-      "/brand/logos/dacqua-dolce-logo-metallic-aqua-filtration-systems.webp",
+      "/brand/logos/dacqua-dolce-logo-metallic-aqua-filtration-systems-transparent.webp",
     filtrationPath:
-      "/brand/logos/dacqua-dolce-logo-metallic-aqua-filtration-systems.webp",
+      "/brand/logos/dacqua-dolce-logo-metallic-aqua-filtration-systems-transparent.webp",
     alt: "D'Acqua Dolce Filtration Systems",
   },
 ] as const;

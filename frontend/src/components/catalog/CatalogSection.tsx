@@ -132,7 +132,7 @@ export function CatalogSection({
 
         <p>
           Each system has a clear job. Not sure which one fits your home?
-          Recommend a System, just below, is the place to start.
+          Let us help you choose, just below.
         </p>
       </div>
 
