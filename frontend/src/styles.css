@@ -6975,7 +6975,7 @@ summary {
   padding: 4px 0 8px;
 }
 
-.operations-nav-links > button {
+.operations-nav-links .operations-nav-group > button {
   flex: 0 0 auto;
   min-height: 42px;
   padding: 9px 13px;
@@ -6990,18 +6990,18 @@ summary {
   white-space: nowrap;
 }
 
-.operations-nav-links > button:hover {
+.operations-nav-links .operations-nav-group > button:hover {
   border-color: var(--hairline);
   color: var(--ink);
 }
 
-.operations-nav-links > button.is-active {
+.operations-nav-links .operations-nav-group > button.is-active {
   background: var(--surface-1);
   border-color: var(--accent);
   color: var(--ink);
 }
 
-.operations-nav-links > button:focus-visible {
+.operations-nav-links .operations-nav-group > button:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
@@ -7040,7 +7040,7 @@ summary {
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .operations-nav-links > button {
+  .operations-nav-links .operations-nav-group > button {
     min-height: 44px;
     padding: 10px 12px;
   }
@@ -7471,7 +7471,8 @@ button.product-detail-main-image {
  *
  * Customer header and footer logos are transparent artwork, so the white
  * plate behind them is removed and the header logo is shown a little larger.
- * Operations keeps its plate. The black-line logo is inverted in dark
+ * (Operations dropped its plate too on 2026-11-13; see the end of this file.)
+ * The black-line logo is inverted in dark
  * appearance, exactly as the background watermark already is.
  */
 .site-header .brand-logo-frame,
@@ -7894,13 +7895,28 @@ img[data-logo-variant^="monochrome"] {
   height: 1.35rem;
   margin-left: 7px;
   padding: 0 6px;
+  border: 1.5px solid currentColor;
   border-radius: 999px;
-  background: var(--action);
-  color: var(--action-text);
-  font-size: 0.72rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.78rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+}
+
+/* The Operations header logo drops its white plate, matching the customer
+   header. The black-line logo is inverted on the dark appearance. The footer
+   logo is unchanged. */
+.operations-brand-header .brand-logo-frame {
+  padding: 0;
+  background: transparent;
+}
+
+.operations-shell[data-appearance="dark"]
+.operations-brand-header
+img[data-logo-variant^="monochrome"] {
+  filter: invert(1);
 }
 
 .operations-shell .operations-workspace-panel > .operations-workspace-main {
