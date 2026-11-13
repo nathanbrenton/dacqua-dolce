@@ -121,20 +121,34 @@ type OperationsWorkspace =
   | "staff"
   | "audit";
 
+type OperationsWorkspaceGroup = "daily" | "store" | "admin";
+
+// Tabs are grouped by how often they're used: day-to-day customer work first,
+// then store records, then administration.
+const OPERATIONS_WORKSPACE_GROUPS: ReadonlyArray<{
+  id: OperationsWorkspaceGroup;
+  label: string;
+}> = [
+  { id: "daily", label: "Daily" },
+  { id: "store", label: "Store" },
+  { id: "admin", label: "Admin" },
+];
+
 const OPERATIONS_WORKSPACES: ReadonlyArray<{
   id: OperationsWorkspace;
   label: string;
   description: string;
+  group: OperationsWorkspaceGroup;
 }> = [
-  { id: "overview", label: "Overview", description: "Priorities & readiness" },
-  { id: "communications", label: "Inbox", description: "Inbox & delivery" },
-  { id: "requests", label: "Requests", description: "Quotes & triage" },
-  { id: "orders", label: "Orders", description: "Fulfillment" },
-  { id: "catalog", label: "Catalog", description: "Pricing & inventory" },
-  { id: "customers", label: "Customers", description: "Accounts & equipment" },
-  { id: "installers", label: "Installers", description: "Internal research" },
-  { id: "staff", label: "Staff", description: "User access & roles" },
-  { id: "audit", label: "Audit", description: "Activity & troubleshooting" },
+  { id: "overview", label: "Overview", description: "Priorities & readiness", group: "daily" },
+  { id: "communications", label: "Inbox", description: "Inbox & delivery", group: "daily" },
+  { id: "requests", label: "Requests", description: "Quotes & triage", group: "daily" },
+  { id: "orders", label: "Orders", description: "Fulfillment", group: "daily" },
+  { id: "catalog", label: "Catalog", description: "Pricing & inventory", group: "store" },
+  { id: "customers", label: "Customers", description: "Accounts & equipment", group: "store" },
+  { id: "installers", label: "Installers", description: "Internal research", group: "store" },
+  { id: "staff", label: "Staff", description: "User access & roles", group: "admin" },
+  { id: "audit", label: "Audit", description: "Activity & troubleshooting", group: "admin" },
 ];
 
 const OPERATIONS_TARGET_WORKSPACES: Record<string, OperationsWorkspace> = {
@@ -753,6 +767,7 @@ export function OperationsPage({
 
   const [activeWorkspace, setActiveWorkspace] =
     useState<OperationsWorkspace>("overview");
+  const [activeInboxCount, setActiveInboxCount] = useState(0);
 
   const visibleWorkspaces = useMemo(() =>
     OPERATIONS_WORKSPACES.filter(({ id }) =>
@@ -2577,6 +2592,20 @@ export function OperationsPage({
               }
   );
 
+  // Counts shown beside a nav tab when that workspace has work waiting.
+  const workspaceWaitingCounts: Partial<
+    Record<OperationsWorkspace, { count: number; description: string }>
+  > = {
+    requests: {
+      count: summary?.new_quotes ?? 0,
+      description: (summary?.new_quotes ?? 0) === 1 ? "new request" : "new requests",
+    },
+    communications: {
+      count: activeInboxCount,
+      description: activeInboxCount === 1 ? "open conversation" : "open conversations",
+    },
+  };
+
   function scrollToOperationsTarget(
     targetId: string,
     selector?: string,
@@ -2724,18 +2753,50 @@ export function OperationsPage({
           <span>{visibleWorkspaces.find(({ id }) => id === activeWorkspace)?.description}</span>
         </div>
         <div className="operations-nav-links">
-          {visibleWorkspaces.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              className={activeWorkspace === id ? "is-active" : ""}
-              aria-pressed={activeWorkspace === id}
-              aria-controls={`operations-panel-${id}`}
-              onClick={() => chooseWorkspace(id)}
-            >
-              {label}
-            </button>
-          ))}
+          {OPERATIONS_WORKSPACE_GROUPS.map((group) => {
+            const groupWorkspaces = visibleWorkspaces.filter(
+              (workspace) => workspace.group === group.id,
+            );
+            if (groupWorkspaces.length === 0) {
+              return null;
+            }
+            return (
+              <div
+                key={group.id}
+                className="operations-nav-group"
+                role="group"
+                aria-label={group.label}
+              >
+                <span className="operations-nav-group-label" aria-hidden="true">
+                  {group.label}
+                </span>
+                {groupWorkspaces.map(({ id, label }) => {
+                  const waiting = workspaceWaitingCounts[id];
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={activeWorkspace === id ? "is-active" : ""}
+                      aria-pressed={activeWorkspace === id}
+                      aria-controls={`operations-panel-${id}`}
+                      onClick={() => chooseWorkspace(id)}
+                    >
+                      {label}
+                      {waiting !== undefined && waiting.count > 0 ? (
+                        <span
+                          className="operations-nav-count"
+                          title={waiting.description}
+                        >
+                          {waiting.count}
+                          <span className="sr-only">{` ${waiting.description}`}</span>
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </nav>
 
@@ -3058,20 +3119,12 @@ export function OperationsPage({
         </details>
       ) : null}
 
-      <details
+      <section
         id="communications-history"
-        className="operations-section operations-disclosure operations-customer-inbox-section"
+        className="operations-section operations-customer-inbox-section operations-workspace-main"
       >
-        <summary className="operations-disclosure-summary">
-          <span>
-            <strong>Customer communications</strong>
-            <small>Customer inbox</small>
-          </span>
-        </summary>
-        <div className="operations-disclosure-content">
-          <CommunicationsInbox />
-        </div>
-      </details>
+        <CommunicationsInbox onActiveCountChange={setActiveInboxCount} />
+      </section>
 
       </section>
 
@@ -3081,17 +3134,10 @@ export function OperationsPage({
         aria-label="Customer requests"
         hidden={activeWorkspace !== "requests"}
       >
-      <details
+      <section
         id="quote-queue"
-        className="operations-section operations-disclosure"
+        className="operations-section operations-workspace-main"
       >
-        <summary className="operations-disclosure-summary">
-          <span>
-            <strong>Customer requests</strong>
-            <small>Quote queue</small>
-          </span>
-        </summary>
-        <div className="operations-disclosure-content">
         <div className="operations-section-heading">
           <p className="eyebrow">Quote Queue</p>
           <h2>Customer requests</h2>
@@ -3417,8 +3463,7 @@ export function OperationsPage({
             ))}
           </div>
         )}
-        </div>
-      </details>
+      </section>
 
       </section>
 

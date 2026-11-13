@@ -425,7 +425,15 @@ function deliveryNotice(status: string): string {
 
 type InboxView = "active" | "system" | "archived" | "all";
 
-export function CommunicationsInbox() {
+type CommunicationsInboxProps = {
+  // Reports how many open customer conversations sit in the Inbox view, so
+  // the Operations navigation can show the count next to the Inbox tab.
+  onActiveCountChange?: (count: number) => void;
+};
+
+export function CommunicationsInbox({
+  onActiveCountChange,
+}: CommunicationsInboxProps = {}) {
   const [threads, setThreads] =
     useState<OperationsCommunicationThread[]>([]);
   const [selectedThreadId, setSelectedThreadId] =
@@ -578,6 +586,10 @@ export function CommunicationsInbox() {
     archived: threads.filter((thread) => thread.status === "closed").length,
     all: threads.length,
   }), [threads]);
+
+  useEffect(() => {
+    onActiveCountChange?.(inboxCounts.active);
+  }, [inboxCounts.active, onActiveCountChange]);
 
   async function openThread(threadId: string): Promise<void> {
     setSelectedThreadId(threadId);

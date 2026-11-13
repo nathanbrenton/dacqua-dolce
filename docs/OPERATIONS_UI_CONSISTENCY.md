@@ -11,15 +11,29 @@ replaces already-loaded ORM state with the committed pricing records.
 
 ## Current Operations layout contract
 
-The current Operations sections are ordered as follows:
+Operations is organised as workspaces in a top navigation bar
+(`OPERATIONS_WORKSPACES` in `OperationsPage.tsx`). One workspace is shown at a
+time, in this order:
 
-1. Customer Requests
-2. Customer Orders
-3. Pricing & Inventory
-4. Accounts & Address Book
-5. User Access & Roles
-6. Customer Inbox
-7. Audit Log
+1. Overview — priorities and readiness
+2. Inbox — customer communications and failed email deliveries
+3. Requests — quote requests and triage
+4. Orders — fulfilment
+5. Catalog — pricing and inventory
+6. Customers — accounts and address book
+7. Installers — internal installer-candidate research
+8. Staff — user access and roles (administrator and developer only)
+9. Audit — privileged activity history (developer only)
+
+The Inbox workspace (formerly "Communications") moved to second place in
+commit `181db0c`.
+
+The tabs are grouped as Daily (Overview, Inbox, Requests, Orders), Store
+(Catalog, Customers, Installers) and Admin (Staff, Audit). Requests shows the
+number of new requests and Inbox the number of open customer conversations
+when either is above zero. Requests and Inbox render their content directly
+rather than inside a collapsed disclosure; the other workspaces keep their
+disclosures and open the first one when the tab is chosen.
 
 Pricing & Inventory product cards are collapsed by default and use a one-open-at-a-time accordion. Compact summary badges explicitly label `Lifecycle:`, `Inventory:`, and `Pricing:` so canonical product names never need lifecycle words embedded in the title.
 
