@@ -1,7 +1,4 @@
 import {
-  Fragment,
-  type FormEvent,
-  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -14,40 +11,14 @@ import {
   getOperationsCommunicationThreads,
   replyToOperationsCommunicationThread,
   updateOperationsCommunicationThreadStatus,
-  type OperationsCommunicationMessage,
   type OperationsCommunicationThread,
   type OperationsCommunicationThreadDetail,
 } from "../../api/operations";
-
-function formatTimestamp(value: string | null): string {
-  if (value === null) {
-    return "No message timestamp";
-  }
-
-  return new Date(value).toLocaleString();
-}
-
-function formatBytes(value: number): string {
-  if (value < 1024) {
-    return `${value} B`;
-  }
-
-  if (value < 1024 * 1024) {
-    return `${(value / 1024).toFixed(1)} KB`;
-  }
-
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function messageTimestamp(
-  message: OperationsCommunicationMessage,
-): string {
-  return (
-    message.received_at
-    ?? message.sent_at
-    ?? message.created_at
-  );
-}
+import {
+  ConversationMessageList,
+  ConversationReplyForm,
+  formatTimestamp,
+} from "./ConversationThread";
 
 function threadSearchText(
   thread: OperationsCommunicationThread,
@@ -68,315 +39,6 @@ function threadSearchText(
 }
 
 
-function replyTargetSourceLabel(value: string | null): string | null {
-  switch (value) {
-    case "latest_inbound_sender":
-      return "Latest customer message";
-    case "quote_request":
-      return "Quote request";
-    case "account_email":
-      return "Account email";
-    case "latest_outbound_recipient":
-      return "Previous outbound message";
-    default:
-      return null;
-  }
-}
-
-function recipientLabel(
-  message: OperationsCommunicationMessage,
-): string {
-  if (message.direction === "inbound") {
-    return "Received by D’Acqua Dolce";
-  }
-
-  const recipients = message.recipients
-    .filter((recipient) => recipient.recipient_type === "to")
-    .map((recipient) => recipient.address);
-
-  if (recipients.length === 0) {
-    return "Recipient unavailable";
-  }
-
-  return `To ${recipients.join(", ")}`;
-}
-
-type VisibleMessageBody = {
-  visible: string;
-  quoted: string | null;
-};
-
-const HTTP_URL_PATTERN = /https?:\/\/[^\s<>"']+/gi;
-const INBOUND_URL_PATTERN = /https?:\/\//i;
-const SIMPLE_TRAILING_URL_PUNCTUATION = /[.,!?;:]+$/;
-
-function splitTrailingUrlPunctuation(value: string): {
-  href: string;
-  trailing: string;
-} {
-  let href = value;
-  let trailing = "";
-
-  const simple = SIMPLE_TRAILING_URL_PUNCTUATION.exec(href);
-  if (simple !== null) {
-    trailing = simple[0] + trailing;
-    href = href.slice(0, -simple[0].length);
-  }
-
-  const pairedDelimiters: Array<[string, string]> = [
-    ["(", ")"],
-    ["[", "]"],
-    ["{", "}"],
-  ];
-
-  for (const [opening, closing] of pairedDelimiters) {
-    while (href.endsWith(closing)) {
-      const openingCount = href.split(opening).length - 1;
-      const closingCount = href.split(closing).length - 1;
-
-      if (closingCount <= openingCount) {
-        break;
-      }
-
-      trailing = closing + trailing;
-      href = href.slice(0, -1);
-    }
-  }
-
-  return { href, trailing };
-}
-
-function PlainTextWithLinks({ text }: { text: string }) {
-  const nodes: ReactNode[] = [];
-  let cursor = 0;
-  let part = 0;
-
-  for (const match of text.matchAll(HTTP_URL_PATTERN)) {
-    const raw = match[0];
-    const index = match.index ?? cursor;
-
-    if (index > cursor) {
-      nodes.push(
-        <Fragment key={`text-${part}`}>
-          {text.slice(cursor, index)}
-        </Fragment>,
-      );
-      part += 1;
-    }
-
-    const { href, trailing } = splitTrailingUrlPunctuation(raw);
-    let isSafeHttpUrl = false;
-
-    try {
-      const parsed = new URL(href);
-      isSafeHttpUrl =
-        parsed.protocol === "http:" || parsed.protocol === "https:";
-    } catch {
-      isSafeHttpUrl = false;
-    }
-
-    if (isSafeHttpUrl) {
-      nodes.push(
-        <a
-          key={`link-${part}`}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {href}
-        </a>,
-      );
-      part += 1;
-
-      if (trailing.length > 0) {
-        nodes.push(
-          <Fragment key={`trailing-${part}`}>
-            {trailing}
-          </Fragment>,
-        );
-        part += 1;
-      }
-    } else {
-      nodes.push(
-        <Fragment key={`url-text-${part}`}>{raw}</Fragment>,
-      );
-      part += 1;
-    }
-
-    cursor = index + raw.length;
-  }
-
-  if (cursor < text.length) {
-    nodes.push(
-      <Fragment key={`text-${part}`}>{text.slice(cursor)}</Fragment>,
-    );
-  }
-
-  return <>{nodes}</>;
-}
-
-function splitQuotedHistory(body: string): VisibleMessageBody {
-  const markers = [
-    /^On .+ wrote:\s*$/im,
-    /^-{2,}\s*Original Message\s*-{2,}\s*$/im,
-  ];
-
-  let firstIndex: number | null = null;
-
-  for (const marker of markers) {
-    const match = marker.exec(body);
-
-    if (
-      match !== null
-      && (
-        firstIndex === null
-        || match.index < firstIndex
-      )
-    ) {
-      firstIndex = match.index;
-    }
-  }
-
-  if (firstIndex === null) {
-    return {
-      visible: body.trim(),
-      quoted: null,
-    };
-  }
-
-  const visible = body.slice(0, firstIndex).trim();
-  const quoted = body.slice(firstIndex).trim();
-
-  return {
-    visible,
-    quoted: quoted.length > 0 ? quoted : null,
-  };
-}
-
-
-function messageSourceLabel(
-  message: OperationsCommunicationMessage,
-): string {
-  if (message.provider === "web") {
-    return "Website";
-  }
-
-  if (message.provider === "postmark") {
-    return "Email";
-  }
-
-  return "Archived";
-}
-
-function MessageSecuritySummary({
-  message,
-}: {
-  message: OperationsCommunicationMessage;
-}) {
-  if (
-    message.direction !== "inbound"
-    || message.security == null
-  ) {
-    return null;
-  }
-
-  const security = message.security;
-  const spamStatus =
-    security.spam_status?.toLowerCase() ?? null;
-  const spfResult =
-    security.spf_result?.toLowerCase() ?? null;
-  const spamWarning = spamStatus === "yes";
-  const spfWarning =
-    spfResult === "fail"
-    || spfResult === "softfail"
-    || spfResult === "permerror";
-
-  return (
-    <div className="operations-inbox-message-badges">
-      {spamStatus !== null
-        || security.spam_score !== null ? (
-        <span
-          className={
-            "operations-status-badge"
-            + (spamWarning ? " is-failed" : "")
-          }
-          title={
-            security.spam_tests.length > 0
-              ? `Spam checks: ${security.spam_tests.join(", ")}`
-              : "Postmark spam assessment"
-          }
-        >
-          Spam: {spamStatus ?? "unknown"}
-          {security.spam_score !== null
-            ? ` · score ${security.spam_score}`
-            : ""}
-        </span>
-      ) : null}
-      {spfResult !== null ? (
-        <span
-          className={
-            "operations-status-badge"
-            + (spfWarning ? " is-failed" : "")
-          }
-        >
-          SPF: {spfResult}
-        </span>
-      ) : null}
-    </div>
-  );
-}
-
-
-function ArchivedMessageBody({
-  message,
-}: {
-  message: OperationsCommunicationMessage;
-}) {
-  if (message.content_redacted) {
-    return (
-      <em>
-        Sensitive message content is redacted from the archive.
-      </em>
-    );
-  }
-
-  if (
-    message.body_text === null
-    || message.body_text.trim().length === 0
-  ) {
-    return <em>No plain-text body archived.</em>;
-  }
-
-  const body = splitQuotedHistory(message.body_text);
-  const inbound = message.direction === "inbound";
-  const hasInboundUrl =
-    inbound && INBOUND_URL_PATTERN.test(message.body_text);
-
-  return (
-    <>
-      <p>
-        {inbound
-          ? body.visible
-          : <PlainTextWithLinks text={body.visible} />}
-      </p>
-      {hasInboundUrl ? (
-        <small>
-          Inbound URLs are shown as plain text to reduce accidental phishing clicks.
-        </small>
-      ) : null}
-      {body.quoted !== null ? (
-        <details className="operations-inbox-quoted-history">
-          <summary>Show quoted history</summary>
-          <p>
-            {inbound
-              ? body.quoted
-              : <PlainTextWithLinks text={body.quoted} />}
-          </p>
-        </details>
-      ) : null}
-    </>
-  );
-}
 
 const AUTO_REFRESH_MS = 60_000;
 
@@ -411,17 +73,6 @@ function relatedRecordLabel(
   return labels[type] ?? "Related record";
 }
 
-function deliveryNotice(status: string): string {
-  if (status === "sent") {
-    return "Reply sent and archived.";
-  }
-
-  if (status === "suppressed") {
-    return "Reply archived locally; email delivery is disabled in this environment.";
-  }
-
-  return "Reply attempt was archived, but email delivery failed.";
-}
 
 type InboxView = "active" | "system" | "archived" | "all";
 
@@ -429,10 +80,17 @@ type CommunicationsInboxProps = {
   // Reports how many open customer conversations sit in the Inbox view, so
   // the Operations navigation can show the count next to the Inbox tab.
   onActiveCountChange?: (count: number) => void;
+  // Shows an "Open request" link on conversations linked to a request.
+  onOpenRequest?: (quoteId: string) => void;
+  // Opens this conversation (from a request's "Open in Inbox"). A new object
+  // reopens it even when the thread id is unchanged.
+  threadToOpen?: { threadId: string } | null;
 };
 
 export function CommunicationsInbox({
   onActiveCountChange,
+  onOpenRequest,
+  threadToOpen = null,
 }: CommunicationsInboxProps = {}) {
   const [threads, setThreads] =
     useState<OperationsCommunicationThread[]>([]);
@@ -442,11 +100,8 @@ export function CommunicationsInbox({
     useState<OperationsCommunicationThreadDetail | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<InboxView>("active");
-  const [replyBody, setReplyBody] = useState("");
-  const [replyRecipient, setReplyRecipient] = useState("");
-  const [replySender, setReplySender] = useState("");
-  const [replyNotice, setReplyNotice] = useState<string | null>(null);
-  const [replyFailed, setReplyFailed] = useState(false);
+  // Archive/restore notices shown in the reply form's status line.
+  const [statusNotice, setStatusNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -460,7 +115,6 @@ export function CommunicationsInbox({
     useRef<Map<string, HTMLButtonElement>>(new Map());
   const [lastRefreshedAt, setLastRefreshedAt] =
     useState<Date | null>(null);
-  const [replySending, setReplySending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -594,18 +248,12 @@ export function CommunicationsInbox({
   async function openThread(threadId: string): Promise<void> {
     setSelectedThreadId(threadId);
     setDetailLoading(true);
-    setReplyBody("");
-    setReplyRecipient("");
-    setReplySender("");
-    setReplyNotice(null);
-    setReplyFailed(false);
+    setStatusNotice(null);
     setError(null);
 
     try {
       const result = await getOperationsCommunicationThread(threadId);
       setThreadDetail(result);
-      setReplyRecipient(result.reply_target ?? "");
-      setReplySender(result.reply_sender_default ?? "");
     } catch (caught) {
       setThreadDetail(null);
       setError(
@@ -617,6 +265,37 @@ export function CommunicationsInbox({
       setDetailLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (threadToOpen === null) {
+      return;
+    }
+
+    const { threadId } = threadToOpen;
+    setSearch("");
+    void openThread(threadId);
+
+    // Refresh the list (the thread may be new or just replied to), then pick
+    // a view that shows it: archived or system threads aren't in "Inbox".
+    void getOperationsCommunicationThreads()
+      .then((nextThreads) => {
+        setThreads(nextThreads);
+        setLastRefreshedAt(new Date());
+        const listed = nextThreads.find((thread) => thread.id === threadId);
+        if (listed !== undefined) {
+          setView(
+            listed.status === "open" && listed.mailbox_kind === "inbox"
+              ? "active"
+              : "all",
+          );
+        }
+      })
+      .catch(() => {
+        // The conversation itself still opens; the list catches up on the
+        // next refresh.
+      });
+    // Only a new request to open should trigger this, not list refreshes.
+  }, [threadToOpen]);
 
   async function archiveThreadFromList(
     threadId: string,
@@ -649,9 +328,7 @@ export function CommunicationsInbox({
           thread.id === updated.id ? updated : thread,
         ),
       );
-      setReplyBody("");
-      setReplyNotice(null);
-      setReplyFailed(false);
+      setStatusNotice(null);
 
       if (nextThread === null) {
         setSelectedThreadId(null);
@@ -715,12 +392,11 @@ export function CommunicationsInbox({
               failed_message_count: updated.failed_message_count,
             },
       );
-      setReplyNotice(
+      setStatusNotice(
         archived
           ? "Conversation archived."
           : "Conversation restored to the active inbox.",
       );
-      setReplyFailed(false);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -732,69 +408,40 @@ export function CommunicationsInbox({
     }
   }
 
-  async function submitReply(
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> {
-    event.preventDefault();
+  async function sendReply(
+    threadId: string,
+    body: string,
+    recipient: string,
+    sender: string,
+  ): Promise<{ delivery_status: string; sender: string }> {
+    const result = await replyToOperationsCommunicationThread(
+      threadId,
+      body,
+      recipient,
+      sender,
+    );
 
-    if (
-      threadDetail === null
-      || replyBody.trim().length === 0
-      || replyRecipient.trim().length === 0
-      || replySender.trim().length === 0
-    ) {
-      return;
-    }
+    setThreadDetail(result.thread);
+    setThreads((current) =>
+      current
+        .map((thread) =>
+          thread.id === result.thread.id
+            ? result.thread
+            : thread,
+        )
+        .sort((left, right) => {
+          const leftTime = new Date(
+            left.last_message_at ?? left.created_at,
+          ).getTime();
+          const rightTime = new Date(
+            right.last_message_at ?? right.created_at,
+          ).getTime();
 
-    setReplySending(true);
-    setReplyNotice(null);
-    setReplyFailed(false);
-    setError(null);
+          return rightTime - leftTime;
+        }),
+    );
 
-    try {
-      const result = await replyToOperationsCommunicationThread(
-        threadDetail.id,
-        replyBody,
-        replyRecipient,
-        replySender,
-      );
-
-      setThreadDetail(result.thread);
-      setReplySender(result.sender);
-      setThreads((current) =>
-        current
-          .map((thread) =>
-            thread.id === result.thread.id
-              ? result.thread
-              : thread,
-          )
-          .sort((left, right) => {
-            const leftTime = new Date(
-              left.last_message_at ?? left.created_at,
-            ).getTime();
-            const rightTime = new Date(
-              right.last_message_at ?? right.created_at,
-            ).getTime();
-
-            return rightTime - leftTime;
-          }),
-      );
-      setReplyNotice(deliveryNotice(result.delivery_status));
-      setReplyFailed(result.delivery_status === "failed");
-
-      if (result.delivery_status !== "failed") {
-        setReplyBody("");
-      }
-    } catch (caught) {
-      setReplyFailed(true);
-      setReplyNotice(
-        caught instanceof Error
-          ? caught.message
-          : "Reply could not be submitted.",
-      );
-    } finally {
-      setReplySending(false);
-    }
+    return result;
   }
 
   return (
@@ -1074,12 +721,27 @@ export function CommunicationsInbox({
                   threadDetail.related_entity_type,
                   threadDetail.originating_request?.request_type ?? null,
                 ) !== null ? (
-                  <small className="operations-inbox-related">
-                    {relatedRecordLabel(
-                      threadDetail.related_entity_type,
-                      threadDetail.originating_request?.request_type ?? null,
-                    )}
-                  </small>
+                  <div className="operations-inbox-related-row">
+                    <small className="operations-inbox-related">
+                      {relatedRecordLabel(
+                        threadDetail.related_entity_type,
+                        threadDetail.originating_request?.request_type ?? null,
+                      )}
+                    </small>
+                    {threadDetail.related_entity_type === "quote_request"
+                      && threadDetail.related_entity_id !== null
+                      && onOpenRequest !== undefined ? (
+                        <button
+                          type="button"
+                          className="operations-inbox-open-request"
+                          onClick={() => {
+                            onOpenRequest(threadDetail.related_entity_id as string);
+                          }}
+                        >
+                          Open request →
+                        </button>
+                      ) : null}
+                  </div>
                 ) : null}
               </header>
 
@@ -1130,207 +792,24 @@ export function CommunicationsInbox({
                 </article>
               ) : null}
 
-              <div className="operations-inbox-message-list">
-                <p className="operations-inbox-message-list-label">
-                  Conversation history
-                </p>
-                {threadDetail.messages.map((message) => (
-                  <article
-                    key={message.id}
-                    className={
-                      "operations-inbox-message "
-                      + `is-${message.direction} `
-                      + (message.status === "failed" ? "has-failure" : "")
-                    }
-                  >
-                    <header>
-                      <div>
-                        <div className="operations-inbox-message-badges">
-                          <span className="operations-status-badge">
-                            {messageSourceLabel(message)}
-                          </span>
-                          <span
-                            className={
-                              "operations-inbox-direction "
-                              + `is-${message.direction}`
-                            }
-                          >
-                            {message.direction}
-                          </span>
-                          {message.status === "failed" ? (
-                            <span className="operations-status-badge is-failed">
-                              Failed
-                            </span>
-                          ) : null}
-                        </div>
-                        <strong>
-                          {message.sender_name !== null
-                            ? `${message.sender_name} <${message.sender_address}>`
-                            : message.sender_address}
-                        </strong>
-                      </div>
-                      <small>
-                        {formatTimestamp(messageTimestamp(message))}
-                      </small>
-                    </header>
+              <ConversationMessageList messages={threadDetail.messages} />
 
-                    <p className="operations-inbox-recipient">
-                      {recipientLabel(message)}
-                    </p>
-
-                    <MessageSecuritySummary message={message} />
-
-                    <h4>{message.subject}</h4>
-
-                    <div className="operations-inbox-body">
-                      <ArchivedMessageBody message={message} />
-                    </div>
-
-                    {message.attachments.length > 0 ? (
-                      <div className="operations-inbox-attachments">
-                        <strong>Attachments</strong>
-                        <ul>
-                          {message.attachments.map((attachment) => (
-                            <li key={attachment.id}>
-                              <span>{attachment.filename}</span>
-                              <small>
-                                {attachment.content_type}
-                                {" · "}
-                                {formatBytes(attachment.size_bytes)}
-                              </small>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-
-              <form
-                className="operations-inbox-reply"
-                onSubmit={(event) => {
-                  void submitReply(event);
-                }}
-              >
-                <div>
-                  <strong>Reply</strong>
-                  <small>
-                    {threadDetail.status === "closed"
-                      ? "Restore this conversation to the inbox before replying."
-                      : "Confirm the recipient before sending."}
-                  </small>
-                </div>
-
-                <label className="operations-inbox-reply-recipient-field">
-                  <span>From</span>
-                  <select
-                    aria-label="Reply sender"
-                    value={replySender}
-                    required
-                    disabled={
-                      replySending
-                      || threadDetail.status === "closed"
-                      || threadDetail.reply_sender_addresses.length === 0
-                    }
-                    onChange={(event) => {
-                      setReplySender(event.target.value);
-                      setReplyNotice(null);
-                      setReplyFailed(false);
-                    }}
-                  >
-                    {threadDetail.reply_sender_addresses.map((address) => (
-                      <option key={address} value={address}>
-                        {address}
-                      </option>
-                    ))}
-                  </select>
-                  <small>
-                    Approved D’Acqua Dolce sender · customer replies remain
-                    attached to this archived conversation.
-                  </small>
-                </label>
-
-                <label className="operations-inbox-reply-recipient-field">
-                  <span>To</span>
-                  <input
-                    type="text"
-                    inputMode="email"
-                    aria-label="Reply recipients"
-                    placeholder="customer@example.com"
-                    value={replyRecipient}
-                    maxLength={320}
-                    required
-                    disabled={
-                      replySending
-                      || threadDetail.status === "closed"
-                    }
-                    onChange={(event) => {
-                      setReplyRecipient(event.target.value);
-                      setReplyNotice(null);
-                      setReplyFailed(false);
-                    }}
-                  />
-                  <small>
-                    {threadDetail.reply_target !== null
-                      ? `Suggested from: ${replyTargetSourceLabel(threadDetail.reply_target_source) ?? "conversation"}`
-                      : "No suggested address is available. Enter a recipient."}
-                    {threadDetail.customer_email !== null
-                      && threadDetail.customer_email !== threadDetail.reply_target
-                      ? ` · Account email: ${threadDetail.customer_email}`
-                      : ""}
-                    {" · Separate multiple recipients with commas or semicolons."}
-                  </small>
-                </label>
-
-                <textarea
-                  aria-label="Reply message"
-                  placeholder="Write a plain-text reply…"
-                  value={replyBody}
-                  maxLength={20000}
-                  disabled={
-                    replySending
-                    || threadDetail.status === "closed"
-                  }
-                  onChange={(event) => {
-                    setReplyBody(event.target.value);
-                    setReplyNotice(null);
-                    setReplyFailed(false);
-                  }}
-                />
-
-                <div className="operations-inbox-reply-actions">
-                  {replyNotice !== null ? (
-                    <span
-                      className={
-                        replyFailed
-                          ? "operations-inbox-reply-status is-error"
-                          : "operations-inbox-reply-status"
-                      }
-                    >
-                      {replyNotice}
-                    </span>
-                  ) : (
-                    <span className="operations-inbox-reply-status">
-                      Plain text · archived with this conversation
-                    </span>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="operations-action"
-                    disabled={
-                      replySending
-                      || threadDetail.status === "closed"
-                      || replyRecipient.trim().length === 0
-                      || replySender.trim().length === 0
-                      || replyBody.trim().length === 0
-                    }
-                  >
-                    {replySending ? "Sending…" : "Send reply"}
-                  </button>
-                </div>
-              </form>
+              <ConversationReplyForm
+                key={threadDetail.id}
+                senderAddresses={threadDetail.reply_sender_addresses}
+                defaultSender={threadDetail.reply_sender_default}
+                defaultRecipient={threadDetail.reply_target}
+                recipientSource={threadDetail.reply_target_source}
+                accountEmail={threadDetail.customer_email}
+                closedHint={
+                  threadDetail.status === "closed"
+                    ? "Restore this conversation to the inbox before replying."
+                    : null
+                }
+                statusNotice={statusNotice}
+                onSubmit={(body, recipient, sender) =>
+                  sendReply(threadDetail.id, body, recipient, sender)}
+              />
             </>
           )}
         </section>

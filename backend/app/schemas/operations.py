@@ -255,6 +255,20 @@ class OperationsCommunicationThreadDetailRead(
     )
 
 
+class OperationsQuoteConversationRead(BaseModel):
+    """A request's customer conversation, plus what a first reply would use.
+
+    `thread` is null until someone replies; the reply fields are filled either
+    way so the request can offer a "start the conversation" form.
+    """
+
+    thread: OperationsCommunicationThreadDetailRead | None = None
+    reply_target: str | None = None
+    reply_target_source: str | None = None
+    reply_sender_addresses: list[str] = Field(default_factory=list)
+    reply_sender_default: str | None = None
+
+
 class OperationsCommunicationThreadStatusUpdate(BaseModel):
     status: CommunicationThreadStatus
 

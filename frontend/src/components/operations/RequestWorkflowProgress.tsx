@@ -93,7 +93,7 @@ function nextStepFor(
   switch (stepId) {
     case "contacted":
       return {
-        hint: "Get in touch with the customer by email or phone, then mark it contacted.",
+        hint: "Email the customer from the Conversation section below (sending marks it contacted), or call them and mark it contacted.",
         action: { kind: "status", label: "Mark as contacted", status: "contacted" },
       };
     case "drafted":

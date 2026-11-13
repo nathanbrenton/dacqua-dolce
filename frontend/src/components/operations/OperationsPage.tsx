@@ -68,6 +68,7 @@ import {
 import {
   DeveloperFooterLogo,
 } from "../brand/DeveloperFooterLogo";
+import { RequestConversation } from "./RequestConversation";
 import { RequestWorkflowProgress } from "./RequestWorkflowProgress";
 import {
   FooterCopyright,
@@ -792,6 +793,9 @@ export function OperationsPage({
   const [activeWorkspace, setActiveWorkspace] =
     useState<OperationsWorkspace>("overview");
   const [activeInboxCount, setActiveInboxCount] = useState(0);
+  // Set by a request's "Open in Inbox"; a new object reopens the thread.
+  const [inboxThreadToOpen, setInboxThreadToOpen] =
+    useState<{ threadId: string } | null>(null);
 
   const visibleWorkspaces = useMemo(() =>
     OPERATIONS_WORKSPACES.filter(({ id }) =>
@@ -2721,6 +2725,25 @@ export function OperationsPage({
     scrollToOperationsTarget("quote-queue");
   }
 
+  // From an Inbox conversation: show its request in the Requests workspace,
+  // widening the queue filters if they would hide it.
+  function openRequestFromInbox(quoteId: string) {
+    const quote = quotes.find((candidate) => candidate.id === quoteId);
+    if (quote === undefined) {
+      setError("That request isn't in the loaded request list.");
+      return;
+    }
+    setRequestView(quote.status === "closed" ? "all" : "active");
+    setRecommendationTriageView("all");
+    setSelectedQuoteId(quote.id);
+    scrollToOperationsTarget("quote-queue");
+  }
+
+  function openThreadInInbox(threadId: string) {
+    setInboxThreadToOpen({ threadId });
+    scrollToOperationsTarget("communications-history");
+  }
+
   return (
     <main
       id="main-content"
@@ -3150,7 +3173,11 @@ export function OperationsPage({
         id="communications-history"
         className="operations-section operations-customer-inbox-section operations-workspace-main"
       >
-        <CommunicationsInbox onActiveCountChange={setActiveInboxCount} />
+        <CommunicationsInbox
+          onActiveCountChange={setActiveInboxCount}
+          onOpenRequest={openRequestFromInbox}
+          threadToOpen={inboxThreadToOpen}
+        />
       </section>
 
       </section>
@@ -3456,6 +3483,24 @@ export function OperationsPage({
                       </p>
                     )}
                   </section>
+
+                  <RequestConversation
+                    quote={quote}
+                    active={
+                      activeWorkspace === "requests"
+                      && quote.id === selectedRequestId
+                    }
+                    onReplied={(reply) => {
+                      // Emailing a new request's customer is contacting them.
+                      if (
+                        quote.status === "new"
+                        && reply.delivery_status !== "failed"
+                      ) {
+                        void saveQuoteStatus(quote, "contacted");
+                      }
+                    }}
+                    onOpenInInbox={openThreadInInbox}
+                  />
 
                   <FormalQuoteComposer
                     quote={quote}

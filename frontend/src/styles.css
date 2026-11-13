@@ -8202,3 +8202,63 @@ img[data-logo-variant^="monochrome"] {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* Operations redesign phase 3 — request conversation and Inbox ↔ request links */
+.operations-inbox-related-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 7px;
+}
+
+.operations-inbox-related-row .operations-inbox-related {
+  margin-top: 0;
+}
+
+.operations-inbox-open-request {
+  padding: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 700;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--control-highlight);
+  text-underline-offset: 3px;
+}
+
+.operations-inbox-open-request:hover,
+.operations-inbox-open-request:focus-visible {
+  text-decoration-thickness: 2px;
+}
+
+.operations-request-conversation .operations-request-region-heading {
+  align-items: center;
+}
+
+.operations-request-conversation-tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Long threads scroll inside the request, starting at the latest email,
+   so the formal quote below stays close. */
+.operations-request-conversation-messages {
+  max-height: min(60vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.operations-request-conversation-messages .operations-inbox-message-list {
+  margin-top: 0;
+}
+
+.operations-request-conversation .operations-request-empty {
+  margin: 0;
+}

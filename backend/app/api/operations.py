@@ -38,6 +38,7 @@ from app.models.communications import (
     CommunicationMessage,
     CommunicationRecipient,
     CommunicationThread,
+    CommunicationThreadStatus,
 )
 from app.models.customer import (
     CustomerAddress,
@@ -109,6 +110,7 @@ from app.schemas.operations import (
     OperationsProductSpecificationRead,
     OperationsProductVariantRead,
     OperationsPromotionRead,
+    OperationsQuoteConversationRead,
     OperationsQuoteRead,
     OperationsReturnPolicyExceptionRead,
     OperationsSalesInsightsRead,
@@ -2041,6 +2043,153 @@ def update_quote_status(
     return operations_quote_read(
         db,
         quote=quote,
+    )
+
+
+QUOTE_CONVERSATION_SUBJECT = "Your D'Acqua Dolce request"
+
+
+def _quote_conversation_thread(
+    db: DatabaseSession,
+    *,
+    quote_id: uuid.UUID,
+) -> CommunicationThread | None:
+    """Most recent customer conversation linked to a quote request.
+
+    System threads (staff alerts and similar) share the quote link but are
+    not customer conversations, so they are skipped.
+    """
+    threads = list(
+        db.scalars(
+            select(CommunicationThread)
+            .where(
+                CommunicationThread.related_entity_type == "quote_request",
+                CommunicationThread.related_entity_id == str(quote_id),
+            )
+            .order_by(
+                CommunicationThread.last_message_at.desc().nullslast(),
+                CommunicationThread.created_at.desc(),
+                CommunicationThread.id,
+            )
+        ).all()
+    )
+
+    if not threads:
+        return None
+
+    inbox_thread_ids = {
+        read.id
+        for read in _communication_thread_list_reads(db, threads=threads)
+        if read.mailbox_kind == "inbox"
+    }
+
+    for thread in threads:
+        if str(thread.id) in inbox_thread_ids:
+            return thread
+
+    return None
+
+
+def _require_quote(
+    db: DatabaseSession,
+    *,
+    quote_id: uuid.UUID,
+) -> QuoteRequest:
+    quote = db.get(QuoteRequest, quote_id)
+
+    if quote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Quote request not found.",
+        )
+
+    return quote
+
+
+@router.get(
+    "/quotes/{quote_id}/conversation",
+    response_model=OperationsQuoteConversationRead,
+)
+def get_quote_conversation(
+    quote_id: uuid.UUID,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsQuoteConversationRead:
+    """The customer conversation for a request (thread is null if none yet)."""
+    require_operations(db, user=current_user)
+    quote = _require_quote(db, quote_id=quote_id)
+
+    thread = _quote_conversation_thread(db, quote_id=quote_id)
+
+    if thread is not None:
+        detail = get_communication_thread(thread.id, db, current_user)
+        return OperationsQuoteConversationRead(
+            thread=detail,
+            reply_target=detail.reply_target,
+            reply_target_source=detail.reply_target_source,
+            reply_sender_addresses=detail.reply_sender_addresses,
+            reply_sender_default=detail.reply_sender_default,
+        )
+
+    # No conversation yet: a first reply goes to the request's email from a
+    # quote-appropriate sender. The thread here is never added to the session.
+    sender_options = resolve_communication_reply_sender_options(
+        get_email_runtime_settings(),
+        thread=CommunicationThread(related_entity_type="quote_request"),
+    )
+
+    try:
+        reply_target: str | None = normalize_email_address(quote.email)
+    except ValueError:
+        reply_target = None
+
+    return OperationsQuoteConversationRead(
+        thread=None,
+        reply_target=reply_target,
+        reply_target_source="quote_request" if reply_target else None,
+        reply_sender_addresses=list(sender_options.addresses),
+        reply_sender_default=sender_options.default,
+    )
+
+
+@router.post(
+    "/quotes/{quote_id}/conversation/reply",
+    response_model=OperationsCommunicationReplyRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def reply_to_quote_conversation(
+    quote_id: uuid.UUID,
+    payload: OperationsCommunicationReplyCreate,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> OperationsCommunicationReplyRead:
+    """Reply to the request's customer conversation, starting one if needed.
+
+    The thread is only created here, together with its first message, so
+    opening a request never leaves an empty conversation in the Inbox. If the
+    send is refused, the request rolls back and no thread is kept.
+    """
+    require_operations(db, user=current_user)
+    quote = _require_quote(db, quote_id=quote_id)
+
+    thread = _quote_conversation_thread(db, quote_id=quote_id)
+
+    if thread is None:
+        thread = CommunicationThread(
+            customer_user_id=quote.user_id,
+            subject=QUOTE_CONVERSATION_SUBJECT,
+            related_entity_type="quote_request",
+            related_entity_id=str(quote.id),
+            status=CommunicationThreadStatus.open,
+        )
+        db.add(thread)
+        db.flush()
+
+    return reply_to_communication_thread(
+        thread.id,
+        payload,
+        db,
+        current_user,
     )
 
 

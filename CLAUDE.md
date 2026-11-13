@@ -87,7 +87,8 @@ organised, above all for communicating with customers and fielding quotes.
 - `frontend/src/components/operations/OperationsPage.tsx` (~6,000 lines) holds
   the header, workspace nav and most panels.
 - Split-out panels in the same folder: `CommunicationsInbox.tsx` (customer
-  inbox and replies), `FormalQuoteComposer.tsx` (quote drafting inside a
+  inbox), `ConversationThread.tsx` (message list and reply form shared by the
+  Inbox and requests), `RequestConversation.tsx`, `FormalQuoteComposer.tsx` (quote drafting inside a
   request), `OrderFulfillmentControls.tsx`, `PolicyManagementPanel.tsx`,
   `LaunchDependencyEvidencePanel.tsx`, `ProductFamilyOrderPanel.tsx`.
 - API calls: `frontend/src/api/operations.ts`; backend routes in `backend/app/api/operations.py`.
@@ -105,7 +106,7 @@ collapsible `<details>` disclosures.
 |---|---|---|
 | `overview` | Overview | Summary counts, readiness snapshot, observed request patterns, launch policies |
 | `communications` | Inbox | Failed email deliveries (only when there are any), customer inbox |
-| `requests` | Requests | Status/triage filter tabs, then a queue of requests on the left and the selected request on the right: workflow progress bar plus next step (`RequestWorkflowProgress.tsx`), Customer, Recommendation, Request, Formal quote and private notes |
+| `requests` | Requests | Status/triage filter tabs, then a queue of requests on the left and the selected request on the right: workflow progress bar plus next step (`RequestWorkflowProgress.tsx`), Customer, Recommendation, Request, Conversation (`RequestConversation.tsx`), Formal quote and private notes |
 | `orders` | Orders | Customer orders and fulfilment |
 | `catalog` | Catalog | Pricing and inventory, availability demand, per-product accordions |
 | `customers` | Customers | Accounts and address book |
@@ -120,9 +121,9 @@ comma-separated list. Each inbox gets its own copy (category
 alerts off.
 
 **Known pain points:**
-- Requests and Inbox are separate workspaces. A quote's email thread is linked
-  to it in data (`related_entity_type: "quote_request"`), but you have to switch
-  workspaces to see the conversation next to the request.
+- The Inbox thread list only loads the 200 most recent threads, and System
+  mail (alerts, verification) fills most of that locally. A request's
+  Conversation section loads its own thread, so it isn't affected.
 - A single request is still long: recommendation context and the formal
   quote builder take a lot of vertical space.
 - `OperationsPage.tsx` is very large; split panels out into their own files as you touch them.
@@ -139,7 +140,11 @@ alerts off.
    Every request stays mounted (unselected ones are `hidden`) so quote and
    note drafts survive switching; Overview shortcuts select the first match.
 3. Show the linked email conversation, with a reply box, inside the request;
-   add an "Open request" link to Inbox conversations.
+   add an "Open request" link to Inbox conversations. **Done.** The request
+   loads its own thread (`/api/operations/quotes/{id}/conversation`, skipping
+   System threads); with none yet, the first reply creates one linked to the
+   request. Replying to a New request marks it Contacted. "Open in Inbox" and
+   "Open request →" link the two workspaces both ways.
 4. Overview becomes a "Needs you" list linking straight to waiting items.
 
 The tab order (Inbox before Requests) is unchanged. The user hasn't decided

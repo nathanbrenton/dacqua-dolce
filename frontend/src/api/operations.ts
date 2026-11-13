@@ -247,6 +247,15 @@ export type OperationsCommunicationReply = {
   thread: OperationsCommunicationThreadDetail;
 };
 
+/** A request's customer conversation; `thread` is null until the first reply. */
+export type OperationsQuoteConversation = {
+  thread: OperationsCommunicationThreadDetail | null;
+  reply_target: string | null;
+  reply_target_source: string | null;
+  reply_sender_addresses: string[];
+  reply_sender_default: string | null;
+};
+
 export type InstallerCandidateStatus =
   | "researching"
   | "contacted"
@@ -848,6 +857,31 @@ export function replyToOperationsCommunicationThread(
 ): Promise<OperationsCommunicationReply> {
   return writeJson(
     `/api/operations/communication-threads/${encodeURIComponent(threadId)}/reply`,
+    "POST",
+    {
+      body_text: bodyText,
+      recipient,
+      sender,
+    },
+  );
+}
+
+export function getOperationsQuoteConversation(
+  quoteId: string,
+): Promise<OperationsQuoteConversation> {
+  return getJson(
+    `/api/operations/quotes/${encodeURIComponent(quoteId)}/conversation`,
+  );
+}
+
+export function replyToOperationsQuoteConversation(
+  quoteId: string,
+  bodyText: string,
+  recipient: string,
+  sender: string,
+): Promise<OperationsCommunicationReply> {
+  return writeJson(
+    `/api/operations/quotes/${encodeURIComponent(quoteId)}/conversation/reply`,
     "POST",
     {
       body_text: bodyText,
