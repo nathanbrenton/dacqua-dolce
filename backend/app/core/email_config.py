@@ -161,6 +161,57 @@ class EmailRuntimeSettings(BaseSettings):
 
         return normalized
 
+    @field_validator("email_operator_to")
+    @classmethod
+    def validate_email_operator_to(
+        cls,
+        value: str | None,
+    ) -> str | None:
+        # One address or a comma/semicolon-separated list of staff inboxes that
+        # receive new-request alerts. Blank means alerts are off: the
+        # production template leaves it empty, and an empty recipient would
+        # be rejected by Postmark as "Zero recipients specified".
+        if value is None:
+            return None
+
+        candidates = [
+            item.strip()
+            for item in value.replace(";", ",").split(",")
+            if item.strip()
+        ]
+
+        if not candidates:
+            return None
+
+        if len(candidates) > 10:
+            raise ValueError(
+                "email_operator_to supports at most 10 addresses."
+            )
+
+        normalized: list[str] = []
+        seen: set[str] = set()
+
+        for candidate in candidates:
+            address = normalize_email_address(candidate)
+
+            if address in seen:
+                continue
+
+            seen.add(address)
+            normalized.append(address)
+
+        return ",".join(normalized)
+
+    @property
+    def operator_recipients(
+        self,
+    ) -> tuple[str, ...]:
+        """Staff inboxes for new-request alerts; empty when alerts are off."""
+        if not self.email_operator_to:
+            return ()
+
+        return tuple(self.email_operator_to.split(","))
+
     @field_validator("email_support_from")
     @classmethod
     def validate_email_support_from(

@@ -132,9 +132,9 @@ def send_quote_emails(
         customer_user_id=quote.user_id,
     )
 
-    operator_to = email_settings.email_operator_to
+    operator_recipients = email_settings.operator_recipients
 
-    if operator_to is None:
+    if not operator_recipients:
         return
 
     message_lines = [
@@ -210,19 +210,22 @@ def send_quote_emails(
             ]
         )
 
-    deliver_email(
-        db,
-        settings=email_settings,
-        message=EmailMessage(
-            sender=(email_settings.email_from),
-            recipient=operator_to,
-            subject=subject,
-            body_text="\n".join(message_lines),
-        ),
-        category=("quote_operator_notification"),
-        related_entity_type=("quote_request"),
-        related_entity_id=str(quote.id),
-    )
+    # One message per staff inbox: recipients don't see each other's
+    # addresses, and each delivery succeeds or fails on its own record.
+    for operator_to in operator_recipients:
+        deliver_email(
+            db,
+            settings=email_settings,
+            message=EmailMessage(
+                sender=(email_settings.email_from),
+                recipient=operator_to,
+                subject=subject,
+                body_text="\n".join(message_lines),
+            ),
+            category=("quote_operator_notification"),
+            related_entity_type=("quote_request"),
+            related_entity_id=str(quote.id),
+        )
 
 
 

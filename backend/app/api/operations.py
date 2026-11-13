@@ -1228,6 +1228,8 @@ SYSTEM_EMAIL_CATEGORIES = {
     "email_verification",
     "password_reset",
     "customer_welcome",
+    # Internal new-request alerts to staff inboxes, not customer conversations.
+    "quote_operator_notification",
 }
 
 

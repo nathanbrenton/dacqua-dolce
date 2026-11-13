@@ -196,6 +196,7 @@ def test_communication_thread_mailbox_kind_uses_delivery_category(
             "email_verification": "system",
             "password_reset": "system",
             "customer_welcome": "system",
+            "quote_operator_notification": "system",
             "quote_reply": "inbox",
         }
         thread_ids: dict[str, uuid.UUID] = {}

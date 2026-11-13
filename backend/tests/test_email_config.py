@@ -63,6 +63,47 @@ def test_blank_support_sender_uses_fallback_path() -> None:
     assert settings.email_support_from is None
 
 
+def test_blank_operator_recipient_disables_operator_alerts() -> None:
+    # An empty DACQUA_EMAIL_OPERATOR_TO= (the production template default)
+    # must mean "no operator alert", not an alert to zero recipients.
+    for blank in ("", "   ", " , ; "):
+        settings = EmailRuntimeSettings(email_operator_to=blank)
+
+        assert settings.email_operator_to is None
+        assert settings.operator_recipients == ()
+
+
+def test_operator_recipient_is_normalized() -> None:
+    settings = EmailRuntimeSettings(
+        email_operator_to=" Sales@DacquaDolce.com ",
+    )
+
+    assert settings.email_operator_to == "sales@dacquadolce.com"
+    assert settings.operator_recipients == ("sales@dacquadolce.com",)
+
+
+def test_operator_recipient_list_is_normalized_and_deduplicated() -> None:
+    settings = EmailRuntimeSettings(
+        email_operator_to=(
+            "Owner@Example.test, staff@example.test;"
+            " owner@example.test , team@example.test"
+        ),
+    )
+
+    assert settings.operator_recipients == (
+        "owner@example.test",
+        "staff@example.test",
+        "team@example.test",
+    )
+
+
+def test_operator_recipient_list_rejects_invalid_address() -> None:
+    with pytest.raises(ValidationError):
+        EmailRuntimeSettings(
+            email_operator_to="owner@example.test, not-an-address",
+        )
+
+
 def test_reply_sender_addresses_are_normalized_and_deduplicated() -> None:
     settings = EmailRuntimeSettings(
         email_from="no-reply@dacquadolce.com",

@@ -113,6 +113,12 @@ collapsible `<details>` disclosures.
 | `staff` | Staff | User access and roles (administrator and developer only) |
 | `audit` | Audit | Privileged activity history (developer only) |
 
+**New-request email alerts:** `DACQUA_EMAIL_OPERATOR_TO` (in
+`/etc/dacqua-dolce/backend.env` on production) takes one address or a
+comma-separated list. Each inbox gets its own copy (category
+`quote_operator_notification`, filed under Inbox > System); blank turns
+alerts off.
+
 **Known pain points:**
 - Requests and Inbox are separate workspaces. A quote's email thread is linked
   to it in data (`related_entity_type: "quote_request"`), but you have to switch
