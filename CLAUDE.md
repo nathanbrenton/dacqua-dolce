@@ -37,7 +37,10 @@ It is developed locally and deployed to one production host.
 
 ## Checks
 
-- Frontend: `npm run typecheck`; `node --test tests/*.test.mjs` (from
+- Frontend typecheck: `npx tsc -p tsconfig.app.json --noEmit` (from
+  `frontend/`). **`npm run typecheck` checks nothing**: the root
+  `tsconfig.json` has `"files": []` and only references sub-projects.
+- Frontend tests: `node --test tests/*.test.mjs` (from
   `frontend/`; these tests pin exact strings and element order on product
   pages, so copy or layout edits there can break them); production build with
   `VITE_APP_ENVIRONMENT=production VITE_DEVELOPER_MODE=false npx vite build`.
@@ -102,7 +105,7 @@ collapsible `<details>` disclosures.
 |---|---|---|
 | `overview` | Overview | Summary counts, readiness snapshot, observed request patterns, launch policies |
 | `communications` | Inbox | Failed email deliveries (only when there are any), customer inbox |
-| `requests` | Requests | Quote requests with status/filter tabs; each card has Customer, Recommendation, Request, Formal quote, notes and a Status sidebar |
+| `requests` | Requests | Status/triage filter tabs, then a queue of requests on the left and the selected request on the right: workflow progress bar plus next step (`RequestWorkflowProgress.tsx`), Customer, Recommendation, Request, Formal quote and private notes |
 | `orders` | Orders | Customer orders and fulfilment |
 | `catalog` | Catalog | Pricing and inventory, availability demand, per-product accordions |
 | `customers` | Customers | Accounts and address book |
@@ -114,16 +117,21 @@ collapsible `<details>` disclosures.
 - Requests and Inbox are separate workspaces. A quote's email thread is linked
   to it in data (`related_entity_type: "quote_request"`), but you have to switch
   workspaces to see the conversation next to the request.
-- Requests lists every request fully expanded, one after another; a single
-  request card is long and dense.
-- Status is a plain dropdown with no "what to do next" guidance.
+- A single request is still long: recommendation context and the formal
+  quote builder take a lot of vertical space.
 - `OperationsPage.tsx` is very large; split panels out into their own files as you touch them.
 
 **Redesign plan (agreed 2026-11-12):**
 1. Quick wins: grouped tabs, waiting counts, Requests and Inbox open by
    default. **Done.**
-2. Requests as a list plus a detail pane (like the Inbox), with status steps
-   (New → Contacted → Quoted → Closed) and one next-step button.
+2. Requests as a list plus a detail pane (like the Inbox), with a workflow
+   progress bar and one next step. **Done.** The bar's steps are worked out
+   from the request and its formal quotes: Received → Contacted → Quote
+   drafted → Staff review (only when required) → Presented → Customer
+   approved (this creates the order) → Closed. Presenting needs a customer
+   account under the request email plus delivery and billing addresses.
+   Every request stays mounted (unselected ones are `hidden`) so quote and
+   note drafts survive switching; Overview shortcuts select the first match.
 3. Show the linked email conversation, with a reply box, inside the request;
    add an "Open request" link to Inbox conversations.
 4. Overview becomes a "Needs you" list linking straight to waiting items.

@@ -35,6 +35,18 @@ when either is above zero. Requests and Inbox render their content directly
 rather than inside a collapsed disclosure; the other workspaces keep their
 disclosures and open the first one when the tab is chosen.
 
+Requests shows a queue on the left (name, what the customer needs, age,
+status, and Human review / Lab testing tags) and the selected request on the
+right. The request opens with a progress bar (`RequestWorkflowProgress.tsx`)
+whose nodes are derived from the request and its formal quotes: Received,
+Contacted, Quote drafted, Staff review (only when the latest quote requires
+it), Presented, Customer approved (approval creates the order) and Closed.
+Below it is one suggested next step with a button (Mark as contacted, Start
+quote, Go to staff review, Go to quote, Close request or Reopen request) and
+a secondary Close request. Unselected requests stay mounted but hidden so unsaved
+quote and note drafts are kept. The Overview metrics select the first
+matching request.
+
 Pricing & Inventory product cards are collapsed by default and use a one-open-at-a-time accordion. Compact summary badges explicitly label `Lifecycle:`, `Inventory:`, and `Pricing:` so canonical product names never need lifecycle words embedded in the title.
 
 Customer Inbox distinguishes Website, Email/Postmark, and archived/provider evidence. Website submissions are not treated as email-authentication events. Inbound/customer-supplied URLs remain non-clickable; arbitrary inbound HTML remains untrusted.

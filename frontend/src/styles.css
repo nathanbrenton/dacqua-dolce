@@ -7932,3 +7932,273 @@ img[data-logo-variant^="monochrome"] {
     padding: 0 6px;
   }
 }
+
+/* 2026-11-13 — Operations phase 2: Requests as a queue plus a detail pane,
+   with status steps and one suggested next step per request. */
+.operations-request-split {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.operations-request-queue {
+  position: sticky;
+  top: 96px;
+  max-height: calc(100vh - 116px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--surface-2);
+  border: 1px solid var(--hairline);
+}
+
+.operations-request-queue li + li {
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-request-queue-item {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  padding: 12px 14px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.operations-request-queue-item:hover {
+  background: var(--surface-1);
+}
+
+.operations-request-queue-item.is-selected {
+  background: var(--surface-1);
+  box-shadow: inset 3px 0 0 var(--control-highlight);
+}
+
+.operations-request-queue-item:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: -3px;
+}
+
+.operations-request-queue-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.operations-request-queue-top strong {
+  overflow: hidden;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operations-request-queue-top time {
+  flex: 0 0 auto;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.operations-request-queue-need {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.operations-request-queue-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.operations-request-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--ink-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.operations-request-tag[data-status="new"] {
+  border-color: var(--control-highlight);
+  color: var(--control-highlight);
+}
+
+.operations-request-tag.is-important {
+  background: var(--warning-surface);
+  border-color: var(--warning-border);
+  color: var(--warning-text);
+}
+
+.operations-request-detail {
+  min-width: 0;
+}
+
+.operations-request-detail > .operations-quote {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.operations-request-detail > .operations-quote[hidden] {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .operations-request-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .operations-request-queue {
+    position: static;
+    max-height: 280px;
+  }
+}
+
+/* Jump targets land below the pinned Operations tab bar. */
+.operations-shell .operations-formal-quote {
+  scroll-margin-top: 110px;
+}
+
+/* Request workflow: a progress track with one node per step, then the
+   suggested next step. Done nodes are filled, the current node is ringed,
+   and steps a closed request never reached are dashed. */
+.operations-request-workflow {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 16px 16px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+}
+
+.operations-workflow-track {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.operations-workflow-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  text-align: center;
+}
+
+.operations-workflow-step + .operations-workflow-step::before {
+  content: "";
+  position: absolute;
+  top: 9px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--hairline);
+}
+
+.operations-workflow-step.is-done::before,
+.operations-workflow-step.is-current::before {
+  background: var(--control-highlight);
+}
+
+.operations-workflow-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  background: var(--surface-2);
+  border: 2px solid var(--hairline);
+  border-radius: 50%;
+}
+
+.operations-workflow-step.is-done .operations-workflow-node {
+  background: var(--control-highlight);
+  border-color: var(--control-highlight);
+}
+
+.operations-workflow-step.is-done .operations-workflow-node::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  margin-top: -2px;
+  border: solid var(--surface-2);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.operations-workflow-step.is-current .operations-workflow-node {
+  border-color: var(--control-highlight);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--control-highlight) 22%, transparent);
+}
+
+.operations-workflow-step.is-current .operations-workflow-node::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--control-highlight);
+  border-radius: 50%;
+}
+
+.operations-workflow-step.is-skipped .operations-workflow-node {
+  border-style: dashed;
+}
+
+.operations-workflow-label {
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.25;
+}
+
+.operations-workflow-step.is-done .operations-workflow-label {
+  color: var(--ink);
+}
+
+.operations-workflow-step.is-current .operations-workflow-label {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.operations-request-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+}
+
+.operations-request-next p {
+  flex: 1 1 320px;
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.operations-request-next p strong {
+  color: var(--ink);
+}
+
+.operations-request-next-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

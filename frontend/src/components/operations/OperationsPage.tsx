@@ -68,6 +68,7 @@ import {
 import {
   DeveloperFooterLogo,
 } from "../brand/DeveloperFooterLogo";
+import { RequestWorkflowProgress } from "./RequestWorkflowProgress";
 import {
   FooterCopyright,
 } from "../brand/FooterCopyright";
@@ -264,6 +265,29 @@ const QUOTE_STATUS_LABELS: Record<
   quoted: "Quoted",
   closed: "Closed",
 };
+
+type QuoteStatus = (typeof QUOTE_STATUSES)[number];
+
+// Compact age for the request queue: "Just now", "45m", "3h", "2d", or a date.
+function formatRequestAge(createdAt: string, now: number = Date.now()): string {
+  const created = new Date(createdAt);
+  const minutes = Math.floor((now - created.getTime()) / 60000);
+  if (minutes < 1) {
+    return "Just now";
+  }
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+  const days = Math.floor(hours / 24);
+  if (days < 14) {
+    return `${days}d`;
+  }
+  return created.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 const RECOMMENDATION_COMPONENT_LABELS: Record<string, string> = {
   harmony: "Harmony",
@@ -826,6 +850,8 @@ export function OperationsPage({
     useState<RequestView>("active");
   const [recommendationTriageView, setRecommendationTriageView] =
     useState<RecommendationTriageView>("all");
+  const [selectedQuoteId, setSelectedQuoteId] =
+    useState<string | null>(null);
   const [communications, setCommunications] =
     useState<OperationsCommunication[]>([]);
   const [operatorProfile, setOperatorProfile] =
@@ -1494,6 +1520,18 @@ export function OperationsPage({
       );
     });
   }, [lifecycleQuotes, recommendationTriageView]);
+
+  // The request shown in the detail pane: the one picked in the queue, or the
+  // first request in the current view when that pick is filtered out.
+  const selectedRequestId = useMemo(() => {
+    if (
+      selectedQuoteId !== null
+      && visibleQuotes.some((quote) => quote.id === selectedQuoteId)
+    ) {
+      return selectedQuoteId;
+    }
+    return visibleQuotes[0]?.id ?? null;
+  }, [selectedQuoteId, visibleQuotes]);
 
   const requestCounts = useMemo(() => ({
     active: quotes.filter((quote) => quote.status !== "closed").length,
@@ -2658,40 +2696,29 @@ export function OperationsPage({
       return;
     }
 
+    // Quote metrics open the Requests queue filtered to match, with the
+    // first matching active request selected in the detail pane.
     setRequestView("active");
+    const activeQuotes = quotes.filter((quote) => quote.status !== "closed");
+    const firstMatch =
+      metric === "human_review"
+        ? activeQuotes.find(
+          (quote) => quote.recommendation_decision?.human_review === true,
+        )
+        : metric === "lab_testing"
+          ? activeQuotes.find(
+            (quote) =>
+              quote.recommendation_decision?.requires_third_party_lab === true,
+          )
+          : metric === "new_quotes"
+            ? activeQuotes.find((quote) => quote.status === "new")
+            : activeQuotes[0];
 
-    if (metric === "human_review") {
-      setRecommendationTriageView("human_review");
-      scrollToOperationsTarget(
-        "quote-queue",
-        '#quote-queue .operations-quote[data-human-review="true"]',
-      );
-      return;
-    }
-
-    if (metric === "lab_testing") {
-      setRecommendationTriageView("lab_testing");
-      scrollToOperationsTarget(
-        "quote-queue",
-        '#quote-queue .operations-quote[data-lab-testing="true"]',
-      );
-      return;
-    }
-
-    setRecommendationTriageView("all");
-
-    if (metric === "new_quotes") {
-      scrollToOperationsTarget(
-        "quote-queue",
-        '#quote-queue .operations-quote[data-quote-status="new"]',
-      );
-      return;
-    }
-
-    scrollToOperationsTarget(
-      "quote-queue",
-      "#quote-queue .operations-quote",
+    setRecommendationTriageView(
+      metric === "human_review" || metric === "lab_testing" ? metric : "all",
     );
+    setSelectedQuoteId(firstMatch?.id ?? null);
+    scrollToOperationsTarget("quote-queue");
   }
 
   return (
@@ -3209,10 +3236,72 @@ export function OperationsPage({
             No customer requests in this view.
           </p>
         ) : (
-          <div className="operations-quote-list">
+          <div className="operations-request-split">
+            <ul
+              className="operations-request-queue"
+              aria-label="Requests in this view"
+            >
+              {visibleQuotes.map((quote) => {
+                const selected = quote.id === selectedRequestId;
+                const needs =
+                  quote.recommendation_decision?.title
+                  ?? quote.product_name
+                  ?? "General consultation";
+                return (
+                  <li key={quote.id}>
+                    <button
+                      type="button"
+                      className={
+                        "operations-request-queue-item"
+                        + (selected ? " is-selected" : "")
+                      }
+                      aria-current={selected ? "true" : undefined}
+                      aria-controls={`operations-request-${quote.id}`}
+                      onClick={() => {
+                        setSelectedQuoteId(quote.id);
+                      }}
+                    >
+                      <span className="operations-request-queue-top">
+                        <strong>{quote.name}</strong>
+                        <time
+                          dateTime={quote.created_at}
+                          title={new Date(quote.created_at).toLocaleString()}
+                        >
+                          {formatRequestAge(quote.created_at)}
+                        </time>
+                      </span>
+                      <span className="operations-request-queue-need">
+                        {needs}
+                      </span>
+                      <span className="operations-request-queue-tags">
+                        <span
+                          className="operations-request-tag"
+                          data-status={quote.status}
+                        >
+                          {QUOTE_STATUS_LABELS[quote.status as QuoteStatus] ?? quote.status}
+                        </span>
+                        {quote.recommendation_decision?.human_review === true ? (
+                          <span className="operations-request-tag">
+                            Human review
+                          </span>
+                        ) : null}
+                        {quote.recommendation_decision?.requires_third_party_lab === true ? (
+                          <span className="operations-request-tag is-important">
+                            Lab testing
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="operations-request-detail">
             {visibleQuotes.map((quote) => (
               <article
                 key={quote.id}
+                id={`operations-request-${quote.id}`}
+                hidden={quote.id !== selectedRequestId}
                 className="operations-quote"
                 data-quote-status={quote.status}
                 data-human-review={
@@ -3238,6 +3327,19 @@ export function OperationsPage({
                       Received {new Date(quote.created_at).toLocaleString()}
                     </span>
                   </header>
+
+                  <RequestWorkflowProgress
+                    quote={quote}
+                    onSetStatus={(status) => {
+                      void saveQuoteStatus(quote, status);
+                    }}
+                    onOpenQuote={() => {
+                      document
+                        .getElementById(`operations-request-${quote.id}`)
+                        ?.querySelector(".operations-formal-quote")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  />
 
                   <section className="operations-request-region">
                     <p className="operations-request-region-label">Customer</p>
@@ -3434,33 +3536,9 @@ export function OperationsPage({
                     </button>
                   </section>
                 </div>
-
-                <aside className="operations-request-status">
-                  <div>
-                    <p className="operations-request-region-label">Status</p>
-                    <strong>
-                      {QUOTE_STATUS_LABELS[quote.status as keyof typeof QUOTE_STATUS_LABELS] ?? quote.status}
-                    </strong>
-                  </div>
-
-                  <label className="operations-field">
-                    <span>Update status</span>
-                    <select
-                      value={quote.status}
-                      onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-                        void saveQuoteStatus(quote, event.target.value);
-                      }}
-                    >
-                      {QUOTE_STATUSES.map((quoteStatus) => (
-                        <option key={quoteStatus} value={quoteStatus}>
-                          {QUOTE_STATUS_LABELS[quoteStatus]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </aside>
               </article>
             ))}
+            </div>
           </div>
         )}
       </section>
