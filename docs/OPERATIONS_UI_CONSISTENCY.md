@@ -55,8 +55,12 @@ staff alerts are skipped. With no thread yet, the reply box reads "Email the
 customer", addressed to the request email from a sales sender, and the first
 reply creates the linked thread (`POST …/conversation/reply`), so opening a
 request never leaves an empty thread in the Inbox. A reply that isn't a
-failed delivery moves a New request to Contacted. Long threads scroll inside
-the section, starting at the latest email. "Open in Inbox" jumps to the
+failed delivery moves a New request to Contacted. Long threads show the latest
+three emails with a "Show N earlier emails" button (no inner scroll box: it
+trapped the mouse wheel). A product inquiry's server-written configuration
+summary is folded under "Requested configuration" above the customer's own
+message. Price fields in the formal quote and catalog use `MoneyInput.tsx`
+(a fixed "$" prefix; a typed "$" or thousands commas are dropped). "Open in Inbox" jumps to the
 thread; Inbox conversations linked to a request show "Open request →" back.
 The message list and reply form are shared with the Inbox
 (`ConversationThread.tsx`).

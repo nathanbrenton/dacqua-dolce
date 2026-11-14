@@ -59,6 +59,8 @@ It is developed locally and deployed to one production host.
 - Every release note in `docs/changes/` records the rollback command
   (`sudo /srv/dacqua-dolce/current/scripts/production/rollback_release.sh <timestamp>`;
   it does not touch the database).
+- `deploy_release.sh` ends by printing that rollback command, filled in with
+  the release that was active before, so the user has it at hand.
 
 ## Content rules (customer-facing copy)
 

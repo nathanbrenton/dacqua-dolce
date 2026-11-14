@@ -398,3 +398,9 @@ if [ -n "${PREVIOUS_RELEASE}" ]; then
 fi
 
 echo "Release retention count: ${RELEASE_RETENTION_COUNT}"
+
+if [ -n "${PREVIOUS_RELEASE}" ]; then
+  echo
+  echo "Rollback command (returns to the previous release; does not undo database migrations):"
+  echo "  sudo ${APP_ROOT}/current/scripts/production/rollback_release.sh $(basename "${PREVIOUS_RELEASE}")"
+fi

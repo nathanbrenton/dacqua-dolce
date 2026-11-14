@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   getOperationsQuoteConversation,
@@ -11,6 +11,9 @@ import {
   ConversationMessageList,
   ConversationReplyForm,
 } from "./ConversationThread";
+
+// How many of the latest emails a request shows before "Show earlier".
+const RECENT_EMAILS = 3;
 
 type RequestConversationProps = {
   quote: OperationsQuote;
@@ -36,7 +39,7 @@ export function RequestConversation({
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
+  const [showAll, setShowAll] = useState(false);
 
   async function load(): Promise<void> {
     setLoading(true);
@@ -91,13 +94,10 @@ export function RequestConversation({
   const thread = conversation?.thread ?? null;
   const messageCount = thread?.messages.length ?? 0;
 
-  // Start the scrolling message list at the latest email.
-  useEffect(() => {
-    const element = messagesRef.current;
-    if (element !== null) {
-      element.scrollTop = element.scrollHeight;
-    }
-  }, [messageCount, active]);
+  // Long threads show the latest few emails; earlier ones are one click away.
+  // (No inner scroll box: it trapped the mouse wheel inside the request.)
+  const hiddenCount = showAll ? 0 : Math.max(0, messageCount - RECENT_EMAILS);
+  const visibleMessages = thread?.messages.slice(hiddenCount) ?? [];
 
   return (
     <section
@@ -152,13 +152,23 @@ export function RequestConversation({
         <>
           {thread !== null && thread.messages.length > 0 ? (
             <div
-              ref={messagesRef}
               className="operations-request-conversation-messages"
-              tabIndex={0}
               aria-label="Emails with this customer"
             >
+              {hiddenCount > 0 ? (
+                <button
+                  type="button"
+                  className="operations-action secondary compact operations-request-earlier"
+                  onClick={() => {
+                    setShowAll(true);
+                  }}
+                >
+                  Show {hiddenCount} earlier
+                  {hiddenCount === 1 ? " email" : " emails"}
+                </button>
+              ) : null}
               <ConversationMessageList
-                messages={thread.messages}
+                messages={visibleMessages}
                 label={null}
               />
             </div>

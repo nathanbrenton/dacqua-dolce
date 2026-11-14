@@ -11,6 +11,8 @@ import {
 } from "../../api/account";
 import type { CommercialAddress } from "../../api/commercial";
 import { homeSizeLabel } from "../../api/quotes";
+import { MoneyInput } from "./MoneyInput";
+import { parseDollarsToMinor, splitRequestMessage } from "./operationsMoney";
 
 import {
   getAdministrationAccounts,
@@ -674,25 +676,7 @@ type RecommendationTriageView =
   | "lab_testing";
 
 function dollarsToMinor(value: string): number | null {
-  const normalized = value.trim();
-
-  if (normalized.length === 0) {
-    return null;
-  }
-
-  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
-    throw new Error(
-      "Enter a dollar amount with no more than two decimals.",
-    );
-  }
-
-  const amount = Number(normalized);
-
-  if (!Number.isFinite(amount)) {
-    throw new Error("Enter a valid amount.");
-  }
-
-  return Math.round(amount * 100);
+  return parseDollarsToMinor(value);
 }
 
 function minorToDollars(amountMinor: number | null): string {
@@ -3454,15 +3438,39 @@ export function OperationsPage({
 
                   <section className="operations-request-region">
                     <p className="operations-request-region-label">Request</p>
-                    {quote.message !== null ? (
-                      <p className="operations-customer-message">
-                        {quote.message}
-                      </p>
-                    ) : (
-                      <p className="operations-request-empty">
-                        No customer message was provided.
-                      </p>
-                    )}
+                    {(() => {
+                      const { configuration, customerMessage } =
+                        splitRequestMessage(quote.message);
+                      return (
+                        <>
+                          {configuration !== null ? (
+                            <details className="operations-request-configuration">
+                              <summary>
+                                Requested configuration
+                                <span>
+                                  {configuration.split("\n")[1]?.replace(
+                                    /^Catalog reference SKU:\s*/,
+                                    "",
+                                  ) ?? ""}
+                                </span>
+                              </summary>
+                              <p className="operations-customer-message">
+                                {configuration}
+                              </p>
+                            </details>
+                          ) : null}
+                          {customerMessage !== null ? (
+                            <p className="operations-customer-message">
+                              {customerMessage}
+                            </p>
+                          ) : (
+                            <p className="operations-request-empty">
+                              No customer message was provided.
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
                   </section>
 
                   <RequestConversation
@@ -4374,9 +4382,8 @@ export function OperationsPage({
                     <div className="operations-field-row">
                       <label className="operations-field">
                         <span>Amount</span>
-                        <input
-                          inputMode="decimal"
-                          placeholder={amountNeeded ? "0.00" : "Hidden"}
+                        <MoneyInput
+                                                    placeholder={amountNeeded ? "0.00" : "Hidden"}
                           value={amountNeeded ? pricing.amount : ""}
                           disabled={!privileged || !amountNeeded}
                           onChange={(event: ChangeEvent<HTMLInputElement>) => {
@@ -4498,9 +4505,8 @@ export function OperationsPage({
                         <div className="operations-promotion-create">
                           <label className="operations-field">
                             <span>Promotional price</span>
-                            <input
-                              inputMode="decimal"
-                              placeholder="0.00"
+                            <MoneyInput
+                                                            placeholder="0.00"
                               value={promotion.amount}
                               disabled={!privileged}
                               onChange={(event: ChangeEvent<HTMLInputElement>) => {

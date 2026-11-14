@@ -15,6 +15,8 @@ import {
   type OperationsProduct,
   type OperationsQuote,
 } from "../../api/operations";
+import { MoneyInput } from "./MoneyInput";
+import { parseDollarsToMinor } from "./operationsMoney";
 
 type DraftLine = {
   key: number;
@@ -68,14 +70,7 @@ function money(amountMinor: number, currency: string): string {
 }
 
 function dollarsToMinor(value: string): number | null {
-  const cleaned = value.trim();
-  if (cleaned === "") {
-    return null;
-  }
-  if (!/^\d+(?:\.\d{1,2})?$/.test(cleaned)) {
-    throw new Error("Enter amounts as dollars and cents, for example 2499.00.");
-  }
-  return Math.round(Number(cleaned) * 100);
+  return parseDollarsToMinor(value);
 }
 
 function defaultLine(
@@ -625,9 +620,7 @@ export function FormalQuoteComposer({
 
                 <label className="operations-field">
                   <span>Quoted unit price</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
+                  <MoneyInput
                     placeholder={
                       !product
                         ? "Choose a product first"
@@ -737,8 +730,7 @@ export function FormalQuoteComposer({
                 </label>
                 <label className="operations-field">
                   <span>Amount</span>
-                  <input
-                    inputMode="decimal"
+                  <MoneyInput
                     placeholder="0.00"
                     value={charge.amount}
                     onChange={(event) => updateCharge(charge.key, { amount: event.target.value })}

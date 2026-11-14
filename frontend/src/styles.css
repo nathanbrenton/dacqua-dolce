@@ -8429,3 +8429,94 @@ img[data-logo-variant^="monochrome"] {
     grid-template-columns: auto minmax(0, 1fr);
   }
 }
+
+/* Operations — "$" price inputs, folded request configuration, and no inner
+   scroll box in a request's conversation (2026-11-14) */
+.operations-money-input {
+  position: relative;
+  display: block;
+}
+
+.operations-money-prefix {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--ink-muted);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.operations-money-input.is-disabled .operations-money-prefix {
+  opacity: 0.5;
+}
+
+.operations-field .operations-money-input input,
+.operations-money-input input {
+  width: 100%;
+  padding-left: 28px;
+}
+
+.operations-request-conversation-messages {
+  max-height: none;
+  overflow: visible;
+  overscroll-behavior: auto;
+}
+
+.operations-request-earlier {
+  margin-bottom: 10px;
+}
+
+.operations-request-configuration {
+  margin: 0 0 14px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+}
+
+.operations-request-configuration summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.operations-request-configuration summary span {
+  color: var(--ink-muted);
+  font-size: var(--type-micro);
+  font-weight: 600;
+}
+
+.operations-request-configuration[open] summary {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.operations-request-configuration .operations-customer-message {
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.operations-request-configuration summary {
+  list-style: none;
+}
+
+.operations-request-configuration summary::-webkit-details-marker {
+  display: none;
+}
+
+.operations-request-configuration summary::before {
+  content: "";
+  align-self: center;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--ink-muted);
+  transition: transform 120ms ease;
+}
+
+.operations-request-configuration[open] summary::before {
+  transform: rotate(90deg);
+}
