@@ -127,3 +127,15 @@ def test_sizing_readiness_is_complete_when_confirmed_inputs_are_present() -> Non
 
 def test_recommendation_policy_version_is_explicit() -> None:
     assert RECOMMENDATION_POLICY_VERSION == "3"
+
+
+def test_home_size_counts_as_household_size_for_sizing() -> None:
+    with_home_size = evaluate_recommendation(
+        context(treatment_preference="salt_free", home_size="2000_2500")
+    )
+    not_sure = evaluate_recommendation(
+        context(treatment_preference="salt_free", home_size="unsure")
+    )
+
+    assert "occupants" not in with_home_size.sizing.missing_inputs
+    assert "occupants" in not_sure.sizing.missing_inputs

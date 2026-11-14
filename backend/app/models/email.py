@@ -5,6 +5,7 @@ from enum import StrEnum
 from sqlalchemy import (
     DateTime,
     Enum,
+    ForeignKey,
     String,
     Text,
     func,
@@ -92,4 +93,15 @@ class EmailDelivery(Base):
 
     sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
+    )
+
+    # Set when an operator has looked at a failed delivery and cleared it
+    # from Operations > Inbox > Delivery issues.
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
+    reviewed_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
     )

@@ -16,6 +16,19 @@ from app.schemas.product_configuration import ProductConfigurationRequest
 
 TriState = Literal["yes", "no", "unsure"]
 
+# Approximate home size in square feet, as ranges the customer picks.
+HomeSize = Literal[
+    "under_1000",
+    "1000_1500",
+    "1500_2000",
+    "2000_2500",
+    "2500_3000",
+    "3000_4000",
+    "4000_5000",
+    "5000_plus",
+    "unsure",
+]
+
 
 class RecommendationContext(BaseModel):
     source_water: Literal["municipal", "well", "unsure"]
@@ -30,6 +43,7 @@ class RecommendationContext(BaseModel):
     )
     bathrooms: Literal["1", "2", "3", "4", "5+", "unsure"]
     occupants: int | None = Field(default=None, ge=1)
+    home_size: HomeSize | None = None
     water_service_pipe_size: str | None = Field(
         default=None,
         max_length=120,

@@ -1,6 +1,25 @@
 import { getCsrfToken } from "./authentication";
 import { readApiError } from "./httpErrors";
 
+/** Approximate home size ranges (square feet) offered on the quote form. */
+export const HOME_SIZE_OPTIONS = [
+  { value: "unsure", label: "Not sure" },
+  { value: "under_1000", label: "Under 1,000 sq ft" },
+  { value: "1000_1500", label: "1,000–1,500 sq ft" },
+  { value: "1500_2000", label: "1,500–2,000 sq ft" },
+  { value: "2000_2500", label: "2,000–2,500 sq ft" },
+  { value: "2500_3000", label: "2,500–3,000 sq ft" },
+  { value: "3000_4000", label: "3,000–4,000 sq ft" },
+  { value: "4000_5000", label: "4,000–5,000 sq ft" },
+  { value: "5000_plus", label: "Over 5,000 sq ft" },
+] as const;
+
+export type HomeSize = (typeof HOME_SIZE_OPTIONS)[number]["value"];
+
+export function homeSizeLabel(value: string): string | null {
+  return HOME_SIZE_OPTIONS.find((option) => option.value === value)?.label ?? null;
+}
+
 export type RecommendationContext = {
   source_water: "municipal" | "well" | "unsure";
   service_postal_code: string | null;
@@ -8,6 +27,7 @@ export type RecommendationContext = {
   water_hardness: string | null;
   bathrooms: "1" | "2" | "3" | "4" | "5+" | "unsure";
   occupants: number | null;
+  home_size?: HomeSize | null;
   water_service_pipe_size: string | null;
   water_quality_report_read: "yes" | "no" | "unsure";
   chlorine_chloramine_signs: "yes" | "no" | "unsure";

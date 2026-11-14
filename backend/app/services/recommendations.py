@@ -15,7 +15,8 @@ def evaluate_sizing_readiness(
     if context.bathrooms == "unsure":
         missing_inputs.append("bathrooms")
 
-    if context.occupants is None:
+    # Household size: a head count or an approximate home size will do.
+    if context.occupants is None and context.home_size in (None, "unsure"):
         missing_inputs.append("occupants")
 
     if context.water_service_pipe_size is None:

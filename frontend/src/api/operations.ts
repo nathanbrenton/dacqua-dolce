@@ -821,6 +821,17 @@ export function getOperationsCommunications(): Promise<
   );
 }
 
+/** Marks failed deliveries reviewed so they leave "Delivery issues". */
+export function reviewOperationsCommunications(
+  deliveryIds: string[],
+): Promise<OperationsCommunication[]> {
+  return writeJson(
+    "/api/operations/communications/review",
+    "POST",
+    { delivery_ids: deliveryIds },
+  );
+}
+
 export function getOperationsCommunicationThreads(): Promise<
   OperationsCommunicationThread[]
 > {

@@ -70,3 +70,47 @@ def test_blank_operator_setting_sends_no_alert(monkeypatch: Any) -> None:
     quotes.send_quote_emails(db=object(), quote=_quote(), product=None)
 
     assert sent == []
+
+
+def test_operator_alert_is_brief(monkeypatch: Any) -> None:
+    sent = _capture_operator_alerts(
+        monkeypatch,
+        EmailRuntimeSettings(email_operator_to="owner@example.test"),
+    )
+    quote = _quote()
+    quote.inquiry_context = "product_inquiry"
+    quote.phone = "+1 555 010 0100"
+    quote.recommendation_context = {"source_water": "municipal", "bathrooms": "2"}
+    quote.recommendation_decision = {"title": "Softened water", "code": "salt_free"}
+    product = SimpleNamespace(name="Harmony - Pureline Duo", product_family="Harmony")
+
+    quotes.send_quote_emails(db=object(), quote=quote, product=product)
+
+    message = sent[0]["message"]
+    assert message.subject == "New product inquiry"
+    assert message.body_text.splitlines() == [
+        "Name: Example Customer",
+        "Email: customer@example.test",
+        "Phone: +1 555 010 0100",
+        "Product family: Harmony",
+        "",
+        "Message:",
+        "Hard water spots.",
+        "",
+        "Full details are in Operations > Requests.",
+    ]
+
+
+def test_operator_alert_without_product_or_phone(monkeypatch: Any) -> None:
+    sent = _capture_operator_alerts(
+        monkeypatch,
+        EmailRuntimeSettings(email_operator_to="owner@example.test"),
+    )
+
+    quotes.send_quote_emails(db=object(), quote=_quote(), product=None)
+
+    message = sent[0]["message"]
+    assert message.subject == "New expert inquiry"
+    assert "D'Acqua Dolce" not in message.subject
+    assert "Phone: Not given" in message.body_text
+    assert "Product family: None chosen" in message.body_text

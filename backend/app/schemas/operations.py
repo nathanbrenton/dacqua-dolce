@@ -169,6 +169,10 @@ class OperationsCommunicationRead(BaseModel):
     sent_at: str | None
 
 
+class OperationsCommunicationReviewRequest(BaseModel):
+    delivery_ids: list[str] = Field(min_length=1, max_length=500)
+
+
 class OperationsCommunicationRecipientRead(BaseModel):
     recipient_type: str
     address: str

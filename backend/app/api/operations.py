@@ -81,6 +81,7 @@ from app.schemas.operations import (
     OperationsCommunicationRecipientRead,
     OperationsCommunicationReplyCreate,
     OperationsCommunicationReplyRead,
+    OperationsCommunicationReviewRequest,
     OperationsCommunicationSecurityRead,
     OperationsCommunicationThreadDetailRead,
     OperationsCommunicationThreadRead,
@@ -1115,6 +1116,9 @@ def email_delivery_requires_review(
     if delivery.status != EmailDeliveryStatus.failed:
         return False
 
+    if delivery.reviewed_at is not None:
+        return False
+
     if delivery.category != "email_verification":
         return True
 
@@ -1195,6 +1199,72 @@ def list_communications(
         )
         .limit(500)
     ).all()
+
+    return [
+        operations_communication_read(
+            db,
+            delivery=delivery,
+        )
+        for delivery in deliveries
+    ]
+
+
+@router.post(
+    "/communications/review",
+    response_model=list[
+        OperationsCommunicationRead
+    ],
+)
+def review_failed_communications(
+    payload: OperationsCommunicationReviewRequest,
+    db: DatabaseSession,
+    current_user: CurrentUser,
+) -> list[OperationsCommunicationRead]:
+    """Mark failed deliveries as reviewed so they leave Delivery issues."""
+    require_operations(
+        db,
+        user=current_user,
+    )
+
+    delivery_ids: list[uuid.UUID] = []
+    for raw_id in payload.delivery_ids:
+        try:
+            delivery_ids.append(uuid.UUID(raw_id))
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Invalid delivery identifier.",
+            ) from exc
+
+    deliveries = db.scalars(
+        select(EmailDelivery).where(
+            EmailDelivery.id.in_(delivery_ids),
+            EmailDelivery.status == EmailDeliveryStatus.failed,
+        )
+    ).all()
+
+    if len(deliveries) != len(set(delivery_ids)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Failed email delivery not found.",
+        )
+
+    reviewed_at = datetime.now(UTC)
+    for delivery in deliveries:
+        if delivery.reviewed_at is not None:
+            continue
+        delivery.reviewed_at = reviewed_at
+        delivery.reviewed_by_user_id = current_user.id
+        record_audit_event(
+            db,
+            action="communications.delivery_reviewed",
+            entity_type="email_delivery",
+            entity_id=str(delivery.id),
+            actor_user_id=current_user.id,
+            metadata={"category": delivery.category},
+        )
+
+    db.commit()
 
     return [
         operations_communication_read(

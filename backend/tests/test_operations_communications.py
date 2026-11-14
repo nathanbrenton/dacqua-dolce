@@ -120,6 +120,7 @@ def test_communications_response_is_bounded(
         ),
         created_at=created_at,
         sent_at=sent_at,
+        reviewed_at=None,
     )
 
     database = CommunicationsDatabase(
@@ -206,6 +207,7 @@ def verification_failure(
         related_entity_type="user",
         related_entity_id=str(user_id),
         status=EmailDeliveryStatus.failed,
+        reviewed_at=None,
     )
 
 
@@ -261,9 +263,26 @@ def test_non_verification_failure_remains_reviewable() -> None:
         related_entity_type="quote_request",
         related_entity_id=str(uuid.uuid4()),
         status=EmailDeliveryStatus.failed,
+        reviewed_at=None,
     )
 
     assert operations.email_delivery_requires_review(
         database,  # type: ignore[arg-type]
         delivery=delivery,
     ) is True
+
+
+def test_reviewed_failure_no_longer_requires_review() -> None:
+    database = DeliveryReviewDatabase(None)
+    delivery = SimpleNamespace(
+        category="quote_operator_notification",
+        related_entity_type="quote_request",
+        related_entity_id=str(uuid.uuid4()),
+        status=EmailDeliveryStatus.failed,
+        reviewed_at=datetime.now(UTC),
+    )
+
+    assert operations.email_delivery_requires_review(
+        database,  # type: ignore[arg-type]
+        delivery=delivery,
+    ) is False

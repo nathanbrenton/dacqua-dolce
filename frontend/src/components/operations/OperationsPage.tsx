@@ -10,6 +10,7 @@ import {
   type CustomerProfile,
 } from "../../api/account";
 import type { CommercialAddress } from "../../api/commercial";
+import { homeSizeLabel } from "../../api/quotes";
 
 import {
   getAdministrationAccounts,
@@ -22,6 +23,7 @@ import {
 import {
   getOperationsAuditEvents,
   getOperationsCommunications,
+  reviewOperationsCommunications,
   getOperationsCatalog,
   getOperationsCustomers,
   getOperationsInstallerCandidates,
@@ -287,7 +289,14 @@ function recommendationContextLabel(key: string): string {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-function recommendationContextValue(value: unknown): string {
+function recommendationContextValue(key: string, value: unknown): string {
+  if (key === "home_size" && typeof value === "string") {
+    const label = homeSizeLabel(value);
+    if (label !== null) {
+      return label;
+    }
+  }
+
   if (value === "yes") {
     return "Yes";
   }
@@ -1550,6 +1559,35 @@ export function OperationsPage({
     ),
     [communications],
   );
+
+  const [reviewingDeliveryIds, setReviewingDeliveryIds] =
+    useState<string[]>([]);
+
+  async function markDeliveriesReviewed(deliveryIds: string[]): Promise<void> {
+    setReviewingDeliveryIds(deliveryIds);
+    setError(null);
+    try {
+      const reviewed = await reviewOperationsCommunications(deliveryIds);
+      const reviewedById = new Map(reviewed.map((item) => [item.id, item]));
+      setCommunications((current) => current.map(
+        (item) => reviewedById.get(item.id) ?? item,
+      ));
+      setSummary(await getOperationsSummary());
+      setMessage(
+        deliveryIds.length === 1
+          ? "Failed email marked reviewed."
+          : `${deliveryIds.length} failed emails marked reviewed.`,
+      );
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to mark the failed emails reviewed.",
+      );
+    } finally {
+      setReviewingDeliveryIds([]);
+    }
+  }
 
   function installerCandidatePayload(draft: InstallerCandidateDraft) {
     return {
@@ -3056,9 +3094,27 @@ export function OperationsPage({
               className="operations-delivery-issues"
               aria-labelledby="email-delivery-issues-title"
             >
-          <div>
+          <div className="operations-delivery-issues-heading">
             <p className="eyebrow">Delivery Issues</p>
             <h2 id="email-delivery-issues-title">Failed email deliveries</h2>
+            <p className="account-muted">
+              Once you've dealt with a failed email (or it no longer matters),
+              mark it reviewed to clear it from here and from Needs you.
+            </p>
+            {failedDeliveries.length > 1 ? (
+              <button
+                type="button"
+                className="operations-action secondary compact"
+                disabled={reviewingDeliveryIds.length > 0}
+                onClick={() => {
+                  void markDeliveriesReviewed(
+                    failedDeliveries.map((delivery) => delivery.id),
+                  );
+                }}
+              >
+                Mark all {failedDeliveries.length} reviewed
+              </button>
+            ) : null}
           </div>
           <div className="operations-delivery-issue-list">
             {failedDeliveries.map((delivery) => (
@@ -3073,6 +3129,18 @@ export function OperationsPage({
                   {" · "}
                   {new Date(delivery.created_at).toLocaleString()}
                 </small>
+                <button
+                  type="button"
+                  className="operations-action secondary compact"
+                  disabled={reviewingDeliveryIds.length > 0}
+                  onClick={() => {
+                    void markDeliveriesReviewed([delivery.id]);
+                  }}
+                >
+                  {reviewingDeliveryIds.includes(delivery.id)
+                    ? "Saving…"
+                    : "Mark reviewed"}
+                </button>
               </article>
             ))}
           </div>
@@ -3376,7 +3444,7 @@ export function OperationsPage({
                           ([key, value]) => (
                             <div key={key}>
                               <dt>{recommendationContextLabel(key)}</dt>
-                              <dd>{recommendationContextValue(value)}</dd>
+                              <dd>{recommendationContextValue(key, value)}</dd>
                             </div>
                           ),
                         )}

@@ -118,7 +118,16 @@ collapsible `<details>` disclosures.
 `/etc/dacqua-dolce/backend.env` on production) takes one address or a
 comma-separated list. Each inbox gets its own copy (category
 `quote_operator_notification`, filed under Inbox > System); blank turns
-alerts off.
+alerts off. The alert is deliberately short: subject "New product inquiry"
+(or expert / recommendation inquiry; the sender already says D'Acqua Dolce),
+then name, email, phone, product family and the customer's message. Full
+details stay in Operations.
+
+**Failed email deliveries:** Inbox > Delivery issues lists failed sends that
+still need a look. "Mark reviewed" (one or all) sets
+`email_deliveries.reviewed_at` / `reviewed_by_user_id`, writes a
+`communications.delivery_reviewed` audit event, and removes them from
+Delivery issues, the summary count and Needs you.
 
 **Known pain points:**
 - The Inbox thread list only loads the 200 most recent threads, and System

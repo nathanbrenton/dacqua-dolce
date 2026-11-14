@@ -6,7 +6,9 @@ import {
 } from "react";
 
 import {
+  HOME_SIZE_OPTIONS,
   submitQuoteRequest,
+  type HomeSize,
   type RecommendationContext,
   type ProductQuoteConfiguration,
 } from "../../api/quotes";
@@ -101,8 +103,8 @@ export function QuoteDialog({
     useState<SourceWater>("unsure");
   const [bathrooms, setBathrooms] =
     useState<BathroomCount>("unsure");
-  const [occupants, setOccupants] =
-    useState("");
+  const [homeSize, setHomeSize] =
+    useState<HomeSize>("unsure");
   const [message, setMessage] =
     useState("");
   const [error, setError] =
@@ -144,8 +146,8 @@ export function QuoteDialog({
       setBathrooms(
         recommendationContext?.bathrooms ?? "unsure",
       );
-      setOccupants(
-        recommendationContext?.occupants?.toString() ?? "",
+      setHomeSize(
+        recommendationContext?.home_size ?? "unsure",
       );
       setMessage("");
       setError(null);
@@ -241,10 +243,7 @@ export function QuoteDialog({
         service_postal_code:
           servicePostalCode.trim() || null,
         bathrooms,
-        occupants:
-          occupants === ""
-            ? null
-            : Number.parseInt(occupants, 10),
+        home_size: homeSize,
       } satisfies RecommendationContext;
 
       const response =
@@ -552,16 +551,19 @@ export function QuoteDialog({
             </label>
 
             <label>
-              <span>Household size <small>(optional)</small></span>
-              <input
-                type="number"
-                min="1"
-                inputMode="numeric"
-                value={occupants}
+              <span>Approximate household size</span>
+              <select
+                value={homeSize}
                 onChange={(event) => {
-                  setOccupants(event.target.value);
+                  setHomeSize(event.target.value as HomeSize);
                 }}
-              />
+              >
+                {HOME_SIZE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
 
             {sourceWater === "well" ? (

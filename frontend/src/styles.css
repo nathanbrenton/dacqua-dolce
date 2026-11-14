@@ -8406,3 +8406,26 @@ img[data-logo-variant^="monochrome"] {
     display: none;
   }
 }
+
+/* Operations — mark failed email deliveries reviewed (2026-11-14) */
+.operations-delivery-issues-heading {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 10px;
+}
+
+.operations-delivery-issues-heading p.account-muted {
+  margin: 0;
+  font-size: var(--type-micro);
+}
+
+.operations-delivery-issue-list article {
+  grid-template-columns: auto minmax(0, 1.2fr) minmax(0, 1fr) auto auto;
+}
+
+@media (max-width: 900px) {
+  .operations-delivery-issue-list article {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}

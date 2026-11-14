@@ -113,15 +113,15 @@ def send_quote_emails(
 ) -> None:
     email_settings = get_email_runtime_settings()
 
-    product_label = product.name if product is not None else "General consultation"
+    # The sender already names D'Acqua Dolce, so the subject doesn't repeat it.
     subject = (
-        "New D'Acqua Dolce expert inquiry"
+        "New expert inquiry"
         if quote.inquiry_context == "expert_inquiry"
-        else "New D'Acqua Dolce product inquiry"
+        else "New product inquiry"
         if quote.inquiry_context == "product_inquiry"
-        else "New D'Acqua Dolce recommendation inquiry"
+        else "New recommendation inquiry"
         if quote.inquiry_context == "recommendation_inquiry"
-        else "New D'Acqua Dolce quote request"
+        else "New quote request"
     )
 
     deliver_quote_acknowledgement(
@@ -137,78 +137,24 @@ def send_quote_emails(
     if not operator_recipients:
         return
 
+    # Kept short on purpose: contact details, product family and the
+    # customer's message. Everything else is in Operations > Requests.
+    product_family = (
+        "None chosen"
+        if product is None
+        else product.product_family or product.name
+    )
     message_lines = [
-        subject,
-        "",
-        f"Reference: {quote.id}",
-        f"System: {product_label}",
         f"Name: {quote.name}",
         f"Email: {quote.email}",
+        f"Phone: {quote.phone or 'Not given'}",
+        f"Product family: {product_family}",
+        "",
+        "Message:",
+        quote.message or "(No message)",
+        "",
+        "Full details are in Operations > Requests.",
     ]
-
-    if quote.phone:
-        message_lines.append(f"Phone: {quote.phone}")
-
-    if quote.recommendation_decision:
-        decision = quote.recommendation_decision
-        message_lines.extend(
-            [
-                "",
-                "Recommendation result:",
-                f"Policy version: {quote.recommendation_policy_version or 'legacy'}",
-                f"Decision: {decision.get('title', '—')}",
-                f"Decision code: {decision.get('code', '—')}",
-                f"Human review: {'yes' if decision.get('human_review') else 'no'}",
-                (
-                    "Third-party lab required: "
-                    + ("yes" if decision.get("requires_third_party_lab") else "no")
-                ),
-            ]
-        )
-
-        components = decision.get("components")
-        if isinstance(components, list) and components:
-            message_lines.append(
-                "Components: " + ", ".join(str(component) for component in components)
-            )
-
-        sizing = decision.get("sizing")
-        if isinstance(sizing, dict):
-            message_lines.append(
-                "Sizing inputs: "
-                + str(sizing.get("status", "—")).replace("_", " ")
-            )
-            missing_inputs = sizing.get("missing_inputs")
-            if isinstance(missing_inputs, list) and missing_inputs:
-                message_lines.append(
-                    "Sizing details still needed: "
-                    + ", ".join(
-                        str(item).replace("_", " ")
-                        for item in missing_inputs
-                    )
-                )
-
-
-    if quote.recommendation_context:
-        message_lines.extend(
-            [
-                "",
-                "Recommendation context:",
-            ]
-        )
-
-        for key, value in quote.recommendation_context.items():
-            label = key.replace("_", " ").title()
-            message_lines.append(f"{label}: {value}")
-
-    if quote.message:
-        message_lines.extend(
-            [
-                "",
-                "Customer message:",
-                quote.message,
-            ]
-        )
 
     # One message per staff inbox: recipients don't see each other's
     # addresses, and each delivery succeeds or fails on its own record.
