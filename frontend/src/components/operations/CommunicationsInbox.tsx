@@ -80,6 +80,9 @@ type CommunicationsInboxProps = {
   // Reports how many open customer conversations sit in the Inbox view, so
   // the Operations navigation can show the count next to the Inbox tab.
   onActiveCountChange?: (count: number) => void;
+  // Reports open Inbox conversations whose latest message is the customer's,
+  // for the Overview's "Needs you" list.
+  onAwaitingReplyChange?: (threads: OperationsCommunicationThread[]) => void;
   // Shows an "Open request" link on conversations linked to a request.
   onOpenRequest?: (quoteId: string) => void;
   // Opens this conversation (from a request's "Open in Inbox"). A new object
@@ -89,6 +92,7 @@ type CommunicationsInboxProps = {
 
 export function CommunicationsInbox({
   onActiveCountChange,
+  onAwaitingReplyChange,
   onOpenRequest,
   threadToOpen = null,
 }: CommunicationsInboxProps = {}) {
@@ -244,6 +248,20 @@ export function CommunicationsInbox({
   useEffect(() => {
     onActiveCountChange?.(inboxCounts.active);
   }, [inboxCounts.active, onActiveCountChange]);
+
+  const awaitingReplyThreads = useMemo(
+    () => threads.filter(
+      (thread) =>
+        thread.status === "open"
+        && thread.mailbox_kind === "inbox"
+        && thread.latest_direction === "inbound",
+    ),
+    [threads],
+  );
+
+  useEffect(() => {
+    onAwaitingReplyChange?.(awaitingReplyThreads);
+  }, [awaitingReplyThreads, onAwaitingReplyChange]);
 
   async function openThread(threadId: string): Promise<void> {
     setSelectedThreadId(threadId);

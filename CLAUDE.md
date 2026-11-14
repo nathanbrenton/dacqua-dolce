@@ -104,7 +104,7 @@ collapsible `<details>` disclosures.
 
 | Workspace | Label shown | What's in it |
 |---|---|---|
-| `overview` | Overview | Summary counts, readiness snapshot, observed request patterns, launch policies |
+| `overview` | Overview | "Needs you" work list (`NeedsYouList.tsx`), summary counts, readiness snapshot, observed request patterns, launch policies |
 | `communications` | Inbox | Failed email deliveries (only when there are any), customer inbox |
 | `requests` | Requests | Status/triage filter tabs, then a queue of requests on the left and the selected request on the right: workflow progress bar plus next step (`RequestWorkflowProgress.tsx`), Customer, Recommendation, Request, Conversation (`RequestConversation.tsx`), Formal quote and private notes |
 | `orders` | Orders | Customer orders and fulfilment |
@@ -146,6 +146,14 @@ alerts off.
    request. Replying to a New request marks it Contacted. "Open in Inbox" and
    "Open request →" link the two workspaces both ways.
 4. Overview becomes a "Needs you" list linking straight to waiting items.
+   **Done.** It lists, oldest first: requests whose next step is yours,
+   open Inbox conversations where the customer wrote last, paid orders
+   needing action, and failed email deliveries (one row). Each row opens
+   that item. Items waiting on the customer, supplier or carrier sit in a
+   collapsed "Waiting on someone else" group. The request and order rules
+   live in `operationsNextSteps.ts` (plain TS, tested by
+   `tests/operations-next-steps.test.mjs`) and also drive the progress bar.
+   It replaced the single "Next action" card.
 
 The tab order (Inbox before Requests) is unchanged. The user hasn't decided
 whether Requests should come first.

@@ -49,6 +49,7 @@ import {
   type OperationsAuditEvent,
   type OperationsAuditEventQuery,
   type OperationsCommunication,
+  type OperationsCommunicationThread,
   type OperationsCustomer,
   type OperationsOrder,
   type OperationsFormalQuote,
@@ -68,6 +69,8 @@ import {
 import {
   DeveloperFooterLogo,
 } from "../brand/DeveloperFooterLogo";
+import { formatRequestAge } from "./formatRequestAge";
+import { NeedsYouList } from "./NeedsYouList";
 import { RequestConversation } from "./RequestConversation";
 import { RequestWorkflowProgress } from "./RequestWorkflowProgress";
 import {
@@ -270,26 +273,6 @@ const QUOTE_STATUS_LABELS: Record<
 type QuoteStatus = (typeof QUOTE_STATUSES)[number];
 
 // Compact age for the request queue: "Just now", "45m", "3h", "2d", or a date.
-function formatRequestAge(createdAt: string, now: number = Date.now()): string {
-  const created = new Date(createdAt);
-  const minutes = Math.floor((now - created.getTime()) / 60000);
-  if (minutes < 1) {
-    return "Just now";
-  }
-  if (minutes < 60) {
-    return `${minutes}m`;
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours}h`;
-  }
-  const days = Math.floor(hours / 24);
-  if (days < 14) {
-    return `${days}d`;
-  }
-  return created.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
 const RECOMMENDATION_COMPONENT_LABELS: Record<string, string> = {
   harmony: "Harmony",
   cartridge_filtration: "Cartridge filtration",
@@ -796,6 +779,9 @@ export function OperationsPage({
   // Set by a request's "Open in Inbox"; a new object reopens the thread.
   const [inboxThreadToOpen, setInboxThreadToOpen] =
     useState<{ threadId: string } | null>(null);
+  // Open Inbox conversations where the customer wrote last (for Needs you).
+  const [awaitingReplyThreads, setAwaitingReplyThreads] =
+    useState<OperationsCommunicationThread[]>([]);
 
   const visibleWorkspaces = useMemo(() =>
     OPERATIONS_WORKSPACES.filter(({ id }) =>
@@ -2557,83 +2543,6 @@ export function OperationsPage({
     ))
     .join(" ");
 
-  const nextAction = (
-    summary === null
-      ? null
-      : summary.recommendation_lab_testing > 0
-        ? {
-            title: "Review required lab testing",
-            detail:
-              `${summary.recommendation_lab_testing} open guided `
-              + (
-                summary.recommendation_lab_testing === 1
-                  ? "request requires"
-                  : "requests require"
-              )
-              + " third-party laboratory testing.",
-            href: "#quote-queue",
-          }
-        : summary.recommendation_human_review > 0
-          ? {
-              title: "Review guided recommendations",
-              detail:
-                `${summary.recommendation_human_review} open guided `
-                + (
-                  summary.recommendation_human_review === 1
-                    ? "request needs"
-                    : "requests need"
-                )
-                + " human review.",
-              href: "#quote-queue",
-            }
-          : summary.new_quotes > 0
-            ? {
-            title: "Review new quote requests",
-            detail:
-              `${summary.new_quotes} new customer `
-              + (
-                summary.new_quotes === 1
-                  ? "request needs"
-                  : "requests need"
-              )
-              + " attention.",
-            href: "#quote-queue",
-          }
-        : summary.failed_email_deliveries > 0
-          ? {
-              title: "Investigate email delivery",
-              detail:
-                `${summary.failed_email_deliveries} failed email `
-                + (
-                  summary.failed_email_deliveries === 1
-                    ? "delivery requires"
-                    : "deliveries require"
-                )
-                + " review.",
-              href: "#email-delivery-issues",
-            }
-          : summary.open_quotes > 0
-            ? {
-                title: "Continue open quotes",
-                detail:
-                  `${summary.open_quotes} open quote `
-                  + (
-                    summary.open_quotes === 1
-                      ? "request remains"
-                      : "requests remain"
-                  )
-                  + " in the queue.",
-                href: "#quote-queue",
-              }
-            : {
-                title: "No urgent actions",
-                detail:
-                  "The current operations queues "
-                  + "do not show an urgent item.",
-                href: null,
-              }
-  );
-
   // Counts shown beside a nav tab when that workspace has work waiting.
   const workspaceWaitingCounts: Partial<
     Record<OperationsWorkspace, { count: number; description: string }>
@@ -2737,6 +2646,12 @@ export function OperationsPage({
     setRecommendationTriageView("all");
     setSelectedQuoteId(quote.id);
     scrollToOperationsTarget("quote-queue");
+  }
+
+  function openOrderFromOverview(orderId: string) {
+    // Clear the search so the order is in the list before scrolling to it.
+    setOrderSearch("");
+    scrollToOperationsTarget("order-history", `#operations-order-${orderId}`);
   }
 
   function openThreadInInbox(threadId: string) {
@@ -2870,6 +2785,31 @@ export function OperationsPage({
         aria-label="Overview"
         hidden={activeWorkspace !== "overview"}
       >
+      <NeedsYouList
+        quotes={quotes}
+        orders={orders}
+        awaitingReplyThreads={awaitingReplyThreads}
+        failedDeliveryCount={failedDeliveries.length}
+        latestFailedDeliveryAt={
+          failedDeliveries.reduce<string | null>(
+            (latest, delivery) =>
+              latest === null || delivery.created_at > latest
+                ? delivery.created_at
+                : latest,
+            null,
+          )
+        }
+        onOpenRequest={openRequestFromInbox}
+        onOpenThread={openThreadInInbox}
+        onOpenOrder={openOrderFromOverview}
+        onOpenDeliveryIssues={() => {
+          scrollToOperationsTarget(
+            "email-delivery-issues",
+            "#email-delivery-issues .operations-delivery-issue-list article",
+          );
+        }}
+      />
+
       {summary !== null ? (
         <section
           className="operations-metrics"
@@ -2911,34 +2851,6 @@ export function OperationsPage({
               <small>Open</small>
             </button>
           ))}
-        </section>
-      ) : null}
-
-      {nextAction !== null ? (
-        <section
-          className="operations-next-action"
-          aria-labelledby="operations-next-action-title"
-        >
-          <span>Next action</span>
-
-          <div>
-            <strong id="operations-next-action-title">
-              {nextAction.title}
-            </strong>
-            <p>{nextAction.detail}</p>
-          </div>
-
-          {nextAction.href !== null ? (
-            <a
-              href={nextAction.href}
-              onClick={(event) => {
-                event.preventDefault();
-                scrollToOperationsTarget(nextAction.href.slice(1));
-              }}
-            >
-              Open queue
-            </a>
-          ) : null}
         </section>
       ) : null}
 
@@ -3176,6 +3088,7 @@ export function OperationsPage({
         <CommunicationsInbox
           onActiveCountChange={setActiveInboxCount}
           onOpenRequest={openRequestFromInbox}
+          onAwaitingReplyChange={setAwaitingReplyThreads}
           threadToOpen={inboxThreadToOpen}
         />
       </section>
@@ -3659,7 +3572,8 @@ export function OperationsPage({
               return (
                 <article
                   key={order.id}
-                  className="operations-customer"
+                  id={`operations-order-${order.id}`}
+                  className="operations-customer operations-order"
                 >
                   <header>
                     <div>

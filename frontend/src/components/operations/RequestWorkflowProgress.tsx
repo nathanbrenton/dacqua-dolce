@@ -1,28 +1,9 @@
-import type {
-  OperationsFormalQuote,
-  OperationsQuote,
-} from "../../api/operations";
-
-// The whole life of a customer request, from the request arriving to it being
-// closed. Each step is worked out from the request and its formal quotes, so
-// the bar shows where the request really is, not only its status field.
-
-type QuoteRequestStatus = "new" | "contacted" | "quoted" | "closed";
-
-type WorkflowStepId =
-  | "received"
-  | "contacted"
-  | "drafted"
-  | "staff_review"
-  | "presented"
-  | "approved"
-  | "closed";
-
-type WorkflowStep = {
-  id: WorkflowStepId;
-  label: string;
-  done: boolean;
-};
+import type { OperationsQuote } from "../../api/operations";
+import {
+  type QuoteRequestStatus,
+  type WorkflowStepId,
+  workflowSteps,
+} from "./operationsNextSteps";
 
 type NextStep = {
   hint: string;
@@ -31,60 +12,6 @@ type NextStep = {
     | { kind: "quote"; label: string }
     | null;
 };
-
-function latestFormalQuote(
-  formalQuotes: OperationsFormalQuote[],
-): OperationsFormalQuote | null {
-  const current = formalQuotes.filter((quote) => quote.status !== "superseded");
-  if (current.length === 0) {
-    return null;
-  }
-  return current.reduce((latest, quote) =>
-    quote.revision_number > latest.revision_number ? quote : latest,
-  );
-}
-
-function workflowSteps(quote: OperationsQuote): WorkflowStep[] {
-  const latest = latestFormalQuote(quote.formal_quotes);
-  const anyPresented = quote.formal_quotes.some(
-    (formalQuote) =>
-      formalQuote.status === "presented" || formalQuote.status === "approved",
-  );
-  const approved = quote.formal_quotes.some(
-    (formalQuote) => formalQuote.status === "approved",
-  );
-  const closed = quote.status === "closed";
-
-  const steps: WorkflowStep[] = [
-    { id: "received", label: "Received", done: true },
-    {
-      id: "contacted",
-      label: "Contacted",
-      done: quote.status !== "new" || latest !== null,
-    },
-    { id: "drafted", label: "Quote drafted", done: latest !== null },
-  ];
-
-  if (latest?.staff_review_required === true) {
-    steps.push({
-      id: "staff_review",
-      label: "Staff review",
-      done: latest.staff_review_completed_at !== null || anyPresented,
-    });
-  }
-
-  steps.push(
-    {
-      id: "presented",
-      label: "Presented",
-      done: anyPresented || quote.status === "quoted",
-    },
-    { id: "approved", label: "Customer approved", done: approved },
-    { id: "closed", label: "Closed", done: closed },
-  );
-
-  return steps;
-}
 
 function nextStepFor(
   stepId: WorkflowStepId | null,

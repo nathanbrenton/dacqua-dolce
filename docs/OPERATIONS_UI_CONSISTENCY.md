@@ -61,6 +61,15 @@ thread; Inbox conversations linked to a request show "Open request →" back.
 The message list and reply form are shared with the Inbox
 (`ConversationThread.tsx`).
 
+Overview opens with "Needs you" (`NeedsYouList.tsx`): one row per item whose
+next move is the operator's, oldest first, each opening that item directly.
+Rows cover requests (the progress bar's next step), open Inbox conversations
+where the customer wrote last, paid orders (cancellation request, review,
+failed confirmation, order from supplier, ship) and failed email deliveries
+as a single row. Requests awaiting customer approval and orders on hold, with
+the supplier or shipped are under a collapsed "Waiting on someone else".
+The rules are in `operationsNextSteps.ts`. The summary count tiles follow.
+
 Pricing & Inventory product cards are collapsed by default and use a one-open-at-a-time accordion. Compact summary badges explicitly label `Lifecycle:`, `Inventory:`, and `Pricing:` so canonical product names never need lifecycle words embedded in the title.
 
 Customer Inbox distinguishes Website, Email/Postmark, and archived/provider evidence. Website submissions are not treated as email-authentication events. Inbound/customer-supplied URLs remain non-clickable; arbitrary inbound HTML remains untrusted.
