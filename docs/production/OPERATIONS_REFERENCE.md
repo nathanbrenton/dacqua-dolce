@@ -117,6 +117,19 @@ the Nginx rules provide a second public-edge boundary.
     sudo certbot certificates
     systemctl list-timers --all --no-pager | grep certbot
 
+Renewal is automatic: `certbot.timer` renews any certificate with under 30 days
+left (webroot method, `/var/www/letsencrypt`), and the deploy hook
+`/etc/letsencrypt/renewal-hooks/deploy/50-reload-nginx` then checks nginx's
+config and reloads it so the new certificate is served. Installed and
+dry-run tested on 2026-11-15; before that, renewals did not reload nginx.
+The hook covers every certificate on the host (including other sites served
+there). Check it:
+
+    sudo journalctl -t certbot-nginx-reload -n 5 --no-pager
+    echo | openssl s_client -connect dacquadolce.com:443 -servername dacquadolce.com 2>/dev/null | openssl x509 -noout -enddate
+
+Setup commands are in `REBUILD_RUNBOOK.md`, section 15.
+
 Certificate material lives under `/etc/letsencrypt/` and private keys must never be committed or copied into
 project documentation.
 

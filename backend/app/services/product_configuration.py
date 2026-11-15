@@ -7,11 +7,30 @@ from app.schemas.product_configuration import (
 )
 from app.services.option_approval import review_fitting, review_pureline_cartridge
 
+CONFIGURATION_HEADING = (
+    "Customer-requested configuration (NOT a priced or approved order):"
+)
+
+
+def customer_message_text(message: str | None) -> str | None:
+    """The customer's own words from a stored request message.
+
+    Configured requests are stored as the configuration summary, a blank line,
+    then the customer's message (see ``create_quote``). The summary has no
+    blank lines of its own, so everything after the first one is the
+    customer's. Mirrors ``splitRequestMessage`` in the Operations frontend.
+    """
+    if message is None or not message.startswith(CONFIGURATION_HEADING):
+        return message
+    _, separator, rest = message.partition("\n\n")
+    customer_text = rest.strip() if separator else ""
+    return customer_text or None
+
 
 def configuration_inquiry_text(configuration: ProductConfigurationRequest) -> str:
     family = SKU_FAMILY[configuration.sku]
     lines = [
-        "Customer-requested configuration (NOT a priced or approved order):",
+        CONFIGURATION_HEADING,
         f"Catalog reference SKU: {configuration.sku} ({family})",
     ]
     if family == "Origin":

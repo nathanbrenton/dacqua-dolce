@@ -99,8 +99,50 @@ def test_operator_alert_is_brief(monkeypatch: Any) -> None:
         "",
         "Message:",
         "Hard water spots.",
-        "",
-        "Full details are in Operations > Requests.",
+    ]
+
+
+def test_operator_alert_leaves_out_the_configuration_summary(
+    monkeypatch: Any,
+) -> None:
+    sent = _capture_operator_alerts(
+        monkeypatch,
+        EmailRuntimeSettings(email_operator_to="owner@example.test"),
+    )
+    quote = _quote()
+    quote.message = "\n".join([
+        "Customer-requested configuration (NOT a priced or approved order):",
+        "Catalog reference SKU: DD15CATRV (Essence)",
+        "Requested valve: clack",
+        "Confirm availability, compatibility, commercial terms, and pricing before ordering.",
+    ]) + "\n\nI need the cleanest water for coffee."
+
+    quotes.send_quote_emails(db=object(), quote=quote, product=None)
+
+    lines = sent[0]["message"].body_text.splitlines()
+    assert lines[-2:] == ["Message:", "I need the cleanest water for coffee."]
+    assert "SKU" not in sent[0]["message"].body_text
+    assert "Full details" not in sent[0]["message"].body_text
+
+
+def test_operator_alert_configuration_without_customer_text(
+    monkeypatch: Any,
+) -> None:
+    sent = _capture_operator_alerts(
+        monkeypatch,
+        EmailRuntimeSettings(email_operator_to="owner@example.test"),
+    )
+    quote = _quote()
+    quote.message = (
+        "Customer-requested configuration (NOT a priced or approved order):\n"
+        "Catalog reference SKU: DD15CATRV (Essence)"
+    )
+
+    quotes.send_quote_emails(db=object(), quote=quote, product=None)
+
+    assert sent[0]["message"].body_text.splitlines()[-2:] == [
+        "Message:",
+        "(No message)",
     ]
 
 

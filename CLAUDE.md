@@ -126,8 +126,10 @@ comma-separated list. Each inbox gets its own copy (category
 `quote_operator_notification`, filed under Inbox > System); blank turns
 alerts off. The alert is deliberately short: subject "New product inquiry —
 <customer name>" (or expert / recommendation inquiry; the sender already says
-D'Acqua Dolce), then name, email, phone, product family and the customer's
-message. Full details stay in Operations. Apple Mail on iPhone may file the
+D'Acqua Dolce), then name, email, phone, preferred contact method, product
+family, and under "Message:" only the customer's own words (the product
+configuration summary is stripped by `customer_message_text`). No footer line.
+Full details stay in Operations. Apple Mail on iPhone may file the
 alerts under Promotions; each phone fixes that once with ⋯ → Categorize
 Sender → Primary.
 

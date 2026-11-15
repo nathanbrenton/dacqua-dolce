@@ -367,6 +367,24 @@ Verify renewal timer:
 
     systemctl list-timers --all --no-pager | grep certbot
 
+The certificate uses the webroot method, so certbot renews the files but does
+not reload nginx. Install the deploy hook that does, then test it. A plain
+`--dry-run` skips deploy hooks; `--run-deploy-hooks` makes it run them:
+
+    sudo tee /etc/letsencrypt/renewal-hooks/deploy/50-reload-nginx >/dev/null <<'EOF'
+    #!/bin/sh
+    # Runs after certbot renews any certificate: check nginx's config, then
+    # reload so nginx serves the new certificate.
+    /usr/sbin/nginx -t -q || exit 1
+    /usr/bin/systemctl reload nginx || exit 1
+    /usr/bin/logger -t certbot-nginx-reload -- "reloaded nginx for: ${RENEWED_DOMAINS}"
+    EOF
+    sudo chmod 755 /etc/letsencrypt/renewal-hooks/deploy/50-reload-nginx
+    sudo certbot renew --dry-run --run-deploy-hooks
+    sudo journalctl -t certbot-nginx-reload -n 5 --no-pager
+
+The journal should show "reloaded nginx for: dacquadolce.com www.dacquadolce.com".
+
 ## 16. Enable production HTTPS edge
 
 The validated Nginx behavior must include:

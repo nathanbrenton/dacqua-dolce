@@ -45,7 +45,10 @@ from app.services.commerce import active_reserved_quantity
 from app.services.email_delivery import (
     deliver_email,
 )
-from app.services.product_configuration import configuration_inquiry_text
+from app.services.product_configuration import (
+    configuration_inquiry_text,
+    customer_message_text,
+)
 from app.services.public_availability import resolve_public_availability
 from app.services.quote_acknowledgements import deliver_quote_acknowledgement
 from app.services.recommendations import (
@@ -145,7 +148,8 @@ def send_quote_emails(
         return
 
     # Kept short on purpose: contact details, product family and the
-    # customer's message. Everything else is in Operations > Requests.
+    # customer's own message. The configuration summary and everything else
+    # are in Operations > Requests.
     product_family = (
         "None chosen"
         if product is None
@@ -159,9 +163,7 @@ def send_quote_emails(
         f"Product family: {product_family}",
         "",
         "Message:",
-        quote.message or "(No message)",
-        "",
-        "Full details are in Operations > Requests.",
+        customer_message_text(quote.message) or "(No message)",
     ]
 
     # One message per staff inbox: recipients don't see each other's
