@@ -10,7 +10,7 @@ assert.match(menu,/Original \/ legacy catalog photography/);
 assert.doesNotMatch(menu,/developer-photo-valve|developer-imagery-preview-checkbox|Use Archetype/);
 assert.match(app,/photoSource=\{photoSource\}/);
 assert.match(cards,/photoSource=\{photoSource\}/);
-assert.match(detail,/product\.sku, tankFinish,/);
+assert.match(detail,/product\.sku, effectiveTankFinish,/);
 assert.match(detail,/valve: valveSelectable \? "clack" : null/);
 assert.doesNotMatch(detail,/valve: valveSelectable \? photoSource/);
 assert.equal(AVAILABLE_PHOTO_SOURCES['legacy-original'],true);

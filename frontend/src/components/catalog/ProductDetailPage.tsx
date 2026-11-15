@@ -248,6 +248,10 @@ export function ProductDetailPage({
   const presentation = getProductPresentation(product);
   const configurationLoading = product.slug.toLowerCase() !== slug.toLowerCase();
   const configurationFamily = getConfigurationFamily(product.sku);
+  // The black neoprene jacket fits the whole-house tanks (Refine, Essence,
+  // Harmony). Origin is an under-sink RO system: no jacket, ever.
+  const jacketOffered = configurationFamily?.name !== "Origin";
+  const effectiveTankFinish: TankFinish = jacketOffered ? tankFinish : "stainless";
   const valveSelectable = offersClackInstallationFittings(product.sku);
   const isHarmony = configurationFamily?.name === "Harmony";
   const isHarmonyTwoCf = isHarmony && harmonyTankSize === "2.0";
@@ -265,7 +269,7 @@ export function ProductDetailPage({
   // A staff-assisted quote is allowed when the customer needs help choosing it.
   const fittingSelectionPending = fittingEligible && fittingForInquiry === null;
   const approvedGallery = resolveApprovedGallery(
-    product.sku, tankFinish,
+    product.sku, effectiveTankFinish,
     selectedFitting?.orderNo ? clackConceptImageForOrderNo(selectedFitting.orderNo) : null,
     harmonyTankSize,
     photoSource,
@@ -318,7 +322,7 @@ export function ProductDetailPage({
   const requestedCustomizations = [
     ...(fittingSelectionPending ? ["Required installation fitting not yet selected; staff must confirm fitting size, type, compatibility, and price before ordering."] : []),
     ...(isHarmonyTwoCf ? ["Harmony tank size: 2.0 cubic feet (2.0 cf commercial SKU and price pending)."] : []),
-    ...(tankFinish === "neoprene" ? ["Optional neoprene jacket requested (additional cost, confirm availability and final price)."] : []),
+    ...(effectiveTankFinish === "neoprene" ? ["Optional neoprene jacket requested (additional cost, confirm availability and final price)."] : []),
     ...activeHousingSelections.map((housing) => {
       const selection = cartridgeSelections[housing]!;
       return `Pureline housing ${PURELINE_HOUSINGS.indexOf(housing) + 1}: ${selection.category === "other" ? `Other — ${selection.otherDescription || "consultation requested"}` :
@@ -336,7 +340,7 @@ export function ProductDetailPage({
       tank_size_cf: configurationFamily.name === "Origin" ? null
         : isHarmony ? harmonyTankSize
         : product.sku.startsWith("DD20") ? "2.0" : "1.5",
-      finish: configurationFamily.name === "Origin" ? null : tankFinish,
+      finish: configurationFamily.name === "Origin" ? null : effectiveTankFinish,
       // The legacy commercial schema requires a valve for these SKUs.
       // Retain the existing Clack-fitting commercial baseline; display preferences are separate.
       valve: valveSelectable ? "clack" : null,
@@ -690,7 +694,7 @@ export function ProductDetailPage({
                 {isHarmony ? (
                   <p className="product-ownership-guidance">Control valve: Pass-Through Valve with red caps.</p>
                 ) : null}
-                {!isHarmony ? (
+                {!isHarmony && jacketOffered ? (
                   <label className="product-photo-jacket-label">
                     <input type="checkbox" checked={tankFinish === "neoprene"}
                       onChange={(event) => setTankFinish(event.target.checked ? "neoprene" : "stainless")} />
@@ -946,7 +950,7 @@ export function ProductDetailPage({
                 </p>
               )}
 
-              {tankFinish === "neoprene" ? (
+              {effectiveTankFinish === "neoprene" ? (
                 <p className="product-ownership-guidance">The price shown does not include the optional neoprene jacket. We confirm the total in your quote.</p>
               ) : null}
 

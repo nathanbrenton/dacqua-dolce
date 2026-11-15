@@ -8,7 +8,7 @@ const frontendRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = readFileSync(resolve(frontendRoot, "src/components/catalog/ProductDetailPage.tsx"), "utf8");
 
 test("Refine and Essence display the existing neoprene control before fitting options", () => {
-  const jacket = source.indexOf("{!isHarmony ? (");
+  const jacket = source.indexOf("{!isHarmony && jacketOffered ? (");
   const fittings = source.indexOf("{fittingEligible ? (");
   assert.ok(jacket >= 0, "non-Harmony jacket condition must remain intact");
   assert.ok(fittings > jacket, "jacket checkbox must be before fitting selection");
@@ -30,6 +30,13 @@ test("Harmony keeps its independent jacket immediately after tank size and befor
 
 test("photography controls remain separate from customer quotes", () => {
   assert.ok(source.includes('valve: valveSelectable ? "clack" : null'));
-  assert.ok(source.includes('finish: configurationFamily.name === "Origin" ? null : tankFinish'));
-  assert.ok(source.includes('product.sku, tankFinish,'));
+  assert.ok(source.includes('finish: configurationFamily.name === "Origin" ? null : effectiveTankFinish'));
+  assert.ok(source.includes('product.sku, effectiveTankFinish,'));
+});
+
+test("Origin (under-sink RO) never offers or carries the neoprene jacket", () => {
+  assert.ok(source.includes('const jacketOffered = configurationFamily?.name !== "Origin";'));
+  assert.ok(source.includes('const effectiveTankFinish: TankFinish = jacketOffered ? tankFinish : "stainless";'));
+  assert.ok(!/\btankFinish === "neoprene" \?/.test(source.replace(/checked=\{tankFinish === "neoprene"\}/g, "")),
+    "price notes and quote text must use effectiveTankFinish");
 });

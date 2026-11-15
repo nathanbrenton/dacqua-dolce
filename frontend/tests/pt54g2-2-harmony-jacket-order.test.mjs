@@ -25,7 +25,7 @@ test('PT54-G2.2: Harmony neoprene checkbox follows tank size and precedes PureLi
 
 test('PT54-G2.2: keep the independent Refine/Essence jacket control and other layout', () => {
   assert.equal(source.split(label).length - 1, 2, 'one shared non-Harmony control and one Harmony control');
-  const other = source.indexOf('{!isHarmony ? (');
+  const other = source.indexOf('{!isHarmony && jacketOffered ? (');
   const size = source.indexOf('value={harmonyTankSize}');
   const harmony = source.indexOf('{isHarmony ? (\n                  <label className="product-photo-jacket-label">');
   const fitting = source.indexOf('{fittingEligible ? (');

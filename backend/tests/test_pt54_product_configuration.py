@@ -114,6 +114,12 @@ def test_origin_stage_selection_no_whole_house_hardware():
         make(sku="DD6ROAE", tank_size_cf="1.5")
 
 
+@pytest.mark.parametrize("sku", ["DD5RO", "DD6ROAE"])
+def test_origin_rejects_neoprene_jacket(sku: str):
+    with pytest.raises(ValidationError):
+        ProductConfigurationRequest(sku=sku, finish="neoprene")
+
+
 def test_quote_schema_accepts_config_without_price_or_cart_modification():
     payload = QuoteRequestCreate(
         inquiry_context="product_inquiry",
