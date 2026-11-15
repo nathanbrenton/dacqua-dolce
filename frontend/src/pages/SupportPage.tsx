@@ -1,4 +1,5 @@
 import type { AuthenticationStatus } from "../api/authentication";
+import { BusinessContactLine } from "../components/brand/BusinessContactLine";
 import { SupportRequestForm } from "../components/support/SupportRequestForm";
 
 type SupportPageProps = {
@@ -26,7 +27,7 @@ export function SupportPage({ account, onNavigate }: SupportPageProps) {
           our replies stay in one conversation, so you never have to start over.
         </p>
         <p>
-          Prefer email? <a href="mailto:support@dacquadolce.com">support@dacquadolce.com</a>
+          <BusinessContactLine />
         </p>
       </header>
 

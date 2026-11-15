@@ -18,6 +18,7 @@ import {
 import { QuoteDialog } from "../quotes/QuoteDialog";
 import type { ProductQuoteConfiguration } from "../../api/quotes";
 import { InstallationServicesNotice } from "./InstallationServicesNotice";
+import { BusinessContactLine } from "../brand/BusinessContactLine";
 import { SupportRequestForm } from "../support/SupportRequestForm";
 import { ResponsiveProductImage } from "./ResponsiveProductImage";
 import { PreviewProductImage } from "./PreviewProductImage";
@@ -1279,7 +1280,7 @@ export function ProductDetailPage({
                 />
               </details>
               <p className="product-support-email">
-                Prefer email? <a href="mailto:support@dacquadolce.com">support@dacquadolce.com</a>
+                <BusinessContactLine />
               </p>
             </section>
           </div>

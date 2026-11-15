@@ -19,6 +19,8 @@ import {
   ConversationReplyForm,
   formatTimestamp,
 } from "./ConversationThread";
+import { contactMethodLabel } from "../../utils/contactMethod";
+import { formatUsPhoneInput } from "../../utils/phone";
 
 function threadSearchText(
   thread: OperationsCommunicationThread,
@@ -786,7 +788,14 @@ export function CommunicationsInbox({
                   <p className="operations-inbox-originating-request-contact">
                     {threadDetail.originating_request.email}
                     {threadDetail.originating_request.phone !== null
-                      ? ` · ${threadDetail.originating_request.phone}`
+                      ? ` · ${formatUsPhoneInput(threadDetail.originating_request.phone)}`
+                      : ""}
+                    {contactMethodLabel(
+                      threadDetail.originating_request.preferred_contact_method,
+                    ) !== null
+                      ? ` · prefers ${contactMethodLabel(
+                        threadDetail.originating_request.preferred_contact_method,
+                      )?.toLowerCase()}`
                       : ""}
                   </p>
 

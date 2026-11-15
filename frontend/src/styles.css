@@ -8520,3 +8520,71 @@ img[data-logo-variant^="monochrome"] {
 .operations-request-configuration[open] summary::before {
   transform: rotate(90deg);
 }
+
+/* Preferred contact method chip in a request's Customer section (2026-11-15) */
+.operations-contact-preference {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: var(--type-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.operations-contact-preference[data-method="call"],
+.operations-contact-preference[data-method="text"] {
+  border-color: var(--ink-muted);
+}
+
+
+/* Footer business contact: phone and support email (2026-11-15).
+   With the contact added, the footer row wraps instead of squeezing the
+   policy links and copyright into narrow multi-line columns. */
+
+.site-footer-meta {
+  flex-wrap: wrap;
+  row-gap: 12px;
+}
+
+.footer-policy-links a,
+.site-footer-meta > small {
+  white-space: nowrap;
+}
+
+.footer-contact {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-style: normal;
+}
+
+.footer-contact a {
+  color: var(--ink);
+  font-size: var(--type-ui-base);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.footer-contact a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+@media (max-width: 720px) {
+  .footer-contact {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (pointer: coarse) {
+  .footer-contact a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

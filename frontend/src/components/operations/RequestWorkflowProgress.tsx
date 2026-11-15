@@ -1,4 +1,5 @@
 import type { OperationsQuote } from "../../api/operations";
+import { formatUsPhoneInput } from "../../utils/phone";
 import {
   type QuoteRequestStatus,
   type WorkflowStepId,
@@ -18,11 +19,19 @@ function nextStepFor(
   quote: OperationsQuote,
 ): NextStep {
   switch (stepId) {
-    case "contacted":
+    case "contacted": {
+      const phone = quote.phone !== null ? formatUsPhoneInput(quote.phone) : null;
+      const hint =
+        quote.preferred_contact_method === "call" && phone !== null
+          ? `The customer prefers a phone call: call ${phone}, then mark it contacted.`
+          : quote.preferred_contact_method === "text" && phone !== null
+            ? `The customer prefers a text message: text ${phone}, then mark it contacted.`
+            : "Email the customer from the Conversation section below (sending marks it contacted), or call them and mark it contacted.";
       return {
-        hint: "Email the customer from the Conversation section below (sending marks it contacted), or call them and mark it contacted.",
+        hint,
         action: { kind: "status", label: "Mark as contacted", status: "contacted" },
       };
+    }
     case "drafted":
       return {
         hint: "Build a formal quote for this request.",

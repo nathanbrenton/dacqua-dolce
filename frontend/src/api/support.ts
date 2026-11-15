@@ -1,3 +1,4 @@
+import type { ContactMethod } from "../utils/contactMethod";
 import { getCsrfToken } from "./authentication";
 import { readApiError } from "./httpErrors";
 
@@ -11,6 +12,7 @@ export type SupportRequestPayload = {
   name: string;
   email: string;
   phone: string | null;
+  preferred_contact_method?: ContactMethod | null;
   product_id: string | null;
   message: string;
   website: string | null;

@@ -96,6 +96,11 @@ class QuoteRequest(Base):
         String(50),
     )
 
+    # "email", "call" or "text"; null on requests made before it was asked.
+    preferred_contact_method: Mapped[str | None] = mapped_column(
+        String(20),
+    )
+
     message: Mapped[str | None] = mapped_column(
         Text,
     )

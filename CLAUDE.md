@@ -68,6 +68,9 @@ It is developed locally and deployed to one production host.
   invented facts, response times or sizing; avoid "removes"/"eliminates";
   keep the CLEAR acronym exact; "Big Blue" is not public; the equipment-only
   launch boundary must stay visible on product purchase areas and the quote flow.
+- Public phone and support email live in `frontend/src/config/businessContact.ts`;
+  they appear in the footer and in the support areas ("Prefer to reach us
+  directly?" on /support and product pages). Change them there only.
 - Customers see plain language. Avoid trade terms like "power" or "backwash"
   without explanation; frame things around the customer's water problem.
 
@@ -126,6 +129,18 @@ D'Acqua Dolce), then name, email, phone, product family and the customer's
 message. Full details stay in Operations. Apple Mail on iPhone may file the
 alerts under Promotions; each phone fixes that once with ⋯ → Categorize
 Sender → Primary.
+
+**Preferred contact method:** the quote dialog, support form and customer
+profile each have a "Preferred contact method" dropdown (Email / Phone call /
+Text message; `utils/contactMethod.ts` mirrors `backend/app/core/contact_method.py`).
+Call or text requires a phone, checked on both sides. It is stored on
+`quote_requests` and `customer_profiles` (`preferred_contact_method`; support
+requests keep it in the event details). Signed-in customers get their saved
+name, phone and preference prefilled; a form submission doesn't change the
+profile. Operations shows it as a chip and an `sms:` link on the request, on
+the Customers page and in the Inbox, puts a "Prefers:" line in the alert email,
+and words the request's next step to match it. There is no SMS integration:
+operators call or text from their own phone.
 
 **Failed email deliveries:** Inbox > Delivery issues lists failed sends that
 still need a look. "Mark reviewed" (one or all) sets

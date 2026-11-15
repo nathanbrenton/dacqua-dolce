@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
+from app.core.contact_method import contact_method_label
 from app.core.email_config import (
     get_email_runtime_settings,
 )
@@ -154,6 +155,7 @@ def send_quote_emails(
         f"Name: {quote.name}",
         f"Email: {quote.email}",
         f"Phone: {quote.phone or 'Not given'}",
+        f"Prefers: {contact_method_label(quote.preferred_contact_method) or 'Not given'}",
         f"Product family: {product_family}",
         "",
         "Message:",
@@ -360,6 +362,7 @@ def create_quote_request(
             name=payload.name,
             email=payload.email,
             phone=payload.phone,
+            preferred_contact_method=payload.preferred_contact_method,
             message=configured_message,
             recommendation_context=(
                 payload.recommendation_context.model_dump(mode="json")

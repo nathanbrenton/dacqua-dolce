@@ -10,6 +10,7 @@ from sqlalchemy import String, cast, func, not_, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies.auth import CurrentUser, DatabaseSession
+from app.core.contact_method import CONTACT_METHOD_VALUES
 from app.core.email import normalize_email_address
 from app.core.email_config import get_email_runtime_settings
 from app.models.audit import AuditEvent
@@ -431,6 +432,7 @@ def operations_quote_read(
         name=quote.name,
         email=quote.email,
         phone=quote.phone,
+        preferred_contact_method=getattr(quote, "preferred_contact_method", None),
         message=quote.message,
         recommendation_context=getattr(
             quote,
@@ -1764,6 +1766,7 @@ def _communication_originating_request_read(
             name=quote.name,
             email=quote.email,
             phone=quote.phone,
+            preferred_contact_method=quote.preferred_contact_method,
             product_name=product_name_for_quote(
                 db,
                 quote.product_id,
@@ -1810,6 +1813,7 @@ def _communication_originating_request_read(
     name_value = details.get("name")
     email_value = details.get("email")
     phone_value = details.get("phone")
+    contact_method_value = details.get("preferred_contact_method")
     product_name_value = details.get("product_name")
 
     created_at = message.received_at or message.created_at
@@ -1826,6 +1830,11 @@ def _communication_originating_request_read(
             else message.sender_address
         ),
         phone=(phone_value if isinstance(phone_value, str) else None),
+        preferred_contact_method=(
+            contact_method_value
+            if contact_method_value in CONTACT_METHOD_VALUES
+            else None
+        ),
         product_name=(
             product_name_value
             if isinstance(product_name_value, str) and product_name_value.strip()
@@ -2504,6 +2513,11 @@ def operations_customer_read(
         ),
         phone=(
             profile.phone
+            if profile is not None
+            else None
+        ),
+        preferred_contact_method=(
+            profile.preferred_contact_method
             if profile is not None
             else None
         ),

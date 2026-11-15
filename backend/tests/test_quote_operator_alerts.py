@@ -14,6 +14,7 @@ def _quote() -> SimpleNamespace:
         user_id=None,
         name="Example Customer",
         phone=None,
+        preferred_contact_method=None,
         recommendation_decision=None,
         recommendation_policy_version=None,
         recommendation_context=None,
@@ -80,6 +81,7 @@ def test_operator_alert_is_brief(monkeypatch: Any) -> None:
     quote = _quote()
     quote.inquiry_context = "product_inquiry"
     quote.phone = "+1 555 010 0100"
+    quote.preferred_contact_method = "text"
     quote.recommendation_context = {"source_water": "municipal", "bathrooms": "2"}
     quote.recommendation_decision = {"title": "Softened water", "code": "salt_free"}
     product = SimpleNamespace(name="Harmony - Pureline Duo", product_family="Harmony")
@@ -92,6 +94,7 @@ def test_operator_alert_is_brief(monkeypatch: Any) -> None:
         "Name: Example Customer",
         "Email: customer@example.test",
         "Phone: +1 555 010 0100",
+        "Prefers: Text message",
         "Product family: Harmony",
         "",
         "Message:",
@@ -113,6 +116,7 @@ def test_operator_alert_without_product_or_phone(monkeypatch: Any) -> None:
     assert message.subject == "New expert inquiry — Example Customer"
     assert "D'Acqua Dolce" not in message.subject
     assert "Phone: Not given" in message.body_text
+    assert "Prefers: Not given" in message.body_text
     assert "Product family: None chosen" in message.body_text
 
 

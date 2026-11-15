@@ -4,8 +4,13 @@ from pydantic import (
     BaseModel,
     Field,
     field_validator,
+    model_validator,
 )
 
+from app.core.contact_method import (
+    ContactMethod,
+    require_phone_for_contact_method,
+)
 from app.core.email import (
     normalize_email_address,
 )
@@ -175,6 +180,8 @@ class QuoteRequestCreate(BaseModel):
         max_length=50,
     )
 
+    preferred_contact_method: ContactMethod | None = None
+
     message: str | None = Field(
         default=None,
         max_length=4000,
@@ -182,6 +189,14 @@ class QuoteRequestCreate(BaseModel):
 
     recommendation_context: RecommendationContext | None = None
     configuration: ProductConfigurationRequest | None = None
+
+    @model_validator(mode="after")
+    def require_phone_for_call_or_text(self):
+        require_phone_for_contact_method(
+            self.preferred_contact_method,
+            self.phone,
+        )
+        return self
 
     @field_validator("name")
     @classmethod

@@ -188,6 +188,7 @@ def create_support_request(
                     "name": payload.name,
                     "email": payload.email,
                     "phone": payload.phone,
+                    "preferred_contact_method": payload.preferred_contact_method,
                     "product_id": str(product.id) if product is not None else None,
                     "product_name": product.name if product is not None else None,
                 },

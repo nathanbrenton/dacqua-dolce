@@ -224,6 +224,7 @@ export type OperationsCommunicationOriginatingRequest = {
   name: string;
   email: string;
   phone: string | null;
+  preferred_contact_method?: string | null;
   product_name: string | null;
   message: string | null;
   created_at: string;
@@ -358,6 +359,7 @@ export type OperationsQuote = {
   name: string;
   email: string;
   phone: string | null;
+  preferred_contact_method?: string | null;
   message: string | null;
   recommendation_context: Record<string, unknown> | null;
   recommendation_decision: RecommendationDecision | null;
@@ -404,6 +406,7 @@ export type OperationsCustomer = {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  preferred_contact_method?: string | null;
   addresses: OperationsCustomerAddress[];
   equipment: OperationsCustomerEquipment[];
   created_at: string;

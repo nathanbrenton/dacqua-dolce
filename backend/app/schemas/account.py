@@ -4,8 +4,13 @@ from pydantic import (
     BaseModel,
     Field,
     field_validator,
+    model_validator,
 )
 
+from app.core.contact_method import (
+    ContactMethod,
+    require_phone_for_contact_method,
+)
 from app.core.phone import (
     normalize_us_phone,
 )
@@ -90,6 +95,15 @@ class CustomerProfileUpdate(BaseModel):
         default=None,
         max_length=50,
     )
+    preferred_contact_method: ContactMethod | None = None
+
+    @model_validator(mode="after")
+    def require_phone_for_call_or_text(self):
+        require_phone_for_contact_method(
+            self.preferred_contact_method,
+            self.phone,
+        )
+        return self
 
     @field_validator(
         "first_name",
@@ -132,6 +146,7 @@ class CustomerProfileRead(BaseModel):
     first_name: str | None
     last_name: str | None
     phone: str | None
+    preferred_contact_method: str | None = None
     addresses: list[AddressRead] = Field(
         default_factory=list
     )

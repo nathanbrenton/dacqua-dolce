@@ -241,6 +241,7 @@ class OperationsCommunicationOriginatingRequestRead(BaseModel):
     name: str
     email: str
     phone: str | None
+    preferred_contact_method: str | None = None
     product_name: str | None
     message: str | None
     created_at: str
@@ -469,6 +470,7 @@ class OperationsQuoteRead(BaseModel):
     name: str
     email: str
     phone: str | None
+    preferred_contact_method: str | None = None
     message: str | None
     recommendation_context: dict[str, object] | None
     recommendation_decision: dict[str, object] | None
@@ -553,6 +555,7 @@ class OperationsCustomerRead(BaseModel):
     first_name: str | None
     last_name: str | None
     phone: str | None
+    preferred_contact_method: str | None = None
     addresses: list[OperationsCustomerAddressRead] = Field(
         default_factory=list,
     )

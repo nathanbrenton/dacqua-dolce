@@ -39,6 +39,11 @@ class CustomerProfile(Base):
         String(50),
     )
 
+    # "email", "call" or "text"; prefills the site's contact forms.
+    preferred_contact_method: Mapped[str | None] = mapped_column(
+        String(20),
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

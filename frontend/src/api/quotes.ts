@@ -1,3 +1,4 @@
+import type { ContactMethod } from "../utils/contactMethod";
 import { getCsrfToken } from "./authentication";
 import { readApiError } from "./httpErrors";
 
@@ -97,6 +98,7 @@ export type QuoteRequestPayload = {
   name: string;
   email: string;
   phone: string | null;
+  preferred_contact_method?: ContactMethod | null;
   message: string | null;
   recommendation_context: RecommendationContext | null;
   configuration?: ProductQuoteConfiguration | null;

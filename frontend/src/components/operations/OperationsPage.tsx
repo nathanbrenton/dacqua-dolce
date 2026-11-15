@@ -11,6 +11,7 @@ import {
 } from "../../api/account";
 import type { CommercialAddress } from "../../api/commercial";
 import { homeSizeLabel } from "../../api/quotes";
+import { contactMethodLabel } from "../../utils/contactMethod";
 import { MoneyInput } from "./MoneyInput";
 import { parseDollarsToMinor, splitRequestMessage } from "./operationsMoney";
 
@@ -3338,7 +3339,21 @@ export function OperationsPage({
                     <div className="operations-request-contact">
                       <CopyEmailButton email={quote.email} />
                       {quote.phone !== null ? (
-                        <a href={`tel:${quote.phone}`}>{quote.phone}</a>
+                        <a href={`tel:${quote.phone}`}>
+                          {formatUsPhoneInput(quote.phone)}
+                        </a>
+                      ) : null}
+                      {quote.phone !== null
+                      && quote.preferred_contact_method === "text" ? (
+                        <a href={`sms:${quote.phone}`}>Text</a>
+                      ) : null}
+                      {contactMethodLabel(quote.preferred_contact_method) !== null ? (
+                        <span
+                          className="operations-contact-preference"
+                          data-method={quote.preferred_contact_method}
+                        >
+                          Prefers {contactMethodLabel(quote.preferred_contact_method)?.toLowerCase()}
+                        </span>
                       ) : null}
                     </div>
                   </section>
@@ -5081,6 +5096,14 @@ export function OperationsPage({
                         ) : (
                           <strong>Not provided</strong>
                         )}
+                      </div>
+
+                      <div>
+                        <span>Prefers</span>
+                        <strong>
+                          {contactMethodLabel(customer.preferred_contact_method)
+                            ?? "Not set"}
+                        </strong>
                       </div>
                     </div>
 

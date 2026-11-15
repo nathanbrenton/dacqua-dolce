@@ -87,6 +87,7 @@ def test_operations_customer_roster_uses_customer_role(
         first_name="Dory",
         last_name="Tang",
         phone="+19495551234",
+        preferred_contact_method="text",
     )
 
     address = SimpleNamespace(
@@ -144,6 +145,7 @@ def test_operations_customer_roster_uses_customer_role(
     )
     assert roster_customer.first_name == "Dory"
     assert roster_customer.last_name == "Tang"
+    assert roster_customer.preferred_contact_method == "text"
     assert roster_customer.phone == (
         "+19495551234"
     )

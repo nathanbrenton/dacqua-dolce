@@ -110,6 +110,9 @@ def get_profile(
         first_name=(profile.first_name if profile is not None else None),
         last_name=(profile.last_name if profile is not None else None),
         phone=(profile.phone if profile is not None else None),
+        preferred_contact_method=(
+            profile.preferred_contact_method if profile is not None else None
+        ),
         addresses=[address_read(address) for address in addresses],
     )
 
@@ -135,6 +138,9 @@ def update_profile(
     profile.first_name = payload.first_name
     profile.last_name = payload.last_name
     profile.phone = payload.phone
+    # Older clients don't send it; keep the saved preference in that case.
+    if "preferred_contact_method" in payload.model_fields_set:
+        profile.preferred_contact_method = payload.preferred_contact_method
 
     record_audit_event(
         db,

@@ -1,7 +1,11 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
+from app.core.contact_method import (
+    ContactMethod,
+    require_phone_for_contact_method,
+)
 from app.core.email import normalize_email_address
 from app.core.phone import normalize_us_phone
 
@@ -17,6 +21,7 @@ class SupportRequestCreate(BaseModel):
     name: str = Field(min_length=1, max_length=160)
     email: str = Field(min_length=3, max_length=320)
     phone: str | None = Field(default=None, max_length=50)
+    preferred_contact_method: ContactMethod | None = None
     product_id: str | None = None
     message: str = Field(min_length=1, max_length=4000)
     website: str | None = Field(default=None, max_length=200)
@@ -52,6 +57,14 @@ class SupportRequestCreate(BaseModel):
         if not isinstance(value, str):
             raise ValueError("Phone number must be text.")
         return normalize_us_phone(value)
+
+    @model_validator(mode="after")
+    def require_phone_for_call_or_text(self):
+        require_phone_for_contact_method(
+            self.preferred_contact_method,
+            self.phone,
+        )
+        return self
 
 
 class SupportRequestRead(BaseModel):

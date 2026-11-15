@@ -65,6 +65,14 @@ import {
   isCompleteUsPhone,
 } from "../../utils/phone";
 import {
+  CONTACT_METHOD_OPTIONS,
+  type ContactMethod,
+  DEFAULT_CONTACT_METHOD,
+  PHONE_REQUIRED_MESSAGE,
+  contactMethodNeedsPhone,
+  isContactMethod,
+} from "../../utils/contactMethod";
+import {
   PasswordInput,
 } from "../forms/PasswordInput";
 import {
@@ -573,6 +581,10 @@ export function AccountPage({
     useState<string | null>(null);
   const [saving, setSaving] =
     useState(false);
+  // Profile form problems show inside the form, next to Save, rather than
+  // in the page-level alert far above it.
+  const [profileError, setProfileError] =
+    useState<string | null>(null);
   const [saveNotice, setSaveNotice] =
     useState<string | null>(null);
   const [addressDraft, setAddressDraft] =
@@ -845,13 +857,27 @@ export function AccountPage({
       return;
     }
 
+    const preferredContactMethod = isContactMethod(
+      currentProfile.preferred_contact_method,
+    )
+      ? currentProfile.preferred_contact_method
+      : DEFAULT_CONTACT_METHOD;
+
+    if (
+      contactMethodNeedsPhone(preferredContactMethod)
+      && (currentProfile.phone ?? "") === ""
+    ) {
+      setProfileError(PHONE_REQUIRED_MESSAGE);
+      return;
+    }
+
     if (
       currentProfile.phone !== null
       && !isCompleteUsPhone(
         currentProfile.phone,
       )
     ) {
-      setError(
+      setProfileError(
         "Enter a complete "
         + "10-digit phone number.",
       );
@@ -859,7 +885,7 @@ export function AccountPage({
     }
 
     setSaving(true);
-    setError(null);
+    setProfileError(null);
     setSaveNotice(null);
 
     try {
@@ -870,12 +896,13 @@ export function AccountPage({
           last_name:
             currentProfile.last_name,
           phone: currentProfile.phone,
+          preferred_contact_method: preferredContactMethod,
         });
 
       setProfile(updated);
       setSaveNotice("Profile updated.");
     } catch (caught) {
-      setError(
+      setProfileError(
         caught instanceof Error
           ? caught.message
           : "Profile update failed.",
@@ -1145,6 +1172,10 @@ export function AccountPage({
                 placeholder={
                   "(951) 555-0142"
                 }
+                required={
+                  isContactMethod(profile.preferred_contact_method)
+                  && contactMethodNeedsPhone(profile.preferred_contact_method)
+                }
                 value={
                   profile.phone ?? ""
                 }
@@ -1164,6 +1195,44 @@ export function AccountPage({
                 automatically.
               </small>
             </label>
+
+            <label>
+              <span>Preferred contact method</span>
+              <select
+                value={
+                  isContactMethod(profile.preferred_contact_method)
+                    ? profile.preferred_contact_method
+                    : DEFAULT_CONTACT_METHOD
+                }
+                onChange={(event) => {
+                  setProfile({
+                    ...profile,
+                    preferred_contact_method:
+                      event.target.value as ContactMethod,
+                  });
+                }}
+              >
+                {CONTACT_METHOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <small className="field-helper">
+                How we contact you about requests and orders. Used to fill
+                in our contact forms when you're signed in. Calls and texts
+                go to the phone number above.
+              </small>
+            </label>
+
+            {profileError !== null ? (
+              <p
+                className="account-error-inline"
+                role="alert"
+              >
+                {profileError}
+              </p>
+            ) : null}
 
             <button
               type="submit"

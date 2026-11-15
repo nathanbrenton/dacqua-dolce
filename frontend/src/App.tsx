@@ -39,6 +39,7 @@ import {
 import {
   FooterCopyright,
 } from "./components/brand/FooterCopyright";
+import { FooterContact } from "./components/brand/BusinessContactLine";
 import {
   CatalogSection,
 } from "./components/catalog/CatalogSection";
@@ -198,6 +199,8 @@ function CustomerSiteFooter({
       />
 
       <div className="site-footer-meta">
+        <FooterContact />
+
         <nav
           className="footer-policy-links"
           aria-label="Policies"

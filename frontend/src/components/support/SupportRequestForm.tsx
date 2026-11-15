@@ -5,6 +5,15 @@ import {
   submitSupportRequest,
   type SupportRequestKind,
 } from "../../api/support";
+import {
+  type ContactMethod,
+  DEFAULT_CONTACT_METHOD,
+  PHONE_REQUIRED_MESSAGE,
+  contactMethodNeedsPhone,
+} from "../../utils/contactMethod";
+import { isCompleteUsPhone } from "../../utils/phone";
+import { loadAccountContactDefaults } from "../forms/accountContactDefaults";
+import { ContactMethodSelect } from "../forms/ContactMethodSelect";
 import { UsPhoneInput } from "../forms/UsPhoneInput";
 import { useToast } from "../toast/ToastProvider";
 import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChallenge";
@@ -28,6 +37,8 @@ export function SupportRequestForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState(account?.email ?? "");
   const [phone, setPhone] = useState("");
+  const [contactMethod, setContactMethod] =
+    useState<ContactMethod>(DEFAULT_CONTACT_METHOD);
   const [message, setMessage] = useState("");
   const [website, setWebsite] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -42,8 +53,37 @@ export function SupportRequestForm({
     setEmail(account?.email ?? "");
   }, [account]);
 
+  // Signed-in customers start with their saved name, phone and preference.
+  useEffect(() => {
+    if (account?.authenticated !== true) {
+      return;
+    }
+    let cancelled = false;
+    void loadAccountContactDefaults().then((defaults) => {
+      if (cancelled || defaults === null) {
+        return;
+      }
+      setName((current) => current || defaults.name);
+      setPhone((current) => current || defaults.phone);
+      if (defaults.method !== null) {
+        setContactMethod(defaults.method);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [account?.authenticated]);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (contactMethodNeedsPhone(contactMethod) && phone.length === 0) {
+      setError(PHONE_REQUIRED_MESSAGE);
+      return;
+    }
+    if (phone.length > 0 && !isCompleteUsPhone(phone)) {
+      setError("Enter a complete 10-digit phone number.");
+      return;
+    }
     if (turnstileConfigured && !turnstileToken) {
       setError("Complete the verification challenge.");
       return;
@@ -58,6 +98,7 @@ export function SupportRequestForm({
         name,
         email,
         phone: phone || null,
+        preferred_contact_method: contactMethod,
         product_id: productId,
         message,
         website: website || null,
@@ -138,8 +179,12 @@ export function SupportRequestForm({
       </label>
 
       <label>
-        <span>Phone (optional)</span>
+        <span>
+          Phone
+          {contactMethodNeedsPhone(contactMethod) ? null : " (optional)"}
+        </span>
         <UsPhoneInput
+          required={contactMethodNeedsPhone(contactMethod)}
           inputMode="tel"
           autoComplete="tel"
           maxLength={14}
@@ -150,6 +195,8 @@ export function SupportRequestForm({
           onValueChange={setPhone}
         />
       </label>
+
+      <ContactMethodSelect value={contactMethod} onChange={setContactMethod} />
 
       <label>
         <span>How can we help?</span>

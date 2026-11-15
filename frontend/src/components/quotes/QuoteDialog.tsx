@@ -6,6 +6,15 @@ import {
 } from "react";
 
 import {
+  type ContactMethod,
+  DEFAULT_CONTACT_METHOD,
+  PHONE_REQUIRED_MESSAGE,
+  contactMethodFollowUp,
+  contactMethodNeedsPhone,
+} from "../../utils/contactMethod";
+import { loadAccountContactDefaults } from "../forms/accountContactDefaults";
+import { ContactMethodSelect } from "../forms/ContactMethodSelect";
+import {
   HOME_SIZE_OPTIONS,
   submitQuoteRequest,
   type HomeSize,
@@ -97,6 +106,8 @@ export function QuoteDialog({
     useState(initialEmail ?? "");
   const [phone, setPhone] =
     useState("");
+  const [contactMethod, setContactMethod] =
+    useState<ContactMethod>(DEFAULT_CONTACT_METHOD);
   const [servicePostalCode, setServicePostalCode] =
     useState("");
   const [sourceWater, setSourceWater] =
@@ -137,6 +148,7 @@ export function QuoteDialog({
       setName("");
       setEmail(initialEmail ?? "");
       setPhone("");
+      setContactMethod(DEFAULT_CONTACT_METHOD);
       setServicePostalCode(
         recommendationContext?.service_postal_code ?? "",
       );
@@ -160,6 +172,27 @@ export function QuoteDialog({
     productId,
     recommendationContext,
   ]);
+
+  // Signed-in customers start with their saved name, phone and preference.
+  useEffect(() => {
+    if (!open || initialEmail === null) {
+      return;
+    }
+    let cancelled = false;
+    void loadAccountContactDefaults().then((defaults) => {
+      if (cancelled || defaults === null) {
+        return;
+      }
+      setName((current) => current || defaults.name);
+      setPhone((current) => current || defaults.phone);
+      if (defaults.method !== null) {
+        setContactMethod(defaults.method);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, initialEmail]);
 
   useEffect(() => {
     if (successId === null) {
@@ -202,6 +235,11 @@ export function QuoteDialog({
   ) {
     event.preventDefault();
     setError(null);
+
+    if (contactMethodNeedsPhone(contactMethod) && phone.length === 0) {
+      setError(PHONE_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (
       phone.length > 0
@@ -258,6 +296,7 @@ export function QuoteDialog({
           name,
           email,
           phone: phone || null,
+          preferred_contact_method: contactMethod,
           message: combinedMessage || null,
           recommendation_context: qualificationContext,
           configuration: productConfiguration,
@@ -394,8 +433,8 @@ export function QuoteDialog({
           </strong>
 
           <p>
-            Thank you. Our team will review it and reply by email. Your
-            reference is{" "}
+            Thank you. Our team will review it and{" "}
+            {contactMethodFollowUp(contactMethod)}. Your reference is{" "}
             <code>{successId}</code>.
           </p>
 
@@ -452,10 +491,13 @@ export function QuoteDialog({
           <label>
             <span>
               Phone{" "}
-              <small>(optional)</small>
+              {contactMethodNeedsPhone(contactMethod)
+                ? null
+                : <small>(optional)</small>}
             </span>
 
             <UsPhoneInput
+              required={contactMethodNeedsPhone(contactMethod)}
               inputMode="tel"
               autoComplete="tel"
               maxLength={14}
@@ -481,6 +523,11 @@ export function QuoteDialog({
               automatically.
             </small>
           </label>
+
+          <ContactMethodSelect
+            value={contactMethod}
+            onChange={setContactMethod}
+          />
 
           <aside className="quote-purchase-boundary">
             <strong>Equipment only</strong>

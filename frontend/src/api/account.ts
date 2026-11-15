@@ -1,3 +1,4 @@
+import type { ContactMethod } from "../utils/contactMethod";
 import { getCsrfToken } from "./authentication";
 
 import type {
@@ -24,6 +25,7 @@ export type CustomerProfile = {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  preferred_contact_method?: ContactMethod | null;
   addresses: CustomerAddress[];
 };
 
@@ -31,6 +33,7 @@ export type CustomerProfileUpdate = {
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
+  preferred_contact_method?: ContactMethod | null;
 };
 
 export type AddressCreate = Omit<
