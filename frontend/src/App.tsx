@@ -104,8 +104,10 @@ type BackendState =
 const THEME_STORAGE_KEY =
   "dacqua-dolce-theme-v2";
 
+// v3 (2026-11-15): header and footer now show the same artwork; bumping the
+// key returns every visitor to the default (Metallic / Aqua, no subtitle).
 const LOGO_STORAGE_KEY =
-  "dacqua-dolce-logo-v2";
+  "dacqua-dolce-logo-v3";
 
 function getInitialTheme(): ThemeId {
   const storedTheme =

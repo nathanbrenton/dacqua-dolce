@@ -77,7 +77,8 @@ It is developed locally and deployed to one production host.
 ## UI review
 
 - Default customer look: Lagoon Editorial theme, light appearance, Editorial
-  Modern typography, background logo visible, monochrome logo. Other
+  Modern typography, background logo visible, Metallic / Aqua logo (no "Filtration Systems"
+  subtitle; header and footer always show the same artwork). Other
   combinations are only demo options in the pop-up behind the footer logo.
 - Customer pages: check desktop, wide desktop, and iPhone 15+ portrait and landscape.
 - Operations: used only by the developer, on desktop. Mobile polish is low

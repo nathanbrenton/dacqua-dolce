@@ -27,7 +27,6 @@ export function DeveloperFooterLogo({
       <span className="footer-brand-frame">
         <BrandLogo
           variant={variant}
-          filtrationSystems
           className="footer-logo"
         />
       </span>

@@ -5,13 +5,15 @@ import {
 
 type BrandLogoProps = {
   variant: LogoVariantId;
-  filtrationSystems?: boolean;
   className?: string;
 };
 
+/**
+ * The selected logo artwork. Header, footer and Operations all pass the same
+ * variant, so the logo matches everywhere.
+ */
 export function BrandLogo({
   variant,
-  filtrationSystems = false,
   className,
 }: BrandLogoProps) {
   const logo = getLogoVariant(variant);
@@ -20,16 +22,8 @@ export function BrandLogo({
     <img
       className={className}
       data-logo-variant={variant}
-      src={
-        filtrationSystems
-          ? logo.filtrationPath
-          : logo.path
-      }
-      alt={
-        filtrationSystems
-          ? "D'Acqua Dolce Filtration Systems"
-          : logo.alt
-      }
+      src={logo.path}
+      alt={logo.alt}
       decoding="async"
     />
   );

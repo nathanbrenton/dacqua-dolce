@@ -66,3 +66,12 @@ Assets (`.png` and `.webp` each):
 In dark appearance the black-line (monochrome) logo is inverted with CSS so it
 stays visible, the same treatment the background watermark already uses. The
 metallic logo is never filtered. Operations keeps its white logo plate.
+
+## One logo everywhere (2026-11-15)
+
+The header, footer and Operations show the same artwork: whichever "Logo
+artwork" option is picked in the pop-up behind the footer logo. The footer no
+longer swaps in the Filtration Systems version on its own. The default is
+Metallic / Aqua without the subtitle (`dacqua-dolce-logo-metallic-aqua-transparent`).
+The saved choice moved to the `dacqua-dolce-logo-v3` storage key, so earlier
+picks reset to that default once.
