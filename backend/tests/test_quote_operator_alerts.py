@@ -87,7 +87,7 @@ def test_operator_alert_is_brief(monkeypatch: Any) -> None:
     quotes.send_quote_emails(db=object(), quote=quote, product=product)
 
     message = sent[0]["message"]
-    assert message.subject == "New product inquiry"
+    assert message.subject == "New product inquiry — Example Customer"
     assert message.body_text.splitlines() == [
         "Name: Example Customer",
         "Email: customer@example.test",
@@ -110,7 +110,20 @@ def test_operator_alert_without_product_or_phone(monkeypatch: Any) -> None:
     quotes.send_quote_emails(db=object(), quote=_quote(), product=None)
 
     message = sent[0]["message"]
-    assert message.subject == "New expert inquiry"
+    assert message.subject == "New expert inquiry — Example Customer"
     assert "D'Acqua Dolce" not in message.subject
     assert "Phone: Not given" in message.body_text
     assert "Product family: None chosen" in message.body_text
+
+
+def test_operator_alert_subject_flattens_the_name(monkeypatch: Any) -> None:
+    sent = _capture_operator_alerts(
+        monkeypatch,
+        EmailRuntimeSettings(email_operator_to="owner@example.test"),
+    )
+    quote = _quote()
+    quote.name = "  Jamie \n  Smith "
+
+    quotes.send_quote_emails(db=object(), quote=quote, product=None)
+
+    assert sent[0]["message"].subject == "New expert inquiry — Jamie Smith"

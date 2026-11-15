@@ -120,10 +120,12 @@ collapsible `<details>` disclosures.
 `/etc/dacqua-dolce/backend.env` on production) takes one address or a
 comma-separated list. Each inbox gets its own copy (category
 `quote_operator_notification`, filed under Inbox > System); blank turns
-alerts off. The alert is deliberately short: subject "New product inquiry"
-(or expert / recommendation inquiry; the sender already says D'Acqua Dolce),
-then name, email, phone, product family and the customer's message. Full
-details stay in Operations.
+alerts off. The alert is deliberately short: subject "New product inquiry —
+<customer name>" (or expert / recommendation inquiry; the sender already says
+D'Acqua Dolce), then name, email, phone, product family and the customer's
+message. Full details stay in Operations. Apple Mail on iPhone may file the
+alerts under Promotions; each phone fixes that once with ⋯ → Categorize
+Sender → Primary.
 
 **Failed email deliveries:** Inbox > Delivery issues lists failed sends that
 still need a look. "Mark reviewed" (one or all) sets

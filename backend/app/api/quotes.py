@@ -114,7 +114,9 @@ def send_quote_emails(
     email_settings = get_email_runtime_settings()
 
     # The sender already names D'Acqua Dolce, so the subject doesn't repeat it.
-    subject = (
+    # The customer's name keeps each alert distinct (mail apps otherwise stack
+    # identical subjects into one thread and treat them as bulk mail).
+    inquiry_label = (
         "New expert inquiry"
         if quote.inquiry_context == "expert_inquiry"
         else "New product inquiry"
@@ -122,6 +124,10 @@ def send_quote_emails(
         else "New recommendation inquiry"
         if quote.inquiry_context == "recommendation_inquiry"
         else "New quote request"
+    )
+    customer_name = " ".join(str(quote.name or "").split())[:120]
+    subject = (
+        f"{inquiry_label} — {customer_name}" if customer_name else inquiry_label
     )
 
     deliver_quote_acknowledgement(
