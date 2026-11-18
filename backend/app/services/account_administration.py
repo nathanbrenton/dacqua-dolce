@@ -175,10 +175,17 @@ def load_user_with_roles(
     *,
     user_id: uuid.UUID,
 ) -> User | None:
+    # populate_existing: the session keeps objects after commit
+    # (expire_on_commit=False), so without it a reload after changing role
+    # rows returns the user with the roles it had before, and the Staff page
+    # shows the old access until the next request.
     return db.scalar(
         select(User)
         .options(
             selectinload(User.roles)
+        )
+        .execution_options(
+            populate_existing=True
         )
         .where(
             User.id == user_id

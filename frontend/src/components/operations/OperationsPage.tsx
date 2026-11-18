@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -26,6 +27,7 @@ import {
   updateQuoteStatus,
   type OperationsCommunication,
   type OperationsCommunicationThread,
+  type OperationsCommunicationThreadDetail,
   type OperationsCustomer,
   type OperationsOrder,
   type OperationsFormalQuote,
@@ -283,6 +285,9 @@ export function OperationsPage({
   const [inboxThreadToOpen, setInboxThreadToOpen] =
     useState<{ threadId: string } | null>(null);
   // Open Inbox conversations where the customer wrote last (for Needs you).
+  // Latest thread from a reply sent inside a request, passed to the Inbox.
+  const [requestReplyThread, setRequestReplyThread] =
+    useState<OperationsCommunicationThreadDetail | null>(null);
   const [awaitingReplyThreads, setAwaitingReplyThreads] =
     useState<OperationsCommunicationThread[]>([]);
 
@@ -337,6 +342,21 @@ export function OperationsPage({
     useState<OperationsLaunchReadiness | null>(null);
   const [salesInsights, setSalesInsights] =
     useState<OperationsSalesInsights | null>(null);
+
+  // Overview's counts and readiness snapshot are worked out on the server from
+  // catalog, request and policy data. Refetch them after a save elsewhere so
+  // Overview and the tab badges never lag behind the change.
+  const refreshOverviewData = useCallback(() => {
+    void Promise.all([
+      getOperationsSummary(),
+      getOperationsLaunchReadiness(),
+    ])
+      .then(([nextSummary, nextReadiness]) => {
+        setSummary(nextSummary);
+        setLaunchReadiness(nextReadiness);
+      })
+      .catch(() => undefined);
+  }, []);
   const [quotes, setQuotes] =
     useState<OperationsQuote[]>([]);
   const [requestView, setRequestView] =
@@ -1207,7 +1227,10 @@ export function OperationsPage({
           </span>
         </summary>
         <div className="operations-disclosure-content">
-          <PolicyManagementPanel roles={roles} />
+          <PolicyManagementPanel
+            roles={roles}
+            onPoliciesChanged={refreshOverviewData}
+          />
         </div>
       </details>
 
@@ -1299,6 +1322,7 @@ export function OperationsPage({
           onOpenRequest={openRequestFromInbox}
           onAwaitingReplyChange={setAwaitingReplyThreads}
           threadToOpen={inboxThreadToOpen}
+          updatedThread={requestReplyThread}
         />
       </section>
 
@@ -1651,6 +1675,7 @@ export function OperationsPage({
                       && quote.id === selectedRequestId
                     }
                     onReplied={(reply) => {
+                      setRequestReplyThread(reply.thread);
                       // Emailing a new request's customer is contacting them.
                       if (
                         quote.status === "new"
@@ -1771,6 +1796,7 @@ export function OperationsPage({
         privileged={privileged}
         onProductChange={(updated) => {
           setProducts((current) => replaceProduct(current, updated));
+          refreshOverviewData();
         }}
         onMessage={setMessage}
         onError={setError}

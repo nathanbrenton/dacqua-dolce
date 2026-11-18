@@ -248,3 +248,23 @@ def test_developer_role_is_not_web_managed() -> None:
 
     assert exc.value.status_code == 409
     assert database.committed is False
+
+
+def test_load_user_with_roles_repopulates_cached_user() -> None:
+    # After a role change the routes reload the user to build the response.
+    # The session keeps objects across commits, so the reload must overwrite
+    # the cached roles or the response (and the Staff page) shows stale access.
+    captured: list[Any] = []
+
+    class CapturingDatabase:
+        def scalar(self, statement: Any) -> None:
+            captured.append(statement)
+            return None
+
+    account_administration.load_user_with_roles(
+        CapturingDatabase(),  # type: ignore[arg-type]
+        user_id=uuid.uuid4(),
+    )
+
+    assert len(captured) == 1
+    assert captured[0].get_execution_options().get("populate_existing") is True

@@ -50,10 +50,13 @@ function refundTermsSummary(terms: RefundPolicyTerms): string {
 
 type PolicyManagementPanelProps = {
   roles: string[];
+  /** Called after a save changes approved policies (Overview readiness depends on them). */
+  onPoliciesChanged?: () => void;
 };
 
 export function PolicyManagementPanel({
   roles,
+  onPoliciesChanged,
 }: PolicyManagementPanelProps) {
   const writable = roles.some(
     (role) => role === "administrator" || role === "developer",
@@ -383,6 +386,7 @@ export function PolicyManagementPanel({
       const report = await applyPolicyImport(importBundle, importMode);
       setImportReport(report);
       setPolicies(await getOperationsPolicies());
+      onPoliciesChanged?.();
       setMessage(
         `Policy import applied: ${report.additions} added, ${report.skips} skipped, ${report.lifecycle_updates} lifecycle updates.`,
       );
@@ -414,6 +418,7 @@ export function PolicyManagementPanel({
       const updated = await approvePolicyDocument(policy.id);
       const refreshed = await getOperationsPolicies();
       setPolicies(refreshed);
+      onPoliciesChanged?.();
       setMessage(
         `${updated.title} version ${updated.version} is approved.`,
       );

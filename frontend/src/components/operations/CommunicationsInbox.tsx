@@ -44,6 +44,26 @@ function threadSearchText(
 
 const AUTO_REFRESH_MS = 60_000;
 
+// Puts an updated (or newly created) thread into the list, newest first.
+function mergeThread(
+  threads: OperationsCommunicationThread[],
+  updated: OperationsCommunicationThread,
+): OperationsCommunicationThread[] {
+  return [
+    updated,
+    ...threads.filter((thread) => thread.id !== updated.id),
+  ].sort((left, right) => {
+    const leftTime = new Date(
+      left.last_message_at ?? left.created_at,
+    ).getTime();
+    const rightTime = new Date(
+      right.last_message_at ?? right.created_at,
+    ).getTime();
+
+    return rightTime - leftTime;
+  });
+}
+
 function relatedRecordLabel(
   type: string | null,
   originatingRequestType: string | null,
@@ -90,6 +110,9 @@ type CommunicationsInboxProps = {
   // Opens this conversation (from a request's "Open in Inbox"). A new object
   // reopens it even when the thread id is unchanged.
   threadToOpen?: { threadId: string } | null;
+  // A conversation changed elsewhere (a reply sent from a request), merged in
+  // so the list, the open thread and "Needs you" update without a refresh.
+  updatedThread?: OperationsCommunicationThreadDetail | null;
 };
 
 export function CommunicationsInbox({
@@ -97,6 +120,7 @@ export function CommunicationsInbox({
   onAwaitingReplyChange,
   onOpenRequest,
   threadToOpen = null,
+  updatedThread = null,
 }: CommunicationsInboxProps = {}) {
   const [threads, setThreads] =
     useState<OperationsCommunicationThread[]>([]);
@@ -153,6 +177,17 @@ export function CommunicationsInbox({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (updatedThread === null) {
+      return;
+    }
+
+    setThreads((current) => mergeThread(current, updatedThread));
+    setThreadDetail((current) => (
+      current?.id === updatedThread.id ? updatedThread : current
+    ));
+  }, [updatedThread]);
 
   const refreshInbox = useCallback(
     async (): Promise<void> => {
@@ -442,24 +477,7 @@ export function CommunicationsInbox({
     );
 
     setThreadDetail(result.thread);
-    setThreads((current) =>
-      current
-        .map((thread) =>
-          thread.id === result.thread.id
-            ? result.thread
-            : thread,
-        )
-        .sort((left, right) => {
-          const leftTime = new Date(
-            left.last_message_at ?? left.created_at,
-          ).getTime();
-          const rightTime = new Date(
-            right.last_message_at ?? right.created_at,
-          ).getTime();
-
-          return rightTime - leftTime;
-        }),
-    );
+    setThreads((current) => mergeThread(current, result.thread));
 
     return result;
   }
