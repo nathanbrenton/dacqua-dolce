@@ -47,3 +47,26 @@ export function splitRequestMessage(message: string | null): {
     customerMessage: customerMessage === "" ? null : customerMessage,
   };
 }
+
+/** Minor units (cents) to a plain "12.34" string for an input; "" for none. */
+export function minorToDollars(amountMinor: number | null): string {
+  if (amountMinor === null) {
+    return "";
+  }
+
+  return (amountMinor / 100).toFixed(2);
+}
+
+/** Minor units (cents) formatted as currency in the browser's locale. */
+export function formatMoney(
+  amountMinor: number,
+  currency: string,
+): string {
+  return new Intl.NumberFormat(
+    undefined,
+    {
+      style: "currency",
+      currency,
+    },
+  ).format(amountMinor / 100);
+}
