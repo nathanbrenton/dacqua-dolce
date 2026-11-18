@@ -23,6 +23,28 @@ It is developed locally and deployed to one production host.
   sources). Scripts find these relative to their own location; don't hardcode
   home-directory paths.
 
+## Notes for local agents (OpenCode + LM Studio)
+
+A local model (Qwen3.8-27B in OpenCode, set up per `../README.txt`) also works
+in this repo, with a 64K-token window. It reads this file at the start of
+every session. To work within that window:
+
+- **Never read these whole; search them, then read only the lines you need**
+  (e.g. 150–300 lines around a match). Approximate size in tokens:
+  `frontend/src/components/operations/OperationsPage.tsx` ~67K (bigger than
+  the whole window), `frontend/src/styles.css` ~50K,
+  `backend/app/api/operations.py` ~43K, `frontend/src/components/account/AccountPage.tsx` ~21K.
+- Prefer the split-out Operations files (listed under "Operations page"
+  below); most request, inbox and quote work lives in them rather than in
+  `OperationsPage.tsx`.
+- New CSS goes in a new labelled section at the end of `styles.css`; append
+  it rather than reading the file.
+- Start each new session with `/catchup` (recent commits and release notes),
+  and start a fresh session after other agents have changed the code: an old
+  session still remembers the files as they were.
+- Work in small steps, run the checks under "Checks" after each change, and
+  never commit, push or stage a release: that needs the user's go-ahead.
+
 ## Running locally
 
 - Postgres: Docker container `dacqua-dolce-postgres` on `127.0.0.1:15432`.
