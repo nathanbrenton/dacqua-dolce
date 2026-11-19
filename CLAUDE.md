@@ -31,12 +31,12 @@ every session. To work within that window:
 
 - **Never read these whole; search them, then read only the lines you need**
   (e.g. 150–300 lines around a match). Approximate size in tokens:
-  `frontend/src/components/operations/OperationsPage.tsx` ~67K (bigger than
-  the whole window), `frontend/src/styles.css` ~50K,
-  `backend/app/api/operations.py` ~43K, `frontend/src/components/account/AccountPage.tsx` ~21K.
-- Prefer the split-out Operations files (listed under "Operations page"
-  below); most request, inbox and quote work lives in them rather than in
-  `OperationsPage.tsx`.
+  `frontend/src/styles.css` ~50K, `backend/app/api/operations.py` ~43K,
+  `frontend/src/components/catalog/ProductDetailPage.tsx` ~15K.
+- Most other frontend files are small enough to read whole (under ~10K
+  tokens). Operations and the customer account page are split into one
+  file per tab or section (see "Operations page" and "Customer account
+  page" below): open the file for the part you're changing, not the page.
 - New CSS goes in a new labelled section at the end of `styles.css`; append
   it rather than reading the file.
 - Start each new session with `/catchup` (recent commits and release notes),
@@ -96,6 +96,20 @@ every session. To work within that window:
 - Customers see plain language. Avoid trade terms like "power" or "backwash"
   without explanation; frame things around the customer's water problem.
 
+## Customer account page
+
+`frontend/src/components/account/AccountPage.tsx` (~430 lines) handles
+sign-in states, loads the account data and holds the shared alert, success
+toast and one busy flag (a save anywhere disables the other save buttons).
+`SecurityPanel.tsx` and `AppearancePanel.tsx` are shown to every account,
+staff included. Customer panels are in `account/sections/`: `ProfileSection`,
+`AddressesSection`, `CommunicationPreferencesSection`, `EquipmentSection`,
+`MaintenanceChecksSection`, `ConsultationHistorySection`,
+`FormalQuotesSection` (approval prepares an order, so orders are refetched),
+`CartSection`, `OrdersSection`. Shared formatting in `accountFormat.ts`;
+shared props in `accountShared.ts`. API calls: `frontend/src/api/account.ts`,
+`cart.ts`, `orders.ts`.
+
 ## UI review
 
 - Default customer look: Lagoon Editorial theme, light appearance, Editorial
@@ -111,14 +125,37 @@ every session. To work within that window:
 **Goal (current focus):** make Operations more intuitive and visually better
 organised, above all for communicating with customers and fielding quotes.
 
-**Code:**
-- `frontend/src/components/operations/OperationsPage.tsx` (~6,000 lines) holds
-  the header, workspace nav and most panels.
-- Split-out panels in the same folder: `CommunicationsInbox.tsx` (customer
-  inbox), `ConversationThread.tsx` (message list and reply form shared by the
-  Inbox and requests), `RequestConversation.tsx`, `FormalQuoteComposer.tsx` (quote drafting inside a
-  request), `OrderFulfillmentControls.tsx`, `PolicyManagementPanel.tsx`,
-  `LaunchDependencyEvidencePanel.tsx`, `ProductFamilyOrderPanel.tsx`.
+**Code** (all under `frontend/src/components/operations/`; every workspace
+file starts with a comment naming its API calls, backend routes and styles):
+- `OperationsPage.tsx` (~800 lines): header, workspace nav, loading the data
+  several workspaces share (requests, orders, customers, products,
+  communications, summary), and the shortcuts that jump between workspaces.
+  Each tab is a component it renders.
+- `workspaces/` — one file per tab: `OverviewWorkspace`, `InboxWorkspace`,
+  `RequestsWorkspace`, `OrdersWorkspace`, `CatalogWorkspace`,
+  `CustomersWorkspace`, `InstallersWorkspace`, `StaffWorkspace`,
+  `AuditWorkspace`.
+- `requests/` — `RequestDetail.tsx` (one request in the detail pane) and
+  `requestLabels.ts` (statuses, filters, recommendation labels).
+- `catalog/` — `CatalogProductCard.tsx` (one product) and its editors:
+  `ProductRelationships`, `ProductPricingFields`, `ProductTaxFields`,
+  `ProductAvailabilityFields`; shared modes and draft builders in
+  `catalogConstants.ts`. Each editor keeps its own product's draft.
+- Shared pieces: `CommunicationsInbox.tsx` (customer inbox),
+  `ConversationThread.tsx` (message list and reply form shared by the Inbox
+  and requests), `RequestConversation.tsx`, `RequestWorkflowProgress.tsx`,
+  `FormalQuoteComposer.tsx` (quote drafting inside a request),
+  `OrderFulfillmentControls.tsx`, `NeedsYouList.tsx`,
+  `PolicyManagementPanel.tsx`, `LaunchDependencyEvidencePanel.tsx`,
+  `ProductFamilyOrderPanel.tsx`, `CopyEmailButton.tsx`, `MoneyInput.tsx`;
+  helpers in `operationsMoney.ts`, `operationsNextSteps.ts`,
+  `operationsShared.ts` (save-state type, `onMessage`/`onError` props).
+- After a save, show the server's reply straight away (replace the item in
+  state with what the API returns), and call the page's
+  `refreshOverviewData` when the change can move Overview's counts or
+  readiness. Backend routes that reload a row after changing its child rows
+  need `populate_existing=True` (the session keeps objects across commits),
+  as in `load_product_for_operations` and `load_user_with_roles`.
 - API calls: `frontend/src/api/operations.ts`; backend routes in `backend/app/api/operations.py`.
 - Styles: the many "Operations …" sections of `src/styles.css`; the workspace
   nav is under `/* PT45-D — Workspace navigation … */`.
@@ -179,7 +216,6 @@ Delivery issues, the summary count and Needs you.
   Conversation section loads its own thread, so it isn't affected.
 - A single request is still long: recommendation context and the formal
   quote builder take a lot of vertical space.
-- `OperationsPage.tsx` is very large; split panels out into their own files as you touch them.
 
 **Redesign plan (agreed 2026-11-12):**
 1. Quick wins: grouped tabs, waiting counts, Requests and Inbox open by
