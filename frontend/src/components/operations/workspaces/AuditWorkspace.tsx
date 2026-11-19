@@ -16,6 +16,7 @@ import {
   type OperationsAuditEventQuery,
 } from "../../../api/operations";
 import { localDateTimeValue } from "../operationsShared";
+import { exactEntryProps } from "../../forms/textEntry";
 
 const AUDIT_ACTION_LABELS: Record<string, string> = {
   "customer.equipment_recorded": "Installed equipment recorded",
@@ -480,6 +481,7 @@ export function AuditWorkspace() {
                 <label className="operations-field operations-customer-search">
                   <span>Search</span>
                   <input
+                    {...exactEntryProps}
                     type="search"
                     placeholder="Action code, entity, actor, request ID…"
                     value={auditDraft.search}
@@ -538,6 +540,7 @@ export function AuditWorkspace() {
                 <label className="operations-field">
                   <span>Action</span>
                   <input
+                    {...exactEntryProps}
                     list="audit-action-options"
                     placeholder="Exact action code"
                     value={auditDraft.action}
@@ -558,6 +561,7 @@ export function AuditWorkspace() {
                 <label className="operations-field">
                   <span>Entity type</span>
                   <input
+                    {...exactEntryProps}
                     list="audit-entity-options"
                     placeholder="Exact entity type"
                     value={auditDraft.entityType}
@@ -578,6 +582,7 @@ export function AuditWorkspace() {
                 <label className="operations-field">
                   <span>Entity ID</span>
                   <input
+                    {...exactEntryProps}
                     type="search"
                     placeholder="Full or partial ID"
                     value={auditDraft.entityId}
@@ -591,6 +596,7 @@ export function AuditWorkspace() {
                 <label className="operations-field">
                   <span>Actor</span>
                   <input
+                    {...exactEntryProps}
                     type="search"
                     placeholder="Email or user ID"
                     value={auditDraft.actor}
@@ -620,6 +626,7 @@ export function AuditWorkspace() {
                 <label className="operations-field">
                   <span>Request ID</span>
                   <input
+                    {...exactEntryProps}
                     type="search"
                     placeholder="Full or partial request ID"
                     value={auditDraft.requestId}

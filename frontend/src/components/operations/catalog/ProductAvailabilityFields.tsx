@@ -26,6 +26,7 @@ import {
   availabilityPolicyDraftFrom,
   inventoryDraftFrom,
 } from "./catalogConstants";
+import { exactEntryProps, proseEntryProps } from "../../forms/textEntry";
 
 type ProductAvailabilityFieldsProps = {
   onInventorySaved: () => void;
@@ -288,6 +289,7 @@ export function ProductAvailabilityFields({
         <label className="operations-field">
           <span>On hand</span>
           <input
+            {...exactEntryProps}
             type="number"
             min={0}
             step={1}
@@ -305,6 +307,7 @@ export function ProductAvailabilityFields({
         <label className="operations-field">
           <span>Reserved · automatic</span>
           <input
+            {...exactEntryProps}
             type="number"
             min={0}
             step={1}
@@ -344,6 +347,7 @@ export function ProductAvailabilityFields({
       <label className="operations-field">
         <span>Estimated availability range · use when date is unknown</span>
         <input
+          {...proseEntryProps}
           type="text"
           maxLength={120}
           placeholder="Example: 2–3 weeks"
@@ -385,6 +389,7 @@ export function ProductAvailabilityFields({
         <label className="operations-field">
           <span>Internal source reference</span>
           <input
+            {...exactEntryProps}
             type="text"
             maxLength={240}
             placeholder="Portal, rep, report, or internal count"

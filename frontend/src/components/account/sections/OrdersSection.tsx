@@ -15,6 +15,7 @@ import {
   orderStageLabel,
 } from "../accountFormat";
 import { type AccountNoticeProps } from "../accountShared";
+import { proseEntryProps } from "../../forms/textEntry";
 
 type OrdersSectionProps = {
   orders: Order[];
@@ -190,6 +191,7 @@ export function OrdersSection({
                         <label className="account-order-cancellation-field">
                           <span>Reason (optional)</span>
                           <textarea
+                            {...proseEntryProps}
                             rows={2}
                             maxLength={2000}
                             value={cancellationReasons[order.id] ?? ""}

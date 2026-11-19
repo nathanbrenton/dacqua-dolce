@@ -22,6 +22,7 @@ import {
   type WebManagedRole,
 } from "../../../api/administration";
 import type { OperationsNoticeProps, SaveState } from "../operationsShared";
+import { exactEntryProps } from "../../forms/textEntry";
 
 const WEB_MANAGED_ROLES: WebManagedRole[] = [
   "employee",
@@ -330,6 +331,7 @@ export function StaffWorkspace({
             >
               <span>Search user accounts</span>
               <input
+                {...exactEntryProps}
                 type="search"
                 placeholder="Email, status, role…"
                 value={administrationSearch}

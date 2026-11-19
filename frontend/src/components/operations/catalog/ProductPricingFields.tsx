@@ -25,6 +25,7 @@ import {
   dollarsToMinor,
   pricingDraftFrom,
 } from "./catalogConstants";
+import { exactEntryProps } from "../../forms/textEntry";
 
 type ProductPricingFieldsProps = {
   product: OperationsProduct;
@@ -197,6 +198,7 @@ export function ProductPricingFields({
         <label className="operations-field">
           <span>Currency</span>
           <input
+            {...exactEntryProps}
             maxLength={3}
             value={pricing.currency}
             disabled={!privileged}

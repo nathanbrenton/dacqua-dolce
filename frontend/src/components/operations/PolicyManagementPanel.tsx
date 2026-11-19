@@ -20,6 +20,7 @@ import {
   type PolicyKind,
   type RefundPolicyTerms,
 } from "../../api/policies";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 const POLICY_OPTIONS: Array<{
   kind: PolicyKind;
@@ -670,6 +671,7 @@ export function PolicyManagementPanel({
           <label className="operations-field">
             <span>Version</span>
             <input
+              {...exactEntryProps}
               value={version}
               onChange={(event) => setVersion(event.target.value)}
               placeholder="Example: 2026-10-01"
@@ -679,6 +681,7 @@ export function PolicyManagementPanel({
           <label className="operations-field">
             <span>Title</span>
             <input
+              {...proseEntryProps}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Approved customer-facing title"
@@ -688,6 +691,7 @@ export function PolicyManagementPanel({
           <label className="operations-field">
             <span>Policy text</span>
             <textarea
+              {...proseEntryProps}
               rows={12}
               value={body}
               onChange={(event) => setBody(event.target.value)}
@@ -737,6 +741,7 @@ export function PolicyManagementPanel({
                       <label className="operations-field">
                         <span>Return window (days)</span>
                         <input
+                          {...exactEntryProps}
                           type="number"
                           min="1"
                           max="365"
@@ -769,6 +774,7 @@ export function PolicyManagementPanel({
                     <label className="operations-field">
                       <span>Restocking percentage</span>
                       <input
+                        {...exactEntryProps}
                         type="number"
                         min="0.01"
                         max="100"

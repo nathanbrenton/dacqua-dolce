@@ -1,4 +1,5 @@
 import type { InputHTMLAttributes } from "react";
+import { exactEntryProps } from "../forms/textEntry";
 
 /**
  * A text input for dollar amounts with a fixed "$" in front of it. A typed or
@@ -17,6 +18,7 @@ export function MoneyInput(
     >
       <span className="operations-money-prefix" aria-hidden="true">$</span>
       <input
+        {...exactEntryProps}
         {...rest}
         type="text"
         inputMode="decimal"

@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import type { OperationsCommunicationMessage } from "../../api/operations";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 export function formatTimestamp(value: string | null): string {
   if (value === null) {
@@ -586,6 +587,8 @@ export function ConversationReplyForm({
       <label className="operations-inbox-reply-recipient-field">
         <span>To</span>
         <input
+          {...exactEntryProps}
+          autoCapitalize="none"
           type="text"
           inputMode="email"
           aria-label="Reply recipients"
@@ -611,6 +614,7 @@ export function ConversationReplyForm({
       </label>
 
       <textarea
+        {...proseEntryProps}
         aria-label="Reply message"
         placeholder="Write a plain-text reply…"
         value={body}

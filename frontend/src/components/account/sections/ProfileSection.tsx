@@ -22,6 +22,7 @@ import {
 import { isCompleteUsPhone } from "../../../utils/phone";
 import { type AccountNoticeProps, type AccountSavingProps } from "../accountShared";
 import { UsPhoneInput } from "../../forms/UsPhoneInput";
+import { exactEntryProps } from "../../forms/textEntry";
 
 type ProfileSectionProps = {
   profile: CustomerProfile;
@@ -119,6 +120,7 @@ export function ProfileSection({
         <label>
           <span>First name</span>
           <input
+            {...exactEntryProps}
             value={
               profile.first_name
               ?? ""
@@ -138,6 +140,7 @@ export function ProfileSection({
         <label>
           <span>Last name</span>
           <input
+            {...exactEntryProps}
             value={
               profile.last_name
               ?? ""

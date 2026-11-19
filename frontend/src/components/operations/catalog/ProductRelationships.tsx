@@ -14,6 +14,7 @@ import {
   type OperationsProduct,
 } from "../../../api/operations";
 import type { OperationsNoticeProps, SaveState } from "../operationsShared";
+import { exactEntryProps } from "../../forms/textEntry";
 
 type ProductRelationshipsProps = {
   products: OperationsProduct[];
@@ -227,6 +228,7 @@ export function ProductRelationships({
                     <label className="operations-field compact">
                       <span>Replacement interval (days)</span>
                       <input
+                        {...exactEntryProps}
                         type="number"
                         min="1"
                         max="3650"

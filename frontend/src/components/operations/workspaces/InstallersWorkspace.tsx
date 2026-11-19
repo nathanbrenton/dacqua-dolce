@@ -20,6 +20,7 @@ import {
   type OperationsInstallerCandidate,
 } from "../../../api/operations";
 import type { OperationsNoticeProps } from "../operationsShared";
+import { exactEntryProps, proseEntryProps } from "../../forms/textEntry";
 
 const INSTALLER_CANDIDATE_STATUSES: InstallerCandidateStatus[] = [
   "researching",
@@ -283,6 +284,7 @@ export function InstallersWorkspace({
         <label className="operations-field operations-customer-search">
           <span>Search candidates</span>
           <input
+            {...exactEntryProps}
             type="search"
             placeholder="Business, contact, service area, status…"
             value={installerCandidateSearch}
@@ -301,15 +303,15 @@ export function InstallersWorkspace({
                 <small>Internal only</small>
               </div>
               <div className="operations-product-grid">
-                <label className="operations-field"><span>Business name</span><input value={installerCandidateCreateDraft.businessName} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, businessName: event.target.value })} /></label>
-                <label className="operations-field"><span>Contact name</span><input value={installerCandidateCreateDraft.contactName} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, contactName: event.target.value })} /></label>
-                <label className="operations-field"><span>Email</span><input type="email" value={installerCandidateCreateDraft.email} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, email: event.target.value })} /></label>
-                <label className="operations-field"><span>Phone</span><input value={installerCandidateCreateDraft.phone} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, phone: event.target.value })} /></label>
-                <label className="operations-field"><span>Website</span><input value={installerCandidateCreateDraft.website} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, website: event.target.value })} /></label>
+                <label className="operations-field"><span>Business name</span><input {...exactEntryProps} value={installerCandidateCreateDraft.businessName} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, businessName: event.target.value })} /></label>
+                <label className="operations-field"><span>Contact name</span><input {...exactEntryProps} value={installerCandidateCreateDraft.contactName} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, contactName: event.target.value })} /></label>
+                <label className="operations-field"><span>Email</span><input {...exactEntryProps} type="email" value={installerCandidateCreateDraft.email} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, email: event.target.value })} /></label>
+                <label className="operations-field"><span>Phone</span><input {...exactEntryProps} value={installerCandidateCreateDraft.phone} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, phone: event.target.value })} /></label>
+                <label className="operations-field"><span>Website</span><input {...exactEntryProps} autoCapitalize="none" value={installerCandidateCreateDraft.website} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, website: event.target.value })} /></label>
                 <label className="operations-field"><span>Status</span><select value={installerCandidateCreateDraft.status} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, status: event.target.value as InstallerCandidateStatus })}>{INSTALLER_CANDIDATE_STATUSES.map((candidateStatus) => <option key={candidateStatus} value={candidateStatus}>{INSTALLER_CANDIDATE_STATUS_LABELS[candidateStatus]}</option>)}</select></label>
-                <label className="operations-field"><span>Service-area notes</span><textarea value={installerCandidateCreateDraft.serviceAreaNotes} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, serviceAreaNotes: event.target.value })} /></label>
-                <label className="operations-field"><span>Source / provenance</span><textarea value={installerCandidateCreateDraft.sourceReference} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, sourceReference: event.target.value })} /></label>
-                <label className="operations-field"><span>Internal notes</span><textarea value={installerCandidateCreateDraft.internalNotes} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, internalNotes: event.target.value })} /></label>
+                <label className="operations-field"><span>Service-area notes</span><textarea {...proseEntryProps} value={installerCandidateCreateDraft.serviceAreaNotes} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, serviceAreaNotes: event.target.value })} /></label>
+                <label className="operations-field"><span>Source / provenance</span><textarea {...proseEntryProps} value={installerCandidateCreateDraft.sourceReference} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, sourceReference: event.target.value })} /></label>
+                <label className="operations-field"><span>Internal notes</span><textarea {...proseEntryProps} value={installerCandidateCreateDraft.internalNotes} onChange={(event) => setInstallerCandidateCreateDraft({ ...installerCandidateCreateDraft, internalNotes: event.target.value })} /></label>
               </div>
               <button type="button" className="operations-action" disabled={installerCandidateCreating} onClick={() => void addInstallerCandidate()}>{installerCandidateCreating ? "Saving…" : "Add candidate"}</button>
             </section>
@@ -339,15 +341,15 @@ export function InstallersWorkspace({
                     </div>
 
                     <div className="operations-product-grid">
-                      <label className="operations-field"><span>Business name</span><input disabled={!privileged} value={draft.businessName} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "businessName", event.target.value)} /></label>
-                      <label className="operations-field"><span>Contact name</span><input disabled={!privileged} value={draft.contactName} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "contactName", event.target.value)} /></label>
-                      <label className="operations-field"><span>Email</span><input type="email" disabled={!privileged} value={draft.email} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "email", event.target.value)} /></label>
-                      <label className="operations-field"><span>Phone</span><input disabled={!privileged} value={draft.phone} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "phone", event.target.value)} /></label>
-                      <label className="operations-field"><span>Website</span><input disabled={!privileged} value={draft.website} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "website", event.target.value)} /></label>
+                      <label className="operations-field"><span>Business name</span><input {...exactEntryProps} disabled={!privileged} value={draft.businessName} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "businessName", event.target.value)} /></label>
+                      <label className="operations-field"><span>Contact name</span><input {...exactEntryProps} disabled={!privileged} value={draft.contactName} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "contactName", event.target.value)} /></label>
+                      <label className="operations-field"><span>Email</span><input {...exactEntryProps} type="email" disabled={!privileged} value={draft.email} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "email", event.target.value)} /></label>
+                      <label className="operations-field"><span>Phone</span><input {...exactEntryProps} disabled={!privileged} value={draft.phone} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "phone", event.target.value)} /></label>
+                      <label className="operations-field"><span>Website</span><input {...exactEntryProps} autoCapitalize="none" disabled={!privileged} value={draft.website} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "website", event.target.value)} /></label>
                       <label className="operations-field"><span>Status</span><select disabled={!privileged} value={draft.status} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "status", event.target.value as InstallerCandidateStatus)}>{INSTALLER_CANDIDATE_STATUSES.map((candidateStatus) => <option key={candidateStatus} value={candidateStatus}>{INSTALLER_CANDIDATE_STATUS_LABELS[candidateStatus]}</option>)}</select></label>
-                      <label className="operations-field"><span>Service-area notes</span><textarea disabled={!privileged} value={draft.serviceAreaNotes} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "serviceAreaNotes", event.target.value)} /></label>
-                      <label className="operations-field"><span>Source / provenance</span><textarea disabled={!privileged} value={draft.sourceReference} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "sourceReference", event.target.value)} /></label>
-                      <label className="operations-field"><span>Internal notes</span><textarea disabled={!privileged} value={draft.internalNotes} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "internalNotes", event.target.value)} /></label>
+                      <label className="operations-field"><span>Service-area notes</span><textarea {...proseEntryProps} disabled={!privileged} value={draft.serviceAreaNotes} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "serviceAreaNotes", event.target.value)} /></label>
+                      <label className="operations-field"><span>Source / provenance</span><textarea {...proseEntryProps} disabled={!privileged} value={draft.sourceReference} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "sourceReference", event.target.value)} /></label>
+                      <label className="operations-field"><span>Internal notes</span><textarea {...proseEntryProps} disabled={!privileged} value={draft.internalNotes} onChange={(event) => changeInstallerCandidateDraft(candidate.id, "internalNotes", event.target.value)} /></label>
                     </div>
 
                     <p className="operations-governance-context">

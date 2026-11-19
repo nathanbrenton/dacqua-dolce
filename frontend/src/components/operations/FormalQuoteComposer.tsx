@@ -17,6 +17,7 @@ import {
 } from "../../api/operations";
 import { MoneyInput } from "./MoneyInput";
 import { parseDollarsToMinor } from "./operationsMoney";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 type DraftLine = {
   key: number;
@@ -152,6 +153,7 @@ function AddressFields({
         <label className="operations-field">
           <span>Recipient</span>
           <input
+            {...exactEntryProps}
             value={value.recipient_name}
             onChange={(event) => update({ recipient_name: event.target.value })}
           />
@@ -159,6 +161,7 @@ function AddressFields({
         <label className="operations-field">
           <span>Phone</span>
           <input
+            {...exactEntryProps}
             value={value.phone ?? ""}
             onChange={(event) => update({ phone: event.target.value || null })}
           />
@@ -166,6 +169,7 @@ function AddressFields({
         <label className="operations-field operations-commercial-address-wide">
           <span>Address line 1</span>
           <input
+            {...exactEntryProps}
             value={value.line1}
             onChange={(event) => update({ line1: event.target.value })}
           />
@@ -173,6 +177,7 @@ function AddressFields({
         <label className="operations-field operations-commercial-address-wide">
           <span>Address line 2</span>
           <input
+            {...exactEntryProps}
             value={value.line2 ?? ""}
             onChange={(event) => update({ line2: event.target.value || null })}
           />
@@ -180,6 +185,7 @@ function AddressFields({
         <label className="operations-field">
           <span>City</span>
           <input
+            {...exactEntryProps}
             value={value.city}
             onChange={(event) => update({ city: event.target.value })}
           />
@@ -187,6 +193,7 @@ function AddressFields({
         <label className="operations-field">
           <span>State / region</span>
           <input
+            {...exactEntryProps}
             value={value.region_code}
             onChange={(event) => update({ region_code: event.target.value })}
           />
@@ -194,6 +201,7 @@ function AddressFields({
         <label className="operations-field">
           <span>Postal code</span>
           <input
+            {...exactEntryProps}
             value={value.postal_code}
             onChange={(event) => update({ postal_code: event.target.value })}
           />
@@ -201,6 +209,7 @@ function AddressFields({
         <label className="operations-field">
           <span>Country</span>
           <input
+            {...exactEntryProps}
             maxLength={2}
             value={value.country_code}
             onChange={(event) => update({ country_code: event.target.value })}
@@ -608,6 +617,7 @@ export function FormalQuoteComposer({
                 <label className="operations-field">
                   <span>Qty</span>
                   <input
+                    {...exactEntryProps}
                     type="number"
                     min="1"
                     max="100"
@@ -724,6 +734,7 @@ export function FormalQuoteComposer({
                 <label className="operations-field">
                   <span>Customer-facing label</span>
                   <input
+                    {...proseEntryProps}
                     value={charge.label}
                     onChange={(event) => updateCharge(charge.key, { label: event.target.value })}
                   />
@@ -794,6 +805,7 @@ export function FormalQuoteComposer({
           <label className="operations-field">
             <span>Customer-facing note</span>
             <textarea
+              {...proseEntryProps}
               rows={3}
               maxLength={4000}
               placeholder="Optional context that the customer should see with this quote"

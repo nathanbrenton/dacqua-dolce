@@ -17,6 +17,7 @@ import { ContactMethodSelect } from "../forms/ContactMethodSelect";
 import { UsPhoneInput } from "../forms/UsPhoneInput";
 import { useToast } from "../toast/ToastProvider";
 import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChallenge";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 type SupportRequestFormProps = {
   account: AuthenticationStatus | null;
@@ -133,6 +134,7 @@ export function SupportRequestForm({
         <label>
           <span>Website</span>
           <input
+            {...exactEntryProps}
             type="text"
             value={website}
             tabIndex={-1}
@@ -157,6 +159,7 @@ export function SupportRequestForm({
       <label>
         <span>Name</span>
         <input
+          {...exactEntryProps}
           value={name}
           maxLength={160}
           required
@@ -168,6 +171,7 @@ export function SupportRequestForm({
       <label>
         <span>Email</span>
         <input
+          {...exactEntryProps}
           type="email"
           value={email}
           maxLength={320}
@@ -201,6 +205,7 @@ export function SupportRequestForm({
       <label>
         <span>How can we help?</span>
         <textarea
+          {...proseEntryProps}
           value={message}
           maxLength={4000}
           required

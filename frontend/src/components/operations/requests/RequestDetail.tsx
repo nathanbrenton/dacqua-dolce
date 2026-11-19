@@ -27,6 +27,7 @@ import {
   recommendationContextLabel,
   recommendationContextValue,
 } from "./requestLabels";
+import { proseEntryProps } from "../../forms/textEntry";
 
 type RequestDetailProps = {
   quote: OperationsQuote;
@@ -297,6 +298,7 @@ export function RequestDetail({
           <label className="operations-field">
             <span className="sr-only">Internal notes</span>
             <textarea
+              {...proseEntryProps}
               rows={3}
               maxLength={8000}
               placeholder="Add private follow-up notes"

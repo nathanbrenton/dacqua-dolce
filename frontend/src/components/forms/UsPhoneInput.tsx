@@ -8,6 +8,7 @@ import {
 import {
   formatUsPhoneInput,
 } from "../../utils/phone";
+import { exactEntryProps } from "./textEntry";
 
 type UsPhoneInputProps = Omit<
   ComponentPropsWithoutRef<"input">,
@@ -295,6 +296,7 @@ export function UsPhoneInput({
 
   return (
     <input
+      {...exactEntryProps}
       {...inputProps}
       placeholder={placeholder}
       ref={inputRef}

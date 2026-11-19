@@ -9,6 +9,7 @@ import {
   type RecommendationContext,
   type RecommendationDecision,
 } from "../../api/quotes";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 type SystemRecommendationSectionProps = {
   onRequestConsultation: (
@@ -393,6 +394,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Service ZIP code</span>
             <input
+              {...exactEntryProps}
               type="text"
               inputMode="numeric"
               autoComplete="postal-code"
@@ -415,6 +417,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Known water hardness</span>
             <input
+              {...exactEntryProps}
               type="text"
               maxLength={120}
               value={waterHardness}
@@ -444,6 +447,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Number of occupants</span>
             <input
+              {...exactEntryProps}
               type="number"
               min="1"
               inputMode="numeric"
@@ -458,6 +462,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Water service pipe size</span>
             <input
+              {...exactEntryProps}
               type="text"
               maxLength={120}
               value={waterServicePipeSize}
@@ -492,6 +497,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Known chlorine / chloramine details</span>
             <input
+              {...proseEntryProps}
               type="text"
               maxLength={240}
               value={chlorineDetails}
@@ -505,6 +511,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Known iron / manganese details</span>
             <input
+              {...proseEntryProps}
               type="text"
               maxLength={240}
               value={ironManganeseDetails}
@@ -518,6 +525,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field">
             <span>Known pH</span>
             <input
+              {...exactEntryProps}
               type="number"
               min="0"
               max="14"
@@ -583,6 +591,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field recommendation-field-wide">
             <span>What have you heard or noticed about their filtration?</span>
             <textarea
+              {...proseEntryProps}
               rows={2}
               maxLength={1000}
               value={networkExperienceDetails}
@@ -607,6 +616,7 @@ export function SystemRecommendationSection({
           <label className="recommendation-field recommendation-field-wide">
             <span>Existing water-treatment equipment</span>
             <textarea
+              {...proseEntryProps}
               rows={3}
               maxLength={1000}
               value={existingEquipment}

@@ -19,6 +19,7 @@ import {
   getProfile,
 } from "../../../api/account";
 import { type AccountNoticeProps, type AccountSavingProps } from "../accountShared";
+import { exactEntryProps } from "../../forms/textEntry";
 
 const EMPTY_ADDRESS: AddressCreate = {
   label: "Home",
@@ -258,6 +259,7 @@ export function AddressesSection({
         <label>
           <span>Label</span>
           <input
+            {...exactEntryProps}
             required
             value={
               addressDraft.label
@@ -275,6 +277,7 @@ export function AddressesSection({
         <label>
           <span>Address</span>
           <input
+            {...exactEntryProps}
             required
             autoComplete="address-line1"
             value={
@@ -293,6 +296,7 @@ export function AddressesSection({
         <label>
           <span>Address line 2</span>
           <input
+            {...exactEntryProps}
             autoComplete="address-line2"
             value={
               addressDraft.line2
@@ -313,6 +317,7 @@ export function AddressesSection({
           <label>
             <span>City</span>
             <input
+              {...exactEntryProps}
               required
               autoComplete="address-level2"
               value={
@@ -332,6 +337,7 @@ export function AddressesSection({
           <label>
             <span>State / region</span>
             <input
+              {...exactEntryProps}
               required
               autoComplete="address-level1"
               value={
@@ -354,6 +360,7 @@ export function AddressesSection({
           <label>
             <span>Postal code</span>
             <input
+              {...exactEntryProps}
               required
               autoComplete="postal-code"
               value={
@@ -374,6 +381,7 @@ export function AddressesSection({
           <label>
             <span>Country</span>
             <input
+              {...exactEntryProps}
               required
               maxLength={2}
               autoComplete="country"

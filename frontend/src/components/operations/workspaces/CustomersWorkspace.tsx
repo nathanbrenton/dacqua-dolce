@@ -24,6 +24,7 @@ import { contactMethodLabel } from "../../../utils/contactMethod";
 import { formatUsPhoneInput } from "../../../utils/phone";
 import { CopyEmailButton } from "../CopyEmailButton";
 import type { OperationsNoticeProps } from "../operationsShared";
+import { exactEntryProps, proseEntryProps } from "../../forms/textEntry";
 
 type EquipmentDraft = {
   productId: string;
@@ -200,6 +201,7 @@ export function CustomersWorkspace({
       >
         <span>Search customers</span>
         <input
+          {...exactEntryProps}
           type="search"
           placeholder="Name, email, phone, city, ZIP…"
           value={customerSearch}
@@ -443,8 +445,8 @@ export function CustomersWorkspace({
                             </label>
                           );
                         })()}
-                        <label className="operations-field"><span>Location</span><input value={equipmentDraft.locationLabel} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, locationLabel: event.target.value })} placeholder="Kitchen, garage, utility room…" /></label>
-                        <label className="operations-field"><span>Serial number</span><input value={equipmentDraft.serialNumber} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, serialNumber: event.target.value })} /></label>
+                        <label className="operations-field"><span>Location</span><input {...proseEntryProps} value={equipmentDraft.locationLabel} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, locationLabel: event.target.value })} placeholder="Kitchen, garage, utility room…" /></label>
+                        <label className="operations-field"><span>Serial number</span><input {...exactEntryProps} value={equipmentDraft.serialNumber} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, serialNumber: event.target.value })} /></label>
                         <div className="operations-equipment-date-grid">
                           <label className="operations-field"><span>Installed</span><input type="date" value={equipmentDraft.installedOn} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, installedOn: event.target.value })} /></label>
                           <label className="operations-field"><span>Last service</span><input type="date" value={equipmentDraft.lastServiceOn} onChange={(event) => setEquipmentDraft({ ...equipmentDraft, lastServiceOn: event.target.value })} /></label>

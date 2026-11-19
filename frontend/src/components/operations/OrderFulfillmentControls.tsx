@@ -14,6 +14,7 @@ import {
   updateOrderFulfillment,
   updateOrderReview,
 } from "../../api/operations";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 type Props = {
   order: OperationsOrder;
@@ -543,6 +544,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Customer response</span>
               <textarea
+                {...proseEntryProps}
                 rows={3}
                 maxLength={4000}
                 value={customerResponseNote}
@@ -568,6 +570,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Hold reason</span>
               <textarea
+                {...proseEntryProps}
                 rows={3}
                 maxLength={4000}
                 value={holdReason}
@@ -577,6 +580,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Proposed alternative</span>
               <textarea
+                {...proseEntryProps}
                 rows={3}
                 maxLength={4000}
                 value={proposedAlternative}
@@ -689,6 +693,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Exception reason</span>
               <textarea
+                {...proseEntryProps}
                 rows={3}
                 maxLength={4000}
                 value={exceptionalCancellationReason}
@@ -718,6 +723,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Cancellation review note (optional)</span>
               <textarea
+                {...proseEntryProps}
                 rows={3}
                 maxLength={4000}
                 value={reviewNote}
@@ -860,6 +866,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Return window override (days, optional)</span>
               <input
+                {...exactEntryProps}
                 type="number"
                 min="1"
                 max="3650"
@@ -873,6 +880,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Restocking percentage override (optional)</span>
               <input
+                {...exactEntryProps}
                 type="number"
                 min="0"
                 max="100"
@@ -919,6 +927,7 @@ export function OrderFulfillmentControls({
             <label className="operations-field">
               <span>Exception reason</span>
               <textarea
+                {...proseEntryProps}
                 rows={3}
                 maxLength={4000}
                 value={exceptionReason}
@@ -954,6 +963,7 @@ export function OrderFulfillmentControls({
         <label className="operations-field">
           <span>Supplier reference (optional)</span>
           <input
+            {...exactEntryProps}
             type="text"
             value={supplierReference}
             maxLength={160}
@@ -991,6 +1001,7 @@ export function OrderFulfillmentControls({
           <label className="operations-field">
             <span>Carrier</span>
             <input
+              {...exactEntryProps}
               type="text"
               value={carrier}
               maxLength={100}
@@ -1003,6 +1014,7 @@ export function OrderFulfillmentControls({
           <label className="operations-field">
             <span>Tracking number</span>
             <input
+              {...exactEntryProps}
               type="text"
               value={trackingNumber}
               maxLength={200}
@@ -1015,6 +1027,7 @@ export function OrderFulfillmentControls({
           <label className="operations-field">
             <span>Tracking URL (optional HTTPS)</span>
             <input
+              {...exactEntryProps}
               type="url"
               value={trackingUrl}
               maxLength={2048}

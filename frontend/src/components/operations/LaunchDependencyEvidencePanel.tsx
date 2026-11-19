@@ -10,6 +10,7 @@ import {
   type LaunchDependencyTrackingStatus,
   type OperationsLaunchDependencyEvidence,
 } from "../../api/operations";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 type LaunchDependencyEvidencePanelProps = {
   roles: string[];
@@ -250,6 +251,7 @@ export function LaunchDependencyEvidencePanel({
                 <label className="operations-field compact">
                   <span>Source / reference</span>
                   <input
+                    {...exactEntryProps}
                     type="text"
                     value={draft.sourceReference}
                     maxLength={4000}
@@ -286,6 +288,7 @@ export function LaunchDependencyEvidencePanel({
                 <label className="operations-field compact">
                   <span>Internal notes</span>
                   <textarea
+                    {...proseEntryProps}
                     value={draft.internalNotes}
                     maxLength={8000}
                     rows={3}

@@ -21,6 +21,7 @@ import {
 import {
   PasswordInput,
 } from "../forms/PasswordInput";
+import { exactEntryProps } from "../forms/textEntry";
 
 type AuthMode = "login" | "register";
 
@@ -571,6 +572,7 @@ export function AuthDialog({
               <span>Email address</span>
 
               <input
+                {...exactEntryProps}
                 type="email"
                 name="email"
                 autoComplete="email"
@@ -930,6 +932,7 @@ export function AuthDialog({
                   </span>
 
                   <input
+                    {...exactEntryProps}
                     type="text"
                     name="mfa-code"
                     autoComplete="one-time-code"
@@ -1002,6 +1005,7 @@ export function AuthDialog({
             </span>
 
             <input
+              {...exactEntryProps}
               type="text"
               name="mfa-code"
               autoComplete="one-time-code"

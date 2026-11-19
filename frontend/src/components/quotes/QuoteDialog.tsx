@@ -29,6 +29,7 @@ import { TurnstileChallenge, turnstileConfigured } from "../forms/TurnstileChall
 import {
   UsPhoneInput,
 } from "../forms/UsPhoneInput";
+import { exactEntryProps, proseEntryProps } from "../forms/textEntry";
 
 export type QuoteInquiryContext =
   | "general"
@@ -457,6 +458,7 @@ export function QuoteDialog({
             <span>Name</span>
 
             <input
+              {...exactEntryProps}
               type="text"
               autoComplete="name"
               autoFocus
@@ -475,6 +477,7 @@ export function QuoteDialog({
             <span>Email address</span>
 
             <input
+              {...exactEntryProps}
               type="email"
               autoComplete="email"
               required
@@ -549,6 +552,7 @@ export function QuoteDialog({
             <label>
               <span>Service ZIP code</span>
               <input
+                {...exactEntryProps}
                 type="text"
                 inputMode="numeric"
                 autoComplete="postal-code"
@@ -628,6 +632,7 @@ export function QuoteDialog({
             </span>
 
             <textarea
+              {...proseEntryProps}
               rows={5}
               aria-describedby="quote-message-helper"
               maxLength={4000}

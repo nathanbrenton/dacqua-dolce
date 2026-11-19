@@ -3,6 +3,7 @@ import {
   useId,
   useState,
 } from "react";
+import { exactEntryProps } from "./textEntry";
 
 type PasswordInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -31,6 +32,7 @@ export function PasswordInput({
 
       <div className="password-input-control">
         <input
+          {...exactEntryProps}
           {...inputProps}
           id={inputId}
           type={visible ? "text" : "password"}

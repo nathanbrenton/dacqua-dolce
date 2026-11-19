@@ -21,6 +21,7 @@ import {
 } from "./ConversationThread";
 import { contactMethodLabel } from "../../utils/contactMethod";
 import { formatUsPhoneInput } from "../../utils/phone";
+import { exactEntryProps } from "../forms/textEntry";
 
 function threadSearchText(
   thread: OperationsCommunicationThread,
@@ -558,6 +559,7 @@ export function CommunicationsInbox({
       >
         <span>Search conversations</span>
         <input
+          {...exactEntryProps}
           ref={searchInputRef}
           type="search"
           placeholder="Customer, sender, subject, status, related record…"

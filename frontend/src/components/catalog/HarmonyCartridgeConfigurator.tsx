@@ -3,6 +3,7 @@ import {
   harmonyHousingCountForSku, type PurelineHousingPosition,
   type PurelineHousingChoice, type PurelineHousingSelections, type PurelineCategory,
 } from "./harmonyCartridges";
+import { proseEntryProps } from "../forms/textEntry";
 
 type Props = {
   sku: string;
@@ -50,7 +51,7 @@ export function HarmonyCartridgeConfigurator({ sku, selections, onChange }: Prop
             {choice.category === "other" ? (
               <label>
                 <span>DESIRED MEDIA OR CARTRIDGE (OPTIONAL)</span>
-                <input maxLength={120} type="text" value={choice.otherDescription}
+                <input {...proseEntryProps} maxLength={120} type="text" value={choice.otherDescription}
                   placeholder="Tell us what you need and we'll confirm what's available"
                   onChange={(event) => onChange(housing, { ...choice, otherDescription: event.target.value })} />
               </label>

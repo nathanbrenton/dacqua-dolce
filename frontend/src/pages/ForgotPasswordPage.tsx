@@ -6,6 +6,7 @@ import {
 import {
   requestPasswordReset,
 } from "../api/authentication";
+import { exactEntryProps } from "../components/forms/textEntry";
 
 type ForgotPasswordPageProps = {
   onNavigate: (path: string) => void;
@@ -95,6 +96,7 @@ export function ForgotPasswordPage({
             <span>Email address</span>
 
             <input
+              {...exactEntryProps}
               type="email"
               autoComplete="email"
               required

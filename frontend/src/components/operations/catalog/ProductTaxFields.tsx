@@ -11,6 +11,7 @@ import {
 } from "../../../api/operations";
 import { type OperationsNoticeProps, type SaveState } from "../operationsShared";
 import { taxClassificationDraftFrom } from "./catalogConstants";
+import { exactEntryProps } from "../../forms/textEntry";
 
 type ProductTaxFieldsProps = {
   product: OperationsProduct;
@@ -84,6 +85,7 @@ export function ProductTaxFields({
       <label className="operations-field">
         <span>Stripe Tax code</span>
         <input
+          {...exactEntryProps}
           placeholder="txcd_…"
           value={taxClassification.taxCode}
           disabled={!privileged}
@@ -99,6 +101,7 @@ export function ProductTaxFields({
       <label className="operations-field">
         <span>Classification source</span>
         <input
+          {...exactEntryProps}
           placeholder="Stripe tax-code catalog / reviewed source"
           value={taxClassification.sourceReference}
           disabled={!privileged}

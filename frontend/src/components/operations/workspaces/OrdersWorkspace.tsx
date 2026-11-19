@@ -18,6 +18,7 @@ import { formatUsPhoneInput } from "../../../utils/phone";
 import { CopyEmailButton } from "../CopyEmailButton";
 import { formatMoney } from "../operationsMoney";
 import { OrderFulfillmentControls } from "../OrderFulfillmentControls";
+import { exactEntryProps } from "../../forms/textEntry";
 
 function commercialAddressLines(address: CommercialAddress): string[] {
   return [
@@ -117,6 +118,7 @@ export function OrdersWorkspace({
       >
         <span>Search orders</span>
         <input
+          {...exactEntryProps}
           type="search"
           placeholder="Customer, email, order ID, SKU, status…"
           value={search}

@@ -34,6 +34,7 @@ import { getConfigurationFamily } from "./productConfigurations";
 import presentationLabels from "./presentationLabels.json";
 import { ProductImageNotice, PureLineMaintenanceNotice } from "./ProductContentNotices";
 import { CLACK_CONNECTION_SIZES, clackFittingsForSize, shortClackFittingLabel, offersClackInstallationFittings } from "./clackInstallationFittings";
+import { exactEntryProps } from "../forms/textEntry";
 
 // These are the same temporary, representative photos used on the landing
 // cards. They are NOT approved SKU-specific product images. Verified catalog
@@ -875,6 +876,7 @@ export function ProductDetailPage({
                     <label>
                       <span>Email for availability notice</span>
                       <input
+                        {...exactEntryProps}
                         type="email"
                         autoComplete="email"
                         value={notificationEmail}
